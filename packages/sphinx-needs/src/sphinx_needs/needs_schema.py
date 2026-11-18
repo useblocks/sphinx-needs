@@ -60,6 +60,17 @@ def _check_severity(severity: object) -> None:
         raise ValueError("severity must be one of 'violation', 'warning' or 'info'.")
 
 
+def _is_integer(value: object) -> bool:
+    """Whether ``value`` is an ``integer``: a boolean is not, though ``bool`` is an
+    ``int`` in Python (it is not in JSON or TOML)."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_number(value: object) -> bool:
+    """Whether ``value`` is a ``number``: an integer or a float, never a boolean."""
+    return isinstance(value, int | float) and not isinstance(value, bool)
+
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class FieldSchema:
     """Schema for a single field.
@@ -353,9 +364,9 @@ class FieldSchema:
             case "boolean":
                 return isinstance(value, bool)
             case "integer":
-                return isinstance(value, int)
+                return _is_integer(value)
             case "number":
-                return isinstance(value, int | float)
+                return _is_number(value)
             case "array":
                 if not isinstance(value, list):
                     return False
@@ -367,9 +378,9 @@ class FieldSchema:
                     case "boolean":
                         return all(isinstance(item, bool) for item in value)
                     case "integer":
-                        return all(isinstance(item, int) for item in value)
+                        return all(_is_integer(item) for item in value)
                     case "number":
-                        return all(isinstance(item, int | float) for item in value)
+                        return all(_is_number(item) for item in value)
                     case other:
                         raise RuntimeError(f"Unknown item type '{other}'.")
             case other:
@@ -389,9 +400,9 @@ class FieldSchema:
             case "boolean":
                 return isinstance(value, bool)
             case "integer":
-                return isinstance(value, int)
+                return _is_integer(value)
             case "number":
-                return isinstance(value, int | float)
+                return _is_number(value)
             case other:
                 raise RuntimeError(f"Unknown item type '{other}'.")
 

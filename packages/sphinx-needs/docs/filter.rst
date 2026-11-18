@@ -532,8 +532,9 @@ With :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace:
 - A need part reads its need's namespace and local id; its ``id`` is its own part id.
 - ``c.in_namespace("")``, and an argument that is no namespace (``"nc::"``, ``"a b"``), is an error of the filter
   (``needs.filter``), never "every need": a need in no namespace is ``c.id.ns == ""``. In a derived field's
-  ``where`` such a literal makes the rule invalid (``needs.derive_invalid``); in a :ref:`needs_constraints` filter
-  it stops the build, as any invalid constraint filter does. A namespace no need is in selects nothing.
+  ``where`` such a literal makes the rule invalid (``needs.derive_invalid``); in a :ref:`needs_constraints` check
+  it is reported once and the check is not evaluated, as for any constraint filter that fails. A namespace no need
+  is in selects nothing.
 - ``c.id`` holds the facets of the id, not the id: ``c.id == "nc::REQ_1"`` (or ``!=``, or ``c.id in [...]``) is an
   error of the filter; compare ``id``, ``c.id.local`` or ``c.id.ns``. ``c.id`` is not the id's text: comparing
   it, testing membership with it, or using it as a set member or a key (``c.id in {"nc::REQ_1"}``) is an error,

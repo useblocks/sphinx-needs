@@ -16,6 +16,7 @@ from unittest.mock import Mock
 import pytest
 from docutils import nodes
 
+from sphinx_needs import filter_common
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFlowType
 from sphinx_needs.directives.needflow._model import (
@@ -29,7 +30,7 @@ from sphinx_needs.directives.needflow._model import (
     resolve_link_types,
     resolve_presentation,
 )
-from sphinx_needs.exceptions import NeedsInvalidFilter
+from sphinx_needs.filter_common import _need_by_need
 from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceDirective,
@@ -304,13 +305,19 @@ def test_allowed_link_types_falls_back_to_the_configuration():
 
 
 def _presentation(item, **options: Any) -> NodePresentation:
+    highlight = options.pop("highlight", "")
+    origin_docname = options.pop("origin_docname", None)
+    border_color = options.pop("border_color", None)
+    config = _config(**options)
     return resolve_presentation(
         item,
-        highlight=options.pop("highlight", ""),
-        border_color=options.pop("border_color", None),
-        origin_docname=options.pop("origin_docname", None),
-        config=_config(**options),
-        needs=[item],
+        highlighted=_need_by_need(
+            highlight, config, needs=[item], origin_docname=origin_docname
+        )
+        if highlight
+        else None,
+        border_color=border_color,
+        config=config,
         location=nodes.paragraph(),
     )
 
@@ -357,14 +364,24 @@ def test_presentation_does_not_highlight_a_need_of_another_document():
     assert presentation.highlight is False
 
 
-def test_presentation_highlight_without_an_origin_document_is_invalid():
+def test_presentation_highlight_without_an_origin_document_is_invalid(monkeypatch):
     """Without an origin document ``c.this_doc()`` has nothing to compare against.
 
     Every caller in the code base passes one, but the parameter is optional, so this
-    pins that the failure is the explicit one rather than a silent False.
+    pins that the failure is the explicit one rather than a silent False: a highlight
+    failing on a need is reported (as ``needs.filter``) and does not highlight it.
     """
-    with pytest.raises(NeedsInvalidFilter, match="this_doc"):
-        _presentation(need("A", docname="index"), highlight="c.this_doc()")
+    reports: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        filter_common,
+        "log_warning",
+        lambda _log, message, subtype, **_: reports.append((message, subtype)),
+    )
+    presentation = _presentation(need("A", docname="index"), highlight="c.this_doc()")
+    assert presentation.highlight is False
+    assert len(reports) == 1
+    assert "this_doc" in reports[0][0]
+    assert reports[0][1] == "filter"
 
 
 def test_presentation_resolves_the_border_color():

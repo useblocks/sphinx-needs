@@ -8,6 +8,7 @@ from __future__ import annotations
 import html
 import os
 import textwrap
+from collections.abc import Mapping
 from typing import TypedDict
 from urllib.parse import urlparse
 
@@ -25,6 +26,39 @@ from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import get_scale, split_link_types
 
 logger = get_logger(__name__)
+
+
+def linked_needs(
+    need: NeedItem | NeedPartItem, link_type: str, needs: Mapping[str, NeedItem], /
+) -> list[NeedItem]:
+    """The needs *need* links to in *link_type*, in the order of its links: what
+    needsequence and needgantt draw a link to.
+
+    *link_type* names a link field (``links``) or its back links (``links_back``), as
+    ``need[link_type]`` reads them; a name that is neither has no links here (the
+    directive reports it). A link is read from the
+    :class:`~sphinx_needs.need_item.NeedLink` it was parsed into when the need was made
+    (:meth:`~sphinx_needs.need_item.NeedLink.parse_address`), as the dead-link check
+    reads it: a link to a part the need has (``REQ_1.p1``) is a link to the need owning
+    the part, its ``id``. A dead link -- to a need that does not exist (``MISSING``,
+    ``MISSING.p1``), or to a part the need does not have (``REQ_1.nopart``) -- is
+    skipped, as needflow draws no edge for it; the dead-link check reports it.
+    """
+    link_fields = set(need.iter_links_keys())
+    if link_type in link_fields:
+        links = need.get_links(link_type, as_str=False)
+    elif link_type.endswith("_back") and (
+        (field := link_type[: -len("_back")]) in link_fields
+    ):
+        links = need.get_backlinks(field, as_str=False)
+    else:
+        return []
+    return [
+        target
+        for link in links
+        if (target := needs.get(link.id)) is not None
+        and (link.part is None or target.get_part(link.part) is not None)
+    ]
 
 
 class DiagramAttributesType(TypedDict):

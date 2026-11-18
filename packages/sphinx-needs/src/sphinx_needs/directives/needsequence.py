@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +17,7 @@ from sphinx_needs.diagrams_common import (
     create_legend,
     get_debug_container,
     get_filter_para,
+    linked_needs,
     no_plantuml,
     set_plantuml_paths,
 )
@@ -30,8 +31,8 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import (
     FilterBase,
+    _need_by_need,
     _report_filter_text,
-    filter_single_need,
     resolve_max_items,
 )
 from sphinx_needs.logging import get_logger, log_warning
@@ -122,6 +123,10 @@ def process_needsequence(
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
     link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
+    #: each link type's configured name, by the upper-cased name the check compares
+    configured_link_types = {
+        name.upper(): name for name in needs_schema.iter_link_field_names()
+    }
     needs_types = needs_config.types
 
     # NEEDSEQUENCE
@@ -150,6 +155,15 @@ def process_needsequence(
                     "needsequence",
                     location=node,
                 )
+        # the check above accepts a link type in any case, so the walk reads each
+        # name it accepted by its configured spelling (``LINKS`` walks ``links``);
+        # any other name is read as written (``links_back`` walks the back links)
+        walked_link_types = [
+            link
+            if link in configured_link_types.values()
+            else configured_link_types.get(link.upper(), link)
+            for link in current_needsequence["link_types"]
+        ]
 
         content = []
         try:
@@ -194,10 +208,19 @@ def process_needsequence(
         counter = _MessageCounter(
             resolve_max_items(current_needsequence.get("max_items"), needs_config)
         )
+        receives = None
         if filter_string := current_needsequence["filter"]:
             # read need by need below: what its text shows is reported here as well, so
             # that a filter no receiver is tested on is reported too
             _report_filter_text(filter_string, needs_config, node)
+            # one test for every start need, so that a failing filter is reported once
+            receives = _need_by_need(
+                filter_string,
+                needs_config,
+                location=node,
+                needs=all_needs_dict.values(),
+                origin_docname=current_needsequence["docname"],
+            )
         for need_id in start_needs_id:
             try:
                 need = all_needs_dict[need_id.strip()]
@@ -214,12 +237,10 @@ def process_needsequence(
             _msg_receiver_needs, declarations_new, arrows_new = get_message_needs(
                 app,
                 need,
-                current_needsequence["link_types"],
+                walked_link_types,
                 all_needs_dict,
-                filter=current_needsequence["filter"],
+                receives=receives,
                 counter=counter,
-                origin_docname=current_needsequence["docname"],
-                location=node,
             )
             declarations += declarations_new
             arrows += arrows_new
@@ -395,28 +416,30 @@ def get_message_needs(
     link_types: list[str],
     all_needs_dict: NeedsView,
     tracked_receivers: list[str] | None = None,
-    filter: str | None = None,
     *,
+    receives: Callable[[NeedItem], bool | None] | None = None,
     counter: _MessageCounter,
-    origin_docname: str | None = None,
-    location: nodes.Element | None = None,
 ) -> tuple[
     dict[str, dict[str, Any]], list[tuple[str, str]], list[tuple[str, str, str]]
 ]:
-    """Walk the messages sent by ``sender``, drawing each receiver that passes ``filter``.
+    """Walk the messages sent by ``sender``, drawing each receiver that passes the
+    needsequence's ``:filter:``.
 
-    :param origin_docname: The document the needsequence is written in, so that a
-        ``filter`` may test the receiver against it with ``c.this_doc()``.
-    :param location: The needsequence, for what is reported of the ``filter``'s text.
+    A link to a need part is a message to, or from, the need owning the part, and a
+    link to no need is skipped (:func:`~sphinx_needs.diagrams_common.linked_needs`).
+
+    :param receives: The ``:filter:``, tested on one receiver
+        (:func:`~sphinx_needs.filter_common._need_by_need`), or ``None`` for none; a
+        filter failing on a receiver does not draw it.
     :return: the messages, then the participants to declare, as (need id, title),
         then the messages to draw, as (sender id, receiver id, label), in walk order.
         The caller names the participants, once it knows every one of them.
     """
-    msg_needs: list[dict[str, Any]] = []
+    msg_needs: list[NeedItem] = []
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
-        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # ty: ignore[unsupported-operator]
+        msg_needs += linked_needs(sender, link_type, all_needs_dict)
 
     messages: dict[str, dict[str, Any]] = {}
     declarations: list[tuple[str, str]] = []
@@ -440,21 +463,14 @@ def get_message_needs(
             # of the walk, and hence the message total, does not depend on the cap
             tracked_receivers.append(sender["id"])
         for link_type in link_types:
-            receiver_ids = msg_need[link_type]
-            for rec_id in receiver_ids:
-                if filter and not filter_single_need(
-                    all_needs_dict[rec_id],
-                    NeedsSphinxConfig(app.config),
-                    filter,
-                    needs=all_needs_dict.values(),
-                    origin_docname=origin_docname,
-                    location=location,
-                ):
+            for receiver in linked_needs(msg_need, link_type, all_needs_dict):
+                if receives is not None and not receives(receiver):
                     continue
 
+                rec_id = receiver["id"]
                 rec_data = {
                     "id": rec_id,
-                    "title": all_needs_dict[rec_id]["title"],
+                    "title": receiver["title"],
                     "messages": [],
                 }
 
@@ -464,14 +480,12 @@ def get_message_needs(
                 if rec_id not in tracked_receivers:
                     rec_messages, declarations_new, arrows_new = get_message_needs(
                         app,
-                        all_needs_dict[rec_id],
+                        receiver,
                         link_types,
                         all_needs_dict,
                         tracked_receivers,
-                        filter=filter,
+                        receives=receives,
                         counter=counter,
-                        origin_docname=origin_docname,
-                        location=location,
                     )
                     declarations += declarations_new
                     arrows += arrows_new
