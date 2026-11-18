@@ -98,7 +98,8 @@ a value outside ``choices``, a flag written with a value, an argument to a direc
 or a body on a directive without ``content`` is reported on the use (``ub_directives.template_signature``),
 which then renders nothing.
 
-A declaration whose name is already a directive (in any case), that differs only in case from another,
+A declaration whose name is already a directive (in any case), that starts with ``need:``
+(kept for sphinx-needs' need types, ``need:<type>``, even where no such type exists), that differs only in case from another,
 or that gives both or neither of ``template`` and ``body`` is reported once (``ub_directives.directive_template_invalid``) and ignored.
 
 **Markup.** A declared template writes reStructuredText or MyST Markdown:

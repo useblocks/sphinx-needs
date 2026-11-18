@@ -515,6 +515,86 @@ def test_a_qualified_name_is_taken(
     assert _needs(app)["R_001"]["type"] == "req"
 
 
+def test_a_need_prefixed_name_is_reserved_without_sphinx_needs(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§3.2.7 and §5.1: a new name starting with ``need:`` (in any case), a preset's or a
+    declared template's, is refused even where sphinx-needs is not loaded, so there is no
+    ``need`` domain and no need type: the prefix is reserved for need types, and the
+    corpora (which always load sphinx-needs) cannot show that. A preset of another name
+    still works alongside."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_ub_directives"]\nshow_warning_types = True\n',
+        encoding="utf-8",
+        newline="",
+    )
+    (tmp_path / "ubproject.toml").write_text(
+        '[parse.directive_presets."need:draft"]\nbase = "note"\n'
+        '\n[parse.directive_presets."NEED:other"]\nbase = "note"\n'
+        '\n[parse.directive_presets.callout]\nbase = "note"\n'
+        '\n[parse.directive_templates."need:tmpl"]\nbody = "Text."\n',
+        encoding="utf-8",
+        newline="",
+    )
+    (tmp_path / "index.rst").write_text(
+        "Case\n====\n\n.. callout::\n\n   Text.\n", encoding="utf-8", newline=""
+    )
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    refused = [w for w in build_warnings(app) if "directive_preset_name_taken" in w]
+    assert len(refused) == 2, build_warnings(app)
+    assert all("is kept for need types" in w for w in refused), refused
+    template = [w for w in build_warnings(app) if "directive_template_invalid" in w]
+    assert len(template) == 1, build_warnings(app)
+    assert "is kept for need types" in template[0], template
+    html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "admonition note" in html, html
+
+
+def test_a_need_name_is_taken_before_it_is_reserved(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§3.2.7 and §5.1: a new ``need:<type>`` name whose need type EXISTS is refused as
+    already a directive, with the self-preset hint, as before the reservation; only a
+    ``need:`` name no directive has gets the reservation's words. The corpora compare
+    codes only, so the two messages are pinned here."""
+    toml = (
+        QUALIFIED_TYPES
+        + '\n[parse.directive_presets."need:req"]\nbase = "note"\n'
+        + '\n[parse.directive_presets."need:draft"]\nbase = "note"\n'
+        + '\n[parse.directive_templates."need:req"]\nbody = "Text."\n'
+        + '\n[parse.directive_templates."need:other"]\nbody = "Text."\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. need:req:: A\n   :id: R_001\n")
+    warnings = build_warnings(app)
+    taken = [w for w in warnings if "directive_preset_name_taken" in w]
+    by_entry = {
+        name: [w for w in taken if f'directive_presets."{name}"]' in w]
+        for name in ("need:req", "need:draft")
+    }
+    assert len(taken) == 2, warnings
+    (req,) = by_entry["need:req"]
+    assert "is already a directive of this project" in req, req
+    assert "name it as its base, 'need:req', for defaults" in req, req
+    assert "kept for need types" not in req, req
+    (draft,) = by_entry["need:draft"]
+    assert (
+        "'need:draft' starts with 'need:', which is kept for need types "
+        "(need:<type>); a preset cannot take that name"
+    ) in draft, draft
+    invalid = [w for w in warnings if "directive_template_invalid" in w]
+    assert len(invalid) == 2, warnings
+    (template_req,) = [w for w in invalid if '"need:req"]' in w]
+    assert "is already a directive" in template_req, template_req
+    (template_other,) = [w for w in invalid if '"need:other"]' in w]
+    assert (
+        "'need:other' starts with 'need:', which is kept for need types "
+        "(need:<type>); a template directive cannot take that name"
+    ) in template_other, template_other
+    assert _needs(app)["R_001"]["type"] == "req"
+
+
 def test_a_qualified_base_takes_the_need_type_s_options(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:

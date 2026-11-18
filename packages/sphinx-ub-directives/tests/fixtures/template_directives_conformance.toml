@@ -1384,6 +1384,77 @@ code = "directive_template_invalid"
 path = "parse.directive_templates.spec"
 
 [[case]]
+name = "declaration-refused-qualified-need-type-name"
+why = "a declaration named need:<type> for an existing need type is that type's qualified directive, so it is refused at load and ignored"
+config = '''
+[parse.directive_templates."need:spec"]
+body = "Not a need."
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = 'parse.directive_templates."need:spec"'
+
+[[case]]
+name = "declaration-refused-need-prefix-no-such-type"
+why = "a declaration named need:<x> is refused at load and ignored even where no need type x exists: the need: prefix is kept for need types, so a type added later cannot silently take the name over"
+config = '''
+[parse.directive_templates."need:draft"]
+body = "Drafted."
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = 'parse.directive_templates."need:draft"'
+
+[[case]]
+name = "declaration-refused-need-prefix-cased"
+why = "the need: prefix of a declaration's name is compared ignoring case, as directive names are"
+config = '''
+[parse.directive_templates."Need:Draft"]
+body = "Drafted."
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = 'parse.directive_templates."Need:Draft"'
+
+[[case]]
+name = "declared-name-need-without-colon"
+why = "only the need: prefix WITH its colon is kept for need types: a declaration named needle is free and renders"
+config = '''
+[parse.directive_templates.needle]
+body = "Needle text."
+'''
+source = '''
+.. needle::
+'''
+equivalent = '''
+Needle text.
+'''
+[case.expect]
+expansions = [
+'''
+Needle text.''',
+]
+findings = []
+
+[[case]]
 name = "declaration-refused-template-and-body"
 why = "a declaration with both template and body is refused at load and ignored"
 config = '''

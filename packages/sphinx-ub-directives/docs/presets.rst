@@ -55,7 +55,8 @@ Set up a preset
 
    .. step:: Pick the name
 
-      A new name must not already be a directive;
+      A new name must not already be a directive, and must not start with ``need:``,
+      which is kept for sphinx-needs' need types (``need:<type>``) even where no such type exists;
       the same name as the base sets defaults for the base itself (a *self-preset*),
       for the directive that name is: a self-preset ``req`` is the need type's only where a bare ``.. req::`` is the need,
       so for a need type whose bare name is left to another directive (sphinx-needs' ``directive_name``)
@@ -120,8 +121,8 @@ Each check runs once per build; the warning names the entry path (``[parse.direc
    * - ``directive_preset_base_is_preset``
      - ``base`` names another preset.
    * - ``directive_preset_name_taken``
-     - The name is already a directive other than the preset's base, or two presets' names differ only in case
-       (the first in sorted order is kept).
+     - The name is already a directive other than the preset's base, starts with ``need:`` (in any case)
+       and is not its base, or two presets' names differ only in case (the first in sorted order is kept).
    * - ``directive_preset_unknown_option``
      - An option the base does not take (for a need type, matched ignoring case).
    * - ``directive_preset_invalid_value``
