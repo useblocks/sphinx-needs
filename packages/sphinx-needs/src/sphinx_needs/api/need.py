@@ -1727,7 +1727,7 @@ def _in_inert_parse(settings: Any) -> bool:
 
 
 # the raw nodes myst-parser itself makes for ordinary Markdown, as ``(format, text)``:
-# a hard line break, strikethrough, and a task-list checkbox (disabled, or enabled by
+# a hard line break and a task-list checkbox (disabled, or enabled by
 # ``myst_enable_checkboxes``, whose text differs between myst-parser 4 and 5); measured
 # with myst-parser 4.0.1 and 5.1.0. An inert parse keeps them, matched exactly
 _CHECKBOX = '<input class="task-list-item-checkbox"{} type="checkbox">'
@@ -1735,8 +1735,6 @@ _MYST_OWN_RAW = frozenset(
     {
         ("html", "<br />\n"),
         ("latex", "\\\\\n"),
-        ("html", "<s>"),
-        ("html", "</s>"),
         *(
             ("html", _CHECKBOX.format(checked + enabled))
             for checked in ("", ' checked="checked"')
@@ -1744,6 +1742,9 @@ _MYST_OWN_RAW = frozenset(
         ),
     }
 )
+# strikethrough, which an inert parse keeps only as a pair: an ``<s>`` with a later
+# ``</s>`` among the same parent's children, as myst-parser writes ``~~x~~``
+_S_OPEN, _S_CLOSE = ("html", "<s>"), ("html", "</s>")
 
 
 def _remove_raw(node: nodes.Element) -> int:
@@ -1752,12 +1753,21 @@ def _remove_raw(node: nodes.Element) -> int:
 
     :return: How many were removed.
     """
-    raws = [
-        raw
-        for raw in node.findall(nodes.raw)
-        if raw.parent is not None
-        and (raw.get("format"), raw.astext()) not in _MYST_OWN_RAW
-    ]
+    parents = {
+        id(r.parent): r.parent for r in node.findall(nodes.raw) if r.parent is not None
+    }
+    raws: list[nodes.raw] = []
+    for parent in parents.values():
+        opened: list[nodes.raw] = []
+        for raw in [c for c in parent.children if isinstance(c, nodes.raw)]:
+            key = (raw.get("format"), raw.astext())
+            if key == _S_OPEN:
+                opened.append(raw)
+            elif key == _S_CLOSE and opened:
+                opened.pop()
+            elif key not in _MYST_OWN_RAW:
+                raws.append(raw)
+        raws.extend(opened)
     for raw in raws:
         raw.parent.remove(raw)
     return len(raws)
@@ -2005,7 +2015,7 @@ def _create_need_node(
         # one warning per imported need, a need written inside its content counted in
         log_warning(
             logger,
-            "Raw markup (an HTML block or inline HTML) removed from the content of "
+            "Raw markup (an HTML block or inline HTML) removed from "
             f"imported need {data['id']!r} ({removed} node(s)): "
             "needs_import_inert_content is on",
             "import_inert",

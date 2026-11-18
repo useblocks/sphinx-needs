@@ -106,7 +106,7 @@ def refused(path: str) -> str:
 def removed(need_id: str, count: int) -> str:
     """The warning of an imported need whose raw markup was removed."""
     return (
-        "Raw markup (an HTML block or inline HTML) removed from the content of "
+        "Raw markup (an HTML block or inline HTML) removed from "
         f"imported need {need_id!r} ({count} node(s)): {INERT_ON}"
     )
 
