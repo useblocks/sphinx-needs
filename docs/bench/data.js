@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795007173565,
+  "lastUpdate": 1795008370769,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30114,6 +30114,48 @@ window.BENCHMARK_DATA = {
             "value": 188.580449,
             "unit": "MB",
             "extra": "Commit: 6f92b07f4be465e56dee09dae20ee47d5b5206c7\nBranch: master\nTime: 2026-11-18T14:04:58+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4b17227ee8de19b95af412cd995b7d051085fc68",
+          "message": "🐛 `needs_json_format_version` can be set on the command line (`-D needs_json_format_version=2a1`) (#2539)\n\n`needs_json_format_version` can now be set on the command line:\n`sphinx-build -b needs -D needs_json_format_version=2a1 . _build` writes\na 2a1 `needs.json`, and `-D needs_json_format_version=1` keeps writing\nformat 1. Until now Sphinx dropped `2a1` as \"invalid number\" (it\nconverts a `-D` value by the type of the default, the integer `1`) and\nthe file was written in format 1, so a CI job could not ask for one 2a1\nexport of a project without editing its `conf.py`.\n\nWhat a user sees:\n\n- `-D needs_json_format_version=2a1` writes a 2a1 file (with the usual\n`needs.beta` warning); `=1` writes format 1; any other value is the\n`needs.config` warning naming `1` and `'2a1'`, and format 1, as from\n`conf.py`.\n- The text `\"1\"` is format 1 wherever it is set; from `conf.py` and\n`ubproject.toml` it was reported as an unknown value.\n- A build whose value differs from the previous build's reads the\nproject again, so the file is written in the format asked for on every\nsupported Sphinx: on Sphinx 7.4 a build into an output directory with\nnothing out of date wrote no `needs.json` at all, so a `-D` toggled\nbetween two builds left the previous build's file in place. A build with\nthe same value as before reads nothing; `-D needs_json_format_version=1`\nafter a build that left the option unset (or the reverse) counts as a\nchanged value, the text and the integer being different values of the\nsame format. Upgrading reads nothing again for a project whose value is\nunset or set in `conf.py` or `ubproject.toml`; one last built with `-D\nneeds_json_format_version=1` reads again once.\n- From `-D`, text that Python's `int()` reads as 1 but that is not `1`\n(`01`, ` 1`, `+1`) was silently format 1 and is now reported as an\nunknown value (format 1 either way); `-D …=3` says `not '3'` where it\nsaid `not 3`; and an empty `-D …=` is reported by sphinx-needs where\nSphinx reported it.\n- Unset, the option still reads the integer `1`; `conf.py` and\n`ubproject.toml` values behave as before; every other configuration\nvalue is registered exactly as before.\n\nHow: a field of `NeedsSphinxConfig` can now say `\"override_as_text\":\nTrue` in its metadata, and `add_config_values` then registers it with\nSphinx through a callable default that returns the field's default — the\none kind of default for which Sphinx passes a `-D` value through as text\nwhile the unset value stays the integer `1` (the same on Sphinx 7.4, 8.2\nand 9.x). Only `json_format_version` uses it, and it is now registered\nto re-read the project when it changes (`rebuild=\"env\"`, where it was\n`\"html\"`). The two readers of the value read it through one normaliser\nthat takes the text `\"1\"` as `1`.\n\nTests (`tests/test_needs_json_2a1.py`): `-D 2a1` / `-D 1` / `-D 3`\n(driven through `confoverrides`, which Sphinx converts exactly as `-D`);\nthe text `\"1\"` from `conf.py` and `ubproject.toml`; the unset value is\nthe integer `1`; only this value registers a callable default, with\n`rebuild=\"env\"` and types `(int, str)`; two builds into one output\ndirectory (unset then `2a1`, `2a1` then unset, unset twice) write the\nformat asked for and read the project again only when the value changed;\nan environment read with the value unset and registered as before reads\nnothing again; `\" 1\"` and `\"01\"` stay refused.\n\n**Does ubCode need a matching change?** A small one: ubCode still\nreports the text `\"1\"` for this value in a shared `ubproject.toml` as an\nunknown value, where sphinx-needs now reads it as format 1; it is\ntracked as useblocks/ubcode#4968.\n\nCloses #2530",
+          "timestamp": "2026-11-18T14:25:04+01:00",
+          "tree_id": "8b21a410b75a349952a726fb4274f06aeeda71a4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4b17227ee8de19b95af412cd995b7d051085fc68"
+        },
+        "date": 1795008369977,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.040034352999995804,
+            "unit": "s",
+            "extra": "Commit: 4b17227ee8de19b95af412cd995b7d051085fc68\nBranch: master\nTime: 2026-11-18T14:25:04+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 7.869700494,
+            "unit": "s",
+            "extra": "Commit: 4b17227ee8de19b95af412cd995b7d051085fc68\nBranch: master\nTime: 2026-11-18T14:25:04+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 190.538673,
+            "unit": "MB",
+            "extra": "Commit: 4b17227ee8de19b95af412cd995b7d051085fc68\nBranch: master\nTime: 2026-11-18T14:25:04+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
