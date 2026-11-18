@@ -315,7 +315,7 @@ Bug fixes
 - 🐛 A filter string with leading spaces or tabs selects what it selects without them in :ref:`needs_warnings`,
   :ref:`needs_builder_filter`, a ``needpie`` line, needuml's ``filter()``, the filter of the dynamic functions ``copy``,
   ``links_from_filter`` and ``links_from_match``, and a quoted :ref:`needextend` argument **(changed output)**
-  (:issue:`2521`)
+  (:issue:`2521`, :pr:`2537`)
 
   ``" status == 'open'"`` was refused there as ``not valid`` (``unexpected indent``) and matched no need: a
   ``needs_builder_filter`` written so exported none, a ``needextend`` extended none and the dynamic function failed,
@@ -327,10 +327,11 @@ Bug fixes
   written, so a padded one is still refused (``needs.derive_invalid``). A directive option such as ``:filter:`` was
   never affected: docutils strips it.
 
-- 🐛 A ``c.is_a`` naming no need type is reported once at each place it is written, with the place's file and line,
-  where a filter is tested need by need -- a :ref:`needflow` ``:highlight:``, a :ref:`needgantt` ``:milestone_filter:``,
-  a :ref:`needsequence` ``:filter:``, a link condition -- and at each of two :ref:`needextend`\ s of one document with
-  the same quoted filter **(changed output)** (:issue:`2528`)
+- 🐛 A ``c.is_a`` naming no need type is reported once at each place it is written, with the place's file and line
+  (an external need's link condition names the need), where a filter is tested need by need -- a :ref:`needflow`
+  ``:highlight:``, a :ref:`needgantt` ``:milestone_filter:``, a :ref:`needsequence` ``:filter:``, a link condition --
+  and at each of two :ref:`needextend`\ s of one document with the same quoted filter **(changed output)**
+  (:issue:`2528`, :pr:`2537`)
 
   There, ``needs.filter_type`` was reported once per build for the string with no location, however many places wrote
   it, and a place with no location sharing the string (a constraint) took their report; a highlight, milestone filter
