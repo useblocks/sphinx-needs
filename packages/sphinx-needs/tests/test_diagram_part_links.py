@@ -250,13 +250,32 @@ FORWARD_SEQUENCE = (
             [_unknown_link_type("NONEXISTENT")],
             id="links-and-no-link-type",
         ),
+        pytest.param(
+            _project(
+                LINK_TYPES_CONF,
+                LINK_TYPES.format(start="SEQ_S", link_types="LINKS"),
+            ),
+            FORWARD_SEQUENCE,
+            [],
+            id="link-type-upper-case",
+        ),
+        pytest.param(
+            _project(
+                LINK_TYPES_CONF,
+                LINK_TYPES.format(start="SEQ_S", link_types="Links"),
+            ),
+            FORWARD_SEQUENCE,
+            [],
+            id="link-type-mixed-case",
+        ),
     ],
     indirect=["test_app"],
 )
 def test_needsequence_link_types(test_app: Sphinx, uml: str, warnings: list[str]):
     """A back-link type is walked, as it was; a name that is no link type is skipped
-    after the directive's report, where the build ended. The diagram of a link type
-    that works is the one it was."""
+    after the directive's report, where the build ended. A link type written in
+    another case, which the directive's check accepts, is walked as the link type it
+    names. The diagram of a link type that works is the one it was."""
     app = test_app
     sources = _capture(app)
     app.build()
