@@ -13,6 +13,17 @@ from sphinx_needs.need_item import NeedConstraintResults, NeedItem, NeedPartItem
 logger = get_logger(__name__)
 
 
+def _report_tail(
+    constraint: str, check: str
+) -> Callable[[NeedItem | NeedPartItem], str]:
+    """What the report of a failing check ends with: the constraint, the check, and the
+    first need the check fails on."""
+    return lambda need: (
+        f"(from constraint {constraint!r}, check {check!r}, "
+        f"first on need {need['id']!r})"
+    )
+
+
 def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """Analyse constraints of all needs,
     and set corresponding fields on the need data item:
@@ -22,9 +33,10 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     (depending on the config value ``constraint_failed_options``)
 
     A check whose filter fails on a need (it is no Python, names what the need does
-    not have, or raises) is reported once for the check, however many needs it fails
-    on, and is not evaluated on that need: it neither passes nor fails, and the need
-    stores what it would have stored had the check not been declared.
+    not have, raises, or is a constant) is reported once for the check, however many
+    needs it fails on, naming the first of them, and is not evaluated on that need: it
+    neither passes nor fails, and the need stores what it would have stored had the
+    check not been declared.
     """
     config_constraints = config.constraints
     #: each check's filter, by constraint and check name: one report for each
@@ -55,9 +67,9 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                     check = checks[(constraint, name)] = _need_by_need(
                         cmd,
                         config,
-                        append_warning=(
-                            f"(from constraint {constraint!r}, check {name!r})"
-                        ),
+                        # a constraint has no location: its report names the need
+                        # the check fails on first
+                        append_warning=_report_tail(constraint, name),
                     )
                 if (constraint_passed := check(need)) is None:
                     # the check cannot be evaluated on the need: it is reported, and

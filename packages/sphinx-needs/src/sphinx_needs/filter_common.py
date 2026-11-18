@@ -1287,7 +1287,7 @@ def _need_by_need(
     location: tuple[str, int | None] | nodes.Node | None = None,
     needs: Iterable[NeedItem | NeedPartItem] | None = None,
     origin_docname: str | None = None,
-    append_warning: str = "",
+    append_warning: str | Callable[[NeedItem | NeedPartItem], str] = "",
 ) -> Callable[[NeedItem | NeedPartItem], bool | None]:
     """Test one filter, written at one place, need by need: :func:`filter_single_need`,
     with a failing filter handled as a view's ``:filter:`` handles one.
@@ -1303,6 +1303,8 @@ def _need_by_need(
 
     :param needs: All needs, for a filter that reads ``needs``.
     :param origin_docname: The document the filter is written in, for ``c.this_doc()``.
+    :param append_warning: Appended to the report; a function is given the need the
+        filter failed on first, for a place with no location to name it.
     """
     reported = False
 
@@ -1320,9 +1322,12 @@ def _need_by_need(
         except NeedsInvalidFilter as error:
             if not reported:
                 reported = True
+                append = (
+                    append_warning(need) if callable(append_warning) else append_warning
+                )
                 log_warning(
                     log,
-                    f"{error}" + (f" {append_warning}" if append_warning else ""),
+                    f"{error}" + (f" {append}" if append else ""),
                     "filter",
                     location=location,
                 )

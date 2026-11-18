@@ -21,10 +21,7 @@ from sphinx_needs.diagrams_common import (
     no_plantuml,
     set_plantuml_paths,
 )
-from sphinx_needs.directives.utils import (
-    SphinxNeedsLinkTypeException,
-    no_needs_found_paragraph,
-)
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import (
     FilterBase,
     _need_by_need,
@@ -176,9 +173,15 @@ class NeedganttDirective(FilterBase, DiagramBase):
             if link_type is None or link_type == "":
                 continue
             if link_type not in conf_link_types_name:
-                raise SphinxNeedsLinkTypeException(
-                    link_type + " does not exist in configuration option needs_links"
+                # reported and left out, as needsequence and needflow leave out a
+                # name that is no link type
+                log_warning(
+                    logger,
+                    link_type + " does not exist in configuration option needs_links",
+                    "needgantt",
+                    location=self.get_location(),
                 )
+                continue
 
             final_link_types.append(link_type)
         return final_link_types
