@@ -194,9 +194,9 @@ strings; where a filter is data or configuration evaluated need by need (a link 
 a constraint, a dynamic function's filter, a derived field's `where`), a filter tested on no
 need, as nothing reads it there; and a refusing construct the text sees in a first operand
 that evaluation happens not to raise (`c.id in [] or c.id.ns == ""`: an empty list compares
-nothing), which keeps such a filter unreported. Where there is no check context (a `needimport` filter, a
-field's predicate, a variant condition) a read of `c` is refused already, and that refusal
-stands alone.
+nothing), which keeps such a filter unreported. Where there is no check context (a
+`needimport` filter, a field's predicate, a variant condition) a read of `c` is refused
+already, and that refusal stands alone.
 
 ## 10. Deliberately absent
 

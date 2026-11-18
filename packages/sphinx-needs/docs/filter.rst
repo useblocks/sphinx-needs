@@ -536,7 +536,7 @@ With :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace:
   is in no namespace, so ``c.id.ns`` is ``""``, ``c.id.local`` is the whole id, and ``c.in_namespace`` selects
   nothing. Such a filter string is answered as written and reported, by its text, as ``needs.namespaced_ids_off``:
   once per place it is written, and once per build where the place gives no location (a constraint, a derived
-  field's ``where``, a dynamic function's filter). A filter whose text shows it refused (``c.in_namespace("")``
+  field's ``where``, a ``calc_sum`` filter). A filter whose text shows it refused (``c.in_namespace("")``
   alone, say) keeps that refusal alone; one whose refusal the text cannot settle (behind an ``and``, say) may get
   both. A namespace value reached dynamically (``getattr(c.id, "ns")``) is not seen, nor is a filter function or
   filter code, which is Python rather than a filter string. A build with nothing changed reports a page's filters
