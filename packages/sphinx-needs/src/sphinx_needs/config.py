@@ -1023,6 +1023,28 @@ _OWN_ATTRIBUTES = (
 )
 
 
+class _OverrideAsText:
+    """The default a configuration value is registered with when its field's metadata
+    says ``"override_as_text": True``: Sphinx calls it for the value of an unset
+    option, and gets the field's default back.
+
+    A callable default is the one kind for which Sphinx's ``Config.convert_overrides``
+    passes a ``-D`` value through as the text it is (Sphinx 7.4 to 9): for an integer
+    default it tries ``int(value)`` and drops anything else with a warning.
+    """
+
+    __slots__ = ("value",)
+
+    def __init__(self, value: Any) -> None:
+        self.value = value
+
+    def __call__(self, _config: _SphinxConfig) -> Any:
+        return self.value
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.value!r})"
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -1091,7 +1113,14 @@ class NeedsSphinxConfig:
 
     @classmethod
     def add_config_values(cls, app: Sphinx) -> None:
-        """Add all config values to the Sphinx application."""
+        """Add all config values to the Sphinx application.
+
+        A field whose metadata says ``"override_as_text": True`` is registered with a
+        callable default (:class:`_OverrideAsText`) rather than its default itself, so
+        that Sphinx passes a ``-D`` value for it through as the text it is rather than
+        converting it by the default's type; the value it reads unset is the field's
+        default all the same.
+        """
         for item in fields(cls):
             if item.default_factory is not MISSING:
                 default = item.default_factory()
@@ -1101,6 +1130,8 @@ class NeedsSphinxConfig:
                 raise Exception(
                     f"Config item {item.name} has no default value or factory."
                 )
+            if item.metadata.get("override_as_text", False):
+                default = _OverrideAsText(default)
             name = item.name
             if name.startswith("_"):
                 name = name[1:]
@@ -1682,10 +1713,12 @@ class NeedsSphinxConfig:
     Backlink fields are unaffected as they never carry conditions.
     """
     json_format_version: int | str = field(
-        default=1, metadata={"rebuild": "html", "types": (int, str)}
+        default=1,
+        metadata={"rebuild": "html", "types": (int, str), "override_as_text": True},
     )
     """The format version of the ``needs.json`` the needs builders write: ``1`` (the
-    default), or ``"2a1"``, the experimental draft of version 2."""
+    default; the text ``"1"`` too, which is what ``-D`` gives), or ``"2a1"``, the
+    experimental draft of version 2."""
     build_needumls: str = field(
         default="", metadata={"rebuild": "html", "types": (str,)}
     )
