@@ -673,3 +673,237 @@ def test_nothing_is_reported_before_a_build_gives_the_types() -> None:
         assert filter_needs_and_parts([], config, "c.is_a('rq')") == []
         assert filter_single_need(MagicMock(), config, "c.is_a('rq')") is False
     assert warn.call_args_list == []
+
+
+# --- where a filter is tested need by need, it is reported where it is written (#2528) ---
+
+#: the places whose filter is tested need by need, each written twice with the same
+#: string: (the document's text, with ``{f}`` for the filter and ``{n}`` for what tells
+#: the two apart, the configuration's extra text, the builder, the text the line of each
+#: place starts with)
+NEED_BY_NEED: dict[str, tuple[str, str, str, str]] = {
+    "needflow-highlight": (
+        ".. needflow::\n   :highlight: {f}\n",
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+        ".. needflow::",
+    ),
+    "needgantt-milestone_filter": (
+        ".. needgantt:: G{n}\n   :milestone_filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        ".. needgantt::",
+    ),
+    "needsequence-filter": (
+        ".. needsequence:: S{n}\n   :start: LINKS_001\n   :filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        ".. needsequence::",
+    ),
+    "link-condition": (
+        ".. spec:: Links on a condition\n   :id: COND_00{n}\n   :links: REQ_001[{f}]\n",
+        "",
+        "dummy",
+        ".. spec:: Links on a condition",
+    ),
+}
+
+#: :data:`INDEX` with a need needsequence starts from, which sends a message to a need
+#: that links another: the receiver its filter is tested on
+LINKED_INDEX = INDEX + (
+    "\n.. spec:: A message\n   :id: MSG_001\n   :links: SYS_001\n"
+    "\n.. spec:: Links the others\n   :id: LINKS_001\n   :links: MSG_001\n"
+)
+
+NOSUCH = "c.is_a('nosuch')"
+
+
+def _twice(place: str, filter_string: str = NOSUCH) -> str:
+    """:data:`LINKED_INDEX` with the place written twice, the same string at each."""
+    rst = NEED_BY_NEED[place][0]
+    return LINKED_INDEX + "".join(
+        "\n" + rst.format(f=filter_string, n=n) for n in (1, 2)
+    )
+
+
+def _lines(index: str, marker: str) -> list[int]:
+    """The line of every place starting with *marker* in the document :func:`_project`
+    writes (which adds a title of three lines above *index*)."""
+    return [
+        3 + number
+        for number, line in enumerate(index.splitlines(), 1)
+        if line.startswith(marker)
+    ]
+
+
+def _need_by_need_project(place: str) -> dict[str, Any]:
+    _, conf, builder, _ = NEED_BY_NEED[place]
+    return _project(_twice(place), conf=CONF + conf, buildername=builder)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "place"),
+    [
+        pytest.param(_need_by_need_project(place), place, id=place)
+        for place in NEED_BY_NEED
+    ],
+    indirect=["test_app"],
+)
+def test_a_need_by_need_place_is_reported_where_it_is_written(
+    test_app: Any, place: str
+) -> None:
+    """A needflow highlight, a needgantt milestone filter, a needsequence filter and a
+    link condition test their filter need by need: a literal naming no need type is
+    reported once at each place the string is written, with its location, as the views
+    report it and as ``needs.namespaced_ids_off`` is reported."""
+    app = test_app
+    app.build()
+    index = _twice(place)
+    lines = _lines(index, NEED_BY_NEED[place][3])
+    assert len(lines) == 2
+    reported = [w for w in build_warnings(app) if w.endswith("[needs.filter_type]")]
+    assert sorted(reported) == sorted(
+        f"<srcdir>/index.rst:{line}: {_unknown('nosuch', NOSUCH)}" for line in lines
+    )
+
+
+#: :data:`LINKED_INDEX` with two needflow highlights, and a constraint on two needs
+CONSTRAINED_INDEX = (
+    _twice("needflow-highlight")
+    + "\n.. req:: Constrained\n   :id: REQ_101\n   :constraints: c1\n"
+    + "\n.. req:: Constrained too\n   :id: REQ_102\n   :constraints: c1\n"
+)
+
+CONSTRAINED_CONF = (
+    CONF
+    + 'needs_flow_engine = "graphviz"\n'
+    + f"needs_constraints = {{'c1': {{'check_0': {NOSUCH!r}, 'severity': 'LOW'}}}}\n"
+    + "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+)
+
+
+def _constrained_reports() -> list[str]:
+    """Each highlight at its line, and the constraint, which has no location, once."""
+    lines = _lines(CONSTRAINED_INDEX, ".. needflow::")
+    return sorted(
+        [
+            *(
+                f"<srcdir>/index.rst:{line}: {_unknown('nosuch', NOSUCH)}"
+                for line in lines
+            ),
+            _unknown("nosuch", NOSUCH),
+        ]
+    )
+
+
+def _filter_type(warnings: list[str]) -> list[str]:
+    return sorted(w for w in warnings if w.endswith("[needs.filter_type]"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONSTRAINED_INDEX, conf=CONSTRAINED_CONF, buildername="html")],
+    indirect=True,
+)
+def test_a_place_with_no_location_is_reported_once_per_build(test_app: Any) -> None:
+    """A constraint has no location: tested on two needs, it is reported once, without
+    one, beside the highlights that share its string, each at its own line."""
+    app = test_app
+    app.build()
+    assert _filter_type(build_warnings(app)) == _constrained_reports()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONSTRAINED_INDEX, conf=CONSTRAINED_CONF, buildername="html")],
+    indirect=True,
+)
+def test_an_application_building_twice_reports_in_each_build(test_app: Any) -> None:
+    """Per build, not per application: the second build reports what the first did."""
+    app = test_app
+    app.build()
+    first = _filter_type(build_warnings(app))
+    start = len(app._warning.getvalue())
+    app.build(force_all=True)
+    second = _filter_type(
+        build_warnings(app._warning.getvalue()[start:], srcdir=app.srcdir)
+    )
+    assert first == second == _constrained_reports()
+
+
+def test_an_incremental_build_reports_what_a_fresh_one_does(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A document changed since the last build is read and written again: its
+    highlights are reported at their lines, and the constraint once, as a fresh build of
+    the same sources reports them."""
+
+    def build(srcdir: Path, fresh: bool) -> list[str]:
+        app = make_app(
+            "html",
+            srcdir=srcdir,
+            freshenv=fresh,
+            status=io.StringIO(),
+            warning=io.StringIO(),
+        )
+        app.build()
+        return _filter_type(build_warnings(app))
+
+    def write(srcdir: Path, index: str) -> None:
+        srcdir.mkdir(exist_ok=True)
+        (srcdir / "conf.py").write_text(CONSTRAINED_CONF, encoding="utf-8")
+        (srcdir / "ubproject.toml").write_text(TYPES, encoding="utf-8")
+        (srcdir / "index.rst").write_text("Case\n====\n\n" + index, encoding="utf-8")
+
+    incremental = tmp_path / "incremental"
+    write(incremental, CONSTRAINED_INDEX)
+    assert build(incremental, True) == _constrained_reports()
+    # the same lines: a comment after the last directive
+    changed = CONSTRAINED_INDEX + "\n.. a change\n"
+    write(incremental, changed)
+    fresh = tmp_path / "fresh"
+    write(fresh, changed)
+    assert build(incremental, False) == build(fresh, True) == _constrained_reports()
+
+
+#: two needs whose ``effort`` is computed, a ``calc_sum`` over it whose filter is read
+#: quietly first (to order the computation), a ``copy`` whose filter is matched quietly
+#: first, and a constraint and a highlight sharing the string
+QUIET_INDEX = (
+    INDEX
+    + '\n.. req:: Base one\n   :id: EFF_001\n   :base: 3\n   :effort: [[copy("base")]]\n'
+    + '\n.. req:: Base two\n   :id: EFF_002\n   :base: 4\n   :effort: [[copy("base")]]\n'
+    + f'\n.. req:: Sum\n   :id: SUM_001\n   :total: [[calc_sum("effort", filter={NOSUCH!r})]]\n'
+    + f"\n.. req:: Copy\n   :id: COPY_001\n   :constraints: c1\n"
+    f'   :base: [[copy("title", filter={NOSUCH!r})]]\n'
+    + f"\n.. needflow::\n   :highlight: {NOSUCH}\n"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            QUIET_INDEX,
+            conf=CONSTRAINED_CONF
+            + 'needs_extra_options = ["effort", "base", "total"]\n',
+            buildername="html",
+        )
+    ],
+    indirect=True,
+)
+def test_the_quiet_pre_passes_lose_no_report(test_app: Any) -> None:
+    """The pre-passes that order the computed fields evaluate ``calc_sum``'s and
+    ``copy``'s filters quietly: each place is still reported where it is evaluated for
+    real -- the ``copy`` at its need, the highlight at its line, and the ``calc_sum``
+    and the constraint, which share the key of a place with no location, once."""
+    app = test_app
+    app.build()
+    unknown = _unknown("nosuch", NOSUCH)
+    assert _filter_type(build_warnings(app)) == sorted(
+        [
+            f"<srcdir>/index.rst:{_line(QUIET_INDEX, '.. req:: Copy')}: {unknown}",
+            f"<srcdir>/index.rst:{_line(QUIET_INDEX, '.. needflow::')}: {unknown}",
+            unknown,
+        ]
+    )
