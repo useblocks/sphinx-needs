@@ -210,3 +210,84 @@ def test_a_constraint_check_is_reported_once_and_not_evaluated(
     assert stored["CON_B"]["constraints_passed"] is False
     # the style the working check's failure sets, as it sets it
     assert stored["CON_B"]["style"] == "red_bar,"
+
+
+TWO_STARTS = """\
+Index
+=====
+
+.. req:: A1
+   :id: STA_1
+   :links: MSG_1
+
+.. req:: M1
+   :id: MSG_1
+   :links: REC_1
+
+.. req:: R1
+   :id: REC_1
+
+.. req:: A2
+   :id: STA_2
+   :links: MSG_2
+
+.. req:: M2
+   :id: MSG_2
+   :links: REC_2
+
+.. req:: R2
+   :id: REC_2
+
+.. needsequence::
+   :start: STA_1, STA_2
+   :filter: ab == 1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), TWO_STARTS)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_needsequence_with_two_start_needs_reports_it_once(test_app: Sphinx):
+    """The place is the directive, not each walk from one of its start needs."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert _is_reported(warnings[0], "ab == 1", 26), warnings[0]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. req:: A\n   :id: CON_A\n   :constraints: c1, c2\n",
+            CONF + "needs_constraints = {"
+            "'c1': {'check_0': 'ab == 1', 'severity': 'LOW'}, "
+            "'c2': {'check_0': 'ab == 1', 'severity': 'LOW'}"
+            "}\n"
+            "needs_constraint_failed_options = {'LOW': {'on_fail': ['warn']}}\n",
+        )
+    ],
+    indirect=True,
+)
+def test_each_constraint_check_is_reported(test_app: Sphinx):
+    """Two checks written alike are two places: each is reported, by its name."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 2, warnings
+    assert _is_reported(
+        warnings[0], "ab == 1", None, " (from constraint 'c1', check 'check_0')"
+    ), warnings[0]
+    assert _is_reported(
+        warnings[1], "ab == 1", None, " (from constraint 'c2', check 'check_0')"
+    ), warnings[1]

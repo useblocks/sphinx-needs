@@ -2,7 +2,8 @@
 
 A link to a part (``USER_B.p1``) is a link to the need owning the part, and a link to a
 need that does not exist is skipped: the dead-link check reports it, once, as it reports
-every dead link. Both directives looked the link up as a whole need id and ended the
+every dead link. A link to a part a need does not have (``USER_B.nope``) is a link to
+the need, as ubCode draws it; the dead-link check reports that one too. Both directives looked the link up as a whole need id and ended the
 build with a ``KeyError`` (#2336).
 """
 
@@ -105,6 +106,12 @@ SEQUENCE_CASES = [
         id="part-of-a-missing-need",
     ),
     pytest.param(
+        _project(CONF, _sequence("MSG_1.nope", "USER_B.nope")),
+        ["USER_A -> USER_B: Message 1"],
+        [_dead("USER_A", 4, "MSG_1.nope"), _dead("MSG_1", 8, "USER_B.nope")],
+        id="unknown-part-of-a-need",
+    ),
+    pytest.param(
         _project(NAMESPACED_CONF, _sequence("nc::MSG_1.m1", "nc::USER_B.p1", "nc::")),
         ["nc__USER_A -> nc__USER_B: Message 1"],
         [],
@@ -174,6 +181,12 @@ GANTT_CASES = [
         ["[TASK_B] starts at [TASK_A]'s end"],
         [_dead("TASK_B", 10, "MISSING.p1")],
         id="part-of-a-missing-need",
+    ),
+    pytest.param(
+        _project(CONF, _gantt("TASK_A.nope")),
+        ["[TASK_B] starts at [TASK_A]'s end"],
+        [_dead("TASK_B", 10, "TASK_A.nope")],
+        id="unknown-part-of-a-need",
     ),
     pytest.param(
         _project(NAMESPACED_CONF, _gantt("nc::TASK_A.p1", "nc::")),
