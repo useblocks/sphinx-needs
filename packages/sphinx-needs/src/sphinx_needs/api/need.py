@@ -4,7 +4,7 @@ import hashlib
 import os
 import warnings
 from collections.abc import Generator, Iterable, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from copy import copy, deepcopy
 from dataclasses import replace
 from pathlib import Path
@@ -1694,6 +1694,37 @@ def _reset_rst_titles(state: RSTState) -> Generator[None]:
     state.memo.section_level = surrounding_section_level
 
 
+@contextmanager
+def _inert_parse(settings: Any) -> Generator[None]:
+    """docutils' ``file_insertion_enabled`` and ``raw_enabled`` off for the duration of
+    one parse, and put back as they were after it, whatever happens inside."""
+    previous = (
+        getattr(settings, "file_insertion_enabled", True),
+        getattr(settings, "raw_enabled", True),
+    )
+    settings.file_insertion_enabled = settings.raw_enabled = False
+    try:
+        yield
+    finally:
+        settings.file_insertion_enabled, settings.raw_enabled = previous
+
+
+def _remove_raw(data: NeedItem, node: nodes.Element) -> None:
+    """Remove the raw nodes an inert parse of a need's content still made, with one
+    warning: myst-parser's HTML blocks and inline HTML never consult ``raw_enabled``."""
+    raws = [raw for raw in node.findall(nodes.raw) if raw.parent is not None]
+    for raw in raws:
+        raw.parent.remove(raw)
+    if raws:
+        log_warning(
+            logger,
+            f"Raw markup removed from the content of imported need {data['id']!r} "
+            f"({len(raws)} node(s)): needs_import_inert_content is on",
+            "import_inert",
+            location=(data["docname"], data["lineno"]),
+        )
+
+
 def _host_content_anchor(
     state: RSTState, input_offset: int, host_source: str, need_line: int | None
 ) -> tuple[str, int]:
@@ -1844,26 +1875,32 @@ def _create_need_node(
         content_offset = data["lineno_content"] - 1
     else:
         content_offset = _template_parse_offset(data)
-    if content_parser is not None:
-        _parse_declared_content(
-            data,
-            state,
-            content,
-            content_offset,
-            node_need,
-            parser=content_parser,
-            content_source=content_source,
-            host_source=str(source) if source else "",
-        )
-    elif isinstance(content, StringList):
-        state.nested_parse(content, content_offset, node_need, match_titles=False)
-    else:
-        state.nested_parse(
-            StringList(content.splitlines(), source=source),
-            content_offset,
-            node_need,
-            match_titles=False,
-        )
+    # an imported need's content is the source's data, parsed in either route with
+    # docutils' file insertion and raw markup off when the project asks for it
+    inert = data["is_import"] and NeedsSphinxConfig(env.config).import_inert_content
+    with _inert_parse(state.document.settings) if inert else nullcontext():
+        if content_parser is not None:
+            _parse_declared_content(
+                data,
+                state,
+                content,
+                content_offset,
+                node_need,
+                parser=content_parser,
+                content_source=content_source,
+                host_source=str(source) if source else "",
+            )
+        elif isinstance(content, StringList):
+            state.nested_parse(content, content_offset, node_need, match_titles=False)
+        else:
+            state.nested_parse(
+                StringList(content.splitlines(), source=source),
+                content_offset,
+                node_need,
+                match_titles=False,
+            )
+    if inert:
+        _remove_raw(data, node_need)
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     arch = {}

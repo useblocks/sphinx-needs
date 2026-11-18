@@ -3214,6 +3214,62 @@ before. To keep a ``-W`` build green while you register the suffix, add
 
    needs_import_parse_by_doctype = True
 
+.. _`needs_import_inert_content`:
+
+needs_import_inert_content
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+If ``True``, the content of every need :ref:`needimport` creates is parsed with docutils'
+file insertion and raw markup switched off (its ``file_insertion_enabled`` and
+``raw_enabled`` settings), in whichever markup it is parsed. Default: ``False``.
+
+Without it, an imported need's content is parsed as if it had been written on the
+importing page: an ``include`` in a record of the ``needs.json`` reads a file of the machine
+that builds the importing project, and a ``raw`` block writes its markup into the output.
+
+With it, in that content:
+
+- ``include``, ``literalinclude``, ``csv-table`` with ``:file:`` or ``:url:``, and the ``raw``
+  directive and role (with content, ``:file:`` or ``:url:``) do not run, and each is
+  reported by docutils' own warning on the importing page, such as
+  ``"include" directive disabled.``; in MyST content, the same holds for ``{include}``,
+  ``{literalinclude}``, ``{raw}``, ``{csv-table}`` and an ``{eval-rst}`` block holding any
+  of them;
+- a ``needimport`` does not read its file: one ``needs.needimport`` warning;
+- MyST's HTML blocks and inline HTML, which myst-parser does not switch off, are removed,
+  with one ``needs.import_inert`` warning per need.
+
+Content a template renders for an imported need (its ``template``) is its content, and is
+parsed the same way. The needs written in the project are untouched, and so is the
+``needs.json`` the directive reads. External needs (:ref:`needs_external_needs`) render no
+content.
+
+It does not cover:
+
+- images and figures (MyST's ``![](...)`` too) and the ``download`` role: the file they
+  name is copied into the output when it is written, after the content is parsed;
+- a directive that reads a file without consulting docutils' switch, such as ``uml`` naming
+  a file (sphinxcontrib-plantuml), and a diagram whose PlantUML text ``!include``\ s a file,
+  which PlantUML reads when it draws the diagram;
+- directives that read the importing project, such as :ref:`needtable`;
+- the need's ``pre_template`` and ``post_template``, which are parsed as the page's own
+  text.
+
+It is off by default in 9.x, and is planned to be on by default in a later release.
+
+.. code-block:: python
+
+   needs_import_inert_content = True
+
+or, in ``ubproject.toml``:
+
+.. code-block:: toml
+
+   [needs]
+   import_inert_content = true
+
 .. _`needs_external_needs`:
 
 needs_external_needs

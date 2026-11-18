@@ -47,6 +47,14 @@ Improvements
   no need type (``needs.filter_type``) is no longer lost in a ``calc_sum`` filter over a computed field, nor at a
   place with no location (a constraint, say) that shares its filter string with a ``copy`` filter (:pr:`2518`)
 
+- ✨ :ref:`needs_import_inert_content`, opt-in: the content of a need :ref:`needimport` creates is parsed with
+  docutils' file insertion and raw markup switched off, so an ``include``, ``literalinclude``, ``csv-table :file:``
+  or ``raw`` in a record reads no file of the importing machine and writes no markup into its output, a
+  ``needimport`` in it reads no file, and MyST's raw HTML in it is removed (``needs.import_inert``). Turn it on with
+  ``needs_import_inert_content = True`` (``[needs] import_inert_content = true``); it is off by default in 9.x and
+  planned to be on by default in a later release. Images, the ``download`` role, and directives that read a file
+  without consulting docutils' switch (``uml`` naming one) are not covered (:issue:`2259`)
+
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
   the need where another directive has the name too (:pr:`2507`)

@@ -294,6 +294,10 @@ following; a later version will, as ubCode's reader already does:
 - anything relying on the page's substitutions or ``rst_prolog``: it works, but the same
   text means something else on another page.
 
+For the content of a need :ref:`needimport` creates, :ref:`needs_import_inert_content`
+switches off the directives that read files, ``raw``, raw HTML in Markdown and
+``needimport``; images and the other entries stay as above.
+
 Events
 ------
 

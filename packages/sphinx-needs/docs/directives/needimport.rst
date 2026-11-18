@@ -231,8 +231,24 @@ directive names that ``doctype`` (none if none of those needs has content, or al
 are hidden by their record or by ``:hide:``). Register the suffix, set
 ``:parse_by_doctype: false``, or add ``"needs.import_doctype"`` to ``suppress_warnings``.
 
-The imported content is not restricted: what :ref:`api_content_markup` says content from
-another markup should not contain holds here too.
+What :ref:`api_content_markup` says content from another markup should not contain holds
+here too; :ref:`needimport_inert_content` says what the project can switch off.
+
+.. _needimport_inert_content:
+
+Imported content
+----------------
+
+An imported need's content is parsed as if it had been written on the importing page:
+every directive and role in it runs in the importing build. An ``include`` in a record of
+the ``needs.json`` reads a file of the machine that builds the importing project, and a
+``raw`` block writes its markup into the output.
+
+.. versionadded:: 9.3.0
+
+   Set :ref:`needs_import_inert_content` to parse the content of every imported need with
+   docutils' file insertion and raw markup switched off. It is off by default in 9.x; its
+   entry lists what it stops, and what it does not.
 
 Customization
 -------------
