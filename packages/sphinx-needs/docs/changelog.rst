@@ -370,7 +370,7 @@ Bug fixes
 
 - 🐛 A filter that fails where it is tested need by need -- a :ref:`needflow` ``:highlight:``, a :ref:`needgantt`
   ``:milestone_filter:``, a :ref:`needsequence` ``:filter:``, a :ref:`needs_constraints` check -- no longer aborts the
-  build (:issue:`2252`)
+  build (:issue:`2252`, :pr:`2541`)
 
   A filter there that is not Python (``nc::MISSING``), names what a need does not have (``ab == 1``), raises while it
   is evaluated (``int('x') == 1``) or is a constant ended the build with a traceback (``NeedsInvalidFilter``). It is
@@ -383,7 +383,7 @@ Bug fixes
   been declared. A filter that works selects what it selected.
 
 - 🐛 A :ref:`needsequence` or :ref:`needgantt` over a link to a need part, or to a need that does not exist, or with
-  a link type that does not exist, no longer aborts the build (:issue:`2336`)
+  a link type that does not exist, no longer aborts the build (:issue:`2336`, :pr:`2541`)
 
   Both looked a link up as a whole need id, so a link such as ``USER_B.p1``, and a dead link, ended the build with a
   ``KeyError``. A link to a part the need has is now a link to the need owning the part (a needsequence message to
