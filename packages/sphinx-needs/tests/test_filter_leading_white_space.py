@@ -4,10 +4,12 @@
 or a newline is the tokenizer's own reading, which ``compile`` shares, and a newline or a
 form feed followed by a space is refused by both. The constant check, a constraint and a
 link condition (``filter_single_need``) read a filter as ``eval`` does; the views,
-``needs_warnings``, ``needs_builder_filter``, a ``needpie`` / ``needbar`` content line and
-needuml's ``filter()`` compile it, and now read it the same way, so the same string
-selects the same needs at every place, whichever tier answers it. A message quoting the
-filter quotes it as written.
+``needs_warnings``, ``needs_builder_filter``, a ``needpie`` content line, needuml's
+``filter()`` and the dynamic functions ``links_from_filter`` and ``links_from_match``
+compile it, and now read it the same way, so the same string selects the same needs at
+each of them, whichever tier answers it. A message quoting the filter quotes it as
+written. A derived field's ``where`` is the exception: a declared rule, which must parse
+as written.
 """
 
 from __future__ import annotations
