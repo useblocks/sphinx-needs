@@ -20,8 +20,9 @@ description: The renderer installs, the cell sync and the fences that guard them
 # written inline: `setup-uv` now runs BEFORE the renderer installs rather than after them,
 # because the composite is one step and the two `uses:` lines have to precede it. The
 # Windows graphviz install now relies on that order: it unzips with `uv run --no-project
-# python`. The workflows also restore its zip from `actions/cache` before this action and
-# save it after, which is the other reason those `uses:` steps sit around it.
+# python`. The workflows also restore its zip, and the Linux graphviz .debs, from
+# `actions/cache` before this action and save them after, which is the other reason those
+# `uses:` steps sit around it.
 #
 # Composite inputs are strings, so the two boolean-shaped ones are compared against
 # 'true'. A caller that forwards a `workflow_call` boolean gets exactly that, because
@@ -54,9 +55,23 @@ runs:
   using: composite
   steps:
     - name: Install graphviz (linux)
+      # Not straight from the Ubuntu mirrors. On 2026-11-19 every Linux cell of #2547 died
+      # here, through two reruns, before a test ran: `apt-get install graphviz` could not
+      # reach security.ubuntu.com (exit 100, "Connection failed"). The Windows step below
+      # had already taken its graphviz off a live feed, and this does the same with the
+      # .debs: `graphviz-linux.sh` installs them from the actions cache, offline, and goes
+      # to the mirrors (with retries and timeouts) only when nothing is cached for this
+      # image, or with a warning when the cached set does not install.
+      #
+      # The calling workflow computes the key (`graphviz-linux.sh key`), restores
+      # `$RUNNER_TEMP/graphviz-debs` before this action and saves it after, as it does the
+      # Windows zip. The key is the runner image (`ImageOS` + `ImageVersion`), the dpkg
+      # architecture and the script's CACHE_VERSION: the image decides which libraries the
+      # set needs and which it finds preinstalled. The same script is the graphviz install
+      # of every Linux job that does not use this action, so one change reaches them all.
       if: inputs.needs-graphviz == 'true' && runner.os == 'Linux'
       shell: bash
-      run: sudo apt-get install graphviz
+      run: bash "$GITHUB_ACTION_PATH/graphviz-linux.sh" install
     - name: Install graphviz (windows)
       # Not Chocolatey. `choco install graphviz` asks the community feed, which answers
       # HTTP 406 often enough to be a regular red (job 115845047323: "Failed to fetch
