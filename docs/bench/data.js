@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795093050510,
+  "lastUpdate": 1795095514044,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30366,6 +30366,48 @@ window.BENCHMARK_DATA = {
             "value": 190.073374,
             "unit": "MB",
             "extra": "Commit: d9b2766aa349ee956ff04a27a7c04e3a56caa868\nBranch: master\nTime: 2026-11-19T13:56:04+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1d483837aaca4c7e64980946122c5d586ca67cd",
+          "message": "🧪 sphinx-codelinks: the builtin-header tests find the shipped headers where the package is installed (#2549)\n\n**Why.** The sphinx-codelinks 2.2.0 release run (run 44530476149, job\n\"Build and gate\",\nstep \"Compat cell -- the suite against the RELEASED dependencies\")\nfailed with 16 failures,\nall in `tests/test_builtin_headers.py`. The compat cell runs the suite\nagainst the\ninstalled wheel. Those tests built the expected `clang_resource`\ndirectory from the\ncheckout's `src/` tree, but the product finds it next to the imported\nmodule\n(`builtin_headers.py`: `Path(__file__).parent / \"clang_resource\"`).\nUnder the cell, those\nare two different directories. Nothing for codelinks has been published.\nThe\n`sphinx-codelinks-v2.2.0` tag will be moved to this PR's merge commit.\n\n**What.** The tests now find `RESOURCE` from the imported package\n(`Path(sphinx_codelinks.__file__).parent / \"analyse\" / \"preproc\" /\n\"clang_resource\"`), the\nsame way the product finds it. As a side effect, the manifest-hash test\nnow checks the\nfiles the wheel actually ships. This is a test-only change: there is no\nproduct change and\nno changelog entry. No other test in the suite assumes the source-tree\nlayout.\n\n**Proof.** I reproduced the release.yaml compat cell locally: wheel\nbuilt with\n`--no-sources`, venv outside the project, test-group export +\n`compat-requirements.txt` +\nwheel, and the same pytest command run from `packages/sphinx-codelinks`.\n- Without this change: `16 failed, 3088 passed`, matching CI.\n- With it: `3104 passed`.\n- `uv run poe test-codelinks -n 4` is green in the workspace.\n- `uv run poe lint` and `uv run poe typecheck` are clean.",
+          "timestamp": "2026-11-19T14:36:55+01:00",
+          "tree_id": "53391d5925ac863fced64e4750ab74534859254b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b1d483837aaca4c7e64980946122c5d586ca67cd"
+        },
+        "date": 1795095513494,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07265618199999935,
+            "unit": "s",
+            "extra": "Commit: b1d483837aaca4c7e64980946122c5d586ca67cd\nBranch: master\nTime: 2026-11-19T14:36:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.204345806,
+            "unit": "s",
+            "extra": "Commit: b1d483837aaca4c7e64980946122c5d586ca67cd\nBranch: master\nTime: 2026-11-19T14:36:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 190.216744,
+            "unit": "MB",
+            "extra": "Commit: b1d483837aaca4c7e64980946122c5d586ca67cd\nBranch: master\nTime: 2026-11-19T14:36:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
