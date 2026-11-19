@@ -18,8 +18,10 @@ CACHE_VERSION=1
 dir="${RUNNER_TEMP:?}/graphviz-debs"
 # the network path only: never wait two minutes on one dead connection, and retry a
 # failed fetch (apt backs off between attempts) rather than failing the job on the first.
-# Each network call is also bounded as a whole, so a mirror that black-holes connections
-# fails the step by name in minutes rather than paying every retry's timeout per file
+# Each network call is also bounded as a whole, at 10 minutes: a timed-out `update` only
+# warns and a timed-out download fails the step (exit 124, apt's partial output, no
+# `::error::`), so the worst case is about 21 minutes. Measured on a black-holed mirror,
+# apt's own retries gave up first, failing the step in under five minutes
 net=(-o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
 bound=(timeout --kill-after=30 600)
 
