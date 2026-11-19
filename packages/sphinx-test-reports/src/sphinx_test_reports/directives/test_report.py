@@ -1,4 +1,5 @@
 # fmt: off
+import os
 import pathlib
 import re
 from collections.abc import Iterable
@@ -75,6 +76,8 @@ class TestReportDirective(TestCommonDirective):
             template_path = tr_template
         else:
             template_path = pathlib.Path(self.app.confdir) / tr_template
+
+        self.env.note_dependency(os.path.abspath(template_path))
 
         if not template_path.is_file():
             raise InvalidConfigurationError(
