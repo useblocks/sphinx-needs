@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.4.0`:
+
+0.4.0
+-----
+
+:Released: 2026-11-19
 
 - ✨ ``ubproject.toml`` (or the file ``sources_from_toml`` names) is read as TOML 1.1, so it
   may break an inline table over several lines or end one with a trailing comma, use the
