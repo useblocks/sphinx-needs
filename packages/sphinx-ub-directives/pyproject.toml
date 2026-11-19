@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-ub-directives"
-version = "0.1.0"
+version = "0.2.0"
 description = "Define your own Sphinx directives: presets of existing directives, and Jinja template directives"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }
@@ -11,7 +11,7 @@ dependencies = [
   "docutils>=0.21",
   # the template engine; the same series sphinx-needs pins, so the two co-install
   "minijinja>=3.1.0,<4",
-  "ub-project>=1.2.0,<2",
+  "ub-project>=1.3.0,<2",
 ]
 keywords = [
   "sphinx",
@@ -51,9 +51,10 @@ docs = [
   "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design>=0.8.0",
 ]
-# a sphinx-needs that need-type presets work with: `resolve_need_option` is new in 9.2.0.
+# a sphinx-needs that need-type presets work with and that installs beside this package: 9.3.0 is the
+# first on minijinja 3.1, and the first with the qualified `need:<type>` directives the suite builds with.
 # The root re-exports it as `ub-directives-needs`
-needs = ["sphinx-needs>=9.2,<10"]
+needs = ["sphinx-needs>=9.3.0,<10"]
 
 [project.urls]
 Homepage = "https://sphinx-ub-directives.readthedocs.io"

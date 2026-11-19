@@ -570,7 +570,7 @@ class ExternalSource(TypedDict, total=False):
     which is used as it is"""
 
     id_prefix: str
-    """Prefix all IDs from the external source with this string (optional, uppercased)"""
+    """Prefix all IDs from the external source with this string, as written (optional)"""
 
     css_class: str
     """Added as the `external_css` field for each need item (optional)"""

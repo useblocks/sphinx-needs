@@ -253,9 +253,12 @@ one of them fails, and a template renders it empty.
 Older readers do not read it. Sphinx-Needs 9.1.0 and 9.2.0 refuse the file with one warning per reader, which names
 the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only;
 Sphinx-Needs 9.0.0 refuses it with one warning per reader that its ``'versions' is missing or not an object``; ubCode
-0.39.0 and earlier refuse it in the same way. Sphinx-Needs 8.5.0 aborts the build on it: external needs with
-``NeedsExternalException: No version defined``, a ``needimport`` with ``CorruptedNeedsFile: Key 'current_version'
-missing or corrupted``.
+0.39.0 and earlier refuse it in the same way, and ubCode 0.40.0 reads it. Sphinx-Needs 8.5.0 aborts the build on it:
+external needs with ``NeedsExternalException: No version defined``, a ``needimport`` with ``CorruptedNeedsFile: Key
+'current_version' missing or corrupted``.
+
+The page :ref:`needs_permalink_file` installs reads a ``needs.json`` of format 1 only: with a 2a1 file it does
+not redirect (:issue:`2531`).
 
 .. _needumls_builder:
 

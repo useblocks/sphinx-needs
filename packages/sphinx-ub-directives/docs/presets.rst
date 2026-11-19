@@ -49,8 +49,7 @@ Set up a preset
    .. step:: Pick the base
 
       A built-in directive, one from a loaded extension (such as sphinx-design's ``dropdown``),
-      or a sphinx-needs need type (this needs sphinx-needs 9.2 or later;
-      with an older one a need-type preset is refused, ``ub_directives.directive_preset_unknown_base``),
+      or a sphinx-needs need type (this needs sphinx-needs 9.3 or later, which the ``needs`` extra installs),
       named bare (``req``) or qualified (``need:req``).
 
    .. step:: Pick the name

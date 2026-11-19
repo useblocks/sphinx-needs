@@ -3,8 +3,21 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.2.0`:
+
+0.2.0
+-----
+
+:Released: 2026-11-19
+
+A preset may be based on a need type written as Sphinx-Needs 9.3.0 writes it, qualified
+(``need:req``), and a new preset or template name starting with ``need:`` is refused, as
+such names are kept for need types. Templates render with minijinja 3.1, so a value a
+template builds itself may print differently, a ``.toml`` template context file is read as
+TOML 1.1, a self-preset of a domain's directive applies, and ``ub-template :raw: HTML``
+emits its output. It installs beside Sphinx-Needs 9.3.0 or later only (both render with
+minijinja 3.1), which the ``needs`` extra now installs, and it requires ub-project 1.3.0
+(``>=1.3.0,<2``).
 
 - 🐛 A new preset or declared template directive whose name starts with ``need:`` (in any case) is now refused
   (``directive_preset_name_taken``, ``directive_template_invalid``), whether or not a need type of that name exists
@@ -57,14 +70,13 @@ Unreleased
   ``dialect-undefined-length-is-an-error`` (546 cases). The second render is temporary: it goes once a minijinja-py
   release fixes `minijinja#1028 <https://github.com/mitsuhiko/minijinja/issues/1028>`__.
 
-- A template context file ending in ``.toml`` (``[parse.template_contexts.<name>] file``) is
+- ✨ A template context file ending in ``.toml`` (``[parse.template_contexts.<name>] file``) is
   read as TOML 1.1, through ub-project's ``loads_toml``, as ``ubproject.toml`` itself is: an
   inline table may span lines or end with a trailing comma, and a string may use the ``\e``
   and ``\xHH`` escapes. A file that does not parse is still ``template_context_invalid``,
   with the same wording around the parser's message. In the template corpus the four
   ``dx-toml-1-1-*`` cases, which expected TOML 1.0's refusal, now expect their renders
-  (``1``, ``1``, ``4`` and ``A``) and no finding, and contract section 4.3 names TOML 1.1; a
-  vendored copy of that corpus is due a refresh
+  (``1``, ``1``, ``4`` and ``A``) and no finding, and contract section 4.3 names TOML 1.1
   (`#2476 <https://github.com/useblocks/sphinx-needs/pull/2476>`__).
 
 - 🐛 ``ub-template``'s ``:raw:`` format is read as the ``raw`` directive reads its argument, lower-cased with its

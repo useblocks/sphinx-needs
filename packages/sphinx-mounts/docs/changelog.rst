@@ -3,8 +3,16 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.4.0`:
+
+0.4.0
+-----
+
+:Released: 2026-11-19
+
+``ubproject.toml`` is read as TOML 1.1, through ub-project, as every other tool in the
+family reads it, and a file that is not UTF-8 is reported by name. Nothing changes in how
+files are mounted or gated. It requires ub-project 1.3.0 (``>=1.3.0,<2``).
 
 - ✨ ``ubproject.toml`` (or the file ``sources_from_toml`` names) is read as TOML 1.1, so it
   may break an inline table over several lines or end one with a trailing comma, use the
@@ -13,9 +21,14 @@ Unreleased
   through ub-project's ``load_toml``, as every other tool in the family does, so the file is
   read one way. A malformed file is still a ``TomlConfigError`` starting
   ``sphinx-mounts: failed to parse TOML config <path>:``, now followed by ub-project's
-  ``invalid TOML:`` and the parser's message.
+  ``invalid TOML:`` and the parser's message
+  (`#2476 <https://github.com/useblocks/sphinx-needs/pull/2476>`__).
 - 🐛 A ``ubproject.toml`` that is not UTF-8 stops the build with a ``TomlConfigError`` naming
-  the file (``not valid UTF-8 TOML``), instead of a raw ``UnicodeDecodeError`` traceback.
+  the file (``not valid UTF-8 TOML``), instead of a raw ``UnicodeDecodeError`` traceback
+  (`#2476 <https://github.com/useblocks/sphinx-needs/pull/2476>`__).
+- **sphinx-design 0.8.0 or newer** is now required by the ``docs`` extra (previously
+  0.6.1), for the ``steps`` the docs now write a procedure in
+  (`#2519 <https://github.com/useblocks/sphinx-needs/pull/2519>`__).
 
 .. _`release:0.3.1`:
 

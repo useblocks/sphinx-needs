@@ -492,8 +492,8 @@ need is created, in a :ref:`needimport` ``:filter:``, which reads the imported r
 build, nor in a variant condition: none has a check context, and a facet read there fails with
 ``name 'c' is not defined; the c.source facets are not available in a field predicate`` (or the place it is).
 The ``:columns:`` of a :ref:`needtable` and the ``:sort:`` and ``:sort_by:`` of the views do not read a facet yet.
-A filter on the facets is in the :ref:`portable filter language <filter_string_performance>`;
-`ubCode <https://ubcode.useblocks.com>`__ does not read them yet.
+A filter on the facets is in the :ref:`portable filter language <filter_string_performance>`,
+so it works in `ubCode <https://ubcode.useblocks.com>`__ too.
 
 .. _filter_namespace:
 

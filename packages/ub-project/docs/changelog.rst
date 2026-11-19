@@ -3,8 +3,18 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.3.0`:
+
+1.3.0
+-----
+
+:Released: 2026-11-19
+
+``ubproject.toml`` is read as TOML 1.1, and ``loads_toml`` parses TOML text that does not
+come from a file of its own exactly as ``load_toml`` parses a file. Below Python 3.15 the
+package now depends on ``tomli`` 2.4 or later, its first dependency. Sphinx-Needs 9.3.0,
+sphinx-mounts 0.4.0, sphinx-codelinks 2.2.0 and sphinx-ub-directives 0.2.0 require this
+release.
 
 - **TOML 1.1.** ``load_toml`` reads ``ubproject.toml`` as TOML 1.1, so the file may break an
   inline table over several lines or end it with a trailing comma, use the ``\e`` and
@@ -14,7 +24,8 @@ Unreleased
   package now depends on there and only there (``tomllib`` reads TOML 1.1 from 3.15, so the
   dependency goes when 3.14 is dropped). The reading contract says TOML 1.1 (section 3.1)
   and no longer names one reader's nesting limit (section 2.4); the conformance corpus is
-  unchanged.
+  unchanged
+  (`sphinx-needs#2476 <https://github.com/useblocks/sphinx-needs/pull/2476>`__).
 - **The text twin of load_toml.** ``loads_toml(text, source)`` parses TOML that does not come
   from a file of its own -- text read through a consumer's own source tree, say -- exactly as
   ``load_toml`` parses a file: invalid TOML is a ``ProjectConfigError`` naming *source*, with

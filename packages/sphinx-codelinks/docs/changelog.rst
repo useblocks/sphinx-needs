@@ -3,8 +3,27 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:2.2.0`:
+
+2.2.0
+-----
+
+:Released: 19.11.2026
+
+Two more languages, and a C/C++ engine that reads code as the build compiles it. PowerShell and VHDL are read,
+each through a new tree-sitter grammar dependency, and a reference marker can name the field its references go to.
+The libclang engine now reads each file for the target its compilation database declares, a header through every
+entry that includes it, a unity build's included source through its includer, and with clang's builtin headers,
+which the package now ships (its licence expression is ``MIT AND Apache-2.0 WITH LLVM-exception``); a file whose
+target it cannot read, or whose every parse clang refuses, is read as written instead of skipped. What is extracted
+changes with these fixes, five more C++ shapes are named as clang names them, and five new warnings
+(``codelinks.not_in_compile_database``, ``codelinks.builtin_header``, ``codelinks.marker_above_conditional``,
+``codelinks.preprocessor_target_unknown`` and ``codelinks.preprocessor_parse_refused``) fail a ``-W`` build until
+the cause is fixed or the warning type suppressed. Among them, a compiled source the project traces that its
+``compile_commands.json`` does not list, and that no entry includes, is still skipped but now warned about
+(``codelinks.not_in_compile_database``), where 2.1.0 skipped it silently: a compilation database written with the
+absolute paths of another checkout, for one, now fails a ``-W`` build that passed. The first build after upgrading
+reads every document again. This release requires Sphinx-Needs 9.3.0 (``>=9.3.0,<10``).
 
 New and Improved
 ................
@@ -82,18 +101,69 @@ New and Improved
   (``immintrin.h``, ``arm_neon.h``), which **Sphinx-CodeLinks** does not ship. A relative
   path resolves against the configuration file. It is passed even when a
   ``compile_commands.json`` entry chooses its own builtin headers.
+- ✨ The libclang engine reads a C/C++ header the ``compile_commands.json`` does not list
+  through **every entry that includes it** (:ref:`preprocessor_headers`), where it was
+  parsed standalone, with the ``[analyse.preprocessor]`` ``defines`` alone, for the
+  machine the analysis runs on. Each such entry reads the header with its own flags, its
+  own target and what its source defines before the ``#include``, in the header's first
+  inclusion into it, and a branch of the header is left out only when every one of them
+  leaves it out: a header both an Arm and an x86 entry include keeps the branches of both,
+  and a branch an ``-imacros`` or a ``#define`` before the ``#include`` selects is read.
+  An entry whose target is unknown, or whose every parse is refused, counts every file its
+  forced includes and its ``#include`` and ``#include_next`` lines name as included, and
+  keeps all of their branches. A header no entry includes keeps its standalone parse.
+  What each entry contributes is kept in the Sphinx environment, and an edit to the source
+  of an including entry, or to a project file it includes, reads the header again in an
+  incremental build.
 
 Fixes
 .....
 
+- 🐛 The libclang engine reads each C/C++ file for the target its
+  ``compile_commands.json`` entry declares (:ref:`preprocessor_target`), where it read
+  every file for the machine the analysis runs on: a cross build's
+  ``#if defined(__ARM_ARCH_7M__)`` branches were left out, their markers lost, and its
+  x86 branches read instead. The target is the entry's own ``--target`` or ``-target``;
+  else the triple its compiler's name carries, read as clang's driver reads it
+  (``arm-none-eabi-gcc``, ``aarch64-linux-gnu-g++``, with a version or ``.exe``, behind a
+  launcher such as ``ccache``), when its first part is an architecture the loaded
+  libclang has; else the new ``target`` setting of :ref:`analyse.preprocessor
+  <preprocessor_config>` (``target = "thumbv7em-none-eabihf"``), which a header no entry
+  includes and a file no entry applies to are read for too; else, as before, the machine
+  the analysis runs on. A parse clang refuses for a target with the entry's ``-mcpu=``,
+  ``-march=``, ``-mtune=`` or ``-mabi=`` is made again without them, and the file is
+  warned about once (``codelinks.preprocessor_target_unknown``, naming the flags left
+  out), which fails a ``-W`` build.
+- 🐛 A C/C++ file whose target the loaded libclang cannot read is read **as written**,
+  every ``#if`` branch kept, so nothing is hidden (:ref:`preprocessor_target`): an
+  entry's own ``--target`` naming an architecture libclang does not model
+  (``xtensa-esp32-elf``), whose every parse failed and whose file was skipped; a
+  compiler's name doing so (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``); a ``target``
+  setting doing so; and a declared target clang refuses even without the entry's CPU
+  flags (``-mcmse`` with ``arm-none-eabi``). It is less precise: a definition written once
+  in each of two exclusive branches carries the markers of both. Each such file is warned
+  about once, at its first line (``codelinks.preprocessor_target_unknown``), naming the
+  target and where it came from; the warning fails a ``-W`` build until the target is
+  fixed, ``target`` is set where the file takes the setting, or
+  ``codelinks.preprocessor_target_unknown`` is added to ``suppress_warnings``.
+- 🐛 A C/C++ file whose target is known but whose every libclang parse is refused is read
+  as written, every ``#if`` branch kept, where it was skipped with a "could not load it as
+  a translation unit" warning and its markers lost (:ref:`preprocessor_target`): a flag
+  clang does not take for the target (``-mfpmath=vfp``), or arguments it does not take (a
+  second input file, as in ``gcc main.c util.c -o app``, a ``-std`` it does not know, a
+  ``-fprofile-use=`` profile that has moved). It is warned about once, at its first line
+  (``codelinks.preprocessor_parse_refused``), naming what clang refused; the warning fails
+  a ``-W`` build until the compilation database is corrected or
+  ``codelinks.preprocessor_parse_refused`` is added to ``suppress_warnings``. A source
+  with no entry of its own that such an entry ``#include``\ s is read as written through
+  it, with the same warning naming that includer.
 - 🐛 A ``compile_commands.json`` entry whose arguments end their options with ``--``
   (``-c -- src/a.cpp``, as CMake writes it for clang-cl) is read correctly; before,
   the libclang engine's own arguments landed after the ``--`` as inputs, no ``#if`` arm
   was known to be inactive, and the markers of every arm were extracted. A ``--`` that is
   the value of ``-Xlinker``, ``-I`` or another option listed under
   :ref:`preprocessor_compile_db` ends nothing: such an entry, which libclang could not load, is read with the options
-  after it. An environment of an earlier version is read
-  again once (``env_version`` 7).
+  after it.
 - 🐛 The libclang engine passes clang's builtin headers to every parse
   (:ref:`preprocessor_builtin_headers`). The ``libclang`` wheel carries none, so
   ``stddef.h``, ``stdarg.h``, ``stdbool.h``, ``float.h``, ``stdatomic.h``, the compiler's
@@ -107,8 +177,7 @@ Fixes
   directory or a ``compile_commands.json`` entry chooses its own (``-resource-dir``,
   ``-nostdinc``, ``-nobuiltininc``). A builtin header a parse still cannot find, such as
   an intrinsics header, is warned about once per file and build
-  (``codelinks.builtin_header``, which fails a ``-W`` build). Markers in such arms move,
-  so an environment of an earlier version is read again once (``env_version`` 6).
+  (``codelinks.builtin_header``, which fails a ``-W`` build). Markers in such arms move.
 - 🐛 The libclang engine reads a C/C++ source that a unity (jumbo) build compiles by
   ``#include``\ -ing it, which has no ``compile_commands.json`` entry of its own, through
   the entry that includes it (:ref:`preprocessor_compile_db`). Such a source was
@@ -119,16 +188,15 @@ Fixes
   branch or a comment is none. A compiled source that no entry includes is still
   skipped, now with a ``codelinks.not_in_compile_database`` warning naming it and the
   database, which fails a ``-W`` build: list it in ``exclude``, or add
-  ``codelinks.not_in_compile_database`` to ``suppress_warnings``. Headers keep their
-  standalone parse. An edit to the including entry's source, or to a header it includes,
+  ``codelinks.not_in_compile_database`` to ``suppress_warnings``. A header is read
+  through the entries that include it (:ref:`preprocessor_headers`). An edit to the including entry's source, or to a header it includes,
   reads the source again in an incremental build.
 - 🐛 A ``compile_commands.json`` entry is parsed in its ``directory``, so a relative
   ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros`` resolves as the build
   resolved it. It resolved against the directory the analysis ran in, which, for a
   database in a build directory, found no header, and the branches guarded by its macros
   were dropped as inactive. A relative ``directory`` is taken against the database's own
-  directory. An environment of an earlier version is read again once (``env_version``
-  5).
+  directory.
 - 🐛 A reference marker's ids end at the next marker on the line, and a marker that ends in
   a letter, a digit or ``_`` (any Unicode letter or number) matches a whole word only
   (:ref:`need_id_refs_matching`). ``\satisfies REQ_1 \verifies REQ_2`` gave
@@ -142,8 +210,7 @@ Fixes
   a marker that is the start of a longer word; overlapping markers (``@need-ids`` and
   ``@need-ids:``), where the longest now wins; and an empty marker string, which matched
   every line and now matches nothing. Which lines are reference lines, never one-line
-  needs, follows the same rule. The first build after upgrading reads every document once, so no reference
-  extracted by the old rule is kept (the extension's ``env_version`` is now 4).
+  needs, follows the same rule.
 - 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
   no entity anywhere outside a function's body (at file level, in a namespace, class,
   struct, union or enum body, or in an ``extern "C"`` block), as clang reads it
@@ -179,11 +246,14 @@ Fixes
   with an empty title, its id is then the one the duplicate check and the ``[docs]`` link
   name. The fix is Sphinx-Needs' (its needs.json reader, ub-needs-exchange).
 - 🐛 The libclang engine no longer drops the markers of a file its own includes enter
-  again: a guarded header whose includes include it back, parsed standalone as every
-  header absent from a compilation database is, or a guarded file that includes itself.
+  again: a guarded header whose includes include it back, parsed standalone, as a header
+  no entry includes is, or a guarded file that includes itself.
   The second pass through the preprocessor skips the guarded body, and the engine dropped
   every comment of the file inside what either pass skipped, so it extracted none; only
   the file's own pass decides now.
+
+The first build after upgrading reads every document again (the extension's
+``env_version`` is now 10), so no record extracted by 2.1.0's rules is kept.
 
 .. _`release:2.1.0`:
 
