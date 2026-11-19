@@ -3712,7 +3712,7 @@ provides-extras = ["sphinx", "pytest", "docs"]
 
 [[package]]
 name = "sphinx-ub-directives"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/sphinx-ub-directives" }
 dependencies = [
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },

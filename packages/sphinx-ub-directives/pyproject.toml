@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-ub-directives"
-version = "0.1.0"
+version = "0.2.0"
 description = "Define your own Sphinx directives: presets of existing directives, and Jinja template directives"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }

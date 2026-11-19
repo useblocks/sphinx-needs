@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.2.0`:
+
+0.2.0
+-----
+
+:Released: 2026-11-19
 
 - 🐛 A new preset or declared template directive whose name starts with ``need:`` (in any case) is now refused
   (``directive_preset_name_taken``, ``directive_template_invalid``), whether or not a need type of that name exists
