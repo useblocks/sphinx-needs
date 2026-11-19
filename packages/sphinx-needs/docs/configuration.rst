@@ -95,7 +95,7 @@ needs_from_toml
 .. versionadded:: 4.1.0
 
 This configuration takes the (relative) path to a `toml file <https://toml.io>`__ which contains some or all of the needs configuration (configuration in the toml will override that in the :file:`conf.py`).
-The file is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__ when ub-project 1.3 or later is installed; sphinx-mounts reads it so from its release after 0.3.1.
+The file is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__ (ub-project 1.3.0, which Sphinx-Needs 9.3.0 requires); sphinx-mounts reads it so from 0.4.0.
 Taplo-based editor tooling may still flag the syntax TOML 1.1 adds.
 
 .. code-block:: python
@@ -3662,9 +3662,9 @@ build that sets it after one that left the option unset reads the project again)
    change, or be replaced by the next one, in any release. Each build that writes such a file says
    so in one ``needs.beta`` warning (silence it with ``suppress_warnings = ["needs.beta"]``); a build
    that writes no ``needs.json`` is not warned. Sphinx-Needs 9.0.0 to 9.2.0 refuse such a file with
-   a warning, as ubCode does, and Sphinx-Needs 8.5.0 aborts the build on it (see
-   :ref:`needs_builder_format_2a1`). Use it to try the format, not for a file another project
-   relies on.
+   a warning, as ubCode 0.39.0 does, and Sphinx-Needs 8.5.0 aborts the build on it (see
+   :ref:`needs_builder_format_2a1`); ubCode 0.40.0 reads it, as Sphinx-Needs 9.3.0 does. Use it to
+   try the format, not for a file another project relies on.
 
 Of the other ``needs.json`` options, under ``"2a1"``:
 

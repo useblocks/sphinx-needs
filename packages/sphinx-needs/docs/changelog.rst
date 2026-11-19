@@ -12,12 +12,27 @@ Changelog
 :Released: 19.11.2026
 :Full Changelog: `sphinx-needs-v9.2.0...sphinx-needs-v9.3.0 <https://github.com/useblocks/sphinx-needs/compare/sphinx-needs-v9.2.0...sphinx-needs-v9.3.0>`__
 
+Qualified need directives lead this release: every need type is also written ``.. need:<type>::`` (a
+``{need:<type>}`` fence in MyST), and :ref:`needs_directive_name` says whether the bare ``.. <type>::`` is the need
+where another directive has that name too, so a project keeps both sphinx-design's ``step`` and a need type
+``step``. A need id may name a namespace: with :ref:`needs_namespaced_ids` on, ``nc::m2::REQ_1`` is the need
+``REQ_1`` in the namespace ``nc::m2``, and ``c.in_namespace()``, ``c.id.ns`` and ``c.id.local`` select by it. The
+switch is off by default in 9.x and on by default from 10.0: set it either way to keep a project's reading through
+that release. Two further additions are opt-in: the draft ``needs.json`` format 2a1 (experimental), whose records
+carry each need's source from project to project, and :ref:`needs_import_restrict_content`, which parses imported
+content with file insertion and raw markup switched off. Templates render with minijinja 3.1, where 9.2.0 used 2.x,
+and a value a template builds itself may print differently. Several fixes change output; two to read before
+upgrading: a boolean is no longer accepted as an ``integer`` or ``number`` value, and a filter that fails where it
+is tested need by need is a warning, and a needsequence or needgantt over a part link, a dead link or an unknown
+link type is drawn, where each ended the build. ``ENV_DATA_VERSION`` is 28, was 25: the first build after upgrading
+reads every document again. This release requires ub-needs-exchange 1.2.0 and ub-project 1.3.0.
+
 Improvements
 ............
 
 - ✨ **Namespaced ids**, opt-in: with :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace,
   ``nc::m2::REQ_1`` being the need ``REQ_1`` in the namespace ``nc::m2``, and a filter selects a namespace and
-  everything below it with ``c.in_namespace("nc")`` (:ref:`namespaced_ids`)
+  everything below it with ``c.in_namespace("nc")`` (:ref:`namespaced_ids`, :pr:`2517`)
 
   Turn it on with ``needs_namespaced_ids = True`` (``[needs] namespaced_ids = true``). It is off by default in the
   9.x series and **on by default from 10.0**: set it either way to keep a project's reading through that release.
@@ -159,6 +174,11 @@ Improvements
   ``4 % 0``, and a slice with a negative step works (``[1, 2, 3][5:0:-1]`` is ``[3, 2]``). The full list is
   minijinja's own `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
 
+- 👌 :ref:`needs_from_toml` is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__, through ub-project 1.3.0, which
+  this release requires: an inline table may span lines or end with a trailing comma, a string may use the ``\e``
+  and ``\xHH`` escapes, and a time or a datetime may leave out its seconds; valid TOML 1.0 reads as before
+  (:pr:`2476`)
+
 Bug fixes
 .........
 
@@ -175,7 +195,7 @@ Bug fixes
   text and the integer are both format 1 and differ as values (:issue:`2530`, :pr:`2539`)
 
 - 🐛 A :ref:`needsequence` over need ids holding ``::`` (or another character PlantUML refuses in a name, such as
-  ``-``) renders, and shows each participant by its title or its id
+  ``-``) renders, and shows each participant by its title or its id (:pr:`2515`)
 
   It wrote each need id as it is as a PlantUML participant name. For a participant that sends a message, which is
   declared with its title, an id such as ``SUPPLIER::USER_A`` (which the default :ref:`needs_id_regex` accepts) or
@@ -190,7 +210,7 @@ Bug fixes
   after upgrading reads every document again.
 
 - 🐛 The default item of a :ref:`variant <needs_variant_support>` may hold ``::``, as a need id such as
-  ``SUPPLIER::REQ_2`` does
+  ``SUPPLIER::REQ_2`` does (:pr:`2515`)
 
   ``<<[False]:X, SUPPLIER::REQ_2>>`` read its last item as the variant name ``SUPPLIER`` with the value ``:REQ_2``,
   so the field or link was left empty with a ``needs.dynamic_function`` warning that ``name 'SUPPLIER' is not
@@ -202,6 +222,7 @@ Bug fixes
 
 - 🐛 :ref:`needs_build_json_per_id` and the :ref:`needs_id builder <needs_id_builder>` encode the characters of a need
   id that a file name cannot hold on every system, such as ``:``, in the name of the need's file **(changed output)**
+  (:pr:`2515`)
 
   Each file was named ``<id>.json`` with the id as it is, so ``SUPPLIER::REQ_1``, which the default
   :ref:`needs_id_regex` accepts, gave ``SUPPLIER::REQ_1.json``, a name Windows refuses, and an id holding ``/`` could
@@ -212,7 +233,7 @@ Bug fixes
   Windows' reserved device names (``NUL``, ``CON``, …), and names differing only by case.
 
 - 🐛 An ``id_prefix`` of :ref:`needimport` or :ref:`needs_external_needs` leaves a longer ``::``-joined id in a
-  need's content as it is **(changed output)**
+  need's content as it is **(changed output)** (:pr:`2515`)
 
   The prefix rewrites each id of the file written in a need's content, and it took ``:`` as a word boundary, so with
   the file id ``PLAIN_1`` and the prefix ``SUP::`` the text ``other::PLAIN_1`` became ``other::SUP::PLAIN_1`` and
@@ -227,6 +248,7 @@ Bug fixes
   ``x::SUP::REQ_1.SUB_2``. The first build after upgrading reads every document again.
 
 - 🐛 A one-word :ref:`needextend` argument holding ``(``, ``=``, ``'`` or ``"`` is a filter **(changed output)**
+  (:pr:`2515`)
 
   ``needextend`` read every one-word argument as a need id, so ``c.this_doc()``, ``c.is_a('req')`` and
   ``status=="open"``, written without a space, were reported as ids that do not exist (and ended the build under
@@ -238,7 +260,7 @@ Bug fixes
 
 - 🐛 A filter that is not a Python expression no longer aborts the build where a view's ``:filter:``, the
   ``needextract`` argument, a ``needpie`` or ``needbar`` ``:filter:`` or line, ``need_count``, needuml's ``filter()``,
-  :ref:`needs_warnings` or :ref:`needs_builder_filter` takes it
+  :ref:`needs_warnings` or :ref:`needs_builder_filter` takes it (:pr:`2515`)
 
   ``needextract:: nc::missing`` (an id the :ref:`needs_id_regex` refuses is read as a filter), or the same string as
   the ``:filter:`` of a ``needtable``, ``needlist``, ``needflow``, ``needgantt``, ``needextract``, ``needpie`` or
@@ -322,7 +344,7 @@ Bug fixes
 
   sphinx-needs before 4.0 wrote a need's content as ``description``; that legacy ``description`` is now read as the
   content only when the record has no ``content`` key, after its schema defaults are merged -- the rule of
-  ub-needs-exchange, whose next release carries it. A need without content, which sphinx-needs writes as
+  ub-needs-exchange 1.2.0, which this release requires. A need without content, which sphinx-needs writes as
   ``"content": ""`` (or, with ``needs_json_remove_defaults``, as the schema's ``content`` default), lost its
   ``description`` field into the content, and a need with neither content nor a ``description`` (a nullable field
   written as ``null``) was refused. A link type of that name was refused on ``needimport`` and external needs and lost
