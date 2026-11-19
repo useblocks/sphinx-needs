@@ -18,16 +18,16 @@ from types import ModuleType
 import pytest
 import sphinx
 
+import sphinx_codelinks
 from sphinx_codelinks.analyse.analyse import BuiltinHeaderWarnings
 from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 
+# Located from the IMPORTED package, as ``builtin_headers.py`` locates it from its own
+# ``__file__``, not from this checkout's ``src/``: the release workflow's compat cell
+# runs this suite against the installed wheel, where the two are different directories
+# (and the hash checks below then check the files the wheel actually ships).
 RESOURCE = (
-    Path(__file__).parents[1]
-    / "src"
-    / "sphinx_codelinks"
-    / "analyse"
-    / "preproc"
-    / "clang_resource"
+    Path(sphinx_codelinks.__file__).parent / "analyse" / "preproc" / "clang_resource"
 )
 
 
