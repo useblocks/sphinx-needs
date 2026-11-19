@@ -6,10 +6,12 @@
 #
 # It cannot go in the wheel's `Requires-Dist`: sphinx-ub-directives depends on sphinx-needs
 # only through its optional `needs` extra. The suite loads `sphinx_needs` for the need-type
-# presets and for `var` from sphinx-needs' variant data, and `>=9.2.0` is the release that
-# adds `resolve_need_option`, the floor the `needs` extra declares. One test loads
+# presets and for `var` from sphinx-needs' variant data, and `>=9.3.0` is the floor the
+# `needs` extra declares: the suite builds with the qualified `need:<type>` directives
+# (`.. need:req::`), new in 9.3.0, so a resolver that still sees 9.2.0 is an error rather
+# than failing tests. One test loads
 # `sphinx_test_reports`, to check that the test-report directive names it is CONFIGURED to
 # register are refused in template output (tests/test_templates.py); 4.0.0 is the release
 # made with this one.
-sphinx-needs>=9.2.0,<10
+sphinx-needs>=9.3.0,<10
 sphinx-test-reports>=4.0.0,<5
