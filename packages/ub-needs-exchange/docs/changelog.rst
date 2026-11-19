@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.2.0`:
+
+1.2.0
+-----
+
+:Released: 2026-11-19
 
 - **The grammar of a need id: ``ub_needs_exchange.need_id``.** An id that holds ``::``
   splits at its last ``::`` into a namespace -- one or more segments, each of ASCII
