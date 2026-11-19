@@ -131,6 +131,22 @@ jobs:
         with:
           path: ${{ runner.temp }}/graphviz-download
           key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
+      # The Linux graphviz .debs, kept the same way: `prepare-cell` installs them offline
+      # and goes to the Ubuntu mirrors only on a miss (see its "Install graphviz (linux)"
+      # step). The key is the runner image, so a new image is a miss; the restore falls
+      # back to the newest set for the same OS, which the install tries before the mirrors
+      - name: Name the graphviz .deb cache
+        if: runner.os == 'Linux' && inputs.needs-graphviz
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        if: runner.os == 'Linux' && inputs.needs-graphviz
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - uses: ./.github/actions/prepare-cell
         with:
           sphinx-group: ${{ inputs.sphinx-group }}
@@ -142,6 +158,12 @@ jobs:
         with:
           path: ${{ runner.temp }}/graphviz-download
           key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
+      - name: Save the graphviz .debs
+        if: runner.os == 'Linux' && inputs.needs-graphviz && steps.graphviz-debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
       - name: Run pytest
         # `--durations=25`: the slowest tests, printed at the end of every cell, so a slow
         # Windows run can be read rather than guessed at (there is no Windows machine to

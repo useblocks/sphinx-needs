@@ -88,6 +88,23 @@ jobs:
         with:
           path: ${{ runner.temp }}/graphviz-download
           key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
+      # The Linux graphviz .debs, kept the same way: `prepare-cell` installs them offline
+      # and goes to the Ubuntu mirrors only on a miss (see its "Install graphviz (linux)"
+      # step). The key is the runner image, so a new image is a miss; the restore falls
+      # back to the newest set for the same OS, which the install tries before the mirrors.
+      # This cell always asks for graphviz, so only the OS is tested
+      - name: Name the graphviz .deb cache
+        if: runner.os == 'Linux'
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        if: runner.os == 'Linux'
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - uses: ./.github/actions/prepare-cell
         id: prepare
         with:
@@ -108,6 +125,12 @@ jobs:
         with:
           path: ${{ runner.temp }}/graphviz-download
           key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
+      - name: Save the graphviz .debs
+        if: runner.os == 'Linux' && steps.graphviz-debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
       - name: Check the libclang engine this cell asked for is really there
         # `extra-groups: codelinks-libclang` above is the ONLY executable place that wheel
         # is named in this repository, and losing it is SILENT: the four modules that need

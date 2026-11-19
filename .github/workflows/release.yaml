@@ -73,11 +73,27 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Name the graphviz .deb cache
+        # the graphviz .debs from the actions cache, not the live Ubuntu mirrors: the same
+        # script and cache as `prepare-cell`'s "Install graphviz (linux)" step, which says why
+        #
+        # RESTORE only, never save: this runs on a tag, and a cache saved under a tag ref is one
+        # only a re-run of that same tag could restore. A tag run can read the default
+        # branch's entries, which the master runs of `ci.yaml` keep for the same image
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - name: Install graphviz
         # the compat cell below runs the real suite, and the needflow tests fail rather than
         # skip without `dot`. This mirrors the core test cells in ci.yaml; java, which the
         # vendored plantuml jar needs, is already on the ubuntu runner image
-        run: sudo apt-get install graphviz
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh install
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           # no `enable-cache`: setup-uv's own default is `auto`, which caches on
