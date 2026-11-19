@@ -78,8 +78,8 @@ jobs:
         # script and cache as `prepare-cell`'s "Install graphviz (linux)" step, which says why
         #
         # RESTORE only, never save: this runs on a tag, and a cache saved under a tag ref is one
-        # no later run can restore. A tag run can read the default branch's entries, which the
-        # master runs of `ci.yaml` keep for the same image
+        # only a re-run of that same tag could restore. A tag run can read the default
+        # branch's entries, which the master runs of `ci.yaml` keep for the same image
         id: graphviz-key
         run: bash .github/actions/prepare-cell/graphviz-linux.sh key
       - name: Restore the graphviz .debs
