@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.3.0`:
+
+1.3.0
+-----
+
+:Released: 2026-11-19
 
 - **TOML 1.1.** ``load_toml`` reads ``ubproject.toml`` as TOML 1.1, so the file may break an
   inline table over several lines or end it with a trailing comma, use the ``\e`` and
