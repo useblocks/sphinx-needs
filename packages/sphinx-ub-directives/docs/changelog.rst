@@ -15,8 +15,9 @@ A preset may be based on a need type written as Sphinx-Needs 9.3.0 writes it, qu
 such names are kept for need types. Templates render with minijinja 3.1, so a value a
 template builds itself may print differently, a ``.toml`` template context file is read as
 TOML 1.1, a self-preset of a domain's directive applies, and ``ub-template :raw: HTML``
-emits its output. The ``needs`` extra now installs Sphinx-Needs 9.3.0 or later, and the
-package requires ub-project 1.3.0 (``>=1.3.0,<2``).
+emits its output. It installs beside Sphinx-Needs 9.3.0 or later only (both render with
+minijinja 3.1), which the ``needs`` extra now installs, and it requires ub-project 1.3.0
+(``>=1.3.0,<2``).
 
 - 🐛 A new preset or declared template directive whose name starts with ``need:`` (in any case) is now refused
   (``directive_preset_name_taken``, ``directive_template_invalid``), whether or not a need type of that name exists

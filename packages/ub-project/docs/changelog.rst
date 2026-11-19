@@ -13,7 +13,8 @@ Changelog
 ``ubproject.toml`` is read as TOML 1.1, and ``loads_toml`` parses TOML text that does not
 come from a file of its own exactly as ``load_toml`` parses a file. Below Python 3.15 the
 package now depends on ``tomli`` 2.4 or later, its first dependency. Sphinx-Needs 9.3.0,
-sphinx-mounts 0.4.0 and sphinx-ub-directives 0.2.0 require this release.
+sphinx-mounts 0.4.0, sphinx-codelinks 2.2.0 and sphinx-ub-directives 0.2.0 require this
+release.
 
 - **TOML 1.1.** ``load_toml`` reads ``ubproject.toml`` as TOML 1.1, so the file may break an
   inline table over several lines or end it with a trailing comma, use the ``\e`` and

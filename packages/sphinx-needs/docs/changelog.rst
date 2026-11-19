@@ -22,10 +22,10 @@ that release. Two further additions are opt-in: the draft ``needs.json`` format 
 carry each need's source from project to project, and :ref:`needs_import_restrict_content`, which parses imported
 content with file insertion and raw markup switched off. Templates render with minijinja 3.1, where 9.2.0 used 2.x,
 and a value a template builds itself may print differently. Several fixes change output; two to read before
-upgrading: a boolean is no longer accepted as an ``integer`` or ``number`` value, and a filter that fails where it
-is tested need by need is a warning, and a needsequence or needgantt over a part link, a dead link or an unknown
-link type is drawn, where each ended the build. ``ENV_DATA_VERSION`` is 28, was 25: the first build after upgrading
-reads every document again. This release requires ub-needs-exchange 1.2.0 and ub-project 1.3.0.
+upgrading: a boolean is no longer accepted as an ``integer`` or ``number`` value (:pr:`2540`), and a filter that
+fails where it is tested need by need, or a needsequence or needgantt over a part link, a dead link or an unknown
+link type, no longer ends the build (:pr:`2541`). ``ENV_DATA_VERSION`` is 28, was 25: the first build after
+upgrading reads every document again. This release requires ub-needs-exchange 1.2.0 and ub-project 1.3.0.
 
 Improvements
 ............

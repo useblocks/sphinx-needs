@@ -19,8 +19,11 @@ target it cannot read, or whose every parse clang refuses, is read as written in
 changes with these fixes, five more C++ shapes are named as clang names them, and five new warnings
 (``codelinks.not_in_compile_database``, ``codelinks.builtin_header``, ``codelinks.marker_above_conditional``,
 ``codelinks.preprocessor_target_unknown`` and ``codelinks.preprocessor_parse_refused``) fail a ``-W`` build until
-the cause is fixed or the warning type suppressed. The first build after upgrading reads every document again.
-This release requires Sphinx-Needs 9.3.0 (``>=9.3.0,<10``).
+the cause is fixed or the warning type suppressed. Among them, a source the project traces that its
+``compile_commands.json`` does not list, and that no entry includes, is still skipped but now warned about
+(``codelinks.not_in_compile_database``), where 2.1.0 skipped it silently: a compilation database written with the
+absolute paths of another checkout, for one, now fails a ``-W`` build that passed. The first build after upgrading
+reads every document again. This release requires Sphinx-Needs 9.3.0 (``>=9.3.0,<10``).
 
 New and Improved
 ................
@@ -128,7 +131,9 @@ Fixes
   <preprocessor_config>` (``target = "thumbv7em-none-eabihf"``), which a header no entry
   includes and a file no entry applies to are read for too; else, as before, the machine
   the analysis runs on. A parse clang refuses for a target with the entry's ``-mcpu=``,
-  ``-march=``, ``-mtune=`` or ``-mabi=`` is made again without them.
+  ``-march=``, ``-mtune=`` or ``-mabi=`` is made again without them, and the file is
+  warned about once (``codelinks.preprocessor_target_unknown``, naming the flags left
+  out), which fails a ``-W`` build.
 - 🐛 A C/C++ file whose target the loaded libclang cannot read is read **as written**,
   every ``#if`` branch kept, so nothing is hidden (:ref:`preprocessor_target`): an
   entry's own ``--target`` naming an architecture libclang does not model
