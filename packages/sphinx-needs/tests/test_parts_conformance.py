@@ -423,7 +423,7 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
         # a runner comparing part ids without their texts
         ("parts", {"REQ_1": {"p1": " one ", "p2": " two"}, "REQ_2": {}}),
         # one skipping a need the case names with no parts
-        ("parts", {"REQ_1": {"p1": " one", "p2": " two"}, "REQ_2": {"p9": ""}}),
+        ("parts", {"REQ_1": {}, "REQ_2": {}}),
         # one ignoring the written order where a case pins it
         ("order", {"REQ_1": ["p2", "p1"]}),
         # one counting the findings as a set
