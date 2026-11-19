@@ -377,6 +377,91 @@ def _check(
     return problems
 
 
+#: A built project as :func:`_check` reads it: REQ_1 with the parts p1 and p2, linked
+#: whole by TEST_A and through p1 by TEST_B; TEST_C with one dead link, to the empty part
+#: of REQ_1, which the tool reports as written; and one repeated part id in REQ_1.
+_BUILT = {
+    "REQ_1": {
+        "parts": {
+            "p1": {"id": "p1", "content": " one", "tests_back": ["TEST_B"]},
+            "p2": {"id": "p2", "content": " two"},
+        },
+        "has_dead_links": False,
+        "tests_back": ["TEST_A", "TEST_B", "TEST_C"],
+    },
+    "REQ_2": {"parts": {}, "has_dead_links": False, "tests_back": []},
+    "TEST_C": {"parts": {}, "has_dead_links": True, "tests_back": []},
+}
+_REPORTED = [
+    "<srcdir>/index.rst:5: WARNING: part_need id p1 in need REQ_1 is already taken. "
+    "need_part may get overridden. [needs.duplicate_part_id]",
+    "<srcdir>/index.rst:9: WARNING: Need 'TEST_C' has unknown outgoing link 'REQ_1.' "
+    "in field 'tests' [needs.link_outgoing]",
+]
+_FAITHFUL = {
+    "clean": True,
+    "expect": {
+        "findings": [{"class": "duplicate part id"}, {"class": "dead link"}],
+        "parts": {"REQ_1": {"p1": " one", "p2": " two"}, "REQ_2": {}},
+        "order": {"REQ_1": ["p1", "p2"]},
+        "dead": {"TEST_C": ["REQ_1."], "REQ_1": []},
+        "back": {
+            "REQ_1": {"tests": ["TEST_A", "TEST_B", "TEST_C"]},
+            "REQ_1.p1": {"tests": ["TEST_B"]},
+        },
+    },
+}
+
+
+def test_the_runner_reads_a_faithful_project_as_one() -> None:
+    assert _check(_FAITHFUL, _BUILT, _REPORTED) == []
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        # a runner comparing part ids without their texts
+        ("parts", {"REQ_1": {"p1": " one ", "p2": " two"}, "REQ_2": {}}),
+        # one skipping a need the case names with no parts
+        ("parts", {"REQ_1": {"p1": " one", "p2": " two"}, "REQ_2": {"p9": ""}}),
+        # one ignoring the written order where a case pins it
+        ("order", {"REQ_1": ["p2", "p1"]}),
+        # one counting the findings as a set
+        ("findings", [{"class": "duplicate part id"}] * 2 + [{"class": "dead link"}]),
+        ("findings", [{"class": "dead link"}]),
+        # one reading a part's back links from its need
+        ("back", {"REQ_1.p1": {"tests": ["TEST_A", "TEST_B", "TEST_C"]}}),
+        # one falling back to the need's back links where a part has none of a type
+        ("back", {"REQ_1.p2": {"tests": ["TEST_A"]}}),
+        # one normalising a dead link's address, or ignoring a need with none
+        ("dead", {"TEST_C": ["REQ_1"]}),
+        ("dead", {"TEST_C": ["REQ_1."], "REQ_1": ["REQ_1.p3"]}),
+    ],
+    ids=[
+        "texts",
+        "a-need-with-no-parts",
+        "order",
+        "findings-as-a-set",
+        "a-finding-left-out",
+        "a-parts-back-links-are-not-its-needs",
+        "a-part-with-no-back-links",
+        "a-dead-address-as-written",
+        "a-need-with-no-dead-links",
+    ],
+)
+def test_the_runner_sees_every_difference(key: str, value: Any) -> None:
+    """Each pin, changed so that it no longer describes the built project, is a problem:
+    each of these is a wrong runner that would leave every case of the corpus green."""
+    case = {**_FAITHFUL, "expect": {**_FAITHFUL["expect"], key: value}}
+    assert _check(case, _BUILT, _REPORTED) != []
+
+
+def test_a_clean_case_sees_any_other_report() -> None:
+    other = "<srcdir>/index.rst:3: WARNING: Unknown directive type: 'nope'. [docutils]"
+    assert _check(_FAITHFUL, _BUILT, [*_REPORTED, other]) != []
+    assert _check({**_FAITHFUL, "clean": False}, _BUILT, [*_REPORTED, other]) == []
+
+
 def _check_filters(app: Any, case: Mapping[str, Any]) -> list[str]:
     """The problems with a case's filters: what each selects over needs and parts, and
     that it reports nothing."""
