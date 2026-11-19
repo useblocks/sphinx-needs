@@ -19,7 +19,7 @@ target it cannot read, or whose every parse clang refuses, is read as written in
 changes with these fixes, five more C++ shapes are named as clang names them, and five new warnings
 (``codelinks.not_in_compile_database``, ``codelinks.builtin_header``, ``codelinks.marker_above_conditional``,
 ``codelinks.preprocessor_target_unknown`` and ``codelinks.preprocessor_parse_refused``) fail a ``-W`` build until
-the cause is fixed or the warning type suppressed. Among them, a source the project traces that its
+the cause is fixed or the warning type suppressed. Among them, a compiled source the project traces that its
 ``compile_commands.json`` does not list, and that no entry includes, is still skipped but now warned about
 (``codelinks.not_in_compile_database``), where 2.1.0 skipped it silently: a compilation database written with the
 absolute paths of another checkout, for one, now fails a ``-W`` build that passed. The first build after upgrading
