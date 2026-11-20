@@ -386,7 +386,10 @@ def _label(
         _id = f'{html.escape(need["id_parent"])}.<b align="{align}">{html.escape(need["id"])}</b>'
     font_10 = '<font point-size="10">'
     font_12 = '<font point-size="12">'
-    return f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>"
+    # a part with no text (or a need with no title) has no text line: dot refuses an
+    # empty <b></b> as a syntax error, so the node is labelled by its type and id alone
+    text_line = f"<b>{title}</b>{br}" if title else ""
+    return f"<{font_12}{name}</font>{br}{text_line}{font_10}{_id}</font>{br}>"
 
 
 def _render_edge(
