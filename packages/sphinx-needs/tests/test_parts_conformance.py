@@ -87,7 +87,7 @@ THIS_TOOL = "sphinx-needs"
 #: row here are removed together.
 MARKED_PROBLEMS: dict[str, list[str]] = {
     "placement-a-hidden-need": [
-        "REQ_HID: parts {}, expected {'h1': ' a hidden part'}",
+        "REQ_HID: parts {}, expected {'h1': 'a hidden part'}",
         "findings ['dead link'], expected []",
         "TEST_1: dead links ['REQ_HID.h1'], expected []",
         "TEST_1: has_dead_links is True, expected False",

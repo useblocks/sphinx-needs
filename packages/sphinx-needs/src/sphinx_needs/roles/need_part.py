@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from typing import Final
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -47,6 +48,15 @@ class NeedPart(nodes.Inline, nodes.Element):
 
 _PART_PATTERN = re.compile(r"\(([\w-]+)\)(.*)", re.DOTALL)
 
+#: The white space an ``(id)`` part's text loses at its ends: the 25 code points of
+#: Unicode's ``White_Space`` property (``design/parts-contract.md`` section 1). Not
+#: ``str.strip()``'s default set, which also holds U+001C to U+001F.
+_PART_TEXT_WHITE_SPACE: Final = (
+    "\t\n\x0b\x0c\r \x85\xa0\u1680"
+    "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
+    "\u2028\u2029\u202f\u205f\u3000"
+)
+
 
 class NeedPartRole(SphinxRole):
     """
@@ -57,11 +67,10 @@ class NeedPartRole(SphinxRole):
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
         # note self.text is the content of the role, with backslash escapes removed
         # TODO perhaps in a future change we should allow escaping parentheses in the part id?
-        # and also strip (unescaped) space before/after the title
         result = _PART_PATTERN.match(self.text)
         if result:
             id_ = result.group(1)
-            title = result.group(2)
+            title = result.group(2).strip(_PART_TEXT_WHITE_SPACE)
         else:
             id_ = hashlib.sha1(self.text.encode("UTF-8")).hexdigest().upper()[:3]
             title = self.text

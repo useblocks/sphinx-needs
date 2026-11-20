@@ -587,8 +587,8 @@ _URL = "http://example.org/__error__.html"
             (
                 # a part's text is cut at 30 characters, as for a local part
                 "a record part whose text ru... (EXT_1.rp)",
-                # the text of a part marked `(p1) local part` keeps its leading space
-                " local part (REQ_1.p1)",
+                # the text of a part marked `(p1) local part` has no leading space
+                "local part (REQ_1.p1)",
                 "a dotted part (EXT_1.a.b)",
             ),
             id="show-link-title",

@@ -198,7 +198,7 @@
         "id": "awesome_id"
       },
       "multiline_id": {
-        "content": "\nhas multi-lines",
+        "content": "has multi-lines",
         "id": "multiline_id"
       }
     },
@@ -550,7 +550,7 @@
     "constraints_error": null,
     "constraints_passed": true,
     "constraints_results": {},
-    "content": "\nhas multi-lines",
+    "content": "has multi-lines",
     "docname": "index",
     "doctype": ".rst",
     "duration": null,

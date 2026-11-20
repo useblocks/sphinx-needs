@@ -62,14 +62,14 @@ def test_doc_build_html(test_app):
     # id_part is the part id.
     assert (
         "[NEEDPART][SP_TOO_001.cli] [SP_TOO_001.cli] [SP_TOO_001] [cli] "
-        "[SPEC] [SP_TOO_001.cli]  Command parser support (implemented) Specification/spec"
+        "[SPEC] [SP_TOO_001.cli] Command parser support (implemented) Specification/spec"
         in html
     )
 
     # Explicit inline templates ``[[ ... ]]`` are rendered as Jinja too, using
     # ``[[``/``]]`` as the variable delimiters (so filters work there as well).
     assert '<em class="xref need">IMPL</em>' in html
-    assert '<em class="xref need"> COMMAND PARSER SUPPORT</em>' in html
+    assert '<em class="xref need">COMMAND PARSER SUPPORT</em>' in html
 
 
 @pytest.mark.parametrize(
