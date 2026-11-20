@@ -76,6 +76,26 @@ CLASSES = {
 TOOLS = ("sphinx-needs", "ubcode")
 THIS_TOOL = "sphinx-needs"
 
+#: Each case marked ``divergent`` for sphinx-needs, with the exact problems it gives
+#: today. A marked case is an expected failure for the deviation its marker names and
+#: for nothing else: any other list of problems is a second deviation, and fails.
+#:
+#: This table is the Python runner's alone; the shared corpus keeps its marker shape.
+#: A fix of a deviation empties its list, which fails the case until its marker and its
+#: row here are removed together.
+MARKED_PROBLEMS: dict[str, list[str]] = {
+    "placement-a-hidden-need": [
+        "REQ_HID: parts {}, expected {'h1': ' a hidden part'}",
+        "findings ['dead link'], expected []",
+        "TEST_1: dead links ['REQ_HID.h1'], expected []",
+        "TEST_1: has_dead_links is True, expected False",
+        "REQ_HID.h1: no such part",
+    ],
+    "addressing-an-empty-part": [
+        "TEST_1: dead links ['REQ_1'], expected ['REQ_1.']",
+    ],
+}
+
 #: The configuration the runner gives every case besides its ``ubproject.toml``.
 CONF_PY = """\
 extensions = {extensions!r}
@@ -186,7 +206,11 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert sorted(order) == sorted(expect["parts"][need_id]), (name, need_id)
         for need_id, dead in expect.get("dead", {}).items():
             assert dead == sorted(set(dead)), (name, need_id)
+        # a back-link pin names a link type the case has: `links`, or one its
+        # `ubproject.toml` declares (a misspelt one would read as no back links)
+        link_types = {"links", *tomllib.loads(case["config"])["needs"].get("links", {})}
         for address, by_type in expect.get("back", {}).items():
+            assert set(by_type) <= link_types, (name, address, sorted(by_type))
             for ids in by_type.values():
                 assert ids == sorted(set(ids)), (name, address)
         for entry in case.get("filters", []):
@@ -211,6 +235,10 @@ def test_every_marker_names_a_known_tool() -> None:
             assert re.search(r"\(#\d+\)|\(not filed yet\)", marker[THIS_TOOL]), case[
                 "name"
             ]
+    marked = {case["name"] for case in CASES if THIS_TOOL in case.get("divergent", {})}
+    assert marked == set(MARKED_PROBLEMS), (
+        "every case marked for sphinx-needs, and no other, has its problems recorded"
+    )
 
 
 def test_the_header_lists_every_class_and_section() -> None:
@@ -503,10 +531,16 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     marker = case.get("divergent", {}).get(THIS_TOOL)
     if marker is None:
         assert problems == [], f"{case['name']}: {case['why']}"
-    elif problems:
-        pytest.xfail(f"{marker}: {problems}")
-    else:
+    elif not problems:
         pytest.fail(
             f"{case['name']} is marked divergent for {THIS_TOOL} ({marker}) and passes: "
             "remove the marker"
         )
+    elif problems != MARKED_PROBLEMS[case["name"]]:
+        pytest.fail(
+            f"{case['name']} is marked divergent for {THIS_TOOL} ({marker}), and a "
+            f"second deviation appeared: it gives {problems}, where the marked "
+            f"deviation gives {MARKED_PROBLEMS[case['name']]}"
+        )
+    else:
+        pytest.xfail(f"{marker}: {problems}")
