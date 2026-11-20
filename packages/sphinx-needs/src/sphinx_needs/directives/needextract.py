@@ -31,8 +31,7 @@ from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import find_and_replace_node_content
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import log_warning
-from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
-from sphinx_needs.roles.need_part import _PART_PATTERN
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
 if TYPE_CHECKING:
@@ -184,16 +183,16 @@ def process_needextract(
             remove_node_from_tree(node)
             continue
         elif need_filter_arg:
-            # check if given filter argument is need-id; a part address names its
-            # need, and any other argument is read as it always was
-            is_address = _is_part_address(need_filter_arg)
-            if (
-                need := need_at(all_needs, need_filter_arg)
-                if is_address
-                else all_needs.get(need_filter_arg)
-            ) is not None:
+            # check if given filter argument is need-id, or the address of a part
+            # the need has, which names the need; any other argument is read as before
+            if (need := need_at(all_needs, need_filter_arg)) is not None:
                 need_filter_arg = f'id == "{need["id"]}"'
-            elif _names_a_need(need_filter_arg, is_address, needs_config):
+            elif id_matched_by_patterns(
+                needs_config.id_regex,
+                need_filter_arg,
+                read_id(need_filter_arg, needs_config.namespaced_ids)[1],
+                full=True,
+            ):
                 # check if given filter argument is need-id, but not exists
                 log_warning(
                     LOGGER,
@@ -243,53 +242,6 @@ def process_needextract(
         # Transformers use the complete document (doctree), so we perform this action once per
         # needextract. No matter if one or multiple needs got copied
         Substitutions(doctree).apply()
-
-
-def _is_part_address(argument: str) -> bool:
-    """Whether an argument is read as a part address, ``ID.part``.
-
-    It is when what follows its first ``.`` (split as a link's address is,
-    :meth:`~sphinx_needs.need_item.NeedLink.parse_address`) is a part id: the id of
-    the ``:np:`` role's grammar (letters, digits, ``_`` and ``-``), where a part a
-    record states may also hold a ``.``. Anything else, a filter such as
-    ``status.upper() == "OPEN"`` or ``c.this_doc()`` included, is not.
-
-    :param argument: The argument as written.
-    """
-    if (part := NeedLink.parse_address(argument).part) is None:
-        return False
-    # the role's own pattern, given the part as its ``(id)``; a `.` read as an id
-    # character there
-    as_role_id = part.replace(".", "-")
-    match = _PART_PATTERN.match(f"({as_role_id})")
-    return match is not None and match.group(1) == as_role_id
-
-
-def _names_a_need(
-    argument: str, is_address: bool, needs_config: NeedsSphinxConfig
-) -> bool:
-    """Whether an argument naming no need is read as an id rather than as a filter.
-
-    It is when the id pattern accepts it whole (``needs_id_regex``, matched in full),
-    or when it is a part address (:func:`_is_part_address`) whose need id the pattern
-    accepts.
-
-    :param argument: The argument as written.
-    :param is_address: Whether the argument is a part address.
-    :param needs_config: The Sphinx-Needs configuration.
-    """
-    candidates = [argument]
-    if is_address:
-        candidates.append(NeedLink.parse_address(argument).id)
-    for need_id in candidates:
-        if id_matched_by_patterns(
-            needs_config.id_regex,
-            need_id,
-            read_id(need_id, needs_config.namespaced_ids)[1],
-            full=True,
-        ):
-            return True
-    return False
 
 
 @measure_time("build_needextract")
