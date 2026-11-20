@@ -214,8 +214,23 @@ Other
    :need_part:`(s1) another part`, after :need:`REQ_1.p1`.
 """
 
-#: where three writers that once ended the build (or dropped the node) put a page
-_WRITTEN = {"text": "*.txt", "man": "*.1", "texinfo": "*.texi"}
+_PART_TEXTS = ("a part", "another part")
+_PART_INLINES = (
+    '<inline classes="need-part" ids="REQ_1.p1">',
+    '<inline classes="need-part" ids="SPEC_1.s1">',
+)
+
+#: where a writer puts a page, and what of the parts it must write there: ``text``,
+#: ``man`` and ``epub`` ended the build on a part, ``texinfo`` warned and wrote its
+#: text, and ``xml`` and ``pseudoxml`` wrote a ``NeedPart`` element around its inline
+_WRITTEN: dict[str, tuple[str, tuple[str, ...]]] = {
+    "text": ("*.txt", _PART_TEXTS),
+    "man": ("*.1", _PART_TEXTS),
+    "texinfo": ("*.texi", _PART_TEXTS),
+    "epub": ("*.xhtml", (*_PART_TEXTS, 'id="REQ_1.p1"', 'id="SPEC_1.s1"')),
+    "xml": ("*.xml", _PART_INLINES),
+    "pseudoxml": ("*.pseudoxml", _PART_INLINES),
+}
 
 
 def test_a_page_with_parts_builds_with_every_builder(
@@ -263,14 +278,15 @@ def test_a_page_with_parts_builds_with_every_builder(
         if unknown:
             failures[name] = "\n".join(unknown)
             continue
-        if pattern := _WRITTEN.get(name):
+        if name in _WRITTEN:
+            pattern, expected = _WRITTEN[name]
             written = "".join(
                 path.read_text(encoding="utf-8")
                 for path in Path(app.outdir).glob(pattern)
             )
-            missing = [t for t in ("a part", "another part") if t not in written]
+            missing = [t for t in expected if t not in written]
             if missing:
-                failures[name] = f"the part text {missing} is not written"
+                failures[name] = f"{missing} is not written"
 
     assert not failures, "a page with parts fails with these builders:\n" + "\n".join(
         f"- {name}: {reason}" for name, reason in failures.items()
