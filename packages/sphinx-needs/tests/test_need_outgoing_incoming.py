@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 from sphinx.application import Sphinx
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
 CONF = 'extensions = ["sphinx_needs"]\n'
@@ -208,6 +209,102 @@ def test_need_incoming_on_a_part_lists_the_parts_back_links(test_app: Sphinx):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert _paragraph(html, "Part") == _incoming("REQ_1", "SPEC_B")
     assert _paragraph(html, "Need") == _incoming("REQ_1", "SPEC_A", "SPEC_B", "SPEC_C")
+
+
+def _ids(paragraph: str) -> list[str]:
+    """The ids a ``:need_incoming:`` paragraph lists, in the order it lists them."""
+    return re.findall(r'<a class="reference internal" [^>]*>([^<]+)</a>', paragraph)
+
+
+SIBLINGS = """\
+Siblings
+========
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p10) ten`
+
+.. spec:: Links the first part
+   :id: SPEC_F
+   :links: REQ_1.p1
+
+.. spec:: Links the tenth part only
+   :id: SPEC_T
+   :links: REQ_1.p10
+
+.. spec:: Links the first part too
+   :id: SPEC_B
+   :links: REQ_1.p1
+
+.. spec:: Blocks the first part
+   :id: SPEC_K
+   :blocks: REQ_1.p1
+
+.. spec:: Blocks the need
+   :id: SPEC_M
+   :blocks: REQ_1
+
+Part: :need_incoming:`REQ_1.p1`
+
+Need: :need_incoming:`REQ_1`
+"""
+
+#: :data:`SIBLINGS`, with the second link type ``blocks``
+SIBLINGS_PROJECT = {
+    "buildername": "html",
+    "files": [
+        (Path("conf.py"), CONF + 'needs_links = {"blocks": {}}\n'),
+        (Path("index.rst"), SIBLINGS),
+    ],
+}
+
+
+def _siblings(app: Sphinx) -> tuple[list[str], list[str]]:
+    """Build :data:`SIBLINGS`: the ids listed for ``REQ_1.p1`` and for ``REQ_1``."""
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    return _ids(_paragraph(html, "Part")), _ids(_paragraph(html, "Need"))
+
+
+@pytest.mark.parametrize(
+    "test_app", [SIBLINGS_PROJECT], indirect=True, ids=["siblings"]
+)
+def test_need_incoming_on_a_part_is_not_a_prefix_of_its_siblings(test_app: Sphinx):
+    """``REQ_1.p1`` does not list ``SPEC_T``, which links ``REQ_1.p10`` alone, an
+    address ``REQ_1.p1`` is a prefix of; ``REQ_1`` lists it."""
+    part, need = _siblings(test_app)
+    assert "SPEC_T" not in part
+    assert set(part) == {"SPEC_F", "SPEC_B"}
+    assert "SPEC_T" in need
+
+
+@pytest.mark.parametrize(
+    "test_app", [SIBLINGS_PROJECT], indirect=True, ids=["siblings"]
+)
+def test_need_incoming_on_a_part_reads_one_link_type(test_app: Sphinx):
+    """The plain form reads ``links`` alone, on the part as on the need: neither lists
+    ``SPEC_K``, which blocks ``REQ_1.p1``, and ``REQ_1`` does not list ``SPEC_M``, which
+    blocks it whole."""
+    part, need = _siblings(test_app)
+    assert not {"SPEC_K", "SPEC_M"} & set(need)
+    assert "SPEC_K" not in part
+    assert set(part) == {"SPEC_F", "SPEC_B"}
+
+
+@pytest.mark.parametrize(
+    "test_app", [SIBLINGS_PROJECT], indirect=True, ids=["siblings"]
+)
+def test_need_incoming_on_a_part_lists_in_the_parts_stored_order(test_app: Sphinx):
+    """``REQ_1.p1`` lists the needs linking it in the order the part's stored back links
+    hold them, read from the build's data."""
+    part, _ = _siblings(test_app)
+    stored = SphinxNeedsData(test_app.env).get_needs_view()["REQ_1"].get_part("p1")
+    assert stored is not None
+    order = [link.to_filter_string() for link in stored.backlinks["links"]]
+    assert len(order) == 2
+    assert part == order
 
 
 #: a role writing the node the need card's incoming row writes, ``NeedIncoming`` with a

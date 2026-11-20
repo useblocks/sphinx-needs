@@ -73,8 +73,10 @@ def need(
     parent: str | None = None,
     children: list[str] | None = None,
     incoming: list[str] | None = None,
+    blocked_by: list[str] | None = None,
     parts: tuple[str, ...] = (),
     part_incoming: dict[str, list[str]] | None = None,
+    part_blocked_by: dict[str, list[str]] | None = None,
     docname: str | None = None,
     **core: Any,
 ) -> NeedItem:
@@ -85,9 +87,12 @@ def need(
     :param parent: The id of the need this one is nested in.
     :param children: The ids of the needs nested in this one.
     :param incoming: The ids of the needs linking to this one.
+    :param blocked_by: The ids of the needs blocking this one.
     :param parts: The ids of the parts of the need.
     :param part_incoming: Per part id, the ids of the needs linking to that part, which
         ``incoming`` lists too, as a build lists them.
+    :param part_blocked_by: Per part id, the ids of the needs blocking that part, which
+        ``blocked_by`` lists too.
     :param docname: The document the need is defined in, if it matters.
     """
     return NeedItem(
@@ -101,7 +106,7 @@ def need(
         },
         backlinks={
             "links": incoming or [],
-            "blocks": [],
+            "blocks": blocked_by or [],
             "parent_needs": children or [],
         },
         parts=tuple(
@@ -112,7 +117,11 @@ def need(
                     "links": [
                         NeedLink.from_string(source)
                         for source in (part_incoming or {}).get(part, [])
-                    ]
+                    ],
+                    "blocks": [
+                        NeedLink.from_string(source)
+                        for source in (part_blocked_by or {}).get(part, [])
+                    ],
                 },
             )
             for part in parts
@@ -320,6 +329,29 @@ def test_walk_narrows_the_roots_first_step_alone(root, direction, extra):
         view(req_1, a, b, c, x, y), root, ["links"], direction, None
     )
     assert set(walked) == {"X", "REQ_1", "A", "B", "C", *extra}
+
+
+def test_walk_from_a_part_narrows_the_first_step_of_every_link_type():
+    """Over ``links`` and ``blocks``, the first incoming step from ``REQ_1.p1`` reads
+    the part's back links of each type: ``K``, blocking ``p1``, is reached; ``Y``,
+    blocking ``REQ_1`` whole, is not."""
+    req_1 = need(
+        "REQ_1",
+        parts=("p1",),
+        incoming=["B"],
+        blocked_by=["Y", "K"],
+        part_incoming={"p1": ["B"]},
+        part_blocked_by={"p1": ["K"]},
+    )
+    b = need("B", links=["REQ_1.p1"])
+    y = need("Y", blocks=["REQ_1"])
+    k = need("K", blocks=["REQ_1.p1"])
+    needs = view(req_1, b, y, k)
+    walked = filter_by_tree(needs, "REQ_1.p1", ["links", "blocks"], "incoming", None)
+    assert set(walked) == {"REQ_1", "B", "K"}
+    # the need whole steps in through both
+    walked = filter_by_tree(needs, "REQ_1", ["links", "blocks"], "incoming", None)
+    assert set(walked) == {"REQ_1", "B", "K", "Y"}
 
 
 @pytest.mark.parametrize(
