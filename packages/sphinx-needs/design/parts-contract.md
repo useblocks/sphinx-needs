@@ -6,9 +6,9 @@ needs one of those is a child need. Where a need is expected, a part address rea
 
 This page states what a part is and how it is addressed. Its executable half is
 `tests/fixtures/parts_conformance.toml`, run by `tests/test_parts_conformance.py`; this
-repository is its repository of record, and ubCode vendors it. Each section below names the
-corpus section that pins it. The user's documentation is the `need_part` section of
-`docs/roles.rst`. The findings named here (`duplicate part id`, `part outside a need`,
+repository is its repository of record, and ubCode is to vendor it. Each section below
+names the corpus section that pins it. The user's documentation is the `need_part` section
+of `docs/roles.rst`. The findings named here (`duplicate part id`, `part outside a need`,
 `dead link`, `link target type`, `link condition`) are classes of this contract: each tool
 reports them under codes of its own, which the corpus header maps.
 
@@ -23,12 +23,14 @@ the rest.
   space, a `.`, a `:` or a `(` inside the parentheses means the text has no id.
 - **The text** is everything after the closing parenthesis, exactly as the markup gives the
   role's content: a leading space is kept (`(p1) first` has the text ` first`), the text may
-  be empty, and it may span lines. It is never read as a reference: `(p3) see <target>` has
-  the text ` see <target>`.
+  be empty, and it may span lines, keeping its line breaks without the continuation lines'
+  indentation. It is never read as a reference: `(p3) see <target>` has the text
+  ` see <target>`.
 - **No id.** When the text does not start with `(id)` -- no parenthesis, a character before
   it (`!(p4) text`), or a character that is not an id character -- the part's id is the
-  first three hexadecimal digits, upper case, of the SHA-1 of the role's whole text encoded
-  as UTF-8, and its text is that whole text.
+  first three hexadecimal digits, upper case, of the SHA-1 of the role's whole text as the
+  markup gives it (after backslash escapes are removed) encoded as UTF-8, and its text is
+  that whole text.
 
 ## 2. Which need a part belongs to (corpus: `placement`, `stated`)
 
@@ -38,7 +40,7 @@ comes from: its directive's body in reStructuredText or MyST, a file it includes
 item of `list2need`, the body of a multi-line need in source code, or the body of a test
 case. A role outside every need is one finding, `part outside a need`, and makes no part.
 
-A need whose content is not rendered on a page, an external need, has the parts its record
+An external need, whose content is not part of this project, has the parts its record
 states, each with the id and the text the record gives.
 
 ## 3. One id, one part (corpus: `duplicates`)
@@ -83,7 +85,7 @@ split off, and a namespace segment holds no `.`: the grammar of a need id, secti
 
 ## 7. What a part answers in a filter that asks for parts (corpus: `answers`)
 
-A filter that asks for parts tests each part after its need. A part answers its own `id`
+A filter that asks for parts tests the parts beside the needs. A part answers its own `id`
 (the part id), `id_complete` (`ID.part`), `id_parent` (its need's id), `is_part` (true) and
 `is_need` (false), its text as `content`, no links out (every link type is empty), and its
 own back links (`<link type>_back`). Every other name it answers is its need's: the need's
@@ -94,7 +96,8 @@ included. A part's `title` is not settled here (section 9).
 
 Where a need is expected, a part address reads as its need: a derived field or a function
 that follows a link through a part reads the need's values, and a count over back links
-counts a part link as a link to the need.
+counts a part link as a link to the need. The corpus pins this for links, and pins each
+other place a need id is given as that place comes to follow it.
 
 ## 9. Not settled here
 
