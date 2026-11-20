@@ -4,7 +4,7 @@ import pytest
 from docutils import __version__ as doc_ver
 from lxml import html as html_parser
 
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -302,6 +302,9 @@ Cells
 .. req:: No parts
    :id: REQ_005
 
+.. req:: A need whose id holds a dot, beside REQ_005
+   :id: REQ_005.1
+
 .. spec:: Links
    :id: SPEC_1
    :links: REQ_1, REQ_1.p1, REQ_1.p9, REQ_1., NOPE_1, NOPE_1.p1, REQ_9.x, REQ_005.1.p1, EXT_1, EXT_1.rp, EXT_1.a.b, EXT_1.zz
@@ -372,7 +375,8 @@ def test_needtable_link_cell_reads_a_link_as_a_link_is_read(test_app):
         "NOPE_1.p1": (None, None),
         # a need whose id holds a dot, as in 9.3.0
         "REQ_9.x": (None, None),
-        # the part ``1.p1`` of REQ_005, which it does not have
+        # the part ``1.p1`` of REQ_005, which it does not have (the need REQ_005.1
+        # has no part ``p1`` either)
         "REQ_005.1.p1": (None, None),
         # an external need's part links the need's page, as before; a part it does
         # not have is dead
@@ -382,3 +386,70 @@ def test_needtable_link_cell_reads_a_link_as_a_link_is_read(test_app):
         "EXT_1.zz": (None, None),
     }
     assert incoming == {"SPEC_1": ("#SPEC_1", internal), "REQ_9.x": (None, None)}
+
+
+# A need whose id holds a ``.`` beside a need named by the text before that ``.``: a link
+# naming the dotted need whole is a link to that need, rendered as in 9.3.0, in the
+# forward column and in the back-link column (where it names the source of a link). What
+# such a link means is not settled; it is not read as a part ``1`` of REQ_005, which
+# REQ_005 does not have.
+
+DOTTED_BESIDE_INDEX = """\
+Cells
+=====
+
+.. req:: No parts
+   :id: REQ_005
+
+.. req:: A need whose id holds a dot, beside REQ_005
+   :id: REQ_005.1
+   :links: REQ_2
+
+.. req:: Linked
+   :id: REQ_2
+
+.. spec:: Links
+   :id: SPEC_1
+   :links: REQ_005.1
+
+.. needtable::
+   :columns: id, links
+   :filter: id == "SPEC_1"
+   :style: table
+
+.. needtable::
+   :columns: id, links_back
+   :filter: id == "REQ_2"
+   :style: table
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), 'extensions = ["sphinx_needs"]\n'),
+                (Path("index.rst"), DOTTED_BESIDE_INDEX),
+            ],
+        }
+    ],
+    ids=["dotted-beside"],
+    indirect=True,
+)
+def test_needtable_link_cell_a_dotted_need_beside_its_prefix(test_app):
+    """The cell links ``REQ_005.1`` as in 9.3.0, in both columns. Resolution reports
+    SPEC_1's link dead, as in 9.3.0 (its address split at the first ``.``): that
+    reading of a link to a need whose id holds a ``.`` is not settled, and not changed
+    here."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:14: WARNING: Need 'SPEC_1' has unknown outgoing link "
+        "'REQ_005.1' in field 'links' [needs.link_outgoing]"
+    ]
+    outgoing, incoming = _link_cells(app)
+    assert outgoing == {"REQ_005.1": ("#REQ_005.1", "reference internal")}
+    assert incoming == {"REQ_005.1": ("#REQ_005.1", "reference internal")}
