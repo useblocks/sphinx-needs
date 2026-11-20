@@ -389,12 +389,12 @@ def _build_every_route(
         app.cleanup()
 
 
-def test_dependent_on_a_derived_or_summary_link_type(
+def test_dependent_on_a_summary_or_union_link_type(
     make_app: Any, tmp_path: Path
 ) -> None:
-    """Beside a ``derive`` or ``derive_by_type`` of kind ``links`` (an ordinary link
-    type for it), a ``copy`` or ``collect`` and ``summary = true`` (a summary) and a
-    union (where it means nothing), on a ``needs_links`` entry and on a need type's
+    """On a summary link type (``summary = true``, a ``copy`` or ``collect``), a union,
+    and a ``links`` rule's link type (an ordinary one for ``dependent``), beside a
+    ``derive`` or a ``derive_by_type``, on a ``needs_links`` entry and on a need type's
     declaration alike, ``dependent`` is accepted with no finding -- no
     ``derive_invalid``, as ``summary = false`` beside a copy is -- and kept as given;
     every rule computes its links as without it."""

@@ -3298,7 +3298,7 @@ satisfied_by_back = ["REQ_1", "SPEC_1"]
 
 [[case]]
 name = "type-local-link-dependent-disagrees"
-why = "dependent is set by the first root declaration, a silent one too (\"source\"), and another declaration may repeat it and no more: a later root giving \"target\" where the first is silent, or \"source\" where the first gives \"target\", is one type_conflict and does not declare the link type (its need holds [], a link there is undeclared_for_type); a child giving another value is one type_conflict and still declares it through its parent"
+why = "dependent is set by the first root declaration, a silent one too (\"source\"), and another declaration may repeat it and no more: a later root giving \"target\" where the first is silent, or \"source\" where the first gives \"target\", is one type_conflict and does not declare the link type (its need holds [], a link there is undeclared_for_type); a child giving another value is one type_conflict and still declares it through its parent, and a child repeating its parent's value declares it, with no finding"
 config = '''
 [needs.types.a]
 title = "A"
@@ -3328,6 +3328,14 @@ inherits = "c"
 [needs.types.cc.links.up]
 dependent = "both"
 
+[needs.types.cr]
+title = "CR"
+prefix = "CR_"
+inherits = "c"
+
+[needs.types.cr.links.up]
+dependent = "target"
+
 [needs.types.d]
 title = "D"
 prefix = "D_"
@@ -3351,6 +3359,10 @@ source = '''
    :id: CC_001
    :up: A_001
 
+.. cr:: A child repeating its parent's value
+   :id: CR_001
+   :up: A_001
+
 .. d:: Refused root: up's dependent is target
    :id: D_001
    :up: A_001
@@ -3361,6 +3373,8 @@ rel = []
 [case.expect.needs.C_001]
 up = ["A_001"]
 [case.expect.needs.CC_001]
+up = ["A_001"]
+[case.expect.needs.CR_001]
 up = ["A_001"]
 [case.expect.needs.D_001]
 up = []
