@@ -17,7 +17,7 @@ Internal changes
   a part answers in a filter that asks for parts; ``design/parts-contract.md`` states the rules and names what is
   not settled yet. This repository is the corpus's repository of record, and ubCode is to vendor it. Two cases are
   marked as expected failures of today's sphinx-needs: a hidden need has no parts (:issue:`1321`), and a dead link
-  to an empty part is reported without its ``.``. No behaviour changes.
+  to an empty part is reported without its ``.``. No behaviour changes. (:pr:`2550`)
 
 .. _`release:9.3.0`:
 
