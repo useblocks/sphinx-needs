@@ -15,6 +15,7 @@ from sphinx.transforms import SphinxTransformer
 from sphinx.util.logging import getLogger
 
 from sphinx_needs._namespaced_ids import id_matched_by_patterns, read_id
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsExtractType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -30,7 +31,7 @@ from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import find_and_replace_node_content
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
 if TYPE_CHECKING:
@@ -182,15 +183,10 @@ def process_needextract(
             remove_node_from_tree(node)
             continue
         elif need_filter_arg:
-            # check if given filter argument is need-id
-            if need_filter_arg in all_needs:
-                need_filter_arg = f'id == "{need_filter_arg}"'
-            elif id_matched_by_patterns(
-                needs_config.id_regex,
-                need_filter_arg,
-                read_id(need_filter_arg, needs_config.namespaced_ids)[1],
-                full=True,
-            ):
+            # check if given filter argument is need-id (a part address names its need)
+            if (need := need_at(all_needs, need_filter_arg)) is not None:
+                need_filter_arg = f'id == "{need["id"]}"'
+            elif _names_a_need(need_filter_arg, needs_config):
                 # check if given filter argument is need-id, but not exists
                 log_warning(
                     LOGGER,
@@ -240,6 +236,28 @@ def process_needextract(
         # Transformers use the complete document (doctree), so we perform this action once per
         # needextract. No matter if one or multiple needs got copied
         Substitutions(doctree).apply()
+
+
+def _names_a_need(argument: str, needs_config: NeedsSphinxConfig) -> bool:
+    """Whether an argument naming no need is read as an id rather than as a filter.
+
+    It is when the id pattern accepts it whole (``needs_id_regex``, matched in full),
+    or when it is a part address (read as a link's address is,
+    :meth:`~sphinx_needs.need_item.NeedLink.parse_address`) whose need id the pattern
+    accepts.
+
+    :param argument: The argument as written.
+    :param needs_config: The Sphinx-Needs configuration.
+    """
+    for need_id in (argument, NeedLink.parse_address(argument).id):
+        if id_matched_by_patterns(
+            needs_config.id_regex,
+            need_id,
+            read_id(need_id, needs_config.namespaced_ids)[1],
+            full=True,
+        ):
+            return True
+    return False
 
 
 @measure_time("build_needextract")
