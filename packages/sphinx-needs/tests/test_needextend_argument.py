@@ -511,3 +511,96 @@ def test_a_filter_whose_first_word_is_id_like_is_a_filter(
     assert {need_id: needs[need_id]["tags"] for need_id in ("REQ_1", "SPEC_1")} == {
         need_id: ["x"] if need_id == extended else [] for need_id in ("REQ_1", "SPEC_1")
     }
+
+
+WORD_INDEX = """\
+Index
+=====
+
+.. req:: One
+   :id: {need_id}
+   :status: open
+
+   Text with :np:`(p1) the part`.
+
+.. req:: Supplier req
+   :id: {namespaced_id}
+
+.. needextend:: {argument}
+   :+tags: x
+"""
+
+WORD_CONF = (
+    CONF + "needs_namespaced_ids = True\n" + 'needs_variant_data = {"flag": True}\n'
+)
+
+#: the id pattern (``None``: the default), and the ids of the needs under it
+WORD_ID_REGEXES = {
+    "default-id-regex": (None, "REQ_ONE", "SUP01::REQ_7"),
+    "lower-case-id-regex": ("^[a-z0-9_]+", "req_one", "sup01::req_7"),
+    "mixed-case-id-regex": ("^[A-Za-z0-9_]+", "REQ_ONE", "SUP01::REQ_7"),
+}
+
+#: (argument as written, the id it names)
+WORD_ARGUMENTS = [
+    ("c.id.ns", "c.id.ns"),
+    ("<c.id.ns>", "c.id.ns"),
+    ("var.flag", "var.flag"),
+    ("<var.flag>", "var.flag"),
+]
+
+
+def _word_app(regex: str, argument: str) -> dict[str, object]:
+    pattern, need_id, namespaced_id = WORD_ID_REGEXES[regex]
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("conf.py"),
+                WORD_CONF
+                + ("" if pattern is None else f"needs_id_regex = {pattern!r}\n"),
+            ),
+            (
+                Path("index.rst"),
+                WORD_INDEX.format(
+                    need_id=need_id, namespaced_id=namespaced_id, argument=argument
+                ),
+            ),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "named"),
+    [
+        (_word_app(regex, argument), named)
+        for regex in WORD_ID_REGEXES
+        for argument, named in WORD_ARGUMENTS
+    ],
+    ids=[
+        f"{regex}-{name}"
+        for regex in WORD_ID_REGEXES
+        for name in (
+            "id-facet",
+            "id-facet-bracketed",
+            "variant-data",
+            "variant-data-bracketed",
+        )
+    ],
+    indirect=["test_app"],
+)
+def test_a_filter_with_no_filter_character_is_an_id_as_before(
+    test_app: Sphinx, named: str
+):
+    """``c.id.ns`` and ``var.flag`` hold none of the four characters that make a
+    one-word argument a filter, so each is read as an id, under every id pattern, as in
+    9.3.0: it names no need, and no need has it as a part, so it is reported as an id
+    naming no need. Nothing is extended."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:13: WARNING: Provided id {named!r} for needextend does "
+        "not exist. [needs.needextend]"
+    ]
+    assert all(need["tags"] == [] for need in needs_by_id(app).values())
