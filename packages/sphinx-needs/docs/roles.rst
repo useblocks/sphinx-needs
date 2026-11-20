@@ -94,6 +94,10 @@ This sub-ids can be linked and referenced in other need functions like links and
 
 The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
 
+A part written ``(id) text`` has as its text everything after the ``(id)``, without white space at either end:
+``(2) An acceleration`` and ``(2)An acceleration`` both have the text ``An acceleration``, and a text that starts
+on the line after the ``(id)`` starts with its first word. White space and line breaks inside the text are kept.
+
 A need part is a named, addressable piece of one need: an id, a text, and the links that point at it.
 It has no fields, no type, no status and no outgoing links of its own; a piece of a need that needs any of
 those is a need of its own. A link to a part, ``<need id>.<part id>``, reads and counts as a link to its need:

@@ -39,8 +39,9 @@
 #     of the id; the need types are the default ones (`req`, `spec`, `impl`, `test`) and
 #     those the loaded extensions add
 #   - `parts.<ID>` is the SET of the need's parts, each its id and its text, the text
-#     exactly as the tool stores it (a leading space included); `{}` says the need has
-#     none. A need the case does not name there is not compared
+#     exactly as the tool stores it (an `(id)` part's text has no white space at its
+#     ends, a text a record states is as given); `{}` says the need has none. A need the
+#     case does not name there is not compared
 #   - `dead.<ID>` is the set of the need's links the tool reports as dead, each the address
 #     as written with its condition taken off
 #     (`REQ_1.nope` for `REQ_1.nope[status == "x"]`); `[]` says it reports none. No case
@@ -119,7 +120,7 @@
 [[case]]
 name = "grammar-id-and-text"
 section = "grammar"
-why = "(id) text gives the part id and, as its text, everything after the closing parenthesis, a leading space kept and none added; :need_part: is :np:"
+why = "(id) text gives the part id and, as its text, everything after the closing parenthesis without white space at its ends, none added; :need_part: is :np:"
 clean = true
 config = '''
 [needs]
@@ -133,7 +134,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { p1 = " with a space", p2 = "without one", p3 = " by the long name" }
+REQ_1 = { p1 = "with a space", p2 = "without one", p3 = "by the long name" }
 
 [[case]]
 name = "grammar-id-characters"
@@ -151,7 +152,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { a-b = " dash", x_1 = " underscore", 42 = " digits", -Ab_ = " mixed" }
+REQ_1 = { a-b = "dash", x_1 = "underscore", 42 = "digits", -Ab_ = "mixed" }
 
 [[case]]
 name = "grammar-a-unicode-id"
@@ -170,7 +171,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { "é1" = " unicode id" }
+REQ_1 = { "é1" = "unicode id" }
 
 [[case]]
 name = "grammar-no-id-given"
@@ -244,7 +245,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { p3 = " see <somewhere>" }
+REQ_1 = { p3 = "see <somewhere>" }
 
 [[case]]
 name = "grammar-an-empty-text"
@@ -281,7 +282,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { m1 = " first line\nsecond line" }
+REQ_1 = { m1 = "first line\nsecond line" }
 
 # --- placement -------------------------------------------------------------------------
 
@@ -312,8 +313,8 @@ source = '''
 [case.expect]
 findings = [{ class = "dead link" }]
 [case.expect.parts]
-REQ_OUT = { o1 = " before", o2 = " after" }
-SPEC_IN = { n1 = " inside" }
+REQ_OUT = { o1 = "before", o2 = "after" }
+SPEC_IN = { n1 = "inside" }
 [case.expect.dead]
 TEST_1 = ["REQ_OUT.n1"]
 
@@ -336,7 +337,7 @@ files = { "fragment.txt" = '''A fragment with :np:`(inc) an included part`.
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_INC = { inc = " an included part" }
+REQ_INC = { inc = "an included part" }
 
 [[case]]
 name = "placement-myst"
@@ -363,7 +364,7 @@ A part {np}`(m1) in markdown`.
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_MD = { m1 = " in markdown" }
+REQ_MD = { m1 = "in markdown" }
 
 [[case]]
 name = "placement-a-list2need-item"
@@ -383,8 +384,8 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_L2N = { l1 = " a listed part" }
-REQ_L2M = { l2 = " a part on the next line" }
+REQ_L2N = { l1 = "a listed part" }
+REQ_L2M = { l2 = "a part on the next line" }
 
 [[case]]
 name = "placement-a-multi-line-need-in-code"
@@ -414,7 +415,7 @@ files = { "src/engine.py" = '''# @need[rst] impl: A block
 [case.expect]
 findings = []
 [case.expect.parts]
-IMPL_BLK = { c1 = " in code" }
+IMPL_BLK = { c1 = "in code" }
 
 [[case]]
 name = "placement-a-test-case-body"
@@ -446,7 +447,7 @@ files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
 [case.expect]
 findings = []
 [case.expect.parts]
-TC_BODY = { t1 = " a reported part" }
+TC_BODY = { t1 = "a reported part" }
 
 [[case]]
 name = "placement-a-hidden-need"
@@ -470,7 +471,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_HID = { h1 = " a hidden part" }
+REQ_HID = { h1 = "a hidden part" }
 [case.expect.dead]
 TEST_1 = []
 [case.expect.back]
@@ -495,7 +496,7 @@ source = '''
 [case.expect]
 findings = [{ class = "duplicate part id" }, { class = "duplicate part id" }]
 [case.expect.parts]
-REQ_1 = { p1 = " the first", p2 = " another" }
+REQ_1 = { p1 = "the first", p2 = "another" }
 
 [[case]]
 name = "duplicates-a-repetition-after-other-parts"
@@ -514,7 +515,7 @@ source = '''
 [case.expect]
 findings = [{ class = "duplicate part id" }]
 [case.expect.parts]
-REQ_1 = { p2 = " second", p10 = " tenth", p1 = " first" }
+REQ_1 = { p2 = "second", p10 = "tenth", p1 = "first" }
 
 [[case]]
 name = "duplicates-in-a-list2need-item"
@@ -532,7 +533,7 @@ source = '''
 [case.expect]
 findings = [{ class = "duplicate part id" }]
 [case.expect.parts]
-REQ_L2N = { l1 = " the first" }
+REQ_L2N = { l1 = "the first" }
 
 [[case]]
 name = "duplicates-in-imported-content"
@@ -549,7 +550,7 @@ files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"
 [case.expect]
 findings = [{ class = "duplicate part id" }]
 [case.expect.parts]
-IMP_1 = { ip = " the first" }
+IMP_1 = { ip = "the first" }
 
 [[case]]
 name = "duplicates-in-a-multi-line-need-in-code"
@@ -580,7 +581,7 @@ files = { "src/engine.py" = '''# @need[rst] impl: A block
 [case.expect]
 findings = [{ class = "duplicate part id" }]
 [case.expect.parts]
-IMPL_BLK = { c1 = " the first" }
+IMPL_BLK = { c1 = "the first" }
 
 [[case]]
 name = "duplicates-a-role-outside-every-need"
@@ -604,7 +605,7 @@ Outside :np:`(x1) nowhere`.
 [case.expect]
 findings = [{ class = "part outside a need" }, { class = "dead link" }]
 [case.expect.parts]
-REQ_1 = { p1 = " inside" }
+REQ_1 = { p1 = "inside" }
 TEST_1 = {}
 [case.expect.dead]
 TEST_1 = ["REQ_1.x1"]
@@ -704,7 +705,7 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.parts]
-"SUP01::REQ_1" = { p1 = " the part" }
+"SUP01::REQ_1" = { p1 = "the part" }
 [case.expect.dead]
 TEST_1 = []
 [case.expect.back]
@@ -975,7 +976,7 @@ files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"
 [case.expect]
 findings = []
 [case.expect.parts]
-X_A_REQ1 = { ip = " an imported part" }
+X_A_REQ1 = { ip = "an imported part" }
 [case.expect.dead]
 X_B_TST1 = []
 [case.expect.back]
@@ -1076,7 +1077,7 @@ source = '''
 findings = []
 
 [[case.filters]]
-filter = 'content == " the words of the part"'
+filter = 'content == "the words of the part"'
 expected = ["REQ_1.p1"]
 include_parts = true
 
