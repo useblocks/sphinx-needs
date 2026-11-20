@@ -11,10 +11,10 @@
 # recorded source commit is the sync mechanism.
 #
 # Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
-# excludes it: every `config = '''...'''`, `source = '''...'''` and `files` body below is
+# excludes it: every `config`, `source` and `files` body, `'''...'''` or `"""..."""`, is
 # the INPUT of a case, and a part's text is compared character for character, so a
 # formatter touching one silently changes what the case tests. A change here is a change
-# to the contract, and owes ubCode a re-vendor.
+# to the contract, and owes ubCode a re-vendor. Invisible characters are written as escapes.
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (its `[needs]` table, and the
@@ -232,7 +232,7 @@ REQ_1 = { 78D = "(a.b) dotted id", C24 = "(a b) spaced id", 81F = "(a:b) colon i
 name = "grammar-the-text-is-never-a-reference"
 section = "grammar"
 why = "a text ending in <target> is kept whole: the role is not a reference, and no target is split off"
-divergent = { ubcode = "the role is read as title <target>: the text is ' see', the target split off" }
+divergent = { ubcode = "the role is read as title <target>: the text is 'see', the target split off" }
 config = '''
 [needs]
 '''
@@ -283,6 +283,108 @@ source = '''
 findings = []
 [case.expect.parts]
 REQ_1 = { m1 = "first line\nsecond line" }
+
+[[case]]
+name = "grammar-all-white-space-before-the-text"
+section = "grammar"
+why = "all the white space before the text is removed, of any kind and any length: several spaces, a no-break space and a tab (in MyST, as reStructuredText turns a tab into spaces) after (id) all leave the text alone"
+extensions = ["myst_parser"]
+config = '''
+[needs]
+'''
+source = """
+.. toctree::
+
+   page
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(a1)   after spaces` and :np:`(a2) after a no-break space`
+"""
+files = { "page.md" = """# Page
+
+```{req} A tab
+:id: REQ_MD
+
+A part {np}`(a3)\tafter a tab`.
+```
+""" }
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { a1 = "after spaces", a2 = "after a no-break space" }
+REQ_MD = { a3 = "after a tab" }
+
+[[case]]
+name = "grammar-a-control-character-is-no-white-space"
+section = "grammar"
+why = "only white space is removed: U+001F, a control character that is no white space, after (id) and a space is kept, and the text begins with it"
+config = '''
+[needs]
+'''
+source = """
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(b1) \u001Fafter a unit separator`
+"""
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { b1 = "\u001Fafter a unit separator" }
+
+[[case]]
+name = "grammar-white-space-after-the-text"
+section = "grammar"
+why = "the white space at the end of the text is removed too: trailing spaces and a trailing no-break space, which a MyST role can hold, are gone"
+extensions = ["myst_parser"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+'''
+files = { "page.md" = """# Page
+
+```{req} Trailing
+:id: REQ_MD
+
+A part {np}`(c1) before spaces   ` and {np}`(c2) before a no-break space `.
+```
+""" }
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_MD = { c1 = "before spaces", c2 = "before a no-break space" }
+
+[[case]]
+name = "grammar-no-id-keeps-its-white-space"
+section = "grammar"
+why = "a text with no (id) keeps the white space at its ends, and its id is the hash of the whole text with them"
+extensions = ["myst_parser"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+'''
+files = { "page.md" = """# Page
+
+```{req} Untrimmed
+:id: REQ_MD
+
+A part {np}`  no id, both ends kept `.
+```
+""" }
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_MD = { 77E = "  no id, both ends kept " }
 
 # --- placement -------------------------------------------------------------------------
 
