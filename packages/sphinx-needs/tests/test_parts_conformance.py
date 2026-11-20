@@ -223,7 +223,7 @@ def test_every_case_has_a_complete_expectation() -> None:
 def test_every_marker_names_a_known_tool() -> None:
     """A ``divergent`` marker names one or more tools, each with what it answers
     instead; a marker for sphinx-needs names the issue tracking it, or says it is not
-    filed yet."""
+    filed yet, and a marker for another tool names no issue, as the header says."""
     for case in CASES:
         if "divergent" not in case:
             continue
@@ -234,6 +234,9 @@ def test_every_marker_names_a_known_tool() -> None:
             assert re.search(r"\(#\d+\)|\(not filed yet\)", marker[THIS_TOOL]), case[
                 "name"
             ]
+        for tool, text in marker.items():
+            if tool != THIS_TOOL:
+                assert not re.search(r"#\d+|not filed yet", text), case["name"]
     marked = {case["name"] for case in CASES if THIS_TOOL in case.get("divergent", {})}
     assert marked == set(MARKED_PROBLEMS), (
         "every case marked for sphinx-needs, and no other, has its problems recorded"

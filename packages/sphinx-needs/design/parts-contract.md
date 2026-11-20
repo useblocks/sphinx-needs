@@ -14,9 +14,9 @@ reports them under codes of its own, which the corpus header maps.
 
 ## 1. The role and its grammar (corpus: `grammar`)
 
-`:need_part:` and its short name `:np:` mark a part in a need's content. Their text is read
-as `(id) text`: an opening parenthesis at its very start, an id, a closing parenthesis, and
-the rest.
+`:need_part:` and its short name `:np:` mark a part in a need's content. Their text, once
+the markup's backslash escapes are removed, is read as `(id) text`: an opening parenthesis
+at its very start, an id, a closing parenthesis, and the rest.
 
 - **The id** is one or more characters, each a Unicode letter or digit (what Python's
   `str.isalnum` accepts), `_` or `-`. Case is kept; nothing else is an id character, so a
@@ -28,9 +28,8 @@ the rest.
   ` see <target>`.
 - **No id.** When the text does not start with `(id)` -- no parenthesis, a character before
   it (`!(p4) text`), or a character that is not an id character -- the part's id is the
-  first three hexadecimal digits, upper case, of the SHA-1 of the role's whole text as the
-  markup gives it (after backslash escapes are removed) encoded as UTF-8, and its text is
-  that whole text.
+  first three hexadecimal digits, upper case, of the SHA-1 of that whole text encoded as
+  UTF-8, and its text is that whole text.
 
 ## 2. Which need a part belongs to (corpus: `placement`, `stated`)
 
