@@ -1,0 +1,1244 @@
+# Conformance corpus for NEED PARTS: what a part is (an id, a text and the links that point
+# at it, of one need), how the `:need_part:` role makes one, which need it belongs to, how a
+# link names it, and what it answers -- the executable half of `design/parts-contract.md`.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-needs/tests/fixtures/parts_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
+# excludes it: every `config = '''...'''`, `source = '''...'''` and `files` body below is
+# the INPUT of a case, and a part's text is compared character for character, so a
+# formatter touching one silently changes what the case tests. A change here is a change
+# to the contract, and owes ubCode a re-vendor.
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml` (its `[needs]` table, and the
+#     `[codelinks]` and `[test_reports]` tables the rules below name); `source` is the body
+#     of its one reStructuredText document, `index.rst`, under a title the runner adds:
+#     `Case`, `====` and a blank line; `files` (optional) are other files of the project,
+#     relative to the case directory. A case writes only inside its own directory: a
+#     `files` key that would land outside it (`../x.json`) is a broken case, and the runner
+#     refuses it
+#   - a case with `extensions` loads those Sphinx extensions besides sphinx-needs:
+#     `myst_parser`, `sphinx_codelinks` or `sphinx_test_reports`. The Python runner adds
+#     them to `conf.py`, points the last two at the case's `ubproject.toml`, and SKIPS a
+#     case whose extension is not installed; ubCode's runner models each from its table of
+#     the same file; a runner that needs no extension for MyST reads the MyST documents of
+#     a case loading `myst_parser` with its own MyST reading. A case loading
+#     `sphinx_codelinks` is a git checkout: the RUNNER writes two files beside
+#     `ubproject.toml`. `.git/HEAD` is
+#     `0123456789abcdef0123456789abcdef01234567` and a newline; `.git/config` is
+#     `[remote "origin"]`, a newline, a tab, `url = https://github.com/example/case.git`
+#     and a newline
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`), matched at the start
+#     of the id; the need types are the default ones (`req`, `spec`, `impl`, `test`) and
+#     those the loaded extensions add
+#   - `parts.<ID>` is the SET of the need's parts, each its id and its text, the text
+#     exactly as the tool stores it (a leading space included); `{}` says the need has
+#     none. A need the case does not name there is not compared
+#   - `dead.<ID>` is the set of the need's links the tool reports as dead, each the address
+#     as written with its condition taken off
+#     (`REQ_1.nope` for `REQ_1.nope[status == "x"]`); `[]` says it reports none. No case
+#     sets `allow_dead_links`
+#   - `back.<ADDRESS>`, the address a need's id or `<ID>.<part>` (split at the first `.`),
+#     gives per link type the set of the ids of the needs whose links of that type are
+#     back links of that need or part; `[]` says there are none. It names only link types
+#     the case has (`links`, or one its `config` declares); a link type it does not name is
+#     not compared
+#   - `findings` are compared as a MULTISET of `class`, the name of a class of finding of
+#     the contract; a runner maps its tool's own codes to the classes, and messages,
+#     locations and severities are NOT compared. The classes, and sphinx-needs' codes --
+#         duplicate part id      needs.duplicate_part_id
+#         part outside a need    needs.part
+#         dead link              needs.link_outgoing
+#         link target type       needs.link_target_type
+#         link condition         needs.link_condition_failed
+#     -- every other finding is each tool's own and not compared, unless the case says
+#     `clean = true`: then the project reports nothing at all but its `findings`
+#   - a report, for `clean = true` and for a filter that "reports nothing", is any warning
+#     or error the build emits
+#   - each `[[case.filters]]` entry is one filter string in the portable filter language
+#     (the one `filter_conformance.toml` pins), evaluated after the build, when derived
+#     values are final, over the needs of the built project and their parts
+#     (`include_parts = true`, required) as a filter written in `index.rst` is. That means
+#     only that `c.this_doc()` compares with `index`: it says nothing about which
+#     candidates a directive on that page would have. `expected` lists the ids it selects,
+#     sorted by code point, a part as `<need>.<part>`, and the filter reports nothing. An
+#     entry pins only what a part ANSWERS; which of needs and parts a filter selects when
+#     it does not ask for parts is not settled, and no entry pins it
+#   - `expected` -- every key of `[case.expect]` and every filter's `expected` -- is what the
+#     CONTRACT says. A case carrying `divergent` is one a tool answers otherwise: each key
+#     names a tool (`sphinx-needs`, `ubcode`), its value what that tool answers instead. A
+#     marker for `sphinx-needs` ends with the issue that tracks it, `(#N)`, or with
+#     `(not filed yet)`; a marker for `ubcode` names no issue, as the filter corpus's
+#     markers name none. The runner of a named tool runs the case and requires it to
+#     FAIL, and fails it when it passes, so a fix removes the marker in the same change;
+#     every other runner runs it as any case. (The filter corpus's `divergent` names a tool
+#     the same way; there the named runner skips the entry.)
+#
+# `packages/sphinx-needs/tests/test_parts_conformance.py` runs every case with the `html`
+# builder (a role outside every need is reported where a page is written) AND asserts the
+# case COUNT, so a truncated copy is a red test rather than reduced coverage. The prose half
+# of the contract is `packages/sphinx-needs/design/parts-contract.md`; each case's `why`
+# restates the sentence of it the case holds the tools to.
+#
+# Sections, in this order: grammar, placement, duplicates, stated, addressing, links,
+# answers, derived.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   section      - the section it belongs to (the list above)
+#   why          - one line saying what the case pins
+#   config       - the `ubproject.toml`
+#   source       - the body of `index.rst`
+#   files        - optional; other files, relative to the case directory, and their text
+#   extensions   - optional; the extensions the case loads besides sphinx-needs
+#   clean        - optional; true: the project reports nothing but its `findings`
+#   divergent    - optional; { sphinx-needs = "...", ubcode = "..." }, see the rules above
+#   [case.expect]
+#     findings         - `[]` for none, or one `{ class = "..." }` per finding
+#     parts.<ID>       - optional; { <part id> = "<text>" }, `{}` for none
+#     dead.<ID>        - optional; [the addresses of its dead links]
+#     back.<ADDRESS>   - optional; { <link type> = [the ids of its back links] }
+#   [[case.filters]]
+#     filter         - the filter string
+#     expected       - the ids it selects, sorted by code point
+#     include_parts  - true
+#     why            - optional; one line saying what the entry pins
+
+# --- grammar ---------------------------------------------------------------------------
+
+[[case]]
+name = "grammar-id-and-text"
+section = "grammar"
+why = "(id) text gives the part id and, as its text, everything after the closing parenthesis, a leading space kept and none added; :need_part: is :np:"
+clean = true
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) with a space` and :np:`(p2)without one` and :need_part:`(p3) by the long name`.
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { p1 = " with a space", p2 = "without one", p3 = " by the long name" }
+
+[[case]]
+name = "grammar-id-characters"
+section = "grammar"
+why = "an id is letters, digits, _ and -, in any position and any case, a digit first or digits alone included"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(a-b) dash` :np:`(x_1) underscore` :np:`(42) digits` :np:`(-Ab_) mixed`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { a-b = " dash", x_1 = " underscore", 42 = " digits", -Ab_ = " mixed" }
+
+[[case]]
+name = "grammar-a-unicode-id"
+section = "grammar"
+why = "an id character is any Unicode letter or digit, not only ASCII ones"
+divergent = { ubcode = "an id character is ASCII only: the part is 48A with the text (é1) unicode id" }
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(é1) unicode id`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { "é1" = " unicode id" }
+
+[[case]]
+name = "grammar-no-id-given"
+section = "grammar"
+why = "a text not starting with (id) has as its id the first three hex digits, upper case, of the SHA-1 of the whole text encoded as UTF-8, which is its text; the text is the role's after backslash escapes are removed (back\\slash is backslash, hashed as such)"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`no id given` and :np:`é sans id` and :np:`back\slash`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { 92C = "no id given", BB3 = "é sans id", 385 = "backslash" }
+
+[[case]]
+name = "grammar-a-character-before-the-parenthesis"
+section = "grammar"
+why = "the (id) must open the text: !(p4) is no id, so the hash of the whole text is the id and the whole text, ! included, the text"
+divergent = { ubcode = "a leading ! disables the role: no part at all" }
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`!(p4) a bang part`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { 06B = "!(p4) a bang part" }
+
+[[case]]
+name = "grammar-a-character-outside-the-id-set"
+section = "grammar"
+why = "parentheses holding a character that is no id character (a dot, a space, a colon, a parenthesis) give no id: the hash of the whole text is the id"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(a.b) dotted id` and :np:`(a b) spaced id` and :np:`(a:b) colon id` and :np:`((p1)) nested parenthesis`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { 78D = "(a.b) dotted id", C24 = "(a b) spaced id", 81F = "(a:b) colon id", 7D2 = "((p1)) nested parenthesis" }
+
+[[case]]
+name = "grammar-the-text-is-never-a-reference"
+section = "grammar"
+why = "a text ending in <target> is kept whole: the role is not a reference, and no target is split off"
+divergent = { ubcode = "the role is read as title <target>: the text is ' see', the target split off" }
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p3) see <somewhere>`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { p3 = " see <somewhere>" }
+
+[[case]]
+name = "grammar-an-empty-text"
+section = "grammar"
+why = "(id) alone is a part with the empty text"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p5)`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { p5 = "" }
+
+[[case]]
+name = "grammar-a-text-on-two-lines"
+section = "grammar"
+why = "a role's text may span lines: the text holds the line break, the continuation line's indentation removed"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(m1) first line
+   second line`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { m1 = " first line\nsecond line" }
+
+# --- placement -------------------------------------------------------------------------
+
+[[case]]
+name = "placement-a-nested-need"
+section = "placement"
+why = "a part belongs to the innermost need holding it: the nested need's part is not the outer need's, so the outer need's address of it is dead"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Outer
+   :id: REQ_OUT
+
+   :np:`(o1) before`
+
+   .. spec:: Inner
+      :id: SPEC_IN
+
+      :np:`(n1) inside`
+
+   :np:`(o2) after`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: SPEC_IN.n1, REQ_OUT.n1
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.parts]
+REQ_OUT = { o1 = " before", o2 = " after" }
+SPEC_IN = { n1 = " inside" }
+[case.expect.dead]
+TEST_1 = ["REQ_OUT.n1"]
+
+[[case]]
+name = "placement-an-included-file"
+section = "placement"
+why = "content a need's body includes is the need's content: its role is the need's part, and nothing is reported"
+clean = true
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Included
+   :id: REQ_INC
+
+   .. include:: fragment.txt
+'''
+files = { "fragment.txt" = '''A fragment with :np:`(inc) an included part`.
+''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_INC = { inc = " an included part" }
+
+[[case]]
+name = "placement-myst"
+section = "placement"
+why = "the role written in MyST, {np}, makes the part the reStructuredText role makes"
+clean = true
+extensions = ["myst_parser"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+'''
+files = { "page.md" = '''# Page
+
+```{req} In Markdown
+:id: REQ_MD
+
+A part {np}`(m1) in markdown`.
+```
+''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_MD = { m1 = " in markdown" }
+
+[[case]]
+name = "placement-a-list2need-item"
+section = "placement"
+why = "the content of a list2need item is its need's content: a role in it is that need's part"
+config = '''
+[needs]
+'''
+source = '''
+.. list2need::
+   :types: req
+
+   * (REQ_L2N) A listed need. With :np:`(l1) a listed part`.
+   * (REQ_L2M) Another listed need
+     with :np:`(l2) a part on the next line`.
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_L2N = { l1 = " a listed part" }
+REQ_L2M = { l2 = " a part on the next line" }
+
+[[case]]
+name = "placement-a-multi-line-need-in-code"
+section = "placement"
+why = "the body of a multi-line need in a source code comment is its content: a role in it is the need's part"
+extensions = ["sphinx_codelinks"]
+config = '''
+[needs]
+
+[codelinks.projects.eng.source_discover]
+src_dir = "src"
+comment_type = "python"
+
+[codelinks.projects.eng.analyse]
+get_multiline_needs = true
+'''
+source = '''
+.. src-trace::
+   :project: eng
+'''
+files = { "src/engine.py" = '''# @need[rst] impl: A block
+# :id: IMPL_BLK
+#
+# A body part :np:`(c1) in code`.
+# @endneed
+''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMPL_BLK = { c1 = " in code" }
+
+[[case]]
+name = "placement-a-test-case-body"
+section = "placement"
+why = "the body of a test case is its content: a role in it is the test case's part, and nothing is reported"
+divergent = { ubcode = "a test case's body gives no parts, and its role is reported as outside a need" }
+clean = true
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-case:: A test case
+   :id: TC_BODY
+   :file: report.xml
+   :suite: pytest
+   :classname: tests.test_engine
+   :case: test_start
+
+   A test body with :np:`(t1) a reported part`.
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+TC_BODY = { t1 = " a reported part" }
+
+[[case]]
+name = "placement-a-hidden-need"
+section = "placement"
+why = "a hidden need has the parts its content marks, and a link to one is live: hiding changes how a need is shown, not what it is"
+divergent = { sphinx-needs = "a hidden need has no parts (its content is not read), so the link to its part is dead and reported (#1321)" }
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Hidden
+   :id: REQ_HID
+   :hide:
+
+   :np:`(h1) a hidden part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_HID.h1
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_HID = { h1 = " a hidden part" }
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"REQ_HID.h1" = { tests = ["TEST_1"] }
+
+# --- duplicates ------------------------------------------------------------------------
+
+[[case]]
+name = "duplicates-the-first-wins"
+section = "duplicates"
+why = "an id marked again in one need is the first's part, its text the first's, and each repetition is one finding"
+divergent = { ubcode = "the LAST part of a repeated id wins (the findings are reported)" }
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the first` then :np:`(p1) a second` then :np:`(p1) a third`, and :np:`(p2) another`.
+'''
+[case.expect]
+findings = [{ class = "duplicate part id" }, { class = "duplicate part id" }]
+[case.expect.parts]
+REQ_1 = { p1 = " the first", p2 = " another" }
+
+[[case]]
+name = "duplicates-a-repetition-after-other-parts"
+section = "duplicates"
+why = "an id marked again after other parts is still the first's part, with the first's text, and one finding"
+divergent = { ubcode = "the LAST part of a repeated id wins" }
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p2) second` :np:`(p10) tenth` :np:`(p1) first` :np:`(p2) again`
+'''
+[case.expect]
+findings = [{ class = "duplicate part id" }]
+[case.expect.parts]
+REQ_1 = { p2 = " second", p10 = " tenth", p1 = " first" }
+
+[[case]]
+name = "duplicates-in-a-list2need-item"
+section = "duplicates"
+why = "the first wins in a list2need item's content too, with one finding"
+config = '''
+[needs]
+'''
+source = '''
+.. list2need::
+   :types: req
+
+   * (REQ_L2N) A listed need. With :np:`(l1) the first` and :np:`(l1) a second`.
+'''
+[case.expect]
+findings = [{ class = "duplicate part id" }]
+[case.expect.parts]
+REQ_L2N = { l1 = " the first" }
+
+[[case]]
+name = "duplicates-in-imported-content"
+section = "duplicates"
+why = "the first wins in the content of an imported need too, with one finding; the record states no parts, so nothing competes with the content"
+divergent = { ubcode = "the LAST part of a repeated id wins, and nothing is reported" }
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(ip) the first` and :np:`(ip) a second`."}}}}}''' }
+[case.expect]
+findings = [{ class = "duplicate part id" }]
+[case.expect.parts]
+IMP_1 = { ip = " the first" }
+
+[[case]]
+name = "duplicates-in-a-multi-line-need-in-code"
+section = "duplicates"
+why = "the first wins in the body of a multi-line need in code too, with one finding"
+divergent = { ubcode = "the LAST part of a repeated id wins, and nothing is reported" }
+extensions = ["sphinx_codelinks"]
+config = '''
+[needs]
+
+[codelinks.projects.eng.source_discover]
+src_dir = "src"
+comment_type = "python"
+
+[codelinks.projects.eng.analyse]
+get_multiline_needs = true
+'''
+source = '''
+.. src-trace::
+   :project: eng
+'''
+files = { "src/engine.py" = '''# @need[rst] impl: A block
+# :id: IMPL_BLK
+#
+# Marks :np:`(c1) the first` and :np:`(c1) a second`.
+# @endneed
+''' }
+[case.expect]
+findings = [{ class = "duplicate part id" }]
+[case.expect.parts]
+IMPL_BLK = { c1 = " the first" }
+
+[[case]]
+name = "duplicates-a-role-outside-every-need"
+section = "duplicates"
+why = "a role outside every need makes no part, of the need before it or any other, and is one finding"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Before
+   :id: REQ_1
+
+   :np:`(p1) inside`
+
+Outside :np:`(x1) nowhere`.
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.x1
+'''
+[case.expect]
+findings = [{ class = "part outside a need" }, { class = "dead link" }]
+[case.expect.parts]
+REQ_1 = { p1 = " inside" }
+TEST_1 = {}
+[case.expect.dead]
+TEST_1 = ["REQ_1.x1"]
+
+# --- stated ----------------------------------------------------------------------------
+
+[[case]]
+name = "stated-an-external-need-has-its-record-parts"
+section = "stated"
+why = "an external need, whose content is not part of this project, has the parts its record states, each with the record's id and text"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org/", json_path = "external.json" }]
+'''
+source = '''
+.. req:: Local
+   :id: REQ_1
+'''
+files = { "external.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {"id": "EXT_1", "type": "req", "title": "External", "content": "No role here.", "parts": {"rp": {"id": "rp", "content": "a record part"}, "R2": {"id": "R2", "content": " spaced"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+EXT_1 = { rp = "a record part", R2 = " spaced" }
+
+[[case]]
+name = "stated-a-record-part-id-holding-a-dot"
+section = "stated"
+why = "a record may state a part whose id holds a dot: EXT_1.a.b splits at the first dot and names it, live, while EXT_1.a names no part"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org/", json_path = "external.json" }]
+
+[needs.links.tests]
+'''
+source = '''
+.. test:: Links
+   :id: TEST_1
+   :tests: EXT_1.a.b, EXT_1.a
+'''
+files = { "external.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {"id": "EXT_1", "type": "req", "title": "External", "content": "", "parts": {"a.b": {"id": "a.b", "content": "dotted"}}}}}}}''' }
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.parts]
+EXT_1 = { "a.b" = "dotted" }
+[case.expect.dead]
+TEST_1 = ["EXT_1.a"]
+[case.expect.back]
+"EXT_1.a.b" = { tests = ["TEST_1"] }
+
+# --- addressing ------------------------------------------------------------------------
+
+[[case]]
+name = "addressing-split-at-the-first-dot"
+section = "addressing"
+why = "an address splits at its first dot: REQ_1.p1 is the part p1, live, and REQ_1.p1.x the part p1.x, which REQ_1 does not have"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.p1, REQ_1.p1.x
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.dead]
+TEST_1 = ["REQ_1.p1.x"]
+[case.expect.back]
+"REQ_1.p1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "addressing-a-namespaced-need"
+section = "addressing"
+why = "with namespaced ids on, SUP01::REQ_1.p1 is the part p1 of SUP01::REQ_1: the part is split off before the namespace, and no segment holds a dot"
+clean = true
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.links.tests]
+'''
+source = '''
+.. req:: Namespaced
+   :id: SUP01::REQ_1
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: SUP01::REQ_1.p1
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+"SUP01::REQ_1" = { p1 = " the part" }
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"SUP01::REQ_1.p1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "addressing-a-namespaced-need-with-the-switch-off"
+section = "addressing"
+why = "with namespaced ids off the address splits the same way: SUP01::REQ_1.p1 is the part p1 of the need SUP01::REQ_1"
+config = '''
+[needs]
+namespaced_ids = false
+
+[needs.links.tests]
+'''
+source = '''
+.. req:: Namespaced
+   :id: SUP01::REQ_1
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: SUP01::REQ_1.p1
+'''
+[case.expect]
+findings = []
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"SUP01::REQ_1.p1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "addressing-a-condition-after-a-part"
+section = "addressing"
+why = "a condition after a part is taken off before the split: REQ_1.p1[status == 'open'] names the part p1, live, a back link of the part"
+clean = true
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+   :status: open
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.p1[status == "open"]
+'''
+[case.expect]
+findings = []
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"REQ_1.p1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "addressing-a-dot-in-a-condition"
+section = "addressing"
+why = "a dot inside a condition is never a separator: REQ_1.p1[version == '1.2'] is the part p1 and REQ_1[version == '1.2'] the need, both live"
+config = '''
+[needs.fields.version]
+schema = { type = "string" }
+
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+   :version: 1.2
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.p1[version == "1.2"]
+
+.. test:: Links the need
+   :id: TEST_2
+   :tests: REQ_1[version == "1.2"]
+'''
+[case.expect]
+findings = []
+[case.expect.dead]
+TEST_1 = []
+TEST_2 = []
+[case.expect.back]
+"REQ_1" = { tests = ["TEST_1", "TEST_2"] }
+"REQ_1.p1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "addressing-an-empty-part"
+section = "addressing"
+why = "an address ending in a dot names the empty part, which no need has: REQ_1. is dead, and still counts for REQ_1"
+divergent = { sphinx-needs = "the link is dead, but stored, written and reported as REQ_1: the empty part is dropped from the address (not filed yet)" }
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.dead]
+TEST_1 = ["REQ_1."]
+[case.expect.back]
+"REQ_1" = { tests = ["TEST_1"] }
+"REQ_1.p1" = { tests = [] }
+
+# --- links -----------------------------------------------------------------------------
+
+[[case]]
+name = "links-a-live-part-link-and-its-back-links"
+section = "links"
+why = "a link to a part is live and one of the need's back links and the part's, per link type; a part's back links hold only links naming it, not a link to the need or to a sibling part"
+clean = true
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two` and :np:`(p3) three`
+
+.. test:: The need
+   :id: TEST_A
+   :tests: REQ_1
+
+.. test:: The first part
+   :id: TEST_B
+   :tests: REQ_1.p1
+
+.. test:: The second part
+   :id: TEST_C
+   :tests: REQ_1.p2
+
+.. spec:: The first part, another link type
+   :id: SPEC_1
+   :links: REQ_1.p1
+'''
+[case.expect]
+findings = []
+[case.expect.dead]
+TEST_A = []
+TEST_B = []
+TEST_C = []
+SPEC_1 = []
+[case.expect.back]
+"REQ_1" = { tests = ["TEST_A", "TEST_B", "TEST_C"], links = ["SPEC_1"] }
+"REQ_1.p1" = { tests = ["TEST_B"], links = ["SPEC_1"] }
+"REQ_1.p2" = { tests = ["TEST_C"], links = [] }
+"REQ_1.p3" = { tests = [], links = [] }
+
+[[case]]
+name = "links-a-missing-part"
+section = "links"
+why = "a link to a part the need does not have is dead, one finding, and still counts for the need: it is one of the need's back links"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.nope
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.dead]
+TEST_1 = ["REQ_1.nope"]
+[case.expect.back]
+"REQ_1" = { tests = ["TEST_1"] }
+"REQ_1.p1" = { tests = [] }
+
+[[case]]
+name = "links-a-missing-need"
+section = "links"
+why = "a link to a part of a need that does not exist is dead, one finding, named by its address with its condition taken off"
+divergent = { ubcode = "the dead link is named without its part: NOPE_1" }
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. test:: Links
+   :id: TEST_1
+   :tests: NOPE_1.p1[status == "open"]
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.dead]
+TEST_1 = ["NOPE_1.p1"]
+
+[[case]]
+name = "links-a-condition-is-read-on-the-need"
+section = "links"
+why = "a condition on a part link is read on the need, not the part: id == 'REQ_1' holds on the need, status == 'closed' holds on neither and is one finding; both links are live"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.p1[id == "REQ_1"], REQ_1.p2[status == "closed"]
+'''
+[case.expect]
+findings = [{ class = "link condition" }]
+[case.expect.dead]
+TEST_1 = []
+
+[[case]]
+name = "links-target-types-by-the-owning-need"
+section = "links"
+why = "a part has no type of its own: a link to it is checked against the target types by its need's type, a part of a spec refused where only req is allowed"
+config = '''
+[needs.links.tests]
+target_types = ["req"]
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_1
+
+   :np:`(r1) a requirement's part`
+
+.. spec:: A specification
+   :id: SPEC_1
+
+   :np:`(s1) a specification's part`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: REQ_1.r1, SPEC_1.s1
+'''
+[case.expect]
+findings = [{ class = "link target type" }]
+[case.expect.dead]
+TEST_1 = []
+
+[[case]]
+name = "links-an-id-prefix-keeps-the-part"
+section = "links"
+why = "a prefix given to imported ids prefixes the need's id of a part link and keeps its part: X_B_TST1's link is X_A_REQ1.ip, live"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+   :id_prefix: X_
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A_REQ1": {"id": "A_REQ1", "type": "req", "title": "Imported", "content": "Marks :np:`(ip) an imported part`."}, "B_TST1": {"id": "B_TST1", "type": "test", "title": "Imported linker", "content": "", "tests": ["A_REQ1.ip"]}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+X_A_REQ1 = { ip = " an imported part" }
+[case.expect.dead]
+X_B_TST1 = []
+[case.expect.back]
+"X_A_REQ1.ip" = { tests = ["X_B_TST1"] }
+
+# --- answers ---------------------------------------------------------------------------
+
+[[case]]
+name = "answers-its-own-identity"
+section = "answers"
+why = "a part answers its own id, the part id, which two needs may share, id_complete, its address, id_parent, its need's id, and is_need false"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+   :np:`(p1) of one`
+
+.. req:: Two
+   :id: REQ_2
+
+   :np:`(p1) of two`
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'id == "p1"'
+expected = ["REQ_1.p1", "REQ_2.p1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'id_complete == "REQ_2.p1"'
+expected = ["REQ_2.p1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'id == "REQ_1"'
+expected = ["REQ_1"]
+include_parts = true
+why = "a part does not answer its need's id"
+
+[[case.filters]]
+filter = 'is_part and id_parent == "REQ_1"'
+expected = ["REQ_1.p1"]
+include_parts = true
+why = "a part answers its need's id as id_parent"
+
+[[case.filters]]
+filter = 'not is_need'
+expected = ["REQ_1.p1", "REQ_2.p1"]
+include_parts = true
+why = "a part answers is_need false"
+
+[[case]]
+name = "answers-its-text-as-content"
+section = "answers"
+why = "a part answers its text as content, not its need's content"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   The words of the need, and :np:`(p1) the words of the part`.
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'content == " the words of the part"'
+expected = ["REQ_1.p1"]
+include_parts = true
+
+[[case.filters]]
+filter = '"words of the need" in content'
+expected = ["REQ_1"]
+include_parts = true
+
+[[case]]
+name = "answers-no-links-out"
+section = "answers"
+why = "a part has no outgoing links: every link type of a part is empty, its need's links included"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Target
+   :id: REQ_9
+
+.. spec:: Links out
+   :id: SPEC_1
+   :links: REQ_9
+   :tests: REQ_9
+
+   :np:`(s1) a part of a linking need`
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = '"REQ_9" in links'
+expected = ["SPEC_1"]
+include_parts = true
+
+[[case.filters]]
+filter = '"REQ_9" in tests'
+expected = ["SPEC_1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'is_part and len(links) == 0 and len(tests) == 0'
+expected = ["SPEC_1.s1"]
+include_parts = true
+
+[[case]]
+name = "answers-its-own-back-links"
+section = "answers"
+why = "a part answers its own back links: a link to the part is one, a link to its need or to a sibling part is not"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. test:: The first part
+   :id: TEST_1
+   :tests: REQ_1.p1
+
+.. test:: The need
+   :id: TEST_2
+   :tests: REQ_1
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = '"TEST_1" in tests_back'
+expected = ["REQ_1", "REQ_1.p1"]
+include_parts = true
+
+[[case.filters]]
+filter = '"TEST_2" in tests_back'
+expected = ["REQ_1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'is_part and len(tests_back) == 0'
+expected = ["REQ_1.p2"]
+include_parts = true
+
+[[case]]
+name = "answers-every-other-name-is-its-needs"
+section = "answers"
+why = "every other name a part answers is its need's: its type, its status, a field of the project, its document"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+   :status: open
+   :owner: alice
+
+   :np:`(p1) one`
+
+.. spec:: Other
+   :id: SPEC_1
+   :status: closed
+   :owner: bob
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'owner == "alice"'
+expected = ["REQ_1", "REQ_1.p1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'type == "req" and status == "open"'
+expected = ["REQ_1", "REQ_1.p1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'docname == "index" and owner != "bob"'
+expected = ["REQ_1", "REQ_1.p1"]
+include_parts = true
+
+# --- derived ---------------------------------------------------------------------------
+
+[[case]]
+name = "derived-a-value-read-through-a-part-link"
+section = "derived"
+why = "a derived field following a link through a part reads the need's value: SPEC_1, linking REQ_1.p1, copies REQ_1's owner, which SPEC_1's part answers as its need's"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.owner_of_link]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "links" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+
+   :np:`(p1) the part`
+
+.. spec:: Reads through the part
+   :id: SPEC_1
+   :links: REQ_1.p1
+
+   :np:`(s1) a part of the reader`
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'owner_of_link == "alice"'
+expected = ["SPEC_1", "SPEC_1.s1"]
+include_parts = true
+
+[[case]]
+name = "derived-a-part-link-counts-for-the-need"
+section = "derived"
+why = "a count over back links counts a part link as a link to the need: REQ_1, linked through two of its parts and once whole, has three, which its parts answer as its need's"
+config = '''
+[needs.links.tests]
+
+[needs.fields.test_count]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "tests_back" }
+'''
+source = '''
+.. req:: Counted
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. test:: First
+   :id: TEST_1
+   :tests: REQ_1.p1
+
+.. test:: Second
+   :id: TEST_2
+   :tests: REQ_1.p2
+
+.. test:: Whole
+   :id: TEST_3
+   :tests: REQ_1
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'test_count == 3'
+expected = ["REQ_1", "REQ_1.p1", "REQ_1.p2"]
+include_parts = true

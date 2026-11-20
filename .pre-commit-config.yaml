@@ -6,7 +6,7 @@ repos:
       - id: taplo-format
         # the TOML conformance corpora are (or, for the `ubproject.toml` reading one, the
         # derived-field one, the field-declaration one, the needs.json reading one, the
-        # filter one, the need-id one and sphinx-ub-directives' two, are to be) shared byte-for-byte with ubCode, so a
+        # filter one, the parts one, the need-id one and sphinx-ub-directives' two, are to be) shared byte-for-byte with ubCode, so a
         # formatter local to this repository must not rewrite them. taplo's current
         # defaults happen to leave the variant-condition one alone; the `ubproject.toml` reading
         # corpus they do NOT -- measured: every expectation line past taplo's column limit
@@ -19,6 +19,7 @@ repos:
             packages/sphinx-needs/tests/fixtures/derive_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/field_declaration_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/filter_conformance\.toml|
+            packages/sphinx-needs/tests/fixtures/parts_conformance\.toml|
             packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml|
             packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance\.toml|
             packages/ub-needs-exchange/tests/fixtures/need_id_conformance\.toml|
@@ -49,6 +50,7 @@ repos:
             packages/sphinx-needs/tests/fixtures/derive_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/field_declaration_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/filter_conformance\.toml$|
+            packages/sphinx-needs/tests/fixtures/parts_conformance\.toml$|
             packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml$|
             packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance\.toml$|
             packages/ub-needs-exchange/tests/fixtures/need_id_conformance\.toml$|

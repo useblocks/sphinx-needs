@@ -4,6 +4,21 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Internal changes
+................
+
+- 🧪 A contract for :ref:`need parts <need_part>` and a conformance corpus that pins it,
+  ``tests/fixtures/parts_conformance.toml``: a part is an id, a text and the links that point at it, of one need,
+  with no fields, no type and no outgoing links. Its cases, one project each, pin the role's grammar, which need a
+  part belongs to, a repeated id, the address ``ID.part[condition]``, links to a part and their back links, and what
+  a part answers in a filter that asks for parts; ``design/parts-contract.md`` states the rules and names what is
+  not on the page yet. This repository is the corpus's repository of record, and ubCode is to vendor it. Two cases are
+  marked as expected failures of today's sphinx-needs: a hidden need has no parts (:issue:`1321`), and a dead link
+  to an empty part is reported without its ``.``. No behaviour changes. (:pr:`2550`)
+
 .. _`release:9.3.0`:
 
 9.3.0

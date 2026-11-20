@@ -92,6 +92,11 @@ This sub-ids can be linked and referenced in other need functions like links and
 
 The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
 
+A need part is a named, addressable piece of one need: an id, a text, and the links that point at it.
+It has no fields, no type, no status and no outgoing links of its own; a piece of a need that needs any of
+those is a need of its own. A link to a part, ``<need id>.<part id>``, reads and counts as a link to its need:
+its condition, the target types and the counts are the need's. It is a dead link when the need has no such part.
+
 .. syntax-example::
 
    .. req:: Car must be awesome
