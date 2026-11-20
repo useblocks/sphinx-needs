@@ -107,6 +107,12 @@ Bug fixes
   ``data-*`` and ``scope`` on its rows and header cells). ``html``, ``latex`` and every other builder's output does
   not change. (:pr:`2561`)
 
+- 🐛 A :ref:`needlist`, :ref:`needtable` or :ref:`needextract` that lists a need on a page the ``latex`` or ``texinfo``
+  builder leaves out, such as an ``:orphan:`` page or one only another of the ``latex_documents`` reaches, no longer
+  ends the build (``sphinx.errors.NoUri``). The need is listed, its text with no link, as Sphinx writes a
+  cross-reference whose target the builder leaves out. Where the need's page is written, nothing changes, and
+  every other builder's output does not change. (:pr:`0000`)
+
 Internal changes
 ................
 
