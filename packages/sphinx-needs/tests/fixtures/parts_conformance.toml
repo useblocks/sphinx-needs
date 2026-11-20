@@ -798,7 +798,6 @@ TEST_2 = []
 name = "addressing-an-empty-part"
 section = "addressing"
 why = "an address ending in a dot names the empty part, which no need has: REQ_1. is dead, and still counts for REQ_1"
-divergent = { sphinx-needs = "the link is dead, but stored, written and reported as REQ_1: the empty part is dropped from the address (not filed yet)" }
 config = '''
 [needs.links.tests]
 '''

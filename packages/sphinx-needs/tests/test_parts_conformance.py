@@ -93,9 +93,6 @@ MARKED_PROBLEMS: dict[str, list[str]] = {
         "TEST_1: has_dead_links is True, expected False",
         "REQ_HID.h1: no such part",
     ],
-    "addressing-an-empty-part": [
-        "TEST_1: dead links ['REQ_1'], expected ['REQ_1.']",
-    ],
 }
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``.
