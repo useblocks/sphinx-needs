@@ -1339,7 +1339,7 @@ Each configured link can define:
      outgoing = "is satisfied by"
      dependent = "target"
 
-  sphinx-needs checks and keeps it and does not act on it; impact analysis reads it (ubCode's today).
+  sphinx-needs checks and keeps it and does not act on it: it is there for impact analysis, such as ubCode's.
   No link, check, view or exported file changes with it: it is not in the :ref:`needs.json <needs_builder_format>`.
   A core link type (``links``, ``parent_needs``) is ``"source"`` unless its entry here gives it.
   It is a link type's on every need type, as ``summary`` is: on a link type declared here, a need type's entry
