@@ -59,7 +59,7 @@ Bug fixes
     links, so a walk into ``REQ_1`` reaches the need holding it), and a schema's network rule reports it as a broken
     link, where each read it as a link to ``REQ_1``.
 
-  The first build after upgrading reads every document again.
+  The first build after upgrading reads every document again. (:pr:`2552`)
 
 Internal changes
 ................
