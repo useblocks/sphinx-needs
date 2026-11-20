@@ -83,7 +83,8 @@ def filter_by_tree(
     A part address reads as its need (:func:`~sphinx_needs._part_address.need_at`): a
     ``root_id`` naming a part starts the walk at its need, and a link to a part the need
     has leads to the need, one hop like any link. A link to a part the need does not
-    have is a dead link, and is not followed.
+    have is a dead link, and is not followed from the need that holds it; it still
+    counts in the target need's back links, so an incoming walk reaches its source.
     """
     if (root_need := need_at(needs_view, root_id)) is None:
         return needs_view.filter_ids([])

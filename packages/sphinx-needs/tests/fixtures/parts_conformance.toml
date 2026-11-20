@@ -61,7 +61,10 @@
 #     -- every other finding is each tool's own and not compared, unless the case says
 #     `clean = true`: then the project reports nothing at all but its `findings`
 #   - a report, for `clean = true` and for a filter that "reports nothing", is any warning
-#     or error the build emits
+#     or error the build emits. A case's `config` may configure a schema
+#     (`[[needs.schema_definitions.schemas]]`): a schema finding is a report like any other,
+#     so such a case checks the schema only through `clean`, and a tool with no schema
+#     validation passes it without having checked anything
 #   - each `[[case.filters]]` entry is one filter string in the portable filter language
 #     (the one `filter_conformance.toml` pins), evaluated after the build, when derived
 #     values are final, over the needs of the built project and their parts

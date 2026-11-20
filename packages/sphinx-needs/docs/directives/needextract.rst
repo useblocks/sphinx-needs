@@ -34,7 +34,8 @@ Please read :ref:`filter` for more information.
 
 It also supports arguments as filter string,
 which works like the option ``filter``, but also
-supports need ID as filter argument. A need part's address (``ID.part``) reads as the part's need.
+supports need ID as filter argument. A need part's address (``ID.part``) reads as the part's need; an argument
+whose text after its first ``.`` is no part ID, such as ``status.upper() == "OPEN"``, is a filter string.
 
 .. syntax-example::
 

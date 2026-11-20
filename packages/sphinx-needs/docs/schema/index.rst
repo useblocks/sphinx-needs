@@ -736,7 +736,8 @@ After network resolution, the following checks can be performed:
   met but there are failing additional link targets)
 
 A link to a :ref:`need part <need_part>` (``ID.part``) is validated as a link to the part's need; a link to a part
-the need does not have cannot be resolved (``network_missing_target``).
+the need does not have cannot be resolved (``network_missing_target``). Links to two parts of one need are two links,
+each counted by ``minContains`` and ``maxContains``, while one link written twice is one.
 
 Example:
 

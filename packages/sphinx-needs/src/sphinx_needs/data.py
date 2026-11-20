@@ -49,8 +49,8 @@ Bumped whenever the shape of that data changes, so that Sphinx re-reads instead 
 handing a pickled doctree to code that no longer understands it.
 ``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
 change of what the stored values mean, or of what is rendered from them (versions 8, 10
-to 12, 15, 17, 19, 20 and 29), leaves the shape as it was, so that test cannot see it,
-and the bump is needed all the same.
+to 12, 15, 17, 19 to 25, 27 and 29), leaves the shape as it was, so that test cannot see
+it, and the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
@@ -214,7 +214,8 @@ upgrading.
 
 Version 29 changes what a stored value means: a link to the empty part of a need,
 ``ID.`` (a dead link, as no need has that part), keeps its ``.`` in the filter string
-each stored :class:`~sphinx_needs.need_item.NeedLink` caches, and in what is written to
+each stored :class:`~sphinx_needs.need_item.NeedLink` caches (and the stored order of a
+link list, which sorts by that string, moves with it), and in what is written to
 ``needs.json``. Version 28 cached ``ID``, so the link was reported and filtered as one to
 the need. The shape is unchanged, so without the bump an upgraded build would report and
 filter ``ID`` from the links it unpickles for the documents whose sources did not change,
