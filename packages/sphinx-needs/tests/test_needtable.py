@@ -269,6 +269,7 @@ def test_needtable_style_row_dynamic_function(test_app):
 # part the need does not have was written as a live reference to ``#ID.part``, and the
 # cell took the SECOND dot-separated segment as the part (#2488). A need id holding a
 # ``.`` (``REQ_9.x``, and there is no need ``REQ_9``) is rendered as in 9.3.0.
+# The empty part ``REQ_1.`` is a dead link, written as text with its ``.``.
 
 LINK_CELL_CONF = """\
 extensions = ["sphinx_needs"]
@@ -303,7 +304,7 @@ Cells
 
 .. spec:: Links
    :id: SPEC_1
-   :links: REQ_1, REQ_1.p1, REQ_1.p9, NOPE_1, NOPE_1.p1, REQ_9.x, REQ_005.1.p1, EXT_1, EXT_1.rp, EXT_1.a.b, EXT_1.zz
+   :links: REQ_1, REQ_1.p1, REQ_1.p9, REQ_1., NOPE_1, NOPE_1.p1, REQ_9.x, REQ_005.1.p1, EXT_1, EXT_1.rp, EXT_1.a.b, EXT_1.zz
 
 .. needtable::
    :columns: id, links
@@ -364,6 +365,9 @@ def test_needtable_link_cell_reads_a_link_as_a_link_is_read(test_app):
         "REQ_1.p1": ("#REQ_1.p1", internal),
         # dead: a part REQ_1 does not have; a need that does not exist
         "REQ_1.p9": (None, None),
+        # dead: the empty part, which no need has, written with its dot (it was
+        # written ``REQ_1`` and linked ``#REQ_1``)
+        "REQ_1.": (None, None),
         "NOPE_1": (None, None),
         "NOPE_1.p1": (None, None),
         # a need whose id holds a dot, as in 9.3.0
