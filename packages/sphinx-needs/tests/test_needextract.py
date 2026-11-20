@@ -1070,3 +1070,21 @@ def test_needextract_a_record_part_whose_id_holds_a_dot(test_app):
         "<srcdir>/index.rst:4: WARNING: External needs cannot be used as targets by "
         "needextract (ID 'EXT_1'). [needs.needextract]"
     ]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_extract_app('"REQ_1.p1"')], ids=["quoted"], indirect=True
+)
+def test_needextract_a_quoted_part_address_is_a_filter(test_app):
+    """Written ``"REQ_1.p1"``, the argument is a filter string, as in 9.3.0: a string
+    constant, reported as the invalid filter it is. Nothing is extracted."""
+    app = test_app
+    app.build()
+
+    warnings = warning_lines(app)
+    assert len(warnings) == 1, warnings
+    assert warnings[0].startswith(
+        """<srcdir>/index.rst:8: WARNING: Filter '"REQ_1.p1"' not valid."""
+    ), warnings[0]
+    assert warnings[0].endswith("[needs.filter]"), warnings[0]
+    assert _extracted(app) == []
