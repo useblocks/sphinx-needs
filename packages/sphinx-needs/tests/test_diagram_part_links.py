@@ -503,6 +503,65 @@ def test_needflow_root_id_a_part_address_reads_as_its_need(test_app: Sphinx):
     assert _drawn(from_a_dead_link) == ({"IMPL_1"}, set())
 
 
+EXTERNAL_CONF = (
+    FLOW_CONF
+    + "needs_external_needs = [{'base_url': 'http://example.org/', "
+    + "'json_path': 'external.json', 'id_prefix': ''}]\n"
+)
+
+EXTERNAL_JSON = """\
+{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {
+  "id": "EXT_1", "type": "req", "title": "External", "docname": "ext",
+  "parts": {"rp": {"id": "rp", "content": "a record part"}}
+}}}}}
+"""
+
+EXTERNAL_ROOT = """\
+External
+========
+
+.. spec:: Links an external part
+   :id: SPEC_1
+   :links: EXT_1.rp
+
+.. needflow::
+   :root_id: EXT_1.rp
+
+.. needflow::
+   :root_id: EXT_1.zz
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EXTERNAL_CONF),
+                (Path("external.json"), EXTERNAL_JSON),
+                (Path("index.rst"), EXTERNAL_ROOT),
+            ],
+        }
+    ],
+    ids=["external"],
+    indirect=True,
+)
+def test_needflow_root_id_a_part_of_an_external_need(test_app: Sphinx):
+    """The part an external need's record states is a part of it: the root
+    ``EXT_1.rp`` starts at ``EXT_1``; ``EXT_1.zz``, a part it does not have, draws
+    nothing."""
+    app = test_app
+    sources = _capture(app)
+    app.build()
+    assert build_warnings(app) == []
+    [of_the_part] = sources
+    assert _drawn(of_the_part) == (
+        {"EXT_1", "EXT_1.rp", "SPEC_1"},
+        {"SPEC_1 -[dotted]-> EXT_1.rp"},
+    )
+
+
 EDGES = """\
 Edges
 =====

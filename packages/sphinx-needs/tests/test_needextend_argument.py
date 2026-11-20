@@ -416,3 +416,22 @@ def test_a_need_id_holding_a_dot_is_extended_as_before(test_app: Sphinx):
 
     assert build_warnings(app) == []
     assert needs_by_id(app)["REQ_9.x"]["tags"] == ["x"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_app('"REQ_1.p1"')], ids=["quoted"], indirect=True
+)
+def test_a_part_address_written_as_a_filter_is_a_filter(test_app: Sphinx):
+    """Written ``"REQ_1.p1"``, the argument is a filter string, evaluated as one and
+    reported as the invalid filter it is: only an argument read as an id is refused for
+    naming a part."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert warnings[0].startswith("<srcdir>/index.rst:12: WARNING: "), warnings[0]
+    assert "'REQ_1.p1'" in warnings[0]
+    assert "names a part" not in warnings[0]
+    assert "Provided id" not in warnings[0]
+    assert needs_by_id(app)["REQ_1"]["tags"] == []
