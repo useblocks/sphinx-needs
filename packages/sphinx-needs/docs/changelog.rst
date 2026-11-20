@@ -27,14 +27,15 @@ Bug fixes
 
   The places: the targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml`
   and :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`,
-  and the ``need_id`` of ``copy``. The roles, the needuml functions and needsequence ended the build on a part
+  and the ``need_id`` of ``copy``. ``:need_incoming:`` given a part address lists the links that point at the part,
+  its own back links. The roles, the needuml functions and needsequence ended the build on a part
   address, and ``copy`` reported an error and copied nothing. An address naming a part its need does not have is
   treated as an id naming no need, except that the two roles report it as ``:need:`` reports a missing part.
   **Changed output**: a ``:need_outgoing:`` or ``:need_incoming:`` naming no need, which ended the build too, is now
   reported as ``:need:`` reports one (a ``needs.link_ref`` warning) and rendered as an unresolved reference. The need
   card's outgoing row and the list ``:need_outgoing:`` renders show a link to a part of an external need as they show
   one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
-  the need. (:pr:`2551`)
+  the need. (:pr:`2551`, :pr:`2553`)
 
 - 🐛 Seven more places read a :ref:`need part <need_part>`'s address ``ID.part``, or a link to a part, as a link to a
   part is read: the address is split once at its first ``.``, and names the need when the need has the part.
@@ -47,7 +48,9 @@ Bug fixes
   - :ref:`needextend` given a part address still refuses it, with the same warning and strictness, now saying that
     the address names a part of the need and to extend the need.
   - :ref:`needflow`'s ``:root_id:`` naming a part starts the walk at the part's need, where it drew nothing, and the
-    walk follows a link to a part to the part's need.
+    walk follows a link to a part to the part's need. The walk's first incoming step follows only the links that
+    point at the part, its first outgoing step follows the need's links, and every later step follows the links of
+    the need it reaches.
   - A schema's network rule validates the need a link to a part names, where it reported a broken link
     (:issue:`2337`).
   - A link to the empty part, ``REQ_1.``, which no need has, keeps its ``.`` where the link is stored, written to
@@ -71,7 +74,7 @@ Bug fixes
     links, so a walk into ``REQ_1`` reaches the need holding it), and a schema's network rule reports it as a broken
     link, where each read it as a link to ``REQ_1``.
 
-  The first build after upgrading reads every document again. (:pr:`2552`)
+  The first build after upgrading reads every document again. (:pr:`2552`, :pr:`2553`)
 
 Internal changes
 ................

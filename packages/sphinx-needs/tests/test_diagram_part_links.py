@@ -432,9 +432,10 @@ def test_needsequence_start_that_does_not_resolve(test_app: Sphinx, start: str):
 
 # --- needflow ----------------------------------------------------------------------------
 #
-# A ``:root_id:`` naming a part starts the walk at the part's need, and the walk follows a
-# link to a part to the part's need; a dead part link is not followed. An edge is a part
-# edge when its link names a part; the id of the need the link starts at plays no part.
+# A ``:root_id:`` naming a part starts the walk at the part's need, its first incoming
+# step following the links naming that part alone, and the walk follows a link to a part
+# to the part's need; a dead part link is not followed. An edge is a part edge when its
+# link names a part; the id of the need the link starts at plays no part.
 
 FLOW_CONF = CONF + 'needs_flow_engine = "plantuml"\n'
 
@@ -501,6 +502,76 @@ def test_needflow_root_id_a_part_address_reads_as_its_need(test_app: Sphinx):
     assert _drawn(outgoing_from_spec) == _drawn(of_the_need)
     # and does not follow a link to a part REQ_2 does not have
     assert _drawn(from_a_dead_link) == ({"IMPL_1"}, set())
+
+
+FIRST_STEP = """\
+First step
+==========
+
+.. req:: Parts
+   :id: REQ_1
+   :links: UPS_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. req:: Upstream
+   :id: UPS_1
+
+.. spec:: Links the need
+   :id: SPEC_A
+   :links: REQ_1
+
+.. spec:: Links the first part
+   :id: SPEC_B
+   :links: REQ_1.p1
+
+.. spec:: Links the second part
+   :id: SPEC_C
+   :links: REQ_1.p2
+
+.. needflow::
+   :root_id: REQ_1.p1
+   :root_direction: incoming
+
+.. needflow::
+   :root_id: REQ_1.p1
+
+.. needflow::
+   :root_id: REQ_1
+   :root_direction: incoming
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(FLOW_CONF, FIRST_STEP)], ids=["first-step"], indirect=True
+)
+def test_needflow_root_id_a_part_steps_in_through_the_part(test_app: Sphinx):
+    """The root ``REQ_1.p1`` draws ``REQ_1`` and, incoming, only the need linking that
+    part; ``both`` adds what ``REQ_1`` links. The root ``REQ_1`` draws every need linking
+    it, through a part or whole."""
+    app = test_app
+    sources = _capture(app)
+    app.build()
+    assert build_warnings(app) == []
+
+    incoming_from_the_part, both_from_the_part, incoming_from_the_need = sources
+    parts = {"REQ_1", "REQ_1.p1", "REQ_1.p2"}
+    assert _drawn(incoming_from_the_part) == (
+        {*parts, "SPEC_B"},
+        {"SPEC_B -[dotted]-> REQ_1.p1"},
+    )
+    assert _drawn(both_from_the_part) == (
+        {*parts, "SPEC_B", "UPS_1"},
+        {"SPEC_B -[dotted]-> REQ_1.p1", "REQ_1 --> UPS_1"},
+    )
+    assert _drawn(incoming_from_the_need) == (
+        {*parts, "SPEC_A", "SPEC_B", "SPEC_C"},
+        {
+            "SPEC_A --> REQ_1",
+            "SPEC_B -[dotted]-> REQ_1.p1",
+            "SPEC_C -[dotted]-> REQ_1.p2",
+        },
+    )
 
 
 EXTERNAL_CONF = (
@@ -627,11 +698,16 @@ def test_needflow_an_external_part_whose_id_holds_a_dot(test_app: Sphinx):
 
     assert len(sources) == 4
     of_the_need, of_the_part, outgoing_from_spec_2, outgoing_from_spec_3 = sources
-    # the root EXT_1.a.b draws what the root EXT_1 draws; SPEC_3, whose link is dead,
-    # is reached through EXT_1's back links, and draws no edge
-    assert of_the_part == of_the_need
+    # SPEC_3, whose link is dead, is reached through EXT_1's back links, and draws no
+    # edge
     assert _drawn(of_the_need) == (
         {"EXT_1", "EXT_1.rp", "EXT_1.a.b", "SPEC_2", "SPEC_3"},
+        {"SPEC_2 -[dotted]-> EXT_1.a.b"},
+    )
+    # the root EXT_1.a.b steps in through the part's back links: SPEC_2 alone, whose
+    # link names that part; SPEC_3's dead link is not one of them
+    assert _drawn(of_the_part) == (
+        {"EXT_1", "EXT_1.rp", "EXT_1.a.b", "SPEC_2"},
         {"SPEC_2 -[dotted]-> EXT_1.a.b"},
     )
     # the walk follows SPEC_2's link to EXT_1.a.b to EXT_1

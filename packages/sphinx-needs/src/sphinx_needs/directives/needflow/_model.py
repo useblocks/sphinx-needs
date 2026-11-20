@@ -34,7 +34,7 @@ from typing import Literal
 from docutils import nodes
 from sphinx.application import Sphinx
 
-from sphinx_needs._part_address import need_at
+from sphinx_needs._part_address import need_and_part_at, need_at
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
@@ -85,18 +85,30 @@ def filter_by_tree(
     has leads to the need, one hop like any link. A link to a part the need does not
     have is a dead link, and is not followed from the need that holds it; it still
     counts in the target need's back links, so an incoming walk reaches its source.
+
+    The first step from a ``root_id`` naming a part is the part's where the part has an
+    answer of its own: incoming, it follows the part's back links, the links naming that
+    part alone; outgoing, its need's links, since a part has none. Every later step
+    follows the need's links, however the walk arrived at the need.
     """
-    if (root_need := need_at(needs_view, root_id)) is None:
+    if (start := need_and_part_at(needs_view, root_id)) is None:
         return needs_view.filter_ids([])
+    root_need, root_part = start
+    # where the root's first incoming step reads its back links: the part's, for a part
+    root_back_links: NeedItem | NeedPartItem = (
+        root_need if root_part is None else NeedPartItem(root_need, root_part.id)
+    )
     roots = {root_need["id"]: (0, root_need)}
     link_prefixes = (
-        ("_back",)
+        (("_back", True),)
         if direction == "incoming"
-        else ("",)
+        else (("", False),)
         if direction == "outgoing"
-        else ("", "_back")
+        else (("", False), ("_back", True))
     )
-    links_to_process = [link + d for link in link_names for d in link_prefixes]
+    links_to_process = [
+        (link + suffix, back) for link in link_names for suffix, back in link_prefixes
+    ]
 
     need_ids: list[str] = []
     while roots:
@@ -106,8 +118,10 @@ def filter_by_tree(
         if depth is not None and root_depth > depth:
             continue
         need_ids.append(root_id)
-        for link_type_name in links_to_process:
-            for address in root.get(link_type_name, []):
+        for link_type_name, back in links_to_process:
+            # the root, alone at depth 0, steps in through its part's back links
+            holder = root_back_links if back and root_depth == 0 else root
+            for address in holder.get(link_type_name, []):
                 if (linked := need_at(needs_view, address)) is not None:
                     roots[linked["id"]] = (root_depth + 1, linked)
 

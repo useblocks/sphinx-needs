@@ -2,8 +2,10 @@
 the need card's outgoing row, where a link names a part of an external need.
 
 Where a need is expected, a part address reads as its need (``design/parts-contract.md``):
-a role naming ``REQ_1.p1`` lists the links of ``REQ_1``, exactly as one naming ``REQ_1``.
-An address naming a part its need does not have, or a need that does not exist, does not
+``:need_outgoing:`` naming ``REQ_1.p1`` lists the links of ``REQ_1``, exactly as one naming
+``REQ_1``, since a part has no links of its own. A part has back links of its own, so
+``:need_incoming:`` naming ``REQ_1.p1`` lists those: the links naming that part, and only
+those. An address naming a part its need does not have, or a need that does not exist, does not
 resolve: it is reported as ``:need:`` reports it, and rendered as ``:need:`` renders an
 unresolved reference. Each of those ended the build with a ``KeyError`` of the target,
 the unknown need included **(changed output)**.
@@ -17,6 +19,7 @@ from pathlib import Path
 import pytest
 from sphinx.application import Sphinx
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
 CONF = 'extensions = ["sphinx_needs"]\n'
@@ -129,21 +132,259 @@ def _listed(role: str, ns: str = "") -> str:
 
 @pytest.mark.parametrize(
     "test_app,role",
-    [
-        pytest.param(_project(role, "REQ_1.p1"), role, id=role)
-        for role in ("need_outgoing", "need_incoming")
-    ],
+    [pytest.param(_project("need_outgoing", "REQ_1.p1"), "need_outgoing", id="found")],
     indirect=["test_app"],
 )
-def test_a_part_address_reads_as_its_need(test_app: Sphinx, role: str):
+def test_need_outgoing_on_a_part_address_reads_as_its_need(test_app: Sphinx, role: str):
     """``REQ_1.p1`` lists what ``REQ_1`` lists, rendered byte for byte as the role naming
-    the need renders it."""
+    the need renders it: a part has no links of its own."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert _paragraph(html, "Need") == _listed(role)
     assert _paragraph(html, "Target") == _paragraph(html, "Need")
+
+
+def _incoming(target: str, *sources: str) -> str:
+    """What ``:need_incoming:`` naming *target* (or a part of it) renders, listing
+    *sources*, each linked to its anchor; ``None`` when it lists nothing."""
+    if not sources:
+        return "<span>None</span>"
+    return (
+        "<span>"
+        + ", ".join(
+            f'<a class="reference internal" href="#{source}" title="{target}">'
+            f"{source}</a>"
+            for source in sources
+        )
+        + "</span>"
+    )
+
+
+INCOMING = """\
+Incoming
+========
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. spec:: Links the need
+   :id: SPEC_A
+   :links: REQ_1
+
+.. spec:: Links the first part
+   :id: SPEC_B
+   :links: REQ_1.p1
+
+.. spec:: Links the second part
+   :id: SPEC_C
+   :links: REQ_1.p2
+
+Part: :need_incoming:`REQ_1.p1`
+
+Need: :need_incoming:`REQ_1`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), INCOMING)],
+        }
+    ],
+    indirect=True,
+    ids=["parts"],
+)
+def test_need_incoming_on_a_part_lists_the_parts_back_links(test_app: Sphinx):
+    """``REQ_1.p1`` lists the links naming that part, and only those; ``REQ_1`` lists
+    every link to the need, a link to one of its parts included."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert _paragraph(html, "Part") == _incoming("REQ_1", "SPEC_B")
+    assert _paragraph(html, "Need") == _incoming("REQ_1", "SPEC_A", "SPEC_B", "SPEC_C")
+
+
+def _ids(paragraph: str) -> list[str]:
+    """The ids a ``:need_incoming:`` paragraph lists, in the order it lists them."""
+    return re.findall(r'<a class="reference internal" [^>]*>([^<]+)</a>', paragraph)
+
+
+SIBLINGS = """\
+Siblings
+========
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p10) ten`
+
+.. spec:: Links the first part
+   :id: SPEC_F
+   :links: REQ_1.p1
+
+.. spec:: Links the tenth part only
+   :id: SPEC_T
+   :links: REQ_1.p10
+
+.. spec:: Links the first part too
+   :id: SPEC_B
+   :links: REQ_1.p1
+
+.. spec:: Blocks the first part
+   :id: SPEC_K
+   :blocks: REQ_1.p1
+
+.. spec:: Blocks the need
+   :id: SPEC_M
+   :blocks: REQ_1
+
+Part: :need_incoming:`REQ_1.p1`
+
+Need: :need_incoming:`REQ_1`
+"""
+
+#: :data:`SIBLINGS`, with the second link type ``blocks``
+SIBLINGS_PROJECT = {
+    "buildername": "html",
+    "files": [
+        (Path("conf.py"), CONF + 'needs_links = {"blocks": {}}\n'),
+        (Path("index.rst"), SIBLINGS),
+    ],
+}
+
+
+def _siblings(app: Sphinx) -> tuple[list[str], list[str]]:
+    """Build :data:`SIBLINGS`: the ids listed for ``REQ_1.p1`` and for ``REQ_1``."""
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    return _ids(_paragraph(html, "Part")), _ids(_paragraph(html, "Need"))
+
+
+@pytest.mark.parametrize(
+    "test_app", [SIBLINGS_PROJECT], indirect=True, ids=["siblings"]
+)
+def test_need_incoming_on_a_part_is_not_a_prefix_of_its_siblings(test_app: Sphinx):
+    """``REQ_1.p1`` does not list ``SPEC_T``, which links ``REQ_1.p10`` alone, an
+    address ``REQ_1.p1`` is a prefix of; ``REQ_1`` lists it."""
+    part, need = _siblings(test_app)
+    assert "SPEC_T" not in part
+    assert set(part) == {"SPEC_F", "SPEC_B"}
+    assert "SPEC_T" in need
+
+
+@pytest.mark.parametrize(
+    "test_app", [SIBLINGS_PROJECT], indirect=True, ids=["siblings"]
+)
+def test_need_incoming_on_a_part_reads_one_link_type(test_app: Sphinx):
+    """The plain form reads ``links`` alone, on the part as on the need: neither lists
+    ``SPEC_K``, which blocks ``REQ_1.p1``, and ``REQ_1`` does not list ``SPEC_M``, which
+    blocks it whole."""
+    part, need = _siblings(test_app)
+    assert not {"SPEC_K", "SPEC_M"} & set(need)
+    assert "SPEC_K" not in part
+    assert set(part) == {"SPEC_F", "SPEC_B"}
+
+
+@pytest.mark.parametrize(
+    "test_app", [SIBLINGS_PROJECT], indirect=True, ids=["siblings"]
+)
+def test_need_incoming_on_a_part_lists_in_the_parts_stored_order(test_app: Sphinx):
+    """``REQ_1.p1`` lists the needs linking it in the order the part's stored back links
+    hold them, read from the build's data."""
+    part, _ = _siblings(test_app)
+    stored = SphinxNeedsData(test_app.env).get_needs_view()["REQ_1"].get_part("p1")
+    assert stored is not None
+    order = [link.to_filter_string() for link in stored.backlinks["links"]]
+    assert len(order) == 2
+    assert part == order
+
+
+#: a role writing the node the need card's incoming row writes, ``NeedIncoming`` with a
+#: ``link_type``, for a target the role's text gives: ``<target> <link type>_back``
+BY_TYPE_CONF = """\
+from docutils import nodes
+
+from sphinx_needs.roles.need_incoming import NeedIncoming
+
+extensions = ["sphinx_needs"]
+needs_links = {"blocks": {}}
+
+
+def incoming_by_type(name, rawtext, text, lineno, inliner, options=None, content=None):
+    target, link_type = text.split()
+    node = NeedIncoming(reftarget=target, link_type=link_type)
+    node.append(nodes.inline(target, target))
+    return [node], []
+
+
+def setup(app):
+    app.add_role("incoming_by_type", incoming_by_type)
+"""
+
+BY_TYPE = """\
+By type
+=======
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. spec:: Blocks the first part
+   :id: SPEC_B
+   :blocks: REQ_1.p1
+
+.. spec:: Links the first part
+   :id: SPEC_L
+   :links: REQ_1.p1
+
+.. spec:: Blocks the need
+   :id: SPEC_N
+   :blocks: REQ_1
+
+.. spec:: Blocks the second part
+   :id: SPEC_O
+   :blocks: REQ_1.p2
+
+Part: :incoming_by_type:`REQ_1.p1 blocks_back`
+
+Need: :incoming_by_type:`REQ_1 blocks_back`
+
+Part links: :incoming_by_type:`REQ_1.p1 links_back`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), BY_TYPE_CONF), (Path("index.rst"), BY_TYPE)],
+        }
+    ],
+    indirect=True,
+    ids=["blocks"],
+)
+def test_need_incoming_by_link_type_on_a_part(test_app: Sphinx):
+    """The role's link-type form reads the same link type on the part: ``blocks`` of
+    ``REQ_1.p1`` is ``SPEC_B`` alone, a ``links`` link to the part, a ``blocks`` link to
+    the need and one to its other part kept out; on ``REQ_1`` it is every ``blocks``
+    link to the need."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert _paragraph(html, "Part") == _incoming("REQ_1", "SPEC_B")
+    assert _paragraph(html, "Need") == _incoming("REQ_1", "SPEC_B", "SPEC_N", "SPEC_O")
+    assert _paragraph(html, "Part links") == _incoming("REQ_1", "SPEC_L")
 
 
 @pytest.mark.parametrize(
@@ -245,7 +486,9 @@ Roles
     indirect=["test_app"],
 )
 def test_a_role_in_its_needs_own_content(test_app: Sphinx, listed: str):
-    """A role naming a part of the need whose content holds it reads that need."""
+    """A role naming a part of the need whose content holds it resolves:
+    ``:need_outgoing:`` lists the need's links, ``:need_incoming:`` the part's back
+    links."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
@@ -415,3 +658,75 @@ def test_a_role_naming_a_part_of_an_external_need(test_app: Sphinx):
         f'<span><a class="external_link reference external" href="{_URL}#EXT_2">'
         "EXT_2</a></span>"
     )
+
+
+IMPORT_JSON = (
+    '{"current_version": "1.0", "versions": {"1.0": {"needs": {'
+    '"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", '
+    '"content": ":np:`(ip) an imported part`"}}}}}'
+)
+
+OTHER_PARTS = """\
+Other parts
+===========
+
+.. needimport:: imported.json
+
+.. req:: Linked whole only
+   :id: REQ_1
+
+   :np:`(p1) nothing links here`
+
+.. req:: Nothing links here
+   :id: LONE_1
+
+.. spec:: Links the external part
+   :id: SPEC_1
+   :links: EXT_1.rp
+
+.. spec:: Links the external need and the imported one
+   :id: SPEC_2
+   :links: EXT_1, IMP_1, REQ_1
+
+.. spec:: Links the imported part
+   :id: SPEC_3
+   :links: IMP_1.ip
+
+External: :need_incoming:`EXT_1.rp`
+
+Imported: :need_incoming:`IMP_1.ip`
+
+Unlinked: :need_incoming:`REQ_1.p1`
+
+Lone: :need_incoming:`LONE_1`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EXTERNAL_CONF),
+                (Path("external.json"), EXTERNAL_JSON),
+                (Path("imported.json"), IMPORT_JSON),
+                (Path("index.rst"), OTHER_PARTS),
+            ],
+        }
+    ],
+    indirect=True,
+    ids=["external-imported-unlinked"],
+)
+def test_need_incoming_on_an_external_imported_or_unlinked_part(test_app: Sphinx):
+    """The part an external need's record states, and the part an imported need's
+    content marks, list their own back links; a part no need links to renders as a need
+    no need links to renders, however many links its need has."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert _paragraph(html, "External") == _incoming("EXT_1", "SPEC_1")
+    assert _paragraph(html, "Imported") == _incoming("IMP_1", "SPEC_3")
+    assert _paragraph(html, "Lone") == _incoming("LONE_1")
+    assert _paragraph(html, "Unlinked") == _paragraph(html, "Lone")
