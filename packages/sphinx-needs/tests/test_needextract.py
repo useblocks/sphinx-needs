@@ -770,3 +770,473 @@ def test_needextract_discards_post_transform_state(test_app):
 
     state = Path(app.outdir, "state.log").read_text(encoding="utf8").split()
     assert state == ["sentinel=False", "highlight_language=''"], state
+
+
+# -- A part address as the argument ------------------------------------------
+#
+# Given a need part's address ``ID.part`` of a need that has the part, needextract
+# extracts the need, as it does for ``ID``: the argument names one need. Any other
+# argument is read as in 9.3.0: an address naming a part its need does not have, or a
+# part of no need, is a filter string there, reported as the invalid filter it is. A
+# need id holding a ``.`` is read whole, as it was.
+
+PART_NEEDS = """\
+Needs
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   Text with :np:`(p1) the part` and :np:`(é1) a part whose id is not ASCII`.
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+
+.. req:: A need whose id the default pattern accepts by its prefix alone
+   :id: REQ_001-A
+
+   Text with :np:`(p1) its part`.
+"""
+
+NAMESPACED_PART_NEEDS = """\
+Needs
+=====
+
+.. req:: In a namespace
+   :id: nc::REQ_3
+
+   Text with :np:`(p3) a namespaced part`.
+"""
+
+NAMESPACED_CONF = CONF + "needs_namespaced_ids = True\n"
+
+
+def _extract_app(argument: str, *, namespaced: bool = False) -> dict[str, object]:
+    """A project whose index extracts ``argument`` and whose needs are on another page."""
+    index = f"""\
+Extract
+=======
+
+.. toctree::
+
+   needs
+
+.. needextract:: {argument}
+"""
+    return {
+        "buildername": "html",
+        "files": [
+            (Path("conf.py"), NAMESPACED_CONF if namespaced else CONF),
+            (Path("index.rst"), index),
+            (Path("needs.rst"), NAMESPACED_PART_NEEDS if namespaced else PART_NEEDS),
+        ],
+    }
+
+
+def _extracted(app) -> list[str]:
+    """The ids of the need cards on the index page, which only the extract puts there."""
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    return tree.xpath("//table[contains(concat(' ', @class, ' '), ' need ')]/@id")
+
+
+def _invalid_filter(argument: str, error: str) -> str:
+    """The warning of an argument read as a filter that cannot be evaluated."""
+    return (
+        f"<srcdir>/index.rst:8: WARNING: Filter {argument!r} not valid. Error: "
+        f"{error}. [needs.filter]"
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extracted"),
+    [
+        (_extract_app("REQ_1"), "REQ_1"),
+        (_extract_app("REQ_1.p1"), "REQ_1"),
+        (_extract_app("REQ_1.é1"), "REQ_1"),
+        (_extract_app("REQ_001-A.p1"), "REQ_001-A"),
+        (_extract_app("nc::REQ_3.p3", namespaced=True), "nc::REQ_3"),
+        (_extract_app("REQ_9.x"), "REQ_9.x"),
+    ],
+    ids=[
+        "the-need",
+        "a-part-of-it",
+        "a-non-ascii-part",
+        "a-part-of-a-need-the-id-pattern-matches-by-prefix",
+        "a-part-of-a-namespaced-need",
+        "a-dotted-need-id",
+    ],
+    indirect=["test_app"],
+)
+def test_needextract_a_part_address_extracts_its_need(test_app, extracted):
+    """The need is extracted, as for its id, and nothing is reported.
+
+    ``REQ_9.x`` is a need whose id holds a ``.``, and there is no need ``REQ_9``: it is
+    read whole, as in 9.3.0, which takes no side on what such an id should mean.
+    ``REQ_001-A.p1`` resolves although the id pattern does not accept ``REQ_001-A`` in
+    full: that the need exists and has the part decides, not the pattern.
+    """
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == []
+    assert _extracted(app) == [extracted]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "warning"),
+    [
+        (
+            _extract_app("REQ_1.p9"),
+            _invalid_filter("REQ_1.p9", "name 'REQ_1' is not defined"),
+        ),
+        (
+            _extract_app("NOPE_1.p1"),
+            _invalid_filter("NOPE_1.p1", "name 'NOPE_1' is not defined"),
+        ),
+        (
+            _extract_app("NOPE_1"),
+            "<srcdir>/index.rst:8: WARNING: Requested need 'NOPE_1' not found. "
+            "[needs.needextract]",
+        ),
+        (
+            _extract_app("nc::REQ_3.p9", namespaced=True),
+            _invalid_filter("nc::REQ_3.p9", "invalid syntax (<string>, line 1)"),
+        ),
+    ],
+    ids=[
+        "part-missing",
+        "part-of-a-missing-need",
+        "need-missing",
+        "namespaced-part-missing",
+    ],
+    indirect=["test_app"],
+)
+def test_needextract_an_address_that_does_not_resolve(test_app, warning):
+    """Read as in 9.3.0: an id naming no need is reported as not found, and an address
+    naming a part its need does not have, or a part of no need, is a filter string,
+    reported as the invalid filter it is. Nothing is extracted, and the page is
+    written."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [warning]
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert "<h1>Extract" in html
+    assert _extracted(app) == []
+
+
+# -- A filter is read as a filter ---------------------------------------------
+#
+# An argument is read as a part address only when it resolves: the need exists and has
+# the part. Its text cannot say so (``var.flag`` and ``REQ_1.p1`` have one shape), so
+# any other argument is read as in 9.3.0, whatever the text before its first ``.``: a
+# ``needs_filter_data`` name, an upper-case field, the filter context ``c``, the
+# variant data ``var``, or, under a project's ``needs_id_regex``, any field.
+
+FILTER_NEEDS_IDS = ["REQ_1", "SPEC_1", "SUP01::REQ_7"]
+
+FILTER_NEEDS = """\
+Needs
+=====
+
+.. req:: Req title
+   :id: REQ_1
+   :status: open
+   :ASIL_LEVEL: B
+
+   Text with :np:`(p1) the part`.
+
+.. spec:: Spec one
+   :id: SPEC_1
+   :status: closed
+   :ASIL_LEVEL: A
+
+.. req:: Supplier req
+   :id: SUP01::REQ_7
+   :status: closed
+   :ASIL_LEVEL: A
+"""
+
+FILTER_CONF = (
+    CONF
+    + 'needs_fields = {"ASIL_LEVEL": {"nullable": True}}\n'
+    + "needs_namespaced_ids = True\n"
+    + 'needs_variant_data = {"flag": True}\n'
+)
+
+# a name the (deprecated) ``needs_filter_data`` gives every filter
+FILTER_DATA = 'needs_filter_data = {"CURRENT_VERSION": "1.0"}\n'
+FILTER_DATA_DEPRECATED = (
+    "WARNING: needs_filter_data is deprecated and will be removed in a future "
+    "version. Use needs_variant_data instead. [needs.deprecated]"
+)
+
+# matched in full, each accepts the word before the first ``.`` of the lower-case
+# arguments below; the second the upper-case ones too
+LOWER_CASE_ID_REGEX = "^[a-z0-9_]+"
+MIXED_CASE_ID_REGEX = "^[A-Za-z0-9_]+"
+
+#: the id pattern (``None``: the default), and whether the needs' ids are lower case
+ID_REGEXES = {
+    "default-id-regex": (None, False),
+    "lower-case-id-regex": (LOWER_CASE_ID_REGEX, True),
+    "mixed-case-id-regex": (MIXED_CASE_ID_REGEX, False),
+}
+
+EXTERNAL_PART_JSON = """\
+{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {
+  "id": "EXT_1", "type": "req", "title": "External", "docname": "ext",
+  "parts": {"a.b": {"id": "a.b", "content": "a record part whose id holds a dot"}}
+}}}}}
+"""
+
+EXTERNAL_CONF = (
+    CONF
+    + "needs_external_needs = [\n"
+    + '    {"base_url": "http://example.org/", "json_path": "external.json",'
+    + ' "id_prefix": ""}\n'
+    + "]\n"
+)
+
+
+def _filter_app(argument: str, *, regex: str) -> dict[str, object]:
+    """A project whose index extracts ``argument`` from the needs of another page,
+    under the id pattern ``regex`` names (:data:`ID_REGEXES`)."""
+    pattern, lower_case = ID_REGEXES[regex]
+    needs = FILTER_NEEDS
+    if lower_case:
+        for need_id in FILTER_NEEDS_IDS:
+            needs = needs.replace(f":id: {need_id}\n", f":id: {need_id.lower()}\n")
+    index = f"""\
+Extract
+=======
+
+.. toctree::
+
+   needs
+
+.. needextract:: {argument}
+"""
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("conf.py"),
+                FILTER_CONF
+                + FILTER_DATA
+                + ("" if pattern is None else f"needs_id_regex = {pattern!r}\n"),
+            ),
+            (Path("index.rst"), index),
+            (Path("needs.rst"), needs),
+        ],
+    }
+
+
+#: (argument, the ids extracted, the warning after the deprecation's, if any)
+FILTERS: list[tuple[str, list[str], str | None]] = [
+    ('CURRENT_VERSION.startswith("1") and status == "open"', ["REQ_1"], None),
+    ('ASIL_LEVEL.startswith("B")', ["REQ_1"], None),
+    ('status.upper() == "OPEN"', ["REQ_1"], None),
+    ('title.startswith("Req t")', ["REQ_1"], None),
+    ('type.startswith("sp")', ["SPEC_1"], None),
+    # the needs are on another page than the extract: it selects none
+    ("c.this_doc()", [], None),
+    # the needs that have a namespace
+    ("c.id.ns", ["SUP01::REQ_7"], None),
+    ("var.flag", FILTER_NEEDS_IDS, None),
+    (
+        "status.open",
+        [],
+        _invalid_filter("status.open", "'str' object has no attribute 'open'"),
+    ),
+]
+FILTER_IDS = [
+    "filter-data-name",
+    "upper-case-field",
+    "method-call-compared",
+    "method-call-with-a-space",
+    "method-call",
+    "this-doc",
+    "id-facet",
+    "variant-data",
+    "an-invalid-filter",
+]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "lower_case", "extracted", "warning"),
+    [
+        (_filter_app(argument, regex=regex), lower_case, ids, warning)
+        for regex, (_, lower_case) in ID_REGEXES.items()
+        for argument, ids, warning in FILTERS
+    ],
+    ids=[f"{regex}-{name}" for regex in ID_REGEXES for name in FILTER_IDS],
+    indirect=["test_app"],
+)
+def test_needextract_a_filter_is_read_as_a_filter(
+    test_app, lower_case, extracted, warning
+):
+    """Each argument is a filter, run as one, as in 9.3.0, under each id pattern: the
+    needs it selects are extracted (``c.this_doc()`` selects none on this page, and says
+    so), and nothing is reported but the configuration's deprecation and, for a filter
+    that cannot be evaluated, its invalid filter."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [
+        FILTER_DATA_DEPRECATED,
+        *([] if warning is None else [warning]),
+    ]
+    assert _extracted(app) == [
+        need_id.lower() if lower_case else need_id for need_id in extracted
+    ]
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert ("No needs passed the filters" in html) is (not extracted)
+
+
+WORD_NEEDS = """\
+Needs
+=====
+
+.. req:: A need named as the filter context
+   :id: c
+
+.. req:: A need named as the variant data
+   :id: var
+
+.. req:: Supplier req
+   :id: SUP01::REQ_7
+"""
+
+
+def _word_app(argument: str) -> dict[str, object]:
+    """A project with needs named ``c`` and ``var``, which have no parts, under a
+    project's id pattern, whose index extracts ``argument``."""
+    index = f"""\
+Extract
+=======
+
+.. toctree::
+
+   needs
+
+.. needextract:: {argument}
+"""
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("conf.py"),
+                FILTER_CONF + f"needs_id_regex = {MIXED_CASE_ID_REGEX!r}\n",
+            ),
+            (Path("index.rst"), index),
+            (Path("needs.rst"), WORD_NEEDS),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extracted"),
+    [
+        (_word_app("c.id.ns"), ["SUP01::REQ_7"]),
+        (_word_app("var.flag"), ["c", "var", "SUP01::REQ_7"]),
+    ],
+    ids=["id-facet", "variant-data"],
+    indirect=["test_app"],
+)
+def test_needextract_a_filter_whose_first_word_names_a_need_is_a_filter(
+    test_app, extracted
+):
+    """A need named ``c`` or ``var`` has no part ``id.ns`` or ``flag``: the argument
+    does not resolve, so it is the filter it is, as in 9.3.0."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == []
+    assert _extracted(app) == extracted
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extracted", "warning"),
+    [
+        (_filter_app("req_1.p1", regex="lower-case-id-regex"), ["req_1"], None),
+        (_filter_app("REQ_1.p1", regex="mixed-case-id-regex"), ["REQ_1"], None),
+        (
+            _filter_app("REQ_1.p9", regex="mixed-case-id-regex"),
+            [],
+            _invalid_filter("REQ_1.p9", "name 'REQ_1' is not defined"),
+        ),
+        (
+            _filter_app("NOPE_1.p1", regex="mixed-case-id-regex"),
+            [],
+            _invalid_filter("NOPE_1.p1", "name 'NOPE_1' is not defined"),
+        ),
+    ],
+    ids=[
+        "lower-case-id-regex-a-part-of-it",
+        "a-part-of-it",
+        "part-missing",
+        "part-of-a-missing-need",
+    ],
+    indirect=["test_app"],
+)
+def test_needextract_a_part_address_under_a_project_id_regex(
+    test_app, extracted, warning
+):
+    """Under a project's id pattern too, a part address names its need, and one that
+    does not resolve is read as in 9.3.0."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [
+        FILTER_DATA_DEPRECATED,
+        *([] if warning is None else [warning]),
+    ]
+    assert _extracted(app) == extracted
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EXTERNAL_CONF),
+                (Path("external.json"), EXTERNAL_PART_JSON),
+                (Path("index.rst"), "Extract\n=======\n\n.. needextract:: EXT_1.a.b\n"),
+            ],
+        }
+    ],
+    ids=["record-part"],
+    indirect=True,
+)
+def test_needextract_a_record_part_whose_id_holds_a_dot(test_app):
+    """A part a record states may hold a ``.``: ``EXT_1.a.b`` is the part ``a.b`` of the
+    external need EXT_1, so the argument names EXT_1, which needextract reports it
+    cannot extract (an external need has no content here), rather than an invalid
+    filter."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [
+        "<srcdir>/index.rst:4: WARNING: External needs cannot be used as targets by "
+        "needextract (ID 'EXT_1'). [needs.needextract]"
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_extract_app('"REQ_1.p1"')], ids=["quoted"], indirect=True
+)
+def test_needextract_a_quoted_part_address_is_a_filter(test_app):
+    """Written ``"REQ_1.p1"``, the argument is a filter string, as in 9.3.0: a string
+    constant, reported as the invalid filter it is. Nothing is extracted."""
+    app = test_app
+    app.build()
+
+    warnings = warning_lines(app)
+    assert len(warnings) == 1, warnings
+    assert warnings[0].startswith(
+        """<srcdir>/index.rst:8: WARNING: Filter '"REQ_1.p1"' not valid."""
+    ), warnings[0]
+    assert warnings[0].endswith("[needs.filter]"), warnings[0]
+    assert _extracted(app) == []

@@ -665,7 +665,8 @@ class NeedLink:
         object.__setattr__(
             self,
             "_filter_string",
-            f"{self.id}.{self.part}" if self.part else self.id,
+            # the empty part (`ID.`) keeps its `.`: it is no part, and no need
+            f"{self.id}.{self.part}" if self.part is not None else self.id,
         )
 
     @staticmethod
@@ -788,7 +789,7 @@ class NeedLink:
         result reads back through :meth:`from_string` as the same link. An empty
         condition is written ``ID[]``, which reads as no condition.
         """
-        base = f"{self.id}.{self.part}" if self.part else self.id
+        base = f"{self.id}.{self.part}" if self.part is not None else self.id
         if self.condition is None:
             return base
         condition = self.condition

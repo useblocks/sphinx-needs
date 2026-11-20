@@ -33,6 +33,8 @@ The rule reads the argument alone, not the needs. A one-word argument naming an 
 ``=``, ``'`` or ``"`` (such as ``REQ_001(A)``, which the default :ref:`needs_id_regex` accepts) is a filter: write it
 ``<REQ_001(A)>``. And a filter that is a single word holding none of the four, such as ``is_external``, or a
 comparison without ``=``, such as ``priority>3``, is read as an ID: write it ``"is_external"`` or ``"priority>3"``.
+A need part's address (``ID.part``) as the ID is refused, as an ID naming no need is: a part has no fields, so extend
+its need.
 
 ``needextend`` can modify the ``status``, ``tags``, ``style``, ``layout``, ``hide`` and ``collapse`` options,
 and every :ref:`extra field <needs_fields>` and :ref:`link option <needs_links>`, whatever its type;

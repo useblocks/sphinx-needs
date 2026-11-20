@@ -49,7 +49,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 45
+EXPECTED_CASE_COUNT = 46
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -92,9 +92,6 @@ MARKED_PROBLEMS: dict[str, list[str]] = {
         "TEST_1: dead links ['REQ_HID.h1'], expected []",
         "TEST_1: has_dead_links is True, expected False",
         "REQ_HID.h1: no such part",
-    ],
-    "addressing-an-empty-part": [
-        "TEST_1: dead links ['REQ_1'], expected ['REQ_1.']",
     ],
 }
 

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Final, TypedDict, cast
 import jsonschema_rs
 from jsonschema_rs import RegexOptions, ValidationError, Validator
 
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.derive import typed_empty
 from sphinx_needs.need_item import NeedItem
@@ -488,10 +489,10 @@ def recurse_validate_schemas(
             for target_need_id in need[link_field]:
                 # collect all downstream warnings for broken links, items and contains
                 # evaluation happens later
-                try:
-                    target_need = needs[target_need_id]
-                except KeyError:
-                    # Target need does not exist (broken link). Only reachable for the
+                # a link to a part (``ID.part``) validates the part's need
+                if (target_need := need_at(needs, target_need_id)) is None:
+                    # Target need does not exist, or does not have the part the link
+                    # names (broken link). Only reachable for the
                     # outgoing direction: incoming-link sources come from resolved
                     # ``<link_type>_back`` fields, so they always resolve to a need.
                     rule = MessageRuleEnum.network_missing_target

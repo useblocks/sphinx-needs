@@ -313,3 +313,294 @@ def test_an_existing_id_holding_a_filter_character_is_written_bracketed(
     assert warnings[0].startswith("<srcdir>/index.rst:7: WARNING: "), warnings[0]
     assert "'REQ_001(A)'" in warnings[0]
     assert "Provided id" not in warnings[0]
+
+
+PART_INDEX = """\
+Index
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   Text with :np:`(p1) the part`.
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+
+.. needextend:: {argument}
+   :+tags: x
+"""
+
+
+def _part_app(argument: str, **overrides: object) -> dict[str, object]:
+    return {
+        "buildername": "html",
+        "files": [
+            (Path("conf.py"), CONF),
+            (Path("index.rst"), PART_INDEX.format(argument=argument)),
+        ],
+        **overrides,
+    }
+
+
+def _names_a_part(argument: str) -> str:
+    return (
+        f"Provided id {argument!r} for needextend names a part of the need 'REQ_1': "
+        "a part has no fields and cannot be extended; extend the need."
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "argument"),
+    [
+        (_part_app("REQ_1.p1"), "REQ_1.p1"),
+        (_part_app("<REQ_1.p1>"), "REQ_1.p1"),
+    ],
+    ids=["bare", "bracketed"],
+    indirect=["test_app"],
+)
+def test_a_part_address_is_refused_naming_the_part(test_app: Sphinx, argument: str):
+    """A part has no fields, so it cannot be extended: the address is refused with the
+    warning an id naming no need gets, and its message says the address names a part
+    of the need and to extend the need. Nothing is extended."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:12: WARNING: {_names_a_part(argument)} [needs.needextend]"
+    ]
+    assert needs_by_id(app)["REQ_1"]["tags"] == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_part_app("REQ_1.p1", confoverrides={"needs_needextend_strict": True})],
+    ids=["strict"],
+    indirect=True,
+)
+def test_a_part_address_under_strict_ends_the_build(test_app: Sphinx):
+    """Strictness is as for an id naming no need: the build ends, with the message."""
+    with pytest.raises(NeedsInvalidFilter, match=re.escape(_names_a_part("REQ_1.p1"))):
+        test_app.build()
+
+
+@pytest.mark.parametrize(
+    ("test_app", "argument"),
+    [
+        (_part_app("REQ_1.p9"), "REQ_1.p9"),
+        (_part_app("NOPE_1.p1"), "NOPE_1.p1"),
+    ],
+    ids=["part-missing", "part-of-a-missing-need"],
+    indirect=["test_app"],
+)
+def test_an_address_naming_no_part_is_reported_as_before(
+    test_app: Sphinx, argument: str
+):
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:12: WARNING: Provided id {argument!r} for needextend "
+        "does not exist. [needs.needextend]"
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_app("REQ_9.x")], ids=["no-need-REQ_9"], indirect=True
+)
+def test_a_need_id_holding_a_dot_is_extended_as_before(test_app: Sphinx):
+    """``REQ_9.x`` is a need (there is no need ``REQ_9``): it is extended, as in 9.3.0,
+    which takes no side on what such an id should mean."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    assert needs_by_id(app)["REQ_9.x"]["tags"] == ["x"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_app('"REQ_1.p1"')], ids=["quoted"], indirect=True
+)
+def test_a_part_address_written_as_a_filter_is_a_filter(test_app: Sphinx):
+    """Written ``"REQ_1.p1"``, the argument is a filter string, evaluated as one and
+    reported as the invalid filter it is: only an argument read as an id is refused for
+    naming a part."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert warnings[0].startswith("<srcdir>/index.rst:12: WARNING: "), warnings[0]
+    assert "'REQ_1.p1'" in warnings[0]
+    assert "names a part" not in warnings[0]
+    assert "Provided id" not in warnings[0]
+    assert needs_by_id(app)["REQ_1"]["tags"] == []
+
+
+FILTER_INDEX = """\
+Index
+=====
+
+.. req:: Req title
+   :id: REQ_1
+   :status: open
+   :ASIL_LEVEL: B
+
+   Text with :np:`(p1) the part`.
+
+.. spec:: Spec one
+   :id: SPEC_1
+   :status: closed
+   :ASIL_LEVEL: A
+
+.. needextend:: {argument}
+   :+tags: x
+"""
+
+# matched in full, it accepts the word before the first ``.`` of each argument below
+FILTER_CONF = (
+    CONF
+    + 'needs_fields = {"ASIL_LEVEL": {"nullable": True}}\n'
+    + 'needs_id_regex = "^[A-Za-z0-9_]+"\n'
+)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extended"),
+    [
+        (
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), FILTER_CONF),
+                    (
+                        Path("index.rst"),
+                        FILTER_INDEX.format(argument='ASIL_LEVEL.startswith("B")'),
+                    ),
+                ],
+            },
+            "REQ_1",
+        ),
+        (
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), FILTER_CONF),
+                    (
+                        Path("index.rst"),
+                        FILTER_INDEX.format(argument='type.startswith("sp")'),
+                    ),
+                ],
+            },
+            "SPEC_1",
+        ),
+    ],
+    ids=["upper-case-field", "method-call"],
+    indirect=["test_app"],
+)
+def test_a_filter_whose_first_word_is_id_like_is_a_filter(
+    test_app: Sphinx, extended: str
+):
+    """A one-word argument holding ``(`` is a filter, whatever the text before its
+    first ``.``: it is never read as a part address, and extends the need it selects."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    needs = needs_by_id(app)
+    assert {need_id: needs[need_id]["tags"] for need_id in ("REQ_1", "SPEC_1")} == {
+        need_id: ["x"] if need_id == extended else [] for need_id in ("REQ_1", "SPEC_1")
+    }
+
+
+WORD_INDEX = """\
+Index
+=====
+
+.. req:: One
+   :id: {need_id}
+   :status: open
+
+   Text with :np:`(p1) the part`.
+
+.. req:: Supplier req
+   :id: {namespaced_id}
+
+.. needextend:: {argument}
+   :+tags: x
+"""
+
+WORD_CONF = (
+    CONF + "needs_namespaced_ids = True\n" + 'needs_variant_data = {"flag": True}\n'
+)
+
+#: the id pattern (``None``: the default), and the ids of the needs under it
+WORD_ID_REGEXES = {
+    "default-id-regex": (None, "REQ_ONE", "SUP01::REQ_7"),
+    "lower-case-id-regex": ("^[a-z0-9_]+", "req_one", "sup01::req_7"),
+    "mixed-case-id-regex": ("^[A-Za-z0-9_]+", "REQ_ONE", "SUP01::REQ_7"),
+}
+
+#: (argument as written, the id it names)
+WORD_ARGUMENTS = [
+    ("c.id.ns", "c.id.ns"),
+    ("<c.id.ns>", "c.id.ns"),
+    ("var.flag", "var.flag"),
+    ("<var.flag>", "var.flag"),
+]
+
+
+def _word_app(regex: str, argument: str) -> dict[str, object]:
+    pattern, need_id, namespaced_id = WORD_ID_REGEXES[regex]
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("conf.py"),
+                WORD_CONF
+                + ("" if pattern is None else f"needs_id_regex = {pattern!r}\n"),
+            ),
+            (
+                Path("index.rst"),
+                WORD_INDEX.format(
+                    need_id=need_id, namespaced_id=namespaced_id, argument=argument
+                ),
+            ),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "named"),
+    [
+        (_word_app(regex, argument), named)
+        for regex in WORD_ID_REGEXES
+        for argument, named in WORD_ARGUMENTS
+    ],
+    ids=[
+        f"{regex}-{name}"
+        for regex in WORD_ID_REGEXES
+        for name in (
+            "id-facet",
+            "id-facet-bracketed",
+            "variant-data",
+            "variant-data-bracketed",
+        )
+    ],
+    indirect=["test_app"],
+)
+def test_a_filter_with_no_filter_character_is_an_id_as_before(
+    test_app: Sphinx, named: str
+):
+    """``c.id.ns`` and ``var.flag`` hold none of the four characters that make a
+    one-word argument a filter, so each is read as an id, under every id pattern, as in
+    9.3.0: it names no need, and no need has it as a part, so it is reported as an id
+    naming no need. Nothing is extended."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:13: WARNING: Provided id {named!r} for needextend does "
+        "not exist. [needs.needextend]"
+    ]
+    assert all(need["tags"] == [] for need in needs_by_id(app).values())

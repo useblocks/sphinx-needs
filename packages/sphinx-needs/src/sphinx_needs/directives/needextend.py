@@ -7,6 +7,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.derive import DeriveRule
@@ -293,7 +294,17 @@ def extend_needs_data(
         location = (needextend["docname"], needextend["lineno"])
         if needextend["filter_is_id"]:
             if need_filter not in all_needs:
-                error = f"Provided id {need_filter!r} for needextend does not exist."
+                if (need := need_at(all_needs, need_filter)) is not None:
+                    # a part has no fields: what an extend sets is the need's
+                    error = (
+                        f"Provided id {need_filter!r} for needextend names a part of "
+                        f"the need {need['id']!r}: a part has no fields and cannot be "
+                        "extended; extend the need."
+                    )
+                else:
+                    error = (
+                        f"Provided id {need_filter!r} for needextend does not exist."
+                    )
                 if needextend["strict"]:
                     raise NeedsInvalidFilter(error)
                 log_warning(logger, error, "needextend", location=location)

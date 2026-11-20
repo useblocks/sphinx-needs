@@ -297,3 +297,231 @@ def test_network_finding_header_names_selected_need(
         Path(test_app.outdir, "schema_violations.json").read_text("utf8")
     )
     assert list(report["validation_warnings"]) == ["T_001"]
+
+
+# A link to a part reads as its need (design/parts-contract.md, "A link to a part"): the
+# network rules validate the need, as for a link to the need itself (#2337). A link to a
+# part its need does not have, or to a part of no need, is a broken link, as a link to no
+# need is. A link to a need whose id holds a ``.`` (there is no need ``SPEC_9``) is
+# validated as that need, as in 9.3.0, which takes no side on what such an id means.
+
+_PART_LINK_CONF = """\
+extensions = ["sphinx_needs"]
+needs_schema_definitions = {
+  "schemas": [
+    {
+      "select": {"properties": {"type": {"const": "impl"}}},
+      "validate": {"network": {"links": %s}},
+    }
+  ]
+}
+"""
+
+_PART_LINK_RST = """\
+Index
+=====
+
+.. spec:: Spec
+   :id: SPEC_1
+
+   Text with :np:`(p1) the part`.
+
+.. req:: Req
+   :id: REQ_1
+
+   Text with :np:`(r1) a part of a requirement`.
+
+.. spec:: A need whose id holds a dot
+   :id: SPEC_9.x
+
+.. impl:: To the need
+   :id: IMPL_1
+   :links: SPEC_1
+
+.. impl:: To a part
+   :id: IMPL_2
+   :links: SPEC_1.p1
+
+.. impl:: To a part its need does not have
+   :id: IMPL_3
+   :links: SPEC_1.p9
+
+.. impl:: To a part of no need
+   :id: IMPL_4
+   :links: NOPE_1.p1
+
+.. impl:: To a need whose id holds a dot
+   :id: IMPL_5
+   :links: SPEC_9.x
+
+.. impl:: To a part, with a condition after it
+   :id: IMPL_6
+   :links: SPEC_1.p1[status is None]
+
+.. impl:: To a part of a requirement
+   :id: IMPL_7
+   :links: REQ_1.r1
+
+.. impl:: To the empty part, which no need has
+   :id: IMPL_8
+   :links: SPEC_1.
+"""
+
+
+def _schema_findings(app: SphinxTestApp) -> list[tuple[str, str, str]]:
+    """Each schema finding as its need, its need path and its message."""
+    found = []
+    for record in build_warnings(app):
+        if "has schema violations" not in record:
+            continue
+        lines = record.splitlines()
+        need = lines[0].split("'")[1]
+        path = next(line for line in lines if line.startswith("  Need path:"))
+        message = next(line for line in lines if line.startswith("  Schema message:"))
+        found.append(
+            (
+                need,
+                path.removeprefix("  Need path:").strip(),
+                message.removeprefix("  Schema message:").strip(),
+            )
+        )
+    return found
+
+
+def _broken(need: str, address: str) -> list[tuple[str, str, str]]:
+    return [
+        (
+            need,
+            f"{need} > links",
+            f"Broken link of type 'links' to '{address}' "
+            "[sn_schema_violation.network_missing_target]",
+        ),
+        (
+            need,
+            f"{need} > links",
+            "Too few valid links of type 'links' (0 < 1) "
+            "[sn_schema_violation.network_contains_too_few]",
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    _PART_LINK_CONF
+                    % '{"contains": {"local": {"properties": {"type": {"enum":'
+                    ' ["spec", "req"]}}}}, "minContains": 1}',
+                ),
+                ("index.rst", _PART_LINK_RST),
+            ],
+        }
+    ],
+    ids=["contains"],
+    indirect=True,
+)
+def test_network_reads_a_link_to_a_part_as_its_need(test_app: SphinxTestApp) -> None:
+    test_app.build()
+    assert sorted(_schema_findings(test_app)) == sorted(
+        _broken("IMPL_3", "SPEC_1.p9")
+        + _broken("IMPL_4", "NOPE_1.p1")
+        + _broken("IMPL_8", "SPEC_1.")
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    _PART_LINK_CONF
+                    % '{"items": {"local": {"properties": {"type": {"const":'
+                    ' "spec"}}}}}',
+                ),
+                ("index.rst", _PART_LINK_RST),
+            ],
+        }
+    ],
+    ids=["items"],
+    indirect=True,
+)
+def test_network_validates_the_need_of_a_part_link(test_app: SphinxTestApp) -> None:
+    """``items`` tests the need a link to a part names: the part of a ``req`` fails a
+    rule asking for a ``spec``, and the need path names the link as written."""
+    test_app.build()
+    findings = [f for f in _schema_findings(test_app) if f[0] == "IMPL_7"]
+    assert findings == [
+        (
+            "IMPL_7",
+            "IMPL_7 > links > REQ_1.r1",
+            '"spec" was expected [sn_schema_violation.network_local_fail]',
+        )
+    ]
+    assert {need for need, _, _ in _schema_findings(test_app)} == {
+        "IMPL_3",
+        "IMPL_4",
+        "IMPL_7",
+        "IMPL_8",
+    }
+
+
+# Two links to two parts of one need are two links, and a network rule counts both; one
+# link written twice is one link, counted once.
+
+_TWO_PARTS_RST = """\
+Index
+=====
+
+.. spec:: Spec
+   :id: SPEC_1
+
+   Text with :np:`(p1) a part` and :np:`(p2) another`.
+
+.. impl:: To two parts of one need
+   :id: IMPL_1
+   :links: SPEC_1.p1, SPEC_1.p2
+
+.. impl:: To one need, written twice
+   :id: IMPL_2
+   :links: SPEC_1, SPEC_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    _PART_LINK_CONF
+                    % '{"contains": {"local": {"properties": {"type": {"const":'
+                    ' "spec"}}}}, "maxContains": 1}',
+                ),
+                ("index.rst", _TWO_PARTS_RST),
+            ],
+        }
+    ],
+    ids=["max-contains"],
+    indirect=True,
+)
+def test_network_counts_two_links_to_two_parts_of_one_need(
+    test_app: SphinxTestApp,
+) -> None:
+    test_app.build()
+    assert _schema_findings(test_app) == [
+        (
+            "IMPL_1",
+            "IMPL_1 > links",
+            "Too many valid links of type 'links' (2 > 1) / ok: SPEC_1.p1, SPEC_1.p2 "
+            "[sn_schema_violation.network_contains_too_many]",
+        )
+    ]

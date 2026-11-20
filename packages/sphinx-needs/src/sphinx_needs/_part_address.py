@@ -3,8 +3,11 @@
 The first rule of ``design/parts-contract.md``, for places that are given the id of ONE
 need and read that need: the target of ``:need_outgoing:`` and ``:need_incoming:``, the
 argument of needuml's ``uml()`` and ``flow()``, a needsequence start, the ``need_id`` of
-``copy``. :func:`need_at` is the one lookup they share; each place keeps its own report of
-an address that does not resolve.
+``copy``, the argument of needextract (and of needextend, which refuses a part), and
+needflow's ``root_id``. Two places that read a LINK look its target up through it too,
+whole first as they did, then as a link is read: needflow's root walk and a schema's
+network rule. :func:`need_at` is the one lookup they share; each place keeps its own
+report of an address that does not resolve.
 """
 
 from __future__ import annotations

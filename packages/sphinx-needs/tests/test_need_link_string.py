@@ -173,6 +173,23 @@ def test_the_condition_ends_at_the_closing_brackets_that_end_the_link(
     assert (link.condition, warnings) == (condition, [])
 
 
+@pytest.mark.parametrize(
+    ("written", "condition"),
+    [("REQ_1.", None), ("REQ_1.[status is None]", "status is None")],
+    ids=["no-condition", "condition"],
+)
+def test_the_empty_part_keeps_its_dot(written: str, condition: str | None) -> None:
+    """``REQ_1.`` names the empty part of ``REQ_1``, which no need has: the address is
+    written, and filtered, with its ``.``, so it reads back as the dead link it is and
+    never as a link to ``REQ_1``."""
+    link = NeedLink.from_string(written)
+    assert (link.id, link.part, link.condition) == ("REQ_1", "", condition)
+    assert link.to_filter_string() == "REQ_1."
+    assert link.to_link_string() == written
+    assert NeedLink.from_string_with_warnings(link.to_link_string()) == (link, [])
+    assert NeedLink.from_string(link.to_filter_string()) != NeedLink(id="REQ_1")
+
+
 def test_an_empty_condition_is_no_condition() -> None:
     """``""`` is spelled ``B[]``, which reads as no condition: an empty condition and
     no condition are the same link (the one condition that does not round-trip, by
