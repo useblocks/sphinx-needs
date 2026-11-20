@@ -203,7 +203,8 @@ UNICODE_WHITE_SPACE = frozenset(
 
 def test_a_part_text_loses_exactly_unicode_white_space_at_its_ends() -> None:
     """A character at either end of an ``(id)`` part's text is removed if and only if it
-    is Unicode ``White_Space``, swept over every code point; inside, it is kept."""
+    is Unicode ``White_Space``, swept over every code point; inside, it is kept, and a
+    text of white space alone is the empty text."""
     assert len(UNICODE_WHITE_SPACE) == 25
     role = NeedPartRole()
     # the sweep calls the role alone: no document, so no source position to record
@@ -211,15 +212,19 @@ def test_a_part_text_loses_exactly_unicode_white_space_at_its_ends() -> None:
     wrong = []
     for code_point in range(0x110000):
         char = chr(code_point)
-        role.text = f"(p){char}a{char}b{char}"
-        (part,), messages = role.run()
-        assert not messages
-        inner = f"a{char}b"
-        expected = (
-            inner if code_point in UNICODE_WHITE_SPACE else f"{char}{inner}{char}"
-        )
-        if (part["part_id"], part["title"]) != ("p", expected):
-            wrong.append(f"U+{code_point:04X}")
+        white = code_point in UNICODE_WHITE_SPACE
+        for text, expected in (
+            (
+                f"{char}a{char}b{char}",
+                f"a{char}b" if white else f"{char}a{char}b{char}",
+            ),
+            (char, "" if white else char),
+        ):
+            role.text = f"(p){text}"
+            (part,), messages = role.run()
+            assert not messages
+            if (part["part_id"], part["title"]) != ("p", expected):
+                wrong.append(f"U+{code_point:04X} in {text!r}")
     assert wrong == []
 
 
