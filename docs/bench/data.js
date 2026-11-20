@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795167978793,
+  "lastUpdate": 1795170671180,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30492,6 +30492,48 @@ window.BENCHMARK_DATA = {
             "value": 190.616195,
             "unit": "MB",
             "extra": "Commit: aab60c20edee515dbed3f0520b57f5c93d4b04b7\nBranch: master\nTime: 2026-11-20T10:44:30+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "75a9ea4a07e05e8c7f78f48b49fc5780ac6474da",
+          "message": "🐛 sphinx-needs: seven more places read a part address, or a link to a part, as a link is read (#2552)\n\nSeven more places now read a need part's address `ID.part`, or a link to\na part, as a link to a part is read everywhere else: the address is\nsplit once at its first `.`, and names the need when the need has the\npart. It builds on the previous change, which did the same for six\nplaces that take a need id.\n\n| place | before, given `REQ_1.p1` (REQ_1 has p1) | after |\n|---|---|---|\n| `needextract` argument | read as any argument naming no need: a filter\n(\"Filter 'REQ_1.p1' not valid\") or, under an id pattern accepting it\nwhole, an id not found; nothing extracted | REQ_1 extracted |\n| `needextend` argument | refused: \"Provided id 'REQ_1.p1' for\nneedextend does not exist\" | still refused, same warning type and\nstrictness: \"… names a part of the need 'REQ_1': a part has no fields\nand cannot be extended; extend the need.\" |\n| needflow `:root_id:` | nothing drawn (\"No needs passed the filters\") |\nthe diagram `:root_id: REQ_1` draws |\n| needflow root walk, a link to `REQ_1.p1` | not followed | followed to\nREQ_1, one hop |\n| schema network rule, a link to `SPEC_1.p1` | \"Broken link of type\n'links' to 'SPEC_1.p1'\" (and \"Too few valid links\") | the rule validates\nSPEC_1 (#2337) |\n| needtable link cell | `REQ_1.p9` (no such part) linked live to\n`#REQ_1.p9`; `REQ_005.1.p1` split at the SECOND dot, linked `#REQ_005.1`\n| a dead part link written as text, as a link to a missing need is; the\naddress split at its first dot (#2488) |\n| needflow edge style | a link from a need whose own id holds a `.`\ndrawn as a part edge (`REQ_9.x -[dotted]-> REQ_1`) | a part edge only\nwhen the link names a part (`REQ_9.x --> REQ_1`) (#2488) |\n| a link to the empty part, `REQ_1.` (no need has it: a dead link) |\nstored, written to needs.json, reported and filtered as `REQ_1`, so\nevery view and needs.json read it as a link to REQ_1 | keeps its `.`:\nneeds.json `[\"REQ_1.\"]`, \"unknown outgoing link 'REQ_1.'\", `\"REQ_1.\" in\nlinks` |\n\n**An address that does not resolve**\n\n- `needextract` reads it as before. An argument is an address only when\nit resolves: the need exists and has the part. Then it names that need,\nalso where it could be read as a filter: given a need `var` with a part\n`flag`, `var.flag` extracts `var`, where it was run as a filter\n(`(var.flag)` stays a filter). Any other argument, `status.upper() ==\n\"OPEN\"` or `REQ_1.p9` alike, is read as it was.\n- `needextend` and needflow's `:root_id:` treat it as an id naming no\nneed (\"does not exist\"; nothing drawn).\n- A link to a part the need does not have stays a dead link: a broken\nlink to a schema network rule, text in a needtable cell, and not\nfollowed by the walk from the need that holds it. It still counts in its\ntarget's back links, so a walk into the target reaches its source.\n- Links to two parts of one need are two links to a network rule's\n`minContains` and `maxContains`; one link written twice is one.\n\n**Changed output**\n\n- A `:root_id:` diagram whose needs link to parts holds the needs those\nlinks lead to.\n- A needtable link cell writes a link to a part its need does not have\nas text, where it linked `#ID.part`, and splits a link at its first `.`,\nwhere it took the second segment.\n- A needflow edge starting at a need whose id holds a `.` is drawn as a\nlink between needs, where it was drawn as a part edge.\n- A link written `REQ_1.` is `REQ_1.` in needs.json, in its dead-link\nwarning and in a filter, where it was `REQ_1`. So a needtable link cell\nwrites it as text (it linked `#REQ_1`), needflow draws no edge for it,\nand a schema network rule reports it as a broken link; each read it as a\nlink to REQ_1.\n\n**`ENV_DATA_VERSION` is 29.** The empty part's `.` is a stored value\nwhose meaning changes (each stored link caches its filter string), not\nits shape, so the first build after upgrading reads every document\nagain. Without the bump, pages whose sources did not change would keep\nreporting `REQ_1` while needs.json says `REQ_1.`.\n\n**Not decided here: a need id that holds a `.`.** Such an id (`REQ_9.x`\nwith no need `REQ_9`, or `REQ_005.1` beside a need `REQ_005`) behaves as\nbefore at every place except the edge style above. What a LINK to such a\nneed means stays open: resolution reports it dead (the first-dot split),\nwhile needflow still draws an edge to that need and its walk follows it,\na schema network rule still validates it as that need, and the needtable\ncell renders it as before. Those wait for a decision on dots in need\nids, which is #2488's second question.\n\n**The corpus and the tests.** The parts corpus gains one case in its\n`links` section, `links-a-network-rule-reads-the-need`, and the contract\none sentence (a schema's network rule validates the need). Its case\n`addressing-an-empty-part` now passes, so its sphinx-needs marker is\ngone; one case stays marked, the hidden need (#1321). The other places\nare pinned by ordinary tests beside the existing ones\n(`test_needextract.py`, `test_needextend_argument.py`,\n`test_needflow_model.py`, `test_diagram_part_links.py`,\n`schema/test_schema.py`, `test_needtable.py`,\n`test_need_link_string.py`, `test_need_parts.py`).\n\n**Left for a later change**\n\n- codelinks `@need-ids:`, the permalink page, and a derived field's\n`from` and `links_from_content(need_id=…)`.\n- `:need_outgoing:`, and the need card's outgoing row rendered through\nit, still show a link to the empty part `REQ_1.` as a live link to\nREQ_1.\n- The experimental 2a1 needs.json reader still reads an empty part as no\npart, as its shared draft corpus pins (`an-empty-part-is-no-part`), so a\n2a1 round trip brings `REQ_1.` back as `REQ_1`. That case's stated\nreason no longer holds, since format 1 now writes `REQ_1.`; both change\nwith the next draft of the format.\n- An existing limit of `:root_depth:` that a part link can now reach.\nThe walk is depth first and records a need at the depth of the route\nthat reaches it last before it is visited, so a need the root links\ndirectly drops out when a longer route reaches it too: with `ROOT_1\n:links: XNEED, YNEED` and `YNEED :links: XNEED.p1`, `:root_depth: 1`\ndraws ROOT_1 and YNEED alone, as `YNEED :links: XNEED` does before and\nafter this change. The walk's depth handling is not changed here, as\nthat would change diagrams with no part link.\n\nCloses #2337 (its last point, the same check in the other tool, is\ncarried by the corpus case `links-a-network-rule-reads-the-need`, which\nruns there when the corpus is vendored)\n\nRelated: #2488 (both faults of its first question are fixed here: the\nneedtable cell's split and needflow's edge style; its second question, a\nlink to an existing dotted need, is left open)",
+          "timestamp": "2026-11-20T11:29:53+01:00",
+          "tree_id": "39bcc06a0283d3dabda804b5f2b57362d47084c1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/75a9ea4a07e05e8c7f78f48b49fc5780ac6474da"
+        },
+        "date": 1795170670273,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.04506456200000031,
+            "unit": "s",
+            "extra": "Commit: 75a9ea4a07e05e8c7f78f48b49fc5780ac6474da\nBranch: master\nTime: 2026-11-20T11:29:53+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 10.292859655,
+            "unit": "s",
+            "extra": "Commit: 75a9ea4a07e05e8c7f78f48b49fc5780ac6474da\nBranch: master\nTime: 2026-11-20T11:29:53+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.834761,
+            "unit": "MB",
+            "extra": "Commit: 75a9ea4a07e05e8c7f78f48b49fc5780ac6474da\nBranch: master\nTime: 2026-11-20T11:29:53+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
