@@ -102,7 +102,7 @@
 #   divergent    - optional; { sphinx-needs = "...", ubcode = "..." }, see the rules above
 #   [case.expect]
 #     findings         - `[]` for none, or one `{ class = "..." }` per finding
-#     parts.<ID>       - { <part id> = "<text>" }, `{}` for none
+#     parts.<ID>       - optional; { <part id> = "<text>" }, `{}` for none
 #     dead.<ID>        - optional; [the addresses of its dead links]
 #     back.<ADDRESS>   - optional; { <link type> = [the ids of its back links] }
 #   [[case.filters]]
@@ -611,7 +611,7 @@ TEST_1 = ["REQ_1.x1"]
 [[case]]
 name = "stated-an-external-need-has-its-record-parts"
 section = "stated"
-why = "an external need, whose content is not rendered, has the parts its record states, each with the record's id and text"
+why = "an external need, whose content is not part of this project, has the parts its record states, each with the record's id and text"
 config = '''
 [needs]
 external_needs = [{ base_url = "http://example.org/", json_path = "external.json" }]
