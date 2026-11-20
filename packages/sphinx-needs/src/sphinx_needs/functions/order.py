@@ -752,15 +752,6 @@ class _CallReads:
     def what(self) -> str:
         return _what(self.call)
 
-    def _source(self, need_id: str | None) -> str:
-        """The id of the need a call or rule given *need_id* (its ``need_id``, its
-        ``from``) reads: the need it is in when it names none, the need of a part
-        address, else the id as given, which names no need, so nothing is read on it."""
-        if not need_id:
-            return self.need.id
-        named = need_at(self.project.needs, need_id)
-        return need_id if named is None else named.id
-
     def _read(self, need_id: str, name: Any) -> None:
         if isinstance(name, str) and need_id in self.project.needs:
             _classify(self.project, self.reads, self.scope, self.stratum, need_id, name)
@@ -954,7 +945,7 @@ class _CallReads:
         names = self._filter(filter_string)
         if names is None:
             return
-        source = self._source(args.get("need_id"))
+        source = args.get("need_id") or self.need.id
         for target in self.project.content_refs(source):
             for read in sorted(names.names | names.current):
                 self._read(target, read)
@@ -1123,7 +1114,7 @@ class _RuleReads(_CallReads):
             for name in sorted(where):
                 self._column(name, None, rule.where)
         elif rule.kind == "content_links":
-            source = self._source(rule.from_need)
+            source = rule.from_need or self.need.id
             for target in self.project.content_refs(source):
                 for name in sorted(where):
                     self._read(target, name)
@@ -1136,7 +1127,7 @@ class _RuleReads(_CallReads):
                 if name not in rule.exclude:
                     self._read(self.need.id, name)
         elif rule.kind == "copy" and rule.over is None:
-            self._read(self._source(rule.from_need), rule.field)
+            self._read(rule.from_need or self.need.id, rule.field)
         elif rule.path:
             self._path(rule.over, rule.field, where)
         else:

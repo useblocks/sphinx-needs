@@ -582,14 +582,11 @@ def links_from_content(
           Links retrieved from content of :need:`CON_SPEC_1`
 
     :param need_id: ID of need, which provides the content. If not set, current need is used.
-        A need part's address (``ID.part``) reads as the part's need.
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
     if need_id:
-        # a part address reads as its need; one naming no need is reported below
-        source = need_at(needs, need_id)
-        source_need_id = need_id if source is None else source["id"]
+        source_need_id = need_id
     elif need is None:
         raise ValueError("No need found for links_from_content")
     elif isinstance(need, NeedPartItem):
@@ -980,11 +977,7 @@ def execute_rule(
         return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
         found = links_from_content(app, need, needs, need_id=rule.from_need)
-        source_id = need["id"]
-        if rule.from_need is not None:
-            # as links_from_content reads it: a part address reads as its need
-            source = need_at(needs, rule.from_need)
-            source_id = rule.from_need if source is None else source["id"]
+        source_id = need["id"] if rule.from_need is None else rule.from_need
         if SphinxNeedsData(app.env).get_need_node(source_id) is None:
             # a failed read (no such need, a part, a need without stored content),
             # which links_from_content reported: no value, so the field keeps its
@@ -1008,10 +1001,9 @@ def execute_rule(
     if rule.kind == "copy" and rule.over is None:
         source = need
         if rule.from_need is not None:
-            # a part address reads as its need
-            if (named := need_at(needs, rule.from_need)) is None:
+            if rule.from_need not in needs:
                 raise ValueError(f"'from' names no need: {rule.from_need!r}")
-            source = named
+            source = needs[rule.from_need]
         assert rule.field is not None, "copy has a field"
         if reads is not None:
             reads.note_read(source, rule.field)

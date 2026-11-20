@@ -1218,7 +1218,6 @@ The table is the reference; each kind's section above shows its roles in use.
    * - ``from``
      - a need id
      - The one need whose ``field`` (``copy``) or content (``content_links``) is read.
-       A need part's address (``REQ_1.p1``) reads as the part's need.
    * - ``join``
      - ``{ field = …, equals = … }``
      - ``links``, ``copy``: the candidates are the needs whose ``field`` equals one of this need's ``equals`` values,

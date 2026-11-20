@@ -982,10 +982,9 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
 # -- a part address where a need is expected ------------------------------------------
 #
 # Where a need is expected, a part address reads as its need (design/parts-contract.md):
-# ``copy(..., need_id="REQ_1.p1")`` copies from ``REQ_1``, and
-# ``links_from_content("REQ_1.p1")`` reads ``REQ_1``'s content, each exactly as given
-# ``REQ_1``. An address naming a part the need does not have fails the call as one naming
-# no need does, the report naming the address as written.
+# ``copy(..., need_id="REQ_1.p1")`` copies from ``REQ_1``, exactly as given ``REQ_1``. An
+# address naming a part the need does not have fails the call as one naming no need does,
+# the report naming the address as written.
 
 NEED_ID_CONF = """\
 extensions = ["sphinx_needs"]
@@ -1013,10 +1012,7 @@ Need ids
    :id: REQ_1
    :owner: alice
 
-   The source, with :np:`(p1) the part`, which names :need:`REQ_2`.
-
-.. req:: Named in the source's content
-   :id: REQ_2
+   The source, with :np:`(p1) the part`.
 
 .. req:: A computed source, sorting after the need reading it
    :id: Z_REQ
@@ -1027,12 +1023,10 @@ Need ids
 .. spec:: Copies from the need
    :id: SPEC_1
    :got: [[copy("owner", need_id="REQ_1")]]
-   :links: [[links_from_content("REQ_1")]]
 
 .. spec:: Copies through a part
    :id: SPEC_2
    :got: [[copy("owner", need_id="REQ_1.p1")]]
-   :links: [[links_from_content("REQ_1.p1")]]
 
 .. spec:: Copies through a part of a computed need, which it sorts before
    :id: A_SPEC
@@ -1059,18 +1053,16 @@ def _need_id_project(index: str) -> dict[str, object]:
     "test_app", [_need_id_project(NEED_ID_INDEX)], indirect=True, ids=["found"]
 )
 def test_a_part_address_as_need_id_reads_as_its_need(test_app):
-    """``copy`` and ``links_from_content`` read the need of a part address, as they read
-    the need given its id: its value, computed first where it is computed (``A_SPEC``
-    sorts before ``Z_REQ``), and its content. The address is split at its first dot, so
-    a part whose id holds a dot is found (``EXT_1.a.b``)."""
+    """``copy`` reads the need of a part address, as it reads the need given its id: its
+    value, computed first where it is computed (``A_SPEC`` sorts before ``Z_REQ``). The
+    address is split at its first dot, so a part whose id holds a dot is found
+    (``EXT_1.a.b``)."""
     app = test_app
     app.build()
     assert_no_warnings(app)
     needs = _built_needs(app)
     assert needs["SPEC_1"]["got"] == "alice"
-    assert needs["SPEC_1"]["links"] == ["REQ_2"]
     assert needs["SPEC_2"]["got"] == "alice"
-    assert needs["SPEC_2"]["links"] == ["REQ_2"]
     assert needs["A_SPEC"]["got"] == "alice"
     assert needs["SPEC_3"]["got"] == "External"
 
@@ -1083,15 +1075,11 @@ Need ids
    :id: REQ_1
    :owner: alice
 
-   The source, with :np:`(p1) the part`, which names :need:`REQ_2`.
-
-.. req:: Named in the source's content
-   :id: REQ_2
+   The source, with :np:`(p1) the part`.
 
 .. spec:: Reads what does not resolve
    :id: SPEC_X
    :got: [[copy("owner", need_id="{target}")]]
-   :links: [[links_from_content("{target}")]]
 """
 
 
@@ -1110,20 +1098,16 @@ Need ids
     indirect=["test_app"],
 )
 def test_a_need_id_that_does_not_resolve(test_app, target):
-    """A part the need does not have fails ``copy`` and ``links_from_content`` as a need
-    that does not exist fails them, each report naming the address as written."""
+    """A part the need does not have fails ``copy`` as a need that does not exist fails
+    it, the report naming the address as written."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:13: WARNING: links_from_content: no stored node for need "
-        f"'{target}' [needs.dynamic_function]",
-        "<srcdir>/index.rst:13: WARNING: Error while resolving dynamic values for field "
+        "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field "
         f"'got', of need 'SPEC_X': Error while executing function 'copy': '{target}' "
         "[needs.dynamic_function]",
     ]
-    needs = _built_needs(app)
-    assert needs["SPEC_X"]["got"] is None
-    assert needs["SPEC_X"]["links"] == []
+    assert _built_needs(app)["SPEC_X"]["got"] is None
 
 
 # -- links_from_filter ---------------------------------------------------------------
