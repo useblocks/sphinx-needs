@@ -2770,6 +2770,10 @@ the default accepts an id whose first five characters are upper-case ASCII lette
 whatever follows them (``REQ_001``, ``REQ_001_draft``), and refuses ``R_1`` and ``req_001``.
 End a pattern with ``$`` to anchor its end too.
 
+An id should not hold a ``.``. The first ``.`` of a link, and of a :ref:`role_need` reference, separates a
+:ref:`need part <need_part>` from its need, so a need whose id holds one (``REQ_001.1``, which the default
+pattern accepts) cannot be linked or referenced.
+
 With :ref:`needs_namespaced_ids` on (it is off by default until 10.0), it accepts an id whose local id
 matches, or which matches as a whole (:ref:`namespaced_ids`), as does a need type's ``id_regex``: with the
 default pattern, ``nc::REQ_00001`` is accepted through its local id ``REQ_00001``, ``REQ_1::A`` as a whole (its
