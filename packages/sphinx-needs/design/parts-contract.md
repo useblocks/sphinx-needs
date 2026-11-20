@@ -23,15 +23,19 @@ at its very start, an id, a closing parenthesis, and the rest.
 - **The id** is one or more characters, each a letter or a number by its Unicode general
   category (L or N: what Python's `str.isalnum` accepts), `_` or `-`. Case is kept; nothing else is an id character, so a
   space, a `.`, a `:` or a `(` inside the parentheses means the text has no id.
-- **The text** is everything after the closing parenthesis, exactly as the markup gives the
-  role's content: a leading space is kept (`(p1) first` has the text ` first`), the text may
-  be empty, and it may span lines, keeping its line breaks without the continuation lines'
-  indentation. It is never read as a reference: `(p3) see <target>` has the text
-  ` see <target>`.
+- **The text** is everything after the closing parenthesis, as the markup gives the role's
+  content, with the white space at both of its ends removed: `(p1) first`, `(p1)first` and
+  `(p1)` followed by a line break and `first` all have the text `first`, and MyST's
+  `` {np}`(p1) first ` `` has it too. White space is exactly the 25 code points of Unicode's
+  `White_Space` property: U+0009 to U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000 to
+  U+200A, U+2028, U+2029, U+202F, U+205F and U+3000 (not U+001C to U+001F, which Python's
+  `str.strip()` would also remove). The text may be empty, and it may span lines, keeping
+  the white space and line breaks inside it, without the continuation lines' indentation.
+  It is never read as a reference: `(p3) see <target>` has the text `see <target>`.
 - **No id.** When the text does not start with `(id)` -- no parenthesis, a character before
   it (`!(p4) text`), or a character that is not an id character -- the part's id is the
   first three hexadecimal digits, upper case, of the SHA-1 of that whole text encoded as
-  UTF-8, and its text is that whole text.
+  UTF-8, and its text is that whole text, as written: nothing is removed from its ends.
 
 ## 2. Which need a part belongs to (corpus: `placement`, `stated`)
 
@@ -42,7 +46,8 @@ item of `list2need`, the body of a multi-line need in source code, or the body o
 case. A role outside every need is one finding, `part outside a need`, and makes no part.
 
 An external need, whose content is not part of this project, has the parts its record
-states, each with the id and the text the record gives.
+states, each with the id and the text the record gives, as given: section 1's removal of
+white space is the role's, and a stated text keeps its ends.
 
 ## 3. One id, one part (corpus: `duplicates`)
 
