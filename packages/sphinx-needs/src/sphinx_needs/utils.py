@@ -266,10 +266,13 @@ def row_col_maker(
                     elif ref_lookup:
                         # a link to a need that does not exist is written as text
                         # (the KeyError below), and so is a link to a part its need
-                        # does not have: both are dead links
+                        # does not have: both are dead links. An address naming a
+                        # need whole (an id holding a `.`) is that need, and is
+                        # rendered as it was: what such a link means is not settled
                         temp_need = all_needs[link.id]
                         if (
                             link.part is not None
+                            and datum not in all_needs
                             and temp_need.get_part(link.part) is None
                         ):
                             raise KeyError(datum)
