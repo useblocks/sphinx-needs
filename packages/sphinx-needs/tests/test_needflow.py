@@ -981,8 +981,8 @@ Needflow in an epub
     indirect=True,
 )
 def test_graphviz_needflow_builds_with_epub(test_app):
-    """A page with a graphviz needflow builds with ``epub``, its diagram written as
-    the ``html`` builder writes it.
+    """A page with a graphviz needflow builds with ``epub``: no unknown node ends the
+    build, and the page holds the diagram's image, whose file is written.
 
     The needflow's node had an ``html`` visitor only, and the epub build ended with
     ``departing unknown node type: NeedflowGraphiz``.
@@ -995,6 +995,61 @@ def test_graphviz_needflow_builds_with_epub(test_app):
     img = re.search(r'<img src="([^"]+\.svg)" alt="needflow graphviz diagram"', xhtml)
     assert img is not None, xhtml
     assert (Path(app.outdir) / img.group(1)).is_file()
+
+
+EPUB_TITLES_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   page2
+
+.. req:: A requirement
+   :id: R_1
+
+Section :np:`(p2) in a title`
+==============================
+
+Body.
+"""
+
+EPUB_TITLES_PAGE2 = """\
+About :need:`R_1`
+=================
+
+Body.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "epub",
+            "files": [
+                (Path("conf.py"), EPUB_CONF_PY),
+                (Path("index.rst"), EPUB_TITLES_INDEX),
+                (Path("page2.rst"), EPUB_TITLES_PAGE2),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_need_role_and_part_in_titles_build_with_epub(test_app):
+    """A ``:need:`` role in the title of a page that a toctree lists, and a need
+    part in a section title, build with ``epub``.
+
+    Their nodes had an ``html`` visitor only, and the epub build ended with
+    ``unknown node type: NeedRef`` or ``NeedPart``. The part is outside every need,
+    so the build warns about it: this test does not ask for zero warnings.
+    """
+    app = test_app
+    app.build()
+
+    assert not [w for w in build_warnings(app) if "unknown node type" in w]
+    assert (Path(app.outdir) / "index.xhtml").is_file()
+    assert (Path(app.outdir) / "page2.xhtml").is_file()
 
 
 CLASS_AND_DEBUG = """\

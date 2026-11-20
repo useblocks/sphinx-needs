@@ -7,6 +7,7 @@ from pathlib import Path
 
 import docutils
 import pytest
+from docutils import nodes
 from lxml import html as html_parser
 from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
@@ -173,14 +174,29 @@ def test_every_html_visitor_is_registered_for_epub(test_app: SphinxTestApp):
 
     The epub builder looks a node's visitors up under its own name, and falls back
     to the ``html`` ones only while no extension has registered any for ``epub``;
-    sphinx-data-viewer, which sphinx-needs loads, does. So a node registered for
-    ``html`` alone ends an epub build on its first occurrence.
+    sphinx-data-viewer, which sphinx-needs loads, does. So the epub builder has no
+    visitor for a node registered for ``html`` alone, and ends the build on one that
+    subclasses no node the writer knows. A node is sphinx-needs' when its class is
+    defined in the package, or its ``html`` visitor is.
     """
     handlers = test_app.registry.translation_handlers
+    node_classes: set[type[nodes.Node]] = set()
+    unseen: list[type[nodes.Node]] = [nodes.Node]
+    while unseen:
+        for sub in unseen.pop().__subclasses__():
+            if sub not in node_classes:
+                node_classes.add(sub)
+                unseen.append(sub)
+    our_classes = {
+        cls.__name__
+        for cls in node_classes
+        if cls.__module__ == "sphinx_needs"
+        or cls.__module__.startswith("sphinx_needs.")
+    }
     ours = {
         name: pair
         for name, pair in handlers["html"].items()
-        if pair[0].__module__.startswith("sphinx_needs.")
+        if name in our_classes or pair[0].__module__.startswith("sphinx_needs.")
     }
     # the node the defect was found on, so the selection cannot pass vacuously
     assert "NeedflowGraphiz" in ours
