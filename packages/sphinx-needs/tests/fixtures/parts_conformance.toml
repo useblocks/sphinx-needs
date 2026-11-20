@@ -1276,6 +1276,7 @@ include_parts = true
 name = "derived-copy-given-a-part-address"
 section = "derived"
 why = "copy given a part address as its need_id reads the need: SPEC_1, copying owner from REQ_1.p1, copies REQ_1's owner, as SPEC_2 copying from REQ_1 does"
+divergent = { ubcode = "copy given a part address reports a dynamic function error and copies nothing: SPEC_1 gets no owner_copy" }
 clean = true
 config = '''
 [needs.fields.owner]
