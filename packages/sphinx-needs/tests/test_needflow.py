@@ -749,6 +749,90 @@ def test_graphviz_label_does_not_break_html_entities(test_app):
     assert not re.search(r"&[a-z]*<br[^>]*>[a-z]*;", debug)
 
 
+EMPTY_LABEL_TEXT = """\
+Empty label text
+================
+
+.. spec:: A specification
+   :id: SP_1
+
+   :np:`(p1)` marks a point with no text.
+
+.. spec::
+   :id: SP_2
+
+.. needflow::
+{debug}"""
+
+#: a need with no title is allowed, so the second need has an empty one too
+_EMPTY_LABEL_CONF = {
+    "needs_flow_engine": "graphviz",
+    "graphviz_output_format": "svg",
+    "needs_title_optional": True,
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), EMPTY_LABEL_TEXT.format(debug="   :debug:\n")),
+            ],
+            "confoverrides": _EMPTY_LABEL_CONF,
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_label_without_text_drops_the_empty_line(test_app):
+    """A part with no text (and a need with no title) is labelled by what is left.
+
+    The text went into ``<b>...</b>`` unconditionally, and dot refuses the empty
+    ``<b></b>`` as a syntax error, so the whole diagram failed to render (#2557).
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+    # the block is numbered, so a node's line does not start with its id
+    labels = dict(re.findall(r'"(SP_1\.p1|SP_2)" \[label=(<.*?>), ', debug))
+
+    assert labels == {
+        "SP_1.p1": '<<font point-size="12">Specification (part)</font><br align="left"/>'
+        '<font point-size="10">SP_1.<b align="left">p1</b></font><br align="left"/>>',
+        "SP_2": '<<font point-size="12">Specification</font><br align="left"/>'
+        '<font point-size="10">SP_2</font><br align="left"/>>',
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), EMPTY_LABEL_TEXT.format(debug="")),
+            ],
+            "confoverrides": _EMPTY_LABEL_CONF,
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_draws_a_part_without_text(test_app):
+    """The diagram holding a part with no text renders, through a real ``dot`` run."""
+    app = test_app
+    app.build()
+
+    assert_no_warnings(app)
+
+    svg = _get_svg(app.config, Path(app.outdir), "index.html", "needflow-index-0")
+    assert "<title>SP_1.p1</title>" in svg
+    assert "<title>SP_2</title>" in svg
+
+
 CLASS_AND_DEBUG = """\
 Class and debug
 ===============
