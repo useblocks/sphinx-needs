@@ -162,7 +162,7 @@ REQ_1 = { "é1" = " unicode id" }
 [[case]]
 name = "grammar-no-id-given"
 section = "grammar"
-why = "a text not starting with (id) has as its id the first three hex digits, upper case, of the SHA-1 of the whole text, which is its text"
+why = "a text not starting with (id) has as its id the first three hex digits, upper case, of the SHA-1 of the whole text encoded as UTF-8, which is its text"
 config = '''
 [needs]
 '''
@@ -170,12 +170,12 @@ source = '''
 .. req:: Parts
    :id: REQ_1
 
-   :np:`no id given`
+   :np:`no id given` and :np:`é sans id`
 '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { 92C = "no id given" }
+REQ_1 = { 92C = "no id given", BB3 = "é sans id" }
 
 [[case]]
 name = "grammar-a-character-before-the-parenthesis"
@@ -198,7 +198,7 @@ REQ_1 = { 06B = "!(p4) a bang part" }
 [[case]]
 name = "grammar-a-character-outside-the-id-set"
 section = "grammar"
-why = "parentheses holding a character that is no id character (a dot, a space) give no id: the hash of the whole text is the id"
+why = "parentheses holding a character that is no id character (a dot, a space, a colon, a parenthesis) give no id: the hash of the whole text is the id"
 config = '''
 [needs]
 '''
@@ -206,12 +206,12 @@ source = '''
 .. req:: Parts
    :id: REQ_1
 
-   :np:`(a.b) dotted id` and :np:`(a b) spaced id`
+   :np:`(a.b) dotted id` and :np:`(a b) spaced id` and :np:`(a:b) colon id` and :np:`((p1)) nested parenthesis`
 '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { 78D = "(a.b) dotted id", C24 = "(a b) spaced id" }
+REQ_1 = { 78D = "(a.b) dotted id", C24 = "(a b) spaced id", 81F = "(a:b) colon id", 7D2 = "((p1)) nested parenthesis" }
 
 [[case]]
 name = "grammar-the-text-is-never-a-reference"
@@ -895,7 +895,7 @@ TEST_1 = ["NOPE_1.p1"]
 [[case]]
 name = "links-a-condition-is-read-on-the-need"
 section = "links"
-why = "a condition on a part link is read on the need, not the part: id == 'REQ_1' holds, is_part does not and is one finding; both links are live"
+why = "a condition on a part link is read on the need, not the part: id == 'REQ_1' holds on the need, status == 'closed' holds on neither and is one finding; both links are live"
 config = '''
 [needs.links.tests]
 '''
@@ -907,7 +907,7 @@ source = '''
 
 .. test:: Links
    :id: TEST_1
-   :tests: REQ_1.p1[id == "REQ_1"], REQ_1.p2[is_part]
+   :tests: REQ_1.p1[id == "REQ_1"], REQ_1.p2[status == "closed"]
 '''
 [case.expect]
 findings = [{ class = "link condition" }]
@@ -968,7 +968,7 @@ X_B_TST1 = []
 [[case]]
 name = "answers-its-own-identity"
 section = "answers"
-why = "a part answers its own id, the part id, which two needs may share, and id_complete, its address"
+why = "a part answers its own id, the part id, which two needs may share, id_complete, its address, id_parent, its need's id, and is_need false"
 config = '''
 [needs]
 '''
@@ -1001,6 +1001,18 @@ filter = 'id == "REQ_1"'
 expected = ["REQ_1"]
 include_parts = true
 why = "a part does not answer its need's id"
+
+[[case.filters]]
+filter = 'is_part and id_parent == "REQ_1"'
+expected = ["REQ_1.p1"]
+include_parts = true
+why = "a part answers its need's id as id_parent"
+
+[[case.filters]]
+filter = 'not is_need'
+expected = ["REQ_1.p1", "REQ_2.p1"]
+include_parts = true
+why = "a part answers is_need false"
 
 [[case]]
 name = "answers-its-text-as-content"
