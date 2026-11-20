@@ -51,11 +51,11 @@ Target: :{role}:`{target}`
 TARGET_LINE = 23
 
 
-def _project(role: str, target: str, conf: str = CONF) -> dict[str, object]:
+def _project(role: str, target: str) -> dict[str, object]:
     return {
         "buildername": "html",
         "files": [
-            (Path("conf.py"), conf),
+            (Path("conf.py"), CONF),
             (Path("index.rst"), ROLES.format(role=role, target=target)),
         ],
     }

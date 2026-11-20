@@ -1,10 +1,10 @@
 """Where a need is expected, a part address reads as its need.
 
-The first rule of ``design/parts-contract.md``, for every place that is given the id of
-ONE need and reads that need: a role's target, a needuml function's argument, a
-needsequence start, a dynamic function's ``need_id``, a derived field's ``from``.
-:func:`need_at` is the one lookup they share; each place keeps its own report of an
-address that does not resolve.
+The first rule of ``design/parts-contract.md``, for places that are given the id of ONE
+need and read that need: the target of ``:need_outgoing:`` and ``:need_incoming:``, the
+argument of needuml's ``uml()`` and ``flow()``, a needsequence start, the ``need_id`` of
+``copy``. :func:`need_at` is the one lookup they share; each place keeps its own report of
+an address that does not resolve.
 """
 
 from __future__ import annotations
