@@ -42,15 +42,15 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 28
+ENV_DATA_VERSION: Final = 29
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
 ``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
 change of what the stored values mean, or of what is rendered from them (versions 8, 10
-to 12, 15, 17, 19 and 20), leaves the shape as it was, so that test cannot see it, and
-the bump is needed all the same.
+to 12, 15, 17, 19 to 25, 27 and 29), leaves the shape as it was, so that test cannot see
+it, and the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
@@ -211,6 +211,15 @@ its namespace, a tuple of segments, and its local id, read from its id where it 
 before has neither, so its first ``need.id_local`` would end with an ``AttributeError``
 rather than re-reading the documents; every project re-reads its sources once after
 upgrading.
+
+Version 29 changes what a stored value means: a link to the empty part of a need,
+``ID.`` (a dead link, as no need has that part), keeps its ``.`` in the filter string
+each stored :class:`~sphinx_needs.need_item.NeedLink` caches (and the stored order of a
+link list, which sorts by that string, moves with it), and in what is written to
+``needs.json``. Version 28 cached ``ID``, so the link was reported and filtered as one to
+the need. The shape is unchanged, so without the bump an upgraded build would report and
+filter ``ID`` from the links it unpickles for the documents whose sources did not change,
+while ``needs.json`` says ``ID.``.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

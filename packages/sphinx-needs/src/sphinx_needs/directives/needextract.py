@@ -15,6 +15,7 @@ from sphinx.transforms import SphinxTransformer
 from sphinx.util.logging import getLogger
 
 from sphinx_needs._namespaced_ids import id_matched_by_patterns, read_id
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsExtractType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -182,9 +183,10 @@ def process_needextract(
             remove_node_from_tree(node)
             continue
         elif need_filter_arg:
-            # check if given filter argument is need-id
-            if need_filter_arg in all_needs:
-                need_filter_arg = f'id == "{need_filter_arg}"'
+            # check if given filter argument is need-id, or the address of a part
+            # the need has, which names the need; any other argument is read as before
+            if (need := need_at(all_needs, need_filter_arg)) is not None:
+                need_filter_arg = f'id == "{need["id"]}"'
             elif id_matched_by_patterns(
                 needs_config.id_regex,
                 need_filter_arg,

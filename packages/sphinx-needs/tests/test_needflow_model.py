@@ -208,6 +208,91 @@ def test_walk_ignores_links_to_needs_outside_the_view():
     assert set(filter_by_tree(view(a), "A", ["links"], "outgoing", None)) == {"A"}
 
 
+# A part address reads as its need: a ``root_id`` naming a part starts the walk at the
+# need, and a link to a part the need has leads to the need. A link to a part the need
+# does not have is a dead link, and is not followed. A need id holding a ``.`` is read
+# whole, as it was.
+
+
+def test_walk_from_a_part_starts_at_its_need():
+    p = need("P", parts=("p1",), incoming=["A"])
+    a = need("A", links=["P.p1"])
+    assert set(filter_by_tree(view(a, p), "P.p1", ["links"], "both", None)) == {
+        "P",
+        "A",
+    }
+
+
+@pytest.mark.parametrize(
+    "root", ["P.p9", "GONE.p1"], ids=["part-missing", "part-of-a-missing-need"]
+)
+def test_walk_from_a_part_that_does_not_resolve_returns_nothing(root):
+    needs = view(need("P", parts=("p1",)), need("A"))
+    assert set(filter_by_tree(needs, root, ["links"], "both", None)) == set()
+
+
+def test_walk_follows_a_link_to_a_part_to_its_need():
+    p = need("P", parts=("p1",), links=["Q"])
+    q = need("Q")
+    a = need("A", links=["P.p1"])
+    walked = filter_by_tree(view(a, p, q), "A", ["links"], "outgoing", None)
+    assert set(walked) == {"A", "P", "Q"}
+
+
+def test_walk_through_a_part_is_one_hop():
+    p = need("P", parts=("p1",), links=["Q"])
+    a = need("A", links=["P.p1"])
+    walked = filter_by_tree(view(a, p, need("Q")), "A", ["links"], "outgoing", 1)
+    assert set(walked) == {"A", "P"}
+
+
+def test_walk_reaches_a_need_once_through_two_of_its_parts(monkeypatch):
+    """The walk lists each need it reaches once, P included, which A reaches through
+    two of its parts: asserted on the ids the walk hands to the view, since a view, keyed
+    by id, could not hold P twice."""
+    handed: list[list[str]] = []
+    filter_ids = NeedsView.filter_ids
+
+    def spy(self: NeedsView, values):
+        handed.append(list(values))
+        return filter_ids(self, handed[-1])
+
+    monkeypatch.setattr(NeedsView, "filter_ids", spy)
+    p = need("P", parts=("p1", "p2"))
+    a = need("A", links=["P.p1", "P.p2"])
+    walked = filter_by_tree(view(a, p), "A", ["links"], "outgoing", None)
+    assert handed == [["A", "P"]]
+    assert sorted(walked) == ["A", "P"]
+
+
+@pytest.mark.parametrize(
+    "link", ["P.p9", "GONE.p1"], ids=["part-missing", "part-of-a-missing-need"]
+)
+def test_walk_does_not_follow_a_dead_part_link(link):
+    a = need("A", links=[link])
+    walked = filter_by_tree(
+        view(a, need("P", parts=("p1",))), "A", ["links"], "outgoing", None
+    )
+    assert set(walked) == {"A"}
+
+
+def test_walk_reads_a_need_id_holding_a_dot_whole():
+    """``R.x`` is a need, and there is no need ``R``: the walk reaches it and starts at
+    it, as in 9.3.0, which takes no side on what such an id should mean."""
+    dotted = need("R.x", links=["B"], incoming=["A"])
+    a = need("A", links=["R.x"])
+    needs = view(a, dotted, need("B", incoming=["R.x"]))
+    assert set(filter_by_tree(needs, "A", ["links"], "outgoing", None)) == {
+        "A",
+        "R.x",
+        "B",
+    }
+    assert set(filter_by_tree(needs, "R.x", ["links"], "outgoing", None)) == {
+        "R.x",
+        "B",
+    }
+
+
 # --- the allowed link types ----------------------------------------------------------
 
 
@@ -549,3 +634,30 @@ def test_edge_style_is_the_part_style_for_a_part_edge():
     edges = collect_edges([a, part, need("B")], [schema], {"A", "B", "P.p1"})
     styles = {e.target_id: e.style for e in edges}
     assert styles == {"P.p1": "dotted", "B": "dashed"}
+
+
+def test_an_edge_from_a_need_whose_id_holds_a_dot_is_not_a_part_edge():
+    """A need's own id does not make its links part edges: ``R.x`` is a need (there is
+    no need ``R``), and its link to the need ``B`` is a link between two needs."""
+    dotted = need("R.x", links=["B"])
+    edges = collect_edges([dotted, need("B")], [link_schema()], {"R.x", "B"})
+    assert [(e.source_id, e.target_id, e.is_part) for e in edges] == [
+        ("R.x", "B", False)
+    ]
+
+
+def test_an_edge_to_a_need_whose_id_holds_a_dot_is_styled_as_before():
+    """A link to the need ``R.x`` (there is no need ``R``) names the part ``x`` of
+    ``R`` as a link is read, and is styled as a part edge, as in 9.3.0: what a link to a
+    need whose id holds a ``.`` means is not settled, so its style is not changed."""
+    a = need("A", links=["R.x"])
+    edges = collect_edges([a, need("R.x")], [link_schema()], {"A", "R.x"})
+    assert [(e.target_id, e.is_part) for e in edges] == [("R.x", True)]
+
+
+def test_an_edge_to_a_part_of_a_namespaced_need_is_a_part_edge():
+    parent = need("nc::P", parts=("p1",))
+    part = parent.get_part_item("p1")
+    a = need("A", links=["nc::P.p1"])
+    edges = collect_edges([a, part], [link_schema()], {"A", "nc::P.p1"})
+    assert [(e.target_id, e.is_part) for e in edges] == [("nc::P.p1", True)]

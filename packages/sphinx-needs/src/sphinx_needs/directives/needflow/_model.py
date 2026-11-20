@@ -34,6 +34,7 @@ from typing import Literal
 from docutils import nodes
 from sphinx.application import Sphinx
 
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
@@ -43,7 +44,7 @@ from sphinx_needs.filter_common import (
     process_filters,
 )
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.needs_schema import FieldsSchema, LinkShape
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
@@ -78,10 +79,16 @@ def filter_by_tree(
        and the first visit of a need wins.  A need reachable at two different depths can
        therefore be recorded at the deeper one and have its subtree pruned by ``depth``.
        This makes ``root_depth`` dependent on traversal order; it is kept as is.
+
+    A part address reads as its need (:func:`~sphinx_needs._part_address.need_at`): a
+    ``root_id`` naming a part starts the walk at its need, and a link to a part the need
+    has leads to the need, one hop like any link. A link to a part the need does not
+    have is a dead link, and is not followed from the need that holds it; it still
+    counts in the target need's back links, so an incoming walk reaches its source.
     """
-    if root_id not in needs_view:
+    if (root_need := need_at(needs_view, root_id)) is None:
         return needs_view.filter_ids([])
-    roots = {root_id: (0, needs_view[root_id])}
+    roots = {root_need["id"]: (0, root_need)}
     link_prefixes = (
         ("_back",)
         if direction == "incoming"
@@ -100,13 +107,9 @@ def filter_by_tree(
             continue
         need_ids.append(root_id)
         for link_type_name in links_to_process:
-            roots.update(
-                {
-                    i: (root_depth + 1, needs_view[i])
-                    for i in root.get(link_type_name, [])
-                    if i in needs_view
-                }
-            )
+            for address in root.get(link_type_name, []):
+                if (linked := need_at(needs_view, address)) is not None:
+                    roots[linked["id"]] = (root_depth + 1, linked)
 
     return needs_view.filter_ids(need_ids)
 
@@ -220,7 +223,7 @@ class GraphEdge:
     """The link field the link belongs to, carrying its display configuration."""
 
     is_part: bool
-    """Whether either end of the link is a need part, which is styled differently."""
+    """Whether the link names a need part, which is styled differently."""
 
     source_drawn: bool
     """Whether the source need is drawn as a node.
@@ -599,7 +602,12 @@ def collect_edges(
                         source_id=source_id,
                         target_id=link,
                         link_type=link_type,
-                        is_part="." in link or "." in source_id,
+                        # a part edge is one whose link names a part, its address read
+                        # as a link's is; the id of the need it starts at plays no part
+                        # (a part has no links). A link to a need whose id holds a `.`
+                        # names a part as it is read: what such a link means is not
+                        # settled, and its edge is styled as it was
+                        is_part=NeedLink.parse_address(link).part is not None,
                         source_drawn=source_id in drawn,
                         target_drawn=link in drawn,
                     )

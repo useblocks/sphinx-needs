@@ -24,6 +24,43 @@ Bug fixes
   one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
   the need. (:pr:`2551`)
 
+- 🐛 Seven more places read a :ref:`need part <need_part>`'s address ``ID.part``, or a link to a part, as a link to a
+  part is read: the address is split once at its first ``.``, and names the need when the need has the part.
+
+  - :ref:`needextract` given ``REQ_1.p1`` extracts ``REQ_1``, where it read the address as it read any argument naming
+    no need (as a filter, reported as invalid, or, under an id pattern accepting it whole, as an id naming no need).
+    An argument that is the address of a part an existing need has always names that need, also when it could be read
+    as a filter: given a need ``var`` with a part ``flag``, ``var.flag`` extracts ``var``. Any other argument is read
+    as before, an address of a part the need does not have included.
+  - :ref:`needextend` given a part address still refuses it, with the same warning and strictness, now saying that
+    the address names a part of the need and to extend the need.
+  - :ref:`needflow`'s ``:root_id:`` naming a part starts the walk at the part's need, where it drew nothing, and the
+    walk follows a link to a part to the part's need.
+  - A schema's network rule validates the need a link to a part names, where it reported a broken link
+    (:issue:`2337`).
+  - A link to the empty part, ``REQ_1.``, which no need has, keeps its ``.`` where the link is stored, written to
+    needs.json and reported, where the ``.`` was dropped.
+
+  Given to needextend or ``:root_id:``, an address naming a part its need does not have is treated as an id naming no
+  need, and a link to one stays a dead link.
+
+  **Changed output**:
+
+  - A ``:root_id:`` diagram whose needs link to parts now holds the needs those links lead to.
+  - A :ref:`needtable` link cell splits a link at its first ``.``, where it took the second dot-separated segment as
+    the part, and writes a link to a part its need does not have as text, as it writes a link to a need that does not
+    exist, where it linked ``#ID.part`` (:issue:`2488`). A link naming a need whole, whose id holds a ``.``, is
+    written as before.
+  - A needflow edge is drawn as a part edge when its link names a part, so a link from a need whose id holds a ``.``
+    is drawn as a link between needs, where it was drawn as a part edge (:issue:`2488`).
+  - A link written ``REQ_1.`` is ``REQ_1.`` in needs.json, in its dead-link warning and in a filter
+    (``"REQ_1." in links``), where it was ``REQ_1``. So a needtable link cell writes it as text, a needflow draws no
+    edge for it and its walk does not follow it from the need that holds it (it still counts in ``REQ_1``'s back
+    links, so a walk into ``REQ_1`` reaches the need holding it), and a schema's network rule reports it as a broken
+    link, where each read it as a link to ``REQ_1``.
+
+  The first build after upgrading reads every document again. (:pr:`2552`)
+
 Internal changes
 ................
 
@@ -32,9 +69,9 @@ Internal changes
   with no fields, no type and no outgoing links. Its cases, one project each, pin the role's grammar, which need a
   part belongs to, a repeated id, the address ``ID.part[condition]``, links to a part and their back links, and what
   a part answers in a filter that asks for parts; ``design/parts-contract.md`` states the rules and names what is
-  not on the page yet. This repository is the corpus's repository of record, and ubCode is to vendor it. Two cases are
-  marked as expected failures of today's sphinx-needs: a hidden need has no parts (:issue:`1321`), and a dead link
-  to an empty part is reported without its ``.``. No behaviour changes. (:pr:`2550`)
+  not on the page yet. This repository is the corpus's repository of record, and ubCode is to vendor it. One case is
+  marked as an expected failure of sphinx-needs: a hidden need has no parts (:issue:`1321`). No behaviour changes.
+  (:pr:`2550`)
 
 .. _`release:9.3.0`:
 

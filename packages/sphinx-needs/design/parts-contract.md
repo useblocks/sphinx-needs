@@ -79,6 +79,7 @@ split off, and a namespace segment holds no `.`: the grammar of a need id, secti
   and a condition that does not hold is one finding, `link condition`.
 - The need's type decides it against a link type's **target types**: a part has no type of
   its own, and a link to a need of a type not allowed is one finding, `link target type`.
+  A schema's **network rule** validates the need too, as it validates a link to the need.
 - It **counts for the need**: it is one of the need's back links, live or dead, and, when
   live, one of the part's. A part's back links hold only links naming that part; a link to
   the need alone, or to another of its parts, is not one of them.

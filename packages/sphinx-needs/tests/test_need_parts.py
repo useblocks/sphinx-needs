@@ -129,3 +129,51 @@ def test_add_need_warns_of_the_parts_it_drops(test_app: Sphinx):
         "ADD_EXTERNAL": {"ap": "given ap"},
         "ADD_EMPTY": {},
     }
+
+
+EMPTY_PART_INDEX = """\
+Index
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+.. spec:: Links
+   :id: SPEC_1
+   :links: REQ_1., REQ_1.p1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\nneeds_build_json = True\n',
+                ),
+                (Path("index.rst"), EMPTY_PART_INDEX),
+            ],
+        }
+    ],
+    ids=["empty-part"],
+    indirect=True,
+)
+def test_a_link_to_the_empty_part_keeps_its_dot(test_app: Sphinx):
+    """``REQ_1.`` is a dead link: it is reported, written to needs.json and filtered as
+    written, never as ``REQ_1``, which it read back as."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:9: WARNING: Need 'SPEC_1' has unknown outgoing link "
+        "'REQ_1.' in field 'links' [needs.link_outgoing]"
+    ]
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf8"))
+    needs = data["versions"][data["current_version"]]["needs"]
+    assert needs["SPEC_1"]["links"] == ["REQ_1.", "REQ_1.p1"]
+    assert needs["REQ_1"]["links_back"] == ["SPEC_1"]
