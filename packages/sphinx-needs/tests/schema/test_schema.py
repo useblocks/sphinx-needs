@@ -470,3 +470,58 @@ def test_network_validates_the_need_of_a_part_link(test_app: SphinxTestApp) -> N
         "IMPL_7",
         "IMPL_8",
     }
+
+
+# Two links to two parts of one need are two links, and a network rule counts both; one
+# link written twice is one link, counted once.
+
+_TWO_PARTS_RST = """\
+Index
+=====
+
+.. spec:: Spec
+   :id: SPEC_1
+
+   Text with :np:`(p1) a part` and :np:`(p2) another`.
+
+.. impl:: To two parts of one need
+   :id: IMPL_1
+   :links: SPEC_1.p1, SPEC_1.p2
+
+.. impl:: To one need, written twice
+   :id: IMPL_2
+   :links: SPEC_1, SPEC_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    _PART_LINK_CONF
+                    % '{"contains": {"local": {"properties": {"type": {"const":'
+                    ' "spec"}}}}, "maxContains": 1}',
+                ),
+                ("index.rst", _TWO_PARTS_RST),
+            ],
+        }
+    ],
+    ids=["max-contains"],
+    indirect=True,
+)
+def test_network_counts_two_links_to_two_parts_of_one_need(
+    test_app: SphinxTestApp,
+) -> None:
+    test_app.build()
+    assert _schema_findings(test_app) == [
+        (
+            "IMPL_1",
+            "IMPL_1 > links",
+            "Too many valid links of type 'links' (2 > 1) / ok: SPEC_1.p1, SPEC_1.p2 "
+            "[sn_schema_violation.network_contains_too_many]",
+        )
+    ]
