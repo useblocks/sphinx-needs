@@ -324,33 +324,34 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     NeedsSphinxConfig.add_config_values(app)
 
-    # Define nodes
-    app.add_node(
-        Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart)
+    # Define nodes. A node with an html visitor is registered by `_add_html_node`,
+    # which gives the visitor to epub too (its docstring says why epub must be named).
+    _add_html_node(
+        app, Need, (html_visit, html_depart), latex=(latex_visit, latex_depart)
     )
     app.add_node(Needbar)
     app.add_node(Needimport)
     app.add_node(Needlist)
     app.add_node(Needtable)
     # The three docutils sub-classes a needtable's HTML is built from. They exist only so
-    # that the HTML writers can emit attributes docutils has no other channel for (the
-    # markup contract in `design/needstable-contract.md`); NO other builder gets a
-    # visitor, so `SphinxTranslator.dispatch_visit` walks the MRO and latex, text,
-    # texinfo and man render them as the plain `table`/`row`/`entry` they subclass.
-    app.add_node(
-        NeedtableTable,
-        html=(html_visit_needtable_table, html_depart_needtable_table),
+    # that the HTML writers (html and epub) can emit attributes docutils has no other
+    # channel for (the markup contract in `design/needstable-contract.md`); NO other
+    # builder gets a visitor, so `SphinxTranslator.dispatch_visit` walks the MRO and
+    # latex, text, texinfo and man render them as the plain `table`/`row`/`entry` they
+    # subclass.
+    _add_html_node(
+        app, NeedtableTable, (html_visit_needtable_table, html_depart_needtable_table)
     )
-    app.add_node(
-        NeedtableRow,
-        html=(html_visit_needtable_row, html_depart_needtable_row),
+    _add_html_node(
+        app, NeedtableRow, (html_visit_needtable_row, html_depart_needtable_row)
     )
-    app.add_node(
+    _add_html_node(
+        app,
         NeedtableHeader,
-        html=(html_visit_needtable_header, html_depart_needtable_header),
+        (html_visit_needtable_header, html_depart_needtable_header),
     )
     app.add_node(NeedflowPlantuml)
-    app.add_node(NeedflowGraphiz, html=(html_visit_needflow_graphviz, None))
+    _add_html_node(app, NeedflowGraphiz, (html_visit_needflow_graphviz, None))
     app.add_node(Needpie)
     app.add_node(Needsequence)
     app.add_node(Needgantt)
@@ -359,14 +360,16 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needextend)
     app.add_node(Needuml)
     app.add_node(List2Need)
-    app.add_node(
+    _add_html_node(
+        app,
         NeedPart,
-        html=(visitor_dummy, visitor_dummy),
+        (visitor_dummy, visitor_dummy),
         latex=(visitor_dummy, visitor_dummy),
     )
-    app.add_node(
+    _add_html_node(
+        app,
         NeedRef,
-        html=(visitor_dummy, visitor_dummy),
+        (visitor_dummy, visitor_dummy),
         latex=(visitor_dummy, visitor_dummy),
     )
 
@@ -1601,6 +1604,28 @@ def _refuse_global_severity(
             "config",
             None,
         )
+
+
+#: a node's visitor pair for one builder: ``(visit, depart)``, ``depart`` may be ``None``
+_VisitorPair = tuple[Callable[..., Any], Callable[..., Any] | None]
+
+
+def _add_html_node(
+    app: Sphinx, node: type[nodes.Element], html: _VisitorPair, **others: _VisitorPair
+) -> None:
+    """Register a node whose ``html`` visitor pair is given to ``epub`` as well.
+
+    Sphinx looks a node's visitors up under the builder's name, and falls back to its
+    format (``html``, for epub) only when no extension registered any visitor under that
+    name; sphinx-data-viewer, which sphinx-needs loads, registers one for ``epub``, so a
+    node registered for ``html`` alone was unknown to the epub builder, which ended the
+    build on it.
+
+    :param html: The visitor pair of the html builders.
+    :param others: The visitor pairs of other builders, by builder name, as ``add_node``
+        takes them.
+    """
+    app.add_node(node, override=False, html=html, epub=html, **others)
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
