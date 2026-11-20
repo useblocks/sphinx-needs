@@ -334,11 +334,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needlist)
     app.add_node(Needtable)
     # The three docutils sub-classes a needtable's HTML is built from. They exist only so
-    # that the HTML writers (html and epub) can emit attributes docutils has no other
-    # channel for (the markup contract in `design/needstable-contract.md`); NO other
-    # builder gets a visitor, so `SphinxTranslator.dispatch_visit` walks the MRO and
-    # latex, text, texinfo and man render them as the plain `table`/`row`/`entry` they
-    # subclass.
+    # that the builders that write HTML can emit attributes docutils has no other channel
+    # for (the markup contract in `design/needstable-contract.md`); NO builder of another
+    # format gets a visitor, so `SphinxTranslator.dispatch_visit` walks the MRO and latex,
+    # text, texinfo and man render them as the plain `table`/`row`/`entry` they subclass.
     _add_html_node(
         app, NeedtableTable, (html_visit_needtable_table, html_depart_needtable_table)
     )
@@ -1617,9 +1616,11 @@ def _add_html_node(
 
     Sphinx looks a node's visitors up under the builder's name, and falls back to its
     format (``html``, for epub) only when no extension registered any visitor under that
-    name; sphinx-data-viewer, which sphinx-needs loads, registers one for ``epub``, so a
-    node registered for ``html`` alone was unknown to the epub builder, which ended the
-    build on it.
+    name; sphinx-data-viewer, which sphinx-needs loads, registers one for ``epub``. So the
+    epub builder had no visitor for a node registered for ``html`` alone: it wrote the
+    node as the docutils node it subclasses (a needtable's table, rows and cells), or,
+    where it subclasses none the writer knows (a graphviz needflow, a need role or a
+    need part in a title), ended the build on it.
 
     :param html: The visitor pair of the html builders.
     :param others: The visitor pairs of other builders, by builder name, as ``add_node``
