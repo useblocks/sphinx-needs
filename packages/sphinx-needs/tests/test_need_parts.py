@@ -6,6 +6,7 @@ from sphinx.application import Sphinx
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.roles.need_part import NeedPartRole
 from sphinx_needs_testkit import build_warnings
 
 
@@ -177,3 +178,255 @@ def test_a_link_to_the_empty_part_keeps_its_dot(test_app: Sphinx):
     needs = data["versions"][data["current_version"]]["needs"]
     assert needs["SPEC_1"]["links"] == ["REQ_1.", "REQ_1.p1"]
     assert needs["REQ_1"]["links_back"] == ["SPEC_1"]
+
+
+#: Unicode's ``White_Space`` property, the white space a part's text loses at its ends
+#: (``design/parts-contract.md`` section 1), written out here rather than imported, so
+#: that the sweep below pins the set the role strips and not merely the role's constant.
+#: It is not Python's ``str.isspace``: that also holds U+001C to U+001F.
+UNICODE_WHITE_SPACE = frozenset(
+    {
+        *range(0x09, 0x0E),
+        0x20,
+        0x85,
+        0xA0,
+        0x1680,
+        *range(0x2000, 0x200B),
+        0x2028,
+        0x2029,
+        0x202F,
+        0x205F,
+        0x3000,
+    }
+)
+
+
+def test_a_part_text_loses_exactly_unicode_white_space_at_its_ends() -> None:
+    """A character at either end of an ``(id)`` part's text is removed if and only if it
+    is Unicode ``White_Space``, swept over every code point; inside, it is kept, and a
+    text of white space alone is the empty text."""
+    assert len(UNICODE_WHITE_SPACE) == 25
+    role = NeedPartRole()
+    # the sweep calls the role alone: no document, so no source position to record
+    role.set_source_info = lambda node, lineno=None: None  # type: ignore[method-assign]
+    wrong = []
+    for code_point in range(0x110000):
+        char = chr(code_point)
+        white = code_point in UNICODE_WHITE_SPACE
+        for text, expected in (
+            (
+                f"{char}a{char}b{char}",
+                f"a{char}b" if white else f"{char}a{char}b{char}",
+            ),
+            (f"a{char}", "a" if white else f"a{char}"),
+            (char, "" if white else char),
+        ):
+            role.text = f"(p){text}"
+            (part,), messages = role.run()
+            assert not messages
+            if (part["part_id"], part["title"]) != ("p", expected):
+                wrong.append(f"U+{code_point:04X} in {text!r}")
+    assert wrong == []
+
+
+EDGE_SPACE_CONF = '''\
+from sphinx.util.docutils import SphinxDirective
+
+from sphinx_needs.api import add_need
+
+extensions = ["sphinx_needs", "myst_parser"]
+needs_build_json = True
+
+
+class StatedParts(SphinxDirective):
+    """An external and a hidden need, each given a part whose text has white space at
+    its ends."""
+
+    def run(self):
+        return add_need(
+            self.env.app,
+            self.state,
+            self.env.docname,
+            self.lineno,
+            "req",
+            "Stated",
+            id="EXT_STATED",
+            is_external=True,
+            external_url="https://example.org/x.html#EXT_STATED",
+            parts={"sp": {"id": "sp", "content": "  given with spaces\\t"}},
+        ) + add_need(
+            self.env.app,
+            self.state,
+            self.env.docname,
+            self.lineno,
+            "req",
+            "Stated hidden",
+            id="HIDDEN_STATED",
+            hide=True,
+            parts={"hp": {"id": "hp", "content": "\\tgiven hidden  "}},
+        )
+
+
+def setup(app):
+    app.add_directive("stated-parts", StatedParts)
+'''
+
+# U+00A0 and U+3000 are written as escapes in this literal so that the source shows them
+EDGE_SPACE_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   myst
+
+.. req:: Edge space
+   :id: REQ_1
+
+   :np:`(p1)   three spaces` and :np:`(p2)\u00a0no-break space`
+   and (\\ :np:`(p3) after a paren`) and :np:`(p4)\u3000ideographic space`
+   and :np:`(m1)
+   on the next line` and :np:`(m2) first line
+   second line` and :np:`no id given`.
+
+:need:`REQ_1.p1`
+
+.. stated-parts::
+
+.. needimport:: hidden.json
+   :hide:
+"""
+
+#: A record whose part's text has white space at its ends, imported as a hidden need
+EDGE_SPACE_HIDDEN_RECORD = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_HIDDEN": {
+                    "id": "IMP_HIDDEN",
+                    "type": "req",
+                    "title": "Imported hidden",
+                    "content": "Hidden.",
+                    "parts": {"ip": {"id": "ip", "content": " record spaced "}},
+                }
+            }
+        }
+    },
+}
+
+EDGE_SPACE_MYST = """\
+# MyST
+
+```{req} MyST edge space
+:id: REQ_MD
+
+{np}`(b) trailing ` and {np}`(d)\ttab` and {np}`no id ` and {np}` both no id `
+and {np}` (c) both `
+```
+"""
+
+#: The parts of the project with no ``(id)``: the id is the SHA-1 of the whole text
+#: as written, and the text is that whole text
+WITHOUT_AN_ID = {
+    "92C": "no id given",
+    "88E": "no id ",
+    "768": " both no id ",
+    "6D0": " (c) both ",
+}
+
+EDGE_SPACE_PROJECT = {
+    "buildername": "html",
+    "files": [
+        (Path("conf.py"), EDGE_SPACE_CONF),
+        (Path("index.rst"), EDGE_SPACE_INDEX),
+        (Path("myst.md"), EDGE_SPACE_MYST),
+        (Path("hidden.json"), json.dumps(EDGE_SPACE_HIDDEN_RECORD)),
+    ],
+}
+
+
+def _build_edge_space(app: Sphinx) -> dict[str, dict[str, str]]:
+    """Build the project, which reports nothing, and give each need's parts' texts."""
+    with pytest.warns(DeprecationWarning, match="add_need is deprecated"):
+        app.build()
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    return {
+        need_id: {part_id: part["content"] for part_id, part in need["parts"].items()}
+        for need_id, need in needs.items()
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [EDGE_SPACE_PROJECT], ids=["edge-space"], indirect=True
+)
+def test_a_part_text_has_no_white_space_at_its_ends(test_app: Sphinx) -> None:
+    """An ``(id)`` part's text has no white space at either end, in reStructuredText and
+    in MyST: spaces, a no-break space, an ideographic space, a tab and a line break after
+    the ``)``, and a trailing space MyST keeps; a line break inside the text stays."""
+    parts = _build_edge_space(test_app)
+    with_an_id = {
+        part_id: text
+        for part_id, text in (parts["REQ_1"] | parts["REQ_MD"]).items()
+        if part_id not in WITHOUT_AN_ID
+    }
+    assert with_an_id == {
+        "p1": "three spaces",
+        "p2": "no-break space",
+        "p3": "after a paren",
+        "p4": "ideographic space",
+        "m1": "on the next line",
+        "m2": "first line\nsecond line",
+        "b": "trailing",
+        "d": "tab",
+    }
+    data = json.loads(Path(test_app.outdir, "needs.json").read_text(encoding="utf8"))
+    written = data["versions"][data["current_version"]]["needs"]
+    assert written["REQ_1"]["parts"]["p1"]["content"] == "three spaces"
+    assert written["REQ_MD"]["parts"]["b"]["content"] == "trailing"
+
+
+@pytest.mark.parametrize(
+    "test_app", [EDGE_SPACE_PROJECT], ids=["edge-space"], indirect=True
+)
+def test_a_part_without_an_id_keeps_its_id_and_its_text(test_app: Sphinx) -> None:
+    """A part with no ``(id)`` is untouched: its id is the hash of its whole text as
+    written, and its text is that whole text, edge white space included (MyST)."""
+    parts = _build_edge_space(test_app)
+    all_parts = parts["REQ_1"] | parts["REQ_MD"]
+    assert {part_id: all_parts.get(part_id) for part_id in WITHOUT_AN_ID} == (
+        WITHOUT_AN_ID
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app", [EDGE_SPACE_PROJECT], ids=["edge-space"], indirect=True
+)
+def test_a_stated_part_text_is_kept_as_given(test_app: Sphinx) -> None:
+    """A part given to ``add_need`` for an external or a hidden need, and a part a
+    record imported as a hidden need states, keeps its text byte for byte."""
+    parts = _build_edge_space(test_app)
+    assert {
+        need_id: parts[need_id]
+        for need_id in ("EXT_STATED", "HIDDEN_STATED", "IMP_HIDDEN")
+    } == {
+        "EXT_STATED": {"sp": "  given with spaces\t"},
+        "HIDDEN_STATED": {"hp": "\tgiven hidden  "},
+        "IMP_HIDDEN": {"ip": " record spaced "},
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [EDGE_SPACE_PROJECT], ids=["edge-space"], indirect=True
+)
+def test_a_part_text_is_rendered_without_its_edge_space(test_app: Sphinx) -> None:
+    """On the page the part follows a parenthesis with no space between, and ``:need:``
+    names a part by its text with no space before it."""
+    _build_edge_space(test_app)
+    html = Path(test_app.outdir, "index.html").read_text(encoding="utf8")
+    assert (
+        '(<span class="need-part" id="REQ_1.p3">after a paren'
+        '<a class="needs-id reference internal" href="#REQ_1.p3"> p3</a></span>)'
+    ) in html
+    assert '<em class="xref need">three spaces (REQ_1.p1)</em>' in html

@@ -80,7 +80,7 @@
         "id": "awesome_id"
       },
       "multiline_id": {
-        "content": "\nhas multi-lines",
+        "content": "has multi-lines",
         "id": "multiline_id"
       }
     },

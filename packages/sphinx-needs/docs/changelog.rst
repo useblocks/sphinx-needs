@@ -16,7 +16,7 @@ Improvements
   under ``-W``: before, the key was reported as unknown. A value that is none of the three names is a
   ``needs.config`` warning, and ignored. On a link type declared on need types alone it is part of the link type's
   shape, as ``summary`` is: the first need type declaring it sets it, and another value is a
-  ``needs.type_conflict``. It is not in the ``needs.json``. ``ENV_DATA_VERSION`` is 30: the first build after
+  ``needs.type_conflict``. It is not in the ``needs.json``. ``ENV_DATA_VERSION`` is 31: the first build after
   upgrading reads every document again. (:pr:`2554`)
 
 Bug fixes
@@ -75,6 +75,21 @@ Bug fixes
     link, where each read it as a link to ``REQ_1``.
 
   The first build after upgrading reads every document again. (:pr:`2552`, :pr:`2553`)
+
+- 🐛 The text of a :ref:`need part <need_part>` written ``(id) text`` no longer keeps the white space after its
+  ``(id)`` (:issue:`1437`): ``(p1) first`` has the text ``first``, where it had ``" first"``, and a text written on the
+  line after its ``(id)`` no longer starts with a line break. White space at the end, which a MyST role can hold, is
+  removed too; white space and line breaks inside the text are kept. White space is Unicode's ``White_Space``. No
+  part id changes, and a part with no ``(id)`` keeps its whole text as written. A part a record states keeps its
+  text as given wherever that part is kept, as the ``parts`` of an external need are.
+
+  **Changed output**: a part's text wherever it is shown or read: in needs.json ``parts`` (and ``content.parts`` of
+  the draft format 2a1); as ``content`` in a filter; in the text of ``:need:`` and of a need card's link to a part,
+  whose 30-character cut (:ref:`needs_role_need_max_title_length` for ``:need:``) now counts from the first word; in
+  :ref:`needtable` ``:show_parts:`` rows and :ref:`needflow` labels, so a needflow image is written again under a new
+  name; and on the page where a part directly follows a character other than white space, such as punctuation:
+  ``(\ :np:`(p1) first`)`` renders ``(first p1)`` where it rendered ``( first p1)``. A filter comparing
+  ``content == " first"`` must drop the space. The first build after upgrading reads every document again. (:pr:`2555`)
 
 Internal changes
 ................
