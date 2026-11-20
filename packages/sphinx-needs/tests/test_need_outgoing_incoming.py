@@ -158,9 +158,7 @@ Roles
 
    The target, with :np:`(p1) the part`.
 
-   Out: :need_outgoing:`REQ_1.p1`
-
-   In: :need_incoming:`REQ_1.p1`
+   Target: :{role}:`REQ_1.p1`
 
 .. req:: Linked
    :id: REQ_2
@@ -172,27 +170,39 @@ Roles
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    "test_app,listed",
     [
-        {
-            "buildername": "html",
-            "files": [(Path("conf.py"), CONF), (Path("index.rst"), IN_OWN_CONTENT)],
-        }
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), IN_OWN_CONTENT.format(role=role)),
+                ],
+            },
+            listed,
+            id=role,
+        )
+        for role, listed in (
+            (
+                "need_outgoing",
+                '<a class="reference internal" href="#REQ_2" title="REQ_1">REQ_2</a>',
+            ),
+            (
+                "need_incoming",
+                '<a class="reference internal" href="#SPEC_1" title="REQ_1">SPEC_1</a>',
+            ),
+        )
     ],
-    indirect=True,
+    indirect=["test_app"],
 )
-def test_a_role_in_its_needs_own_content(test_app: Sphinx):
+def test_a_role_in_its_needs_own_content(test_app: Sphinx, listed: str):
     """A role naming a part of the need whose content holds it reads that need."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
-    assert _paragraph(html, "Out") == (
-        '<span><a class="reference internal" href="#REQ_2" title="REQ_1">REQ_2</a></span>'
-    )
-    assert _paragraph(html, "In") == (
-        '<span><a class="reference internal" href="#SPEC_1" title="REQ_1">SPEC_1</a></span>'
-    )
+    assert _paragraph(html, "Target") == f"<span>{listed}</span>"
 
 
 EXTERNAL_JSON = (
@@ -223,18 +233,23 @@ Card
 .. spec:: Linker
    :id: SPEC_1
    :links: EXT_1, EXT_1.a.b, EXT_1.rp, REQ_1.p1
+"""
+
+ROLE_ON_AN_EXTERNAL_PART = """\
+Role
+====
 
 Out: :need_outgoing:`EXT_1.rp`
 """
 
 
-def _external(conf: str) -> dict[str, object]:
+def _external(conf: str, index: str = CARD) -> dict[str, object]:
     return {
         "buildername": "html",
         "files": [
             (Path("conf.py"), conf),
             (Path("external.json"), EXTERNAL_JSON),
-            (Path("index.rst"), CARD),
+            (Path("index.rst"), index),
         ],
     }
 
@@ -295,7 +310,20 @@ def test_the_card_row_keeps_an_external_parts_address(
         f"{external}</a>, "
         f'<a class="reference internal" href="#REQ_1.p1" title="SPEC_1">{local}</a>'
     )
-    # a role naming the external part lists the external need's links
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_external(EXTERNAL_CONF, ROLE_ON_AN_EXTERNAL_PART)],
+    indirect=True,
+    ids=["found"],
+)
+def test_a_role_naming_a_part_of_an_external_need(test_app: Sphinx):
+    """``:need_outgoing:`` naming a part of an external need lists that need's links."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert _paragraph(html, "Out") == (
         f'<span><a class="external_link reference external" href="{_URL}#EXT_2">'
         "EXT_2</a></span>"
