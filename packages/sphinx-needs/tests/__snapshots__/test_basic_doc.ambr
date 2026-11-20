@@ -609,6 +609,7 @@
         value=list([
         ]),
       ),
+      dependent='source',
       derive=None,
       derive_by_type=None,
       description='Link field',
@@ -647,6 +648,7 @@
         value=list([
         ]),
       ),
+      dependent='source',
       derive=None,
       derive_by_type=None,
       description='Link field',
