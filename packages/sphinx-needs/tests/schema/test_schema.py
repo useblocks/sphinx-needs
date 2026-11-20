@@ -361,6 +361,10 @@ Index
 .. impl:: To a part of a requirement
    :id: IMPL_7
    :links: REQ_1.r1
+
+.. impl:: To the empty part, which no need has
+   :id: IMPL_8
+   :links: SPEC_1.
 """
 
 
@@ -423,7 +427,9 @@ def _broken(need: str, address: str) -> list[tuple[str, str, str]]:
 def test_network_reads_a_link_to_a_part_as_its_need(test_app: SphinxTestApp) -> None:
     test_app.build()
     assert sorted(_schema_findings(test_app)) == sorted(
-        _broken("IMPL_3", "SPEC_1.p9") + _broken("IMPL_4", "NOPE_1.p1")
+        _broken("IMPL_3", "SPEC_1.p9")
+        + _broken("IMPL_4", "NOPE_1.p1")
+        + _broken("IMPL_8", "SPEC_1.")
     )
 
 
@@ -462,4 +468,5 @@ def test_network_validates_the_need_of_a_part_link(test_app: SphinxTestApp) -> N
         "IMPL_3",
         "IMPL_4",
         "IMPL_7",
+        "IMPL_8",
     }

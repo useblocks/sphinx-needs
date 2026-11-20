@@ -606,6 +606,44 @@ def test_needflow_a_part_edge_is_one_whose_link_names_a_part(test_app: Sphinx):
     }
 
 
+EMPTY_PART = """\
+Empty part
+==========
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one`
+
+.. impl:: Links the empty part
+   :id: IMPL_1
+   :links: REQ_1.
+
+.. needflow::
+
+.. needflow::
+   :root_id: IMPL_1
+   :root_direction: outgoing
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(FLOW_CONF, EMPTY_PART)], ids=["empty-part"], indirect=True
+)
+def test_needflow_a_link_to_the_empty_part_is_dead(test_app: Sphinx):
+    """``REQ_1.`` names the empty part, which no need has: a dead link, so no edge is
+    drawn for it and the walk does not follow it. Both read it as ``REQ_1``, which it
+    was stored as."""
+    app = test_app
+    sources = _capture(app)
+    app.build()
+    assert build_warnings(app) == [_dead("IMPL_1", 9, "REQ_1.")]
+
+    every_need, from_the_link = sources
+    assert _drawn(every_need) == ({"REQ_1", "REQ_1.p1", "IMPL_1"}, set())
+    assert _drawn(from_the_link) == ({"IMPL_1"}, set())
+
+
 # --- needgantt ---------------------------------------------------------------------------
 
 GANTT = """\
