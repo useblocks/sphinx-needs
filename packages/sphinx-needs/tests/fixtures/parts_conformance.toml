@@ -172,7 +172,7 @@ REQ_1 = { "é1" = " unicode id" }
 [[case]]
 name = "grammar-no-id-given"
 section = "grammar"
-why = "a text not starting with (id) has as its id the first three hex digits, upper case, of the SHA-1 of the whole text encoded as UTF-8, which is its text"
+why = "a text not starting with (id) has as its id the first three hex digits, upper case, of the SHA-1 of the whole text encoded as UTF-8, which is its text; the text is the role's after backslash escapes are removed (back\\slash is backslash, hashed as such)"
 config = '''
 [needs]
 '''
@@ -180,12 +180,12 @@ source = '''
 .. req:: Parts
    :id: REQ_1
 
-   :np:`no id given` and :np:`é sans id`
+   :np:`no id given` and :np:`é sans id` and :np:`back\slash`
 '''
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_1 = { 92C = "no id given", BB3 = "é sans id" }
+REQ_1 = { 92C = "no id given", BB3 = "é sans id", 385 = "backslash" }
 
 [[case]]
 name = "grammar-a-character-before-the-parenthesis"
