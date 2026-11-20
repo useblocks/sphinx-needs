@@ -23,7 +23,7 @@ Bug fixes
   reported as ``:need:`` reports one (a ``needs.link_ref`` warning) and rendered as an unresolved reference. The need
   card's outgoing row and the list ``:need_outgoing:`` renders show a link to a part of an external need as they show
   one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
-  the need. (:pr:`2551`)
+  the need. (:pr:`2551`, :pr:`2553`)
 
 - 🐛 Seven more places read a :ref:`need part <need_part>`'s address ``ID.part``, or a link to a part, as a link to a
   part is read: the address is split once at its first ``.``, and names the need when the need has the part.
@@ -62,7 +62,7 @@ Bug fixes
     links, so a walk into ``REQ_1`` reaches the need holding it), and a schema's network rule reports it as a broken
     link, where each read it as a link to ``REQ_1``.
 
-  The first build after upgrading reads every document again. (:pr:`2552`)
+  The first build after upgrading reads every document again. (:pr:`2552`, :pr:`2553`)
 
 Internal changes
 ................
