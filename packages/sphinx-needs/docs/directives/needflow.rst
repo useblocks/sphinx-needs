@@ -104,6 +104,8 @@ To select a root need for the flowchart and its connected needs, you can use the
 This takes the id of the need you want to use as the root,
 and then traverses the tree of connected needs, to create an initial selection of needs to show in the flowchart.
 A need part's address (``ID.part``) as the root reads as the part's need, and a link to a part leads to the part's need.
+From a part, the walk's first incoming step follows only the links naming that part, while its first outgoing step
+and every later step follow the need's links.
 
 Connections are limited by the link types you have defined in the ``:link_types:`` option,
 or, if not defined, every link type but the summary ones (:ref:`needflow_link_types`).

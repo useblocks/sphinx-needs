@@ -15,7 +15,8 @@ Bug fixes
 
   The places: the targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml`
   and :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`,
-  and the ``need_id`` of ``copy``. The roles, the needuml functions and needsequence ended the build on a part
+  and the ``need_id`` of ``copy``. ``:need_incoming:`` given a part address lists the links that point at the part,
+  its own back links. The roles, the needuml functions and needsequence ended the build on a part
   address, and ``copy`` reported an error and copied nothing. An address naming a part its need does not have is
   treated as an id naming no need, except that the two roles report it as ``:need:`` reports a missing part.
   **Changed output**: a ``:need_outgoing:`` or ``:need_incoming:`` naming no need, which ended the build too, is now
@@ -35,7 +36,8 @@ Bug fixes
   - :ref:`needextend` given a part address still refuses it, with the same warning and strictness, now saying that
     the address names a part of the need and to extend the need.
   - :ref:`needflow`'s ``:root_id:`` naming a part starts the walk at the part's need, where it drew nothing, and the
-    walk follows a link to a part to the part's need.
+    walk follows a link to a part to the part's need. The walk's first incoming step follows only the links that
+    point at the part; its first outgoing step and every later step follow the need's links.
   - A schema's network rule validates the need a link to a part names, where it reported a broken link
     (:issue:`2337`).
   - A link to the empty part, ``REQ_1.``, which no need has, keeps its ``.`` where the link is stored, written to
