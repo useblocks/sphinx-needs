@@ -1,11 +1,11 @@
 """A need list naming a need on a page the builder leaves out of its output.
 
-The ``latex`` and ``texinfo`` builders write only the pages their documents reach
-through a toctree, so an ``:orphan:`` page is not written, and asking them for its URI
-raises :class:`sphinx.errors.NoUri`. A ``needlist``, ``needtable`` or ``needextract``
-listing a need on such a page ended the build with that exception. The need is listed
-all the same, its text with no link, as Sphinx writes a cross-reference whose target
-the builder leaves out.
+The ``latex`` and ``texinfo`` builders write only the pages they include (a start
+document, what its toctree reaches, and its appendices), so an ``:orphan:`` page is
+not written, and asking them for its URI raises :class:`sphinx.errors.NoUri`. A
+``needlist``, ``needtable`` or ``needextract`` listing a need on such a page ended the
+build with that exception. The need is listed all the same, its text with no link, as
+Sphinx writes a cross-reference whose target the builder leaves out.
 """
 
 import re
@@ -68,6 +68,18 @@ Index
 }
 
 
+#: a link whose text holds the need's id, as each builder writes one: latex an
+#: internal ``\hyperref[...]{...}`` or an external ``\sphinxhref{...}{...}``, texinfo
+#: an ``@ref{...}`` or an ``@uref{...}``. A link the need's id merely shares a line
+#: with does not match.
+LINK_AROUND_THE_ID = {
+    "latex": re.compile(
+        r"\\(?:hyperref\[[^\]]*\]|sphinxhref\{[^}]*\})\{(?:\\\w+\{)*[^{}]*LEFTOUT1"
+    ),
+    "texinfo": re.compile(r"@u?ref\{[^}]*LEFTOUT1"),
+}
+
+
 def _project(buildername: str, variant: str) -> dict:
     return {
         "buildername": buildername,
@@ -89,8 +101,9 @@ def _project(buildername: str, variant: str) -> dict:
     indirect=True,
 )
 def test_need_on_a_left_out_page_is_listed_without_a_link(test_app):
-    """The build finishes, and the written document holds the need's id, as text:
-    no link to the page the builder leaves out, and no warning."""
+    """The build finishes with no warning, and the written document holds the need's
+    id as text: no link wraps it (``LINK_AROUND_THE_ID``), and the page the builder
+    leaves out is named nowhere."""
     app = test_app
     app.build()
 
@@ -101,6 +114,7 @@ def test_need_on_a_left_out_page_is_listed_without_a_link(test_app):
     # the targets of labels and links are not text a reader sees
     visible = re.sub(r"\\detokenize\{[^}]*\}|@anchor\{[^}]*\}", "", written)
     assert "LEFTOUT1" in visible, written
+    assert LINK_AROUND_THE_ID[app.builder.name].search(written) is None, written
     assert "elsewhere" not in written, written
 
 
