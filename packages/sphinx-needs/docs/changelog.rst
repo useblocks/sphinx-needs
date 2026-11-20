@@ -22,7 +22,7 @@ Bug fixes
   reported as ``:need:`` reports one (a ``needs.link_ref`` warning) and rendered as an unresolved reference. The need
   card's outgoing row and the list ``:need_outgoing:`` renders show a link to a part of an external need as they show
   one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
-  the need.
+  the need. (:pr:`2551`)
 
 Internal changes
 ................
