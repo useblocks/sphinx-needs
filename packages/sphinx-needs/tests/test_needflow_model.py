@@ -246,10 +246,22 @@ def test_walk_through_a_part_is_one_hop():
     assert set(walked) == {"A", "P"}
 
 
-def test_walk_reaches_a_need_once_through_two_of_its_parts():
+def test_walk_reaches_a_need_once_through_two_of_its_parts(monkeypatch):
+    """The walk lists each need it reaches once, P included, which A reaches through
+    two of its parts: asserted on the ids the walk hands to the view, since a view, keyed
+    by id, could not hold P twice."""
+    handed: list[list[str]] = []
+    filter_ids = NeedsView.filter_ids
+
+    def spy(self: NeedsView, values):
+        handed.append(list(values))
+        return filter_ids(self, handed[-1])
+
+    monkeypatch.setattr(NeedsView, "filter_ids", spy)
     p = need("P", parts=("p1", "p2"))
     a = need("A", links=["P.p1", "P.p2"])
     walked = filter_by_tree(view(a, p), "A", ["links"], "outgoing", None)
+    assert handed == [["A", "P"]]
     assert sorted(walked) == ["A", "P"]
 
 
