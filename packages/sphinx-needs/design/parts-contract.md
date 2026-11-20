@@ -21,8 +21,11 @@ the markup's backslash escapes are removed, is read as `(id) text`: an opening p
 at its very start, an id, a closing parenthesis, and the rest.
 
 - **The id** is one or more characters, each a letter or a number by its Unicode general
-  category (L or N: what Python's `str.isalnum` accepts), `_` or `-`. Case is kept; nothing else is an id character, so a
-  space, a `.`, a `:` or a `(` inside the parentheses means the text has no id.
+  category (L or N, in the Unicode version of the tool that reads it), `_` or `-`. A
+  combining mark (general category M) is no id character: a decomposed `é` (`e` followed by
+  U+0301) or a letter with a vowel sign means the text has no id. Case is kept; nothing else
+  is an id character, so a space, a `.`, a `:` or a `(` inside the parentheses means the text
+  has no id.
 - **The text** is everything after the closing parenthesis, as the markup gives the role's
   content, with the white space at both of its ends removed: `(p1) first`, `(p1)first` and
   `(p1)` followed by a line break and `first` all have the text `first`, and MyST's
