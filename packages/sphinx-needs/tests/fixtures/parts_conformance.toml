@@ -1242,3 +1242,104 @@ findings = []
 filter = 'test_count == 3'
 expected = ["REQ_1", "REQ_1.p1", "REQ_1.p2"]
 include_parts = true
+
+[[case]]
+name = "derived-copy-given-a-part-address"
+section = "derived"
+why = "copy given a part address as its need_id reads the need: SPEC_1, copying owner from REQ_1.p1, copies REQ_1's owner, as SPEC_2 copying from REQ_1 does"
+clean = true
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.owner_copy]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+
+   :np:`(p1) the part`
+
+.. spec:: Copies through the part
+   :id: SPEC_1
+   :owner_copy: [[copy("owner", need_id="REQ_1.p1")]]
+
+.. spec:: Copies from the need
+   :id: SPEC_2
+   :owner_copy: [[copy("owner", need_id="REQ_1")]]
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'owner_copy == "alice"'
+expected = ["SPEC_1", "SPEC_2"]
+include_parts = true
+
+[[case]]
+name = "derived-copy-given-a-missing-part"
+section = "derived"
+why = "copy given the address of a part its need does not have reads nothing, as given a need that does not exist: neither SPEC_1 (REQ_1.p9) nor SPEC_2 (NOPE_1.p1) copies a value"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.owner_copy]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+
+   :np:`(p1) the part`
+
+.. spec:: Copies through a part the need does not have
+   :id: SPEC_1
+   :owner_copy: [[copy("owner", need_id="REQ_1.p9")]]
+
+.. spec:: Copies through a part of no need
+   :id: SPEC_2
+   :owner_copy: [[copy("owner", need_id="NOPE_1.p1")]]
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'owner_copy == "alice"'
+expected = []
+include_parts = true
+
+[[case]]
+name = "derived-a-from-naming-a-part"
+section = "derived"
+why = "a derived field whose from names a part reads the part's need: owner_of_req copies REQ_1's owner on every need, from REQ_1.p1"
+clean = true
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.owner_of_req]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "REQ_1.p1" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+
+   :np:`(p1) the part`
+
+.. spec:: Reads it too
+   :id: SPEC_1
+   :owner: bob
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'owner_of_req == "alice"'
+expected = ["REQ_1", "REQ_1.p1", "SPEC_1"]
+include_parts = true

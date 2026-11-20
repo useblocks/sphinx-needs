@@ -1749,6 +1749,108 @@ def test_a_failed_read_leaves_the_placeholder_unchecked(test_app):
     assert _needs(app)["REQ_001"]["from_missing"] == []
 
 
+# A ``from`` naming a part reads the part's need: where a need is expected, a part address
+# reads as its need (design/parts-contract.md). One naming a part its need does not have
+# fails the read as one naming no need does, the report naming the address as written.
+
+FROM_PART_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {{
+    "owner": {{"nullable": True}},
+    "computed": {{"nullable": True}},
+    "got": {{"nullable": True, "derive": {{"kind": "copy", "field": "owner", "from": "{source}"}}}},
+    "got_computed": {{
+        "nullable": True,
+        "derive": {{"kind": "copy", "field": "computed", "from": "{computed}"}},
+    }},
+}}
+needs_links = {{"refs": {{"derive": {{"kind": "content_links", "from": "{source}"}}}}}}
+"""
+
+FROM_PART_INDEX = """\
+From
+====
+
+.. req:: Source
+   :id: REQ_1
+   :owner: alice
+
+   The source, with :np:`(p1) the part`, which names :need:`REQ_2`.
+
+.. req:: Named in the source's content
+   :id: REQ_2
+   :owner: bob
+
+.. req:: A computed value
+   :id: REQ_3
+   :computed: [[copy("owner", "REQ_2")]]
+
+   :np:`(p3) a part`
+"""
+
+
+def _from_part(source: str, computed: str = "REQ_3") -> dict[str, object]:
+    return {
+        "buildername": "needs",
+        "files": [
+            (Path("conf.py"), FROM_PART_CONF.format(source=source, computed=computed)),
+            (Path("index.rst"), FROM_PART_INDEX),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(_from_part("REQ_1"), id="the-need"),
+        pytest.param(_from_part("REQ_1.p1", "REQ_3.p3"), id="a-part-of-it"),
+    ],
+    indirect=True,
+)
+def test_from_a_part_address_reads_as_its_need(test_app):
+    """``copy`` and ``content_links`` with ``from`` naming ``REQ_1.p1`` read ``REQ_1``,
+    as they read it named whole: its value, computed first where it is computed, and
+    the references of its content."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    for need_id in ("REQ_1", "REQ_2", "REQ_3"):
+        assert needs[need_id]["got"] == "alice"
+        assert needs[need_id]["got_computed"] == "bob"
+        assert needs[need_id]["refs"] == ["REQ_2"]
+
+
+@pytest.mark.parametrize(
+    "test_app,source",
+    [
+        pytest.param(_from_part(source, source), source, id=name)
+        for name, source in (("part-missing", "REQ_1.p9"), ("need-missing", "NOPE_9"))
+    ],
+    indirect=["test_app"],
+)
+def test_from_an_address_that_does_not_resolve(test_app, source):
+    app = test_app
+    app.build()
+    lines = {"REQ_1": 4, "REQ_2": 10, "REQ_3": 14}
+    expected = []
+    for need_id, line in lines.items():
+        expected += [
+            f"<srcdir>/index.rst:{line}: WARNING: Error while resolving dynamic values "
+            f"for field '{field}', of need '{need_id}': 'from' names no need: "
+            f"'{source}' [needs.dynamic_function]"
+            for field in ("got", "got_computed")
+        ]
+        expected.append(
+            f"<srcdir>/index.rst:{line}: WARNING: links_from_content: no stored node "
+            f"for need '{source}' [needs.dynamic_function]"
+        )
+    assert sorted(build_warnings(app)) == sorted(expected)
+    for need in _needs(app).values():
+        assert (need["got"], need["got_computed"], need["refs"]) == (None, None, [])
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {
