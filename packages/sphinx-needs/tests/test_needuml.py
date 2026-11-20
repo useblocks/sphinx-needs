@@ -618,6 +618,44 @@ def test_needuml_a_part_address_reads_as_its_need(test_app):
     assert flow_part == flow_need
 
 
+ONCE = """\
+Once
+====
+
+.. req:: Target
+   :id: REQ_1
+
+   The target, with :np:`(p1) the part`.
+
+.. needuml::
+
+   {{flow("REQ_1")}}
+   {{flow("REQ_1.p1")}}
+   {{uml("REQ_1.p1")}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), PART_ADDRESS_CONF), (Path("index.rst"), ONCE)],
+        }
+    ],
+    indirect=True,
+)
+def test_needuml_a_need_and_its_part_are_drawn_once(test_app):
+    """A diagram draws a need once however it is named: the need's id and a part
+    address of it are one need, so the second and third calls draw nothing."""
+    app = test_app
+    sources = _plantuml_sources(app)
+    app.build()
+    assert_no_warnings(app)
+    (source,) = sources
+    assert source.count(" as REQ_1") == 1
+
+
 UNRESOLVED = """\
 Unresolved
 ==========
