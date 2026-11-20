@@ -37,7 +37,8 @@ Bug fixes
     the address names a part of the need and to extend the need.
   - :ref:`needflow`'s ``:root_id:`` naming a part starts the walk at the part's need, where it drew nothing, and the
     walk follows a link to a part to the part's need. The walk's first incoming step follows only the links that
-    point at the part; its first outgoing step and every later step follow the need's links.
+    point at the part, its first outgoing step follows the need's links, and every later step follows the links of
+    the need it reaches.
   - A schema's network rule validates the need a link to a part names, where it reported a broken link
     (:issue:`2337`).
   - A link to the empty part, ``REQ_1.``, which no need has, keeps its ``.`` where the link is stored, written to

@@ -9,10 +9,10 @@ whole first as they did, then as a link is read: needflow's root walk and a sche
 network rule. :func:`need_at` is the one lookup they share; each place keeps its own
 report of an address that does not resolve.
 
-Where the part has an answer of its own, which is its back links, the place answers for
-the part (section 8 of the contract): ``:need_incoming:`` lists the part's back links,
-and needflow's root walk takes its first incoming step through them. Those two read the
-part too, through :func:`need_and_part_at`, on which :func:`need_at` is built.
+Two places ask which needs link to the address, and answer for the part (section 8 of
+the contract): ``:need_incoming:`` lists the part's back links, and needflow's root walk
+takes its first incoming step through them. Those two read the part too, through
+:func:`need_and_part_at`, on which :func:`need_at` is built.
 """
 
 from __future__ import annotations

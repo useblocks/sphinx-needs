@@ -102,11 +102,12 @@ that follows a link through a part reads the need's values, and a count over bac
 counts a part link as a link to the need. The corpus pins this for links, and pins each
 other place a need id is given as that place comes to follow it.
 
-A place that takes a need id and is given a part address answers for the part where the
-part has an answer of its own, which is its back links; everywhere else it answers for the
-part's need. No warning is given, and a write still refuses. Two places have such an
-answer: `:need_incoming:` lists the part's back links, and a needflow `:root_id:` naming a
-part takes its first incoming step through them.
+Two places that take a need id ask which needs link to it, and given a part address they
+answer for the part: `:need_incoming:` lists the part's back links, and a needflow
+`:root_id:` naming a part takes its first incoming step through them. Every other place
+answers for the part's need, also where it reads a back-link field by name: `copy` of a
+`<link type>_back` field copies the need's. No warning is given, and a write still
+refuses.
 
 ## 9. Not on this page yet
 

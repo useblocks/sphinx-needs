@@ -76,7 +76,7 @@ need_incoming
 
 ``:need_incoming:`` prints a list of IDs of needs which have set outgoing links to the given need.
 Given a :ref:`need part <need_part>`'s address ``ID.part``, it lists only the needs linking that part, where ``ID``
-lists every need linking the need, through one of its parts or whole.
+lists every need linking the need, through one of its parts or whole, a link naming a part it does not have included.
 
 .. syntax-example::
 
