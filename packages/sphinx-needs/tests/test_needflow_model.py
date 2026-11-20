@@ -34,6 +34,7 @@ from sphinx_needs.filter_common import _need_by_need
 from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceDirective,
+    NeedLink,
     NeedPartData,
     NeedsContent,
 )
@@ -73,6 +74,7 @@ def need(
     children: list[str] | None = None,
     incoming: list[str] | None = None,
     parts: tuple[str, ...] = (),
+    part_incoming: dict[str, list[str]] | None = None,
     docname: str | None = None,
     **core: Any,
 ) -> NeedItem:
@@ -84,6 +86,8 @@ def need(
     :param children: The ids of the needs nested in this one.
     :param incoming: The ids of the needs linking to this one.
     :param parts: The ids of the parts of the need.
+    :param part_incoming: Per part id, the ids of the needs linking to that part, which
+        ``incoming`` lists too, as a build lists them.
     :param docname: The document the need is defined in, if it matters.
     """
     return NeedItem(
@@ -100,7 +104,19 @@ def need(
             "blocks": [],
             "parent_needs": children or [],
         },
-        parts=tuple(NeedPartData(id=part, content=f"part {part}") for part in parts),
+        parts=tuple(
+            NeedPartData(
+                id=part,
+                content=f"part {part}",
+                backlinks={
+                    "links": [
+                        NeedLink.from_string(source)
+                        for source in (part_incoming or {}).get(part, [])
+                    ]
+                },
+            )
+            for part in parts
+        ),
         source=(
             NeedItemSourceDirective(docname=docname, lineno=1, lineno_content=1)
             if docname is not None
@@ -209,18 +225,76 @@ def test_walk_ignores_links_to_needs_outside_the_view():
 
 
 # A part address reads as its need: a ``root_id`` naming a part starts the walk at the
-# need, and a link to a part the need has leads to the need. A link to a part the need
-# does not have is a dead link, and is not followed. A need id holding a ``.`` is read
-# whole, as it was.
+# need, and a link to a part the need has leads to the need. The root's first step is
+# the part's where the part has an answer of its own: incoming, it follows only the links
+# naming that part; outgoing, the need's links, since a part has none. Every later step
+# reads the need. A link to a part the need does not have is a dead link, and is not
+# followed. A need id holding a ``.`` is read whole, as it was.
 
 
-def test_walk_from_a_part_starts_at_its_need():
-    p = need("P", parts=("p1",), incoming=["A"])
-    a = need("A", links=["P.p1"])
-    assert set(filter_by_tree(view(a, p), "P.p1", ["links"], "both", None)) == {
-        "P",
-        "A",
-    }
+def _parts_and_links() -> list[NeedItem]:
+    """``REQ_1``, with the parts ``p1`` and ``p2``, linked by ``A`` whole, by ``B`` at
+    ``p1`` and by ``C`` at ``p2``; ``REQ_1`` links ``UP_1``."""
+    return [
+        need(
+            "REQ_1",
+            parts=("p1", "p2"),
+            links=["UP_1"],
+            incoming=["A", "B", "C"],
+            part_incoming={"p1": ["B"], "p2": ["C"]},
+        ),
+        need("A", links=["REQ_1"]),
+        need("B", links=["REQ_1.p1"]),
+        need("C", links=["REQ_1.p2"]),
+        need("UP_1", incoming=["REQ_1"]),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("direction", "expected"),
+    [
+        ("incoming", {"REQ_1", "B"}),
+        ("outgoing", {"REQ_1", "UP_1"}),
+        ("both", {"REQ_1", "B", "UP_1"}),
+    ],
+)
+def test_walk_from_a_part_steps_first_through_the_part(direction, expected):
+    """The root ``REQ_1.p1`` is ``REQ_1``, at depth 0; its first incoming step follows the
+    links naming ``p1`` alone, its first outgoing step ``REQ_1``'s links."""
+    walked = filter_by_tree(
+        view(*_parts_and_links()), "REQ_1.p1", ["links"], direction, None
+    )
+    assert set(walked) == expected
+
+
+@pytest.mark.parametrize(
+    ("root", "direction", "extra"),
+    [
+        # REQ_1 links X: X's back links lead to REQ_1, whose own are all followed
+        ("X", "incoming", []),
+        # Y links REQ_1.p1: the hop arrives at REQ_1 through a part, and REQ_1's
+        # back links are still all followed, not p1's alone
+        ("Y", "both", ["Y"]),
+    ],
+    ids=["incoming-into-the-need", "a-hop-through-a-part"],
+)
+def test_walk_narrows_the_roots_first_step_alone(root, direction, extra):
+    """The narrow rule is the root's alone: a need the walk reaches later steps on with
+    its own links, however the walk arrived at it."""
+    _, a, b, c, _ = _parts_and_links()
+    req_1 = need(
+        "REQ_1",
+        parts=("p1", "p2"),
+        links=["X"],
+        incoming=["A", "B", "C", *extra],
+        part_incoming={"p1": ["B", *extra], "p2": ["C"]},
+    )
+    x = need("X", incoming=["REQ_1"])
+    y = need("Y", links=["REQ_1.p1"])
+    walked = filter_by_tree(
+        view(req_1, a, b, c, x, y), root, ["links"], direction, None
+    )
+    assert set(walked) == {"X", "REQ_1", "A", "B", "C", *extra}
 
 
 @pytest.mark.parametrize(
