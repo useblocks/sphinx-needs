@@ -7,7 +7,7 @@ from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs._namespaced_ids import local_id_hints
-from sphinx_needs._part_address import need_at
+from sphinx_needs._part_address import NeedAndPart, need_and_part_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
@@ -33,9 +33,9 @@ def role_target_need(
     needs: NeedsView,
     node: nodes.Element,
     fromdocname: str,
-) -> NeedItem | None:
-    """The need the target of the role *node* names, where a part address reads as its
-    need (:func:`~sphinx_needs._part_address.need_at`).
+) -> NeedAndPart | None:
+    """The need the target of the role *node* names, and the part when it names one
+    (:func:`~sphinx_needs._part_address.need_and_part_at`).
 
     A target that does not resolve is reported and rendered as ``:need:`` reports and
     renders one: a ``link_ref`` warning naming the target as written (``linked need part``
@@ -43,8 +43,8 @@ def role_target_need(
     need; ``None`` is returned. It ended the build.
     """
     target = node["reftarget"]
-    if (need := need_at(needs, target)) is not None:
-        return need
+    if (found := need_and_part_at(needs, target)) is not None:
+        return found
     link = NeedLink.parse_address(target)
     if link.id not in needs:
         hint = local_id_hints(app, needs).hint(link.id, link.part)
@@ -85,9 +85,11 @@ def process_need_outgoing(
     for node_need_ref in found_nodes:
         node_link_container = nodes.inline()
         needs_all_needs = SphinxNeedsData(env).get_needs_view()
-        ref_need = role_target_need(app, needs_all_needs, node_need_ref, fromdocname)
-        if ref_need is None:
+        target = role_target_need(app, needs_all_needs, node_need_ref, fromdocname)
+        if target is None:
             continue
+        # a part has no links of its own: a part address lists its need's
+        ref_need = target.need
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:

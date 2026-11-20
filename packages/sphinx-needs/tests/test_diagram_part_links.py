@@ -698,11 +698,16 @@ def test_needflow_an_external_part_whose_id_holds_a_dot(test_app: Sphinx):
 
     assert len(sources) == 4
     of_the_need, of_the_part, outgoing_from_spec_2, outgoing_from_spec_3 = sources
-    # the root EXT_1.a.b draws what the root EXT_1 draws; SPEC_3, whose link is dead,
-    # is reached through EXT_1's back links, and draws no edge
-    assert of_the_part == of_the_need
+    # SPEC_3, whose link is dead, is reached through EXT_1's back links, and draws no
+    # edge
     assert _drawn(of_the_need) == (
         {"EXT_1", "EXT_1.rp", "EXT_1.a.b", "SPEC_2", "SPEC_3"},
+        {"SPEC_2 -[dotted]-> EXT_1.a.b"},
+    )
+    # the root EXT_1.a.b steps in through the part's back links: SPEC_2 alone, whose
+    # link names that part; SPEC_3's dead link is not one of them
+    assert _drawn(of_the_part) == (
+        {"EXT_1", "EXT_1.rp", "EXT_1.a.b", "SPEC_2"},
         {"SPEC_2 -[dotted]-> EXT_1.a.b"},
     )
     # the walk follows SPEC_2's link to EXT_1.a.b to EXT_1
