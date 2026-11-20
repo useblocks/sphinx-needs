@@ -178,7 +178,8 @@ def relative_uri(builder: Builder, fromdocname: str, todocname: str) -> str | No
     """The URI of ``todocname`` relative to ``fromdocname``, or ``None`` when the
     builder leaves ``todocname`` out of its output.
 
-    ``latex`` and ``texinfo`` write only the documents their toctrees reach, and raise
+    ``latex`` and ``texinfo`` write only the documents they include (a start document,
+    what its toctree reaches, and its appendices), and raise
     :class:`~sphinx.errors.NoUri` for any other, such as an ``:orphan:`` page. A caller
     given ``None`` writes the text it would have linked, as Sphinx writes a
     cross-reference whose target the builder leaves out.
