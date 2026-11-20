@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795176564279,
+  "lastUpdate": 1795185770709,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30576,6 +30576,48 @@ window.BENCHMARK_DATA = {
             "value": 191.910634,
             "unit": "MB",
             "extra": "Commit: 1d1fed580d90b9a036340dadb3e26e7fc5b8d253\nBranch: master\nTime: 2026-11-20T13:07:53+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a2c2a8679784bf21ea1845248947b5abb29e0b82",
+          "message": "🐛 sphinx-needs: a need part's text has no white space at its ends (#2555)\n\n**A need part's text no longer keeps the white space around it.**\n\n`:np:`(p1) first`` now has the text `first`, where it had ` first`. A\ntext written on the line after its `(id)` no longer starts with a line\nbreak, and a trailing space, which a MyST role can hold, is removed too.\nWhite space and line breaks inside the text are kept.\n\nMeasured on a small project:\n\n| | before | after |\n|---|---|---|\n| needs.json `parts` | `' a top speed'`, `'\\na text on the next line'` |\n`'a top speed'`, `'a text on the next line'` |\n| filter `content == \" a top speed\"` | 1 | 0 (`content == \"a top\nspeed\"`: 1) |\n| `:need:` to the part | ` a top speed (REQ_1.p1)` | `a top speed\n(REQ_1.p1)` |\n| a part after `(` on the page | `( a turbo p2)` | `(a turbo p2)` |\n\n**Changed output**: a part's text wherever it is shown or read:\n\n- in needs.json (`parts`, and `content.parts` of the draft format 2a1);\n- as `content` in a filter: a filter comparing `content == \" first\"`\nmust drop the space;\n- in `:need:` and in a need card's link to a part, whose 30-character\ncut now counts from the first word;\n- in needtable `:show_parts:` rows and needflow labels, so a needflow\nimage is written again under a new name;\n- on the page where a part directly follows a character other than white\nspace, such as punctuation.\n\n**What does not change**:\n\n- No part id changes. The `(id)` is read as before, and a part with no\n`(id)` keeps its id (the hash of its text as written) and its whole\ntext.\n- A part a record states keeps its text as given wherever that part is\nkept, as an external need's `parts` are.\n\n**The rule, exactly.** White space is Unicode's `White_Space` property,\nits 25 code points written out in the role and in the contract\n(`design/parts-contract.md`, section 1). It is not Python's default\n`str.strip()` set, which also removes U+001C to U+001F. The parts\nconformance corpus states the rule in 21 cases; ubCode makes the same\nchange and re-vendors the corpus with it.\n\n`ENV_DATA_VERSION` moves to 30, so the first build after upgrading reads\nevery document again: without that, an incremental build would keep the\nspaced texts of unchanged documents beside the stripped texts of re-read\nones.\n\n**How it was checked.**\n\n- Pins were committed first and were red against the unfixed role: 20\ncorpus cases and three new tests, among them a sweep over every code\npoint at both ends of a text. The pins of what must not change (ids,\nstated texts) were proven by a mutation each.\n- A review compared the set, code point by code point, with an\nindependent implementation of the Unicode property; ran `master` against\nthis branch over a project marking parts through every route (the two\nroles, an included file, `list2need`, imported and external records,\nroles with no `(id)`) and found only texts differing; compared the\ncorpus before and after as parsed TOML; and built incrementally across\nthe upgrade. It found no defect. Its findings were three inexact\nsentences and two behaviours no test held, all addressed here.\n\nrefs #1437",
+          "timestamp": "2026-11-20T15:41:25+01:00",
+          "tree_id": "bdb7174bdb0387c45f3b67e04d17b3f28de91d23",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a2c2a8679784bf21ea1845248947b5abb29e0b82"
+        },
+        "date": 1795185770131,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05412828199999353,
+            "unit": "s",
+            "extra": "Commit: a2c2a8679784bf21ea1845248947b5abb29e0b82\nBranch: master\nTime: 2026-11-20T15:41:25+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 10.005542614999996,
+            "unit": "s",
+            "extra": "Commit: a2c2a8679784bf21ea1845248947b5abb29e0b82\nBranch: master\nTime: 2026-11-20T15:41:25+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 194.571337,
+            "unit": "MB",
+            "extra": "Commit: a2c2a8679784bf21ea1845248947b5abb29e0b82\nBranch: master\nTime: 2026-11-20T15:41:25+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
           }
         ]
       }
