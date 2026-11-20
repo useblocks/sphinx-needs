@@ -68,10 +68,13 @@ Index
 }
 
 
-#: a link whose text holds the need's id, as each builder writes one: latex an
-#: internal ``\hyperref[...]{...}`` or an external ``\sphinxhref{...}{...}``, texinfo
-#: an ``@ref{...}`` or an ``@uref{...}``. A link the need's id merely shares a line
-#: with does not match.
+#: a link written around the need's id. latex: an internal ``\hyperref[...]{...}`` or
+#: an external ``\sphinxhref{...}{...}`` whose text holds the id, directly or inside
+#: inline commands of one argument. texinfo: an ``@ref{...}`` or ``@uref{...}`` holding
+#: it. Neither pattern knows every link form of its builder (texinfo writes an external
+#: link as a footnote; latex text inside ``\DUrole{...}{...}`` is not looked into), so
+#: the test runs both builders. A link the need's id merely shares a line with does not
+#: match.
 LINK_AROUND_THE_ID = {
     "latex": re.compile(
         r"\\(?:hyperref\[[^\]]*\]|sphinxhref\{[^}]*\})\{(?:\\\w+\{)*[^{}]*LEFTOUT1"
