@@ -84,12 +84,12 @@ Bug fixes
   ``texinfo`` warned ``unknown node type``: only ``html`` and ``latex`` knew the node. A writer, another extension's
   included, now gets such a part as the inline text it is, with its id and its link. **Changed output**: ``xml`` and
   ``pseudoxml`` no longer write a ``NeedPart`` element around a part; the part's ``inline`` (class ``need-part``, the
-  part's id) inside it is written as before. ``html`` and ``latex`` output does not change. (:issue:`2556`)
+  part's id) inside it is written as before. ``html`` and ``latex`` output does not change. (:issue:`2556`, :pr:`2558`)
 
 - 🐛 A :ref:`needflow` drawn with the graphviz engine renders when it draws a :ref:`need part <need_part>` with no
   text, or a need with no title: ``dot`` refused the empty ``<b></b>`` that took the text's place, and the whole
   diagram was not rendered. Such a node is now labelled by its type and id. The PlantUML engine was not affected.
-  (:issue:`2557`)
+  (:issue:`2557`, :pr:`2558`)
 
 Internal changes
 ................
