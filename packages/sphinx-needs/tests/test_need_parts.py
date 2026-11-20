@@ -218,6 +218,7 @@ def test_a_part_text_loses_exactly_unicode_white_space_at_its_ends() -> None:
                 f"{char}a{char}b{char}",
                 f"a{char}b" if white else f"{char}a{char}b{char}",
             ),
+            (f"a{char}", "a" if white else f"a{char}"),
             (char, "" if white else char),
         ):
             role.text = f"(p){text}"
@@ -238,7 +239,8 @@ needs_build_json = True
 
 
 class StatedParts(SphinxDirective):
-    """An external need given a part whose text has white space at its ends."""
+    """An external and a hidden need, each given a part whose text has white space at
+    its ends."""
 
     def run(self):
         return add_need(
@@ -252,6 +254,16 @@ class StatedParts(SphinxDirective):
             is_external=True,
             external_url="https://example.org/x.html#EXT_STATED",
             parts={"sp": {"id": "sp", "content": "  given with spaces\\t"}},
+        ) + add_need(
+            self.env.app,
+            self.state,
+            self.env.docname,
+            self.lineno,
+            "req",
+            "Stated hidden",
+            id="HIDDEN_STATED",
+            hide=True,
+            parts={"hp": {"id": "hp", "content": "\\tgiven hidden  "}},
         )
 
 
@@ -280,7 +292,28 @@ Index
 :need:`REQ_1.p1`
 
 .. stated-parts::
+
+.. needimport:: hidden.json
+   :hide:
 """
+
+#: A record whose part's text has white space at its ends, imported as a hidden need
+EDGE_SPACE_HIDDEN_RECORD = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_HIDDEN": {
+                    "id": "IMP_HIDDEN",
+                    "type": "req",
+                    "title": "Imported hidden",
+                    "content": "Hidden.",
+                    "parts": {"ip": {"id": "ip", "content": " record spaced "}},
+                }
+            }
+        }
+    },
+}
 
 EDGE_SPACE_MYST = """\
 # MyST
@@ -308,6 +341,7 @@ EDGE_SPACE_PROJECT = {
         (Path("conf.py"), EDGE_SPACE_CONF),
         (Path("index.rst"), EDGE_SPACE_INDEX),
         (Path("myst.md"), EDGE_SPACE_MYST),
+        (Path("hidden.json"), json.dumps(EDGE_SPACE_HIDDEN_RECORD)),
     ],
 }
 
@@ -370,9 +404,17 @@ def test_a_part_without_an_id_keeps_its_id_and_its_text(test_app: Sphinx) -> Non
     "test_app", [EDGE_SPACE_PROJECT], ids=["edge-space"], indirect=True
 )
 def test_a_stated_part_text_is_kept_as_given(test_app: Sphinx) -> None:
-    """A part given to ``add_need`` for an external need keeps its text byte for byte."""
+    """A part given to ``add_need`` for an external or a hidden need, and a part a
+    record imported as a hidden need states, keeps its text byte for byte."""
     parts = _build_edge_space(test_app)
-    assert parts["EXT_STATED"] == {"sp": "  given with spaces\t"}
+    assert {
+        need_id: parts[need_id]
+        for need_id in ("EXT_STATED", "HIDDEN_STATED", "IMP_HIDDEN")
+    } == {
+        "EXT_STATED": {"sp": "  given with spaces\t"},
+        "HIDDEN_STATED": {"hp": "\tgiven hidden  "},
+        "IMP_HIDDEN": {"ip": " record spaced "},
+    }
 
 
 @pytest.mark.parametrize(
