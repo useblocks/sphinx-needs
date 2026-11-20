@@ -35,8 +35,10 @@ Please read :ref:`filter` for more information.
 It also supports arguments as filter string,
 which works like the option ``filter``, but also
 supports need ID as filter argument. A need part's address (``ID.part``) reads as the part's need when that need
-has the part; an argument naming no part of a need, such as ``var.flag`` or ``REQ_1.p9`` (``REQ_1`` has no part
-``p9``), is read as a need ID or a filter string, as any other argument is.
+has the part, also when the argument could be read as a filter: given a need ``var`` with a part ``flag``,
+``var.flag`` extracts ``var`` (write ``(var.flag)`` to have the filter). An argument naming no part of a need, such as
+``status.upper() == "OPEN"`` or ``REQ_1.p9`` (``REQ_1`` has no part ``p9``), is read as a need ID or a filter string,
+as any other argument is.
 
 .. syntax-example::
 
