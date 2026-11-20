@@ -1,5 +1,7 @@
+import io
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sphinx.application import Sphinx
@@ -430,3 +432,141 @@ def test_a_part_text_is_rendered_without_its_edge_space(test_app: Sphinx) -> Non
         '<a class="needs-id reference internal" href="#REQ_1.p3"> p3</a></span>)'
     ) in html
     assert '<em class="xref need">three spaces (REQ_1.p1)</em>' in html
+
+
+EVERY_BUILDER_CONF = """\
+extensions = ["sphinx_needs"]
+# applehelp asks for a bundle id, and runs `hiutil` and `codesign` unless told not to
+applehelp_bundle_id = "org.example.parts"
+applehelp_disable_external_tools = True
+"""
+
+EVERY_BUILDER_INDEX = """\
+Parts
+=====
+
+.. toctree::
+
+   other
+
+.. req:: A requirement
+   :id: REQ_1
+
+   :np:`(p1) a part` of the requirement.
+
+See :need:`REQ_1` and :need:`REQ_1.p1`.
+"""
+
+EVERY_BUILDER_OTHER = """\
+Other
+=====
+
+.. spec:: A specification
+   :id: SPEC_1
+
+   :need_part:`(s1) another part`, after :need:`REQ_1.p1`.
+"""
+
+_PART_TEXTS = ("a part", "another part")
+_PART_INLINES = (
+    '<inline classes="need-part" ids="REQ_1.p1">',
+    '<inline classes="need-part" ids="SPEC_1.s1">',
+)
+
+#: where a writer puts a page, and what of the parts it must write there: ``text``,
+#: ``man`` and ``epub`` ended the build on a part, ``texinfo`` warned and wrote its
+#: text, and ``xml`` and ``pseudoxml`` wrote a ``NeedPart`` element around its inline
+_WRITTEN: dict[str, tuple[str, tuple[str, ...]]] = {
+    "text": ("*.txt", _PART_TEXTS),
+    "man": ("*.1", _PART_TEXTS),
+    "texinfo": ("*.texi", _PART_TEXTS),
+    "epub": ("*.xhtml", (*_PART_TEXTS, 'id="REQ_1.p1"', 'id="SPEC_1.s1"')),
+    "xml": ("*.xml", _PART_INLINES),
+    "pseudoxml": ("*.pseudoxml", _PART_INLINES),
+}
+
+
+def test_a_page_with_parts_builds_with_every_builder(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A page with need parts, and ``:need:`` references to a need and to a part,
+    builds with every builder the running Sphinx registers (#2556).
+
+    Only html and latex knew the ``NeedPart`` node: ``text`` and ``man`` ended the
+    build on it, ``texinfo`` warned, and ``epub`` ended it too, because an ``epub=``
+    visitor another extension registers stops epub falling back to the html ones. The
+    builders are read from the registry, so a builder added later is covered here
+    without a new test. None is skipped: applehelp is configured not to run its
+    external tools, and the project links nowhere outside itself, so ``linkcheck``
+    opens no connection.
+    """
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(EVERY_BUILDER_CONF, encoding="utf-8")
+    (srcdir / "index.rst").write_text(EVERY_BUILDER_INDEX, encoding="utf-8")
+    (srcdir / "other.rst").write_text(EVERY_BUILDER_OTHER, encoding="utf-8")
+
+    probe = make_app(
+        buildername="dummy", srcdir=srcdir, freshenv=True, warning=io.StringIO()
+    )
+    builders = sorted(probe.registry.builders)
+    # the ones the issue was about, so a registry that lost them cannot pass vacuously
+    assert {"epub", "html", "latex", "man", "texinfo", "text"} <= set(builders)
+
+    failures: dict[str, str] = {}
+    for name in builders:
+        app = make_app(
+            buildername=name,
+            srcdir=srcdir,
+            builddir=tmp_path / "build" / name,
+            freshenv=True,
+            warning=io.StringIO(),
+        )
+        try:
+            app.build()
+        except Exception as exc:
+            failures[name] = f"{type(exc).__name__}: {exc}"
+            continue
+        unknown = [w for w in build_warnings(app) if "unknown node type" in w]
+        if unknown:
+            failures[name] = "\n".join(unknown)
+            continue
+        if name in _WRITTEN:
+            pattern, expected = _WRITTEN[name]
+            written = "".join(
+                path.read_text(encoding="utf-8")
+                for path in Path(app.outdir).glob(pattern)
+            )
+            missing = [t for t in expected if t not in written]
+            if missing:
+                failures[name] = f"{missing} is not written"
+
+    assert not failures, "a page with parts fails with these builders:\n" + "\n".join(
+        f"- {name}: {reason}" for name, reason in failures.items()
+    )
+
+
+def test_a_part_outside_every_need_builds_with_text(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A part on a page that holds no need still reaches no writer as a ``NeedPart``.
+
+    Such a page is not one sphinx-needs processes (it records no need), so nothing that
+    runs only for its own pages can be what removes the node.
+    """
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(EVERY_BUILDER_CONF, encoding="utf-8")
+    (srcdir / "index.rst").write_text(
+        "Index\n=====\n\n.. toctree::\n\n   loose\n", encoding="utf-8"
+    )
+    (srcdir / "loose.rst").write_text(
+        "Loose\n=====\n\nA :np:`(x1) loose part` outside every need.\n",
+        encoding="utf-8",
+    )
+    app = make_app(
+        buildername="text", srcdir=srcdir, freshenv=True, warning=io.StringIO()
+    )
+    app.build()
+
+    assert [w for w in build_warnings(app) if "unknown node type" in w] == []
