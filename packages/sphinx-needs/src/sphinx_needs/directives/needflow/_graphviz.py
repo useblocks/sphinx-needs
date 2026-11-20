@@ -379,17 +379,19 @@ def _label(
         )
         for line in need_title.splitlines()
     )
-    name = html.escape(need["type_name"] + (" (part)" if need["is_part"] else ""))
+    name = need["type_name"] + (" (part)" if need["is_part"] else "")
     if need["is_need"]:
         _id = html.escape(need["id"])
     else:
         _id = f'{html.escape(need["id_parent"])}.<b align="{align}">{html.escape(need["id"])}</b>'
     font_10 = '<font point-size="10">'
     font_12 = '<font point-size="12">'
-    # a part with no text (or a need with no title) has no text line: dot refuses an
-    # empty <b></b> as a syntax error, so the node is labelled by its type and id alone
+    # a need type with an empty (or white-space only) title has no type line, as a part
+    # with no text (or a need with no title) has no text line: dot refuses an empty
+    # <font></font> or <b></b> as a syntax error, so the node is labelled by what is left
+    name_line = f"{font_12}{html.escape(name)}</font>{br}" if name.strip() else ""
     text_line = f"<b>{title}</b>{br}" if title else ""
-    return f"<{font_12}{name}</font>{br}{text_line}{font_10}{_id}</font>{br}>"
+    return f"<{name_line}{text_line}{font_10}{_id}</font>{br}>"
 
 
 def _render_edge(
