@@ -6,13 +6,19 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs._namespaced_ids import local_id_hints
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
-from sphinx_needs.logging import get_logger
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem, NeedLink
 from sphinx_needs.needs_schema import FieldsSchema
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
+from sphinx_needs.utils import (
+    check_and_calc_base_url_rel_path,
+    external_part_url,
+    split_need_id,
+)
 from sphinx_needs.views import NeedsView
 
 log = get_logger(__name__)
@@ -20,6 +26,43 @@ log = get_logger(__name__)
 
 class NeedOutgoing(nodes.Inline, nodes.Element):
     pass
+
+
+def role_target_need(
+    app: Sphinx,
+    needs: NeedsView,
+    node: nodes.Element,
+    fromdocname: str,
+) -> NeedItem | None:
+    """The need the target of the role *node* names, where a part address reads as its
+    need (:func:`~sphinx_needs._part_address.need_at`).
+
+    A target that does not resolve is reported and rendered as ``:need:`` reports and
+    renders one: a ``link_ref`` warning naming the target as written (``linked need part``
+    when the need exists and lacks the part), and the role replaced by a reference to no
+    need; ``None`` is returned. It ended the build.
+    """
+    target = node["reftarget"]
+    if (need := need_at(needs, target)) is not None:
+        return need
+    link = NeedLink.parse_address(target)
+    if link.id not in needs:
+        hint = local_id_hints(app, needs).hint(link.id, link.part)
+        message = f"linked need {target} not found{hint}"
+    else:
+        message = f"linked need part {target} not found"
+    log_warning(log, message, "link_ref", location=node)
+    node.replace_self(
+        make_refnode(
+            app.builder,
+            fromdocname,
+            fromdocname,
+            "Unknown need",
+            node[0].deepcopy(),
+            target + "?",
+        )
+    )
+    return None
 
 
 def process_need_outgoing(
@@ -33,11 +76,18 @@ def process_need_outgoing(
     needs_config = NeedsSphinxConfig(app.config)
     needs_schema = SphinxNeedsData(env).get_schema()
 
+    # the external sources' prefixes, as `:need:` reads them for a part's anchor
+    external_id_prefixes = {
+        source.get("id_prefix", "") for source in needs_config.external_needs
+    }
+
     # for node_need_ref in doctree.findall(NeedOutgoing):
     for node_need_ref in found_nodes:
         node_link_container = nodes.inline()
         needs_all_needs = SphinxNeedsData(env).get_needs_view()
-        ref_need = needs_all_needs[node_need_ref["reftarget"]]
+        ref_need = role_target_need(app, needs_all_needs, node_need_ref, fromdocname)
+        if ref_need is None:
+            continue
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:
@@ -95,17 +145,31 @@ def process_need_outgoing(
                             _docname,
                             target_id,
                             node_need_ref[0].deepcopy(),
-                            node_need_ref["reftarget"],
+                            ref_need["id"],
                         )
                     elif target_need["is_external"]:
                         assert target_need["external_url"] is not None, (
                             "External URL must be set"
                         )
-                        new_node_ref = nodes.reference(
-                            target_need["id"], target_need["id"]
-                        )
+                        external_url = target_need["external_url"]
+                        if need_id_part:
+                            # a part: the text the row gives a part, linked to the
+                            # part's anchor, as `:need:` links it
+                            new_node_ref = nodes.reference(
+                                "", "", node_need_ref[0].deepcopy()
+                            )
+                            external_url = external_part_url(
+                                external_url,
+                                target_need["id"],
+                                need_id_part,
+                                id_prefixes=external_id_prefixes,
+                            )
+                        else:
+                            new_node_ref = nodes.reference(
+                                target_need["id"], target_need["id"]
+                            )
                         new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
-                            target_need["external_url"], fromdocname
+                            external_url, fromdocname
                         )
                         new_node_ref["classes"].append(target_need["external_css"])
                     else:

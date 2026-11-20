@@ -979,6 +979,167 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
     assert needs["SPEC_DOT"]["total"] == 0.0
 
 
+# -- a part address where a need is expected ------------------------------------------
+#
+# Where a need is expected, a part address reads as its need (design/parts-contract.md):
+# ``copy(..., need_id="REQ_1.p1")`` copies from ``REQ_1``, exactly as given ``REQ_1``. An
+# address naming a part the need does not have fails the call as one naming no need does,
+# the report naming the address as written.
+
+NEED_ID_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {
+    "owner": {"nullable": True},
+    "got": {"nullable": True},
+}
+needs_external_needs = [
+    {"base_url": "http://example.org", "json_path": "external.json"},
+]
+"""
+
+#: an external need stating a part whose id holds a dot, which only a record can state
+NEED_ID_EXTERNAL = (
+    '{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {"id": "EXT_1", '
+    '"type": "req", "title": "External", "content": "", '
+    '"parts": {"a.b": {"id": "a.b", "content": "dotted"}}}}}}}'
+)
+
+NEED_ID_INDEX = """\
+Need ids
+========
+
+.. req:: Source
+   :id: REQ_1
+   :owner: alice
+
+   The source, with :np:`(p1) the part`.
+
+.. req:: A computed source, sorting after the need reading it
+   :id: Z_REQ
+   :owner: [[copy("owner", "REQ_1")]]
+
+   :np:`(z1) a part`
+
+.. spec:: Copies from the need
+   :id: SPEC_1
+   :got: [[copy("owner", need_id="REQ_1")]]
+
+.. spec:: Copies through a part
+   :id: SPEC_2
+   :got: [[copy("owner", need_id="REQ_1.p1")]]
+
+.. spec:: Copies through a part of a computed need, which it sorts before
+   :id: A_SPEC
+   :got: [[copy("owner", need_id="Z_REQ.z1")]]
+
+.. spec:: Copies through a part whose id holds a dot
+   :id: SPEC_3
+   :got: [[copy("title", need_id="EXT_1.a.b")]]
+"""
+
+
+def _need_id_project(index: str) -> dict[str, object]:
+    return {
+        "buildername": "needs",
+        "files": [
+            (Path("conf.py"), NEED_ID_CONF),
+            (Path("external.json"), NEED_ID_EXTERNAL),
+            (Path("index.rst"), index),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [_need_id_project(NEED_ID_INDEX)], indirect=True, ids=["found"]
+)
+def test_a_part_address_as_need_id_reads_as_its_need(test_app):
+    """``copy`` reads the need of a part address, as it reads the need given its id: its
+    value, computed first where it is computed (``A_SPEC`` sorts before ``Z_REQ``). The
+    address is split at its first dot, so a part whose id holds a dot is found
+    (``EXT_1.a.b``)."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["SPEC_1"]["got"] == "alice"
+    assert needs["SPEC_2"]["got"] == "alice"
+    assert needs["A_SPEC"]["got"] == "alice"
+    assert needs["SPEC_3"]["got"] == "External"
+
+
+NEED_ID_DOTTED = """\
+Need ids
+========
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+   :owner: bob
+
+.. spec:: Copies from it
+   :id: SPEC_9
+   :got: [[copy("owner", need_id="REQ_9.x")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_need_id_project(NEED_ID_DOTTED)], indirect=True, ids=["no-need-REQ_9"]
+)
+def test_a_need_id_holding_a_dot_is_read_whole(test_app):
+    """``copy(..., need_id="REQ_9.x")`` copies from the need ``REQ_9.x``, there being no
+    need ``REQ_9``.
+
+    This pins what 9.3.0 did: an id naming a need whole is that need, before any part
+    address is read. It takes no side on what a need id holding a ``.`` should mean.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["SPEC_9"]["got"] == "bob"
+
+
+NEED_ID_UNRESOLVED = """\
+Need ids
+========
+
+.. req:: Source
+   :id: REQ_1
+   :owner: alice
+
+   The source, with :np:`(p1) the part`.
+
+.. spec:: Reads what does not resolve
+   :id: SPEC_X
+   :got: [[copy("owner", need_id="{target}")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app,target",
+    [
+        pytest.param(
+            _need_id_project(NEED_ID_UNRESOLVED.format(target=target)), target, id=name
+        )
+        for name, target in (
+            ("part-missing", "REQ_1.p9"),
+            ("need-missing", "NOPE_1"),
+            ("part-of-a-missing-need", "NOPE_1.p1"),
+        )
+    ],
+    indirect=["test_app"],
+)
+def test_a_need_id_that_does_not_resolve(test_app, target):
+    """A part the need does not have fails ``copy`` as a need that does not exist fails
+    it, the report naming the address as written."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field "
+        f"'got', of need 'SPEC_X': Error while executing function 'copy': '{target}' "
+        "[needs.dynamic_function]",
+    ]
+    assert _built_needs(app)["SPEC_X"]["got"] is None
+
+
 # -- links_from_filter ---------------------------------------------------------------
 #
 # The per-need spelling of a derived link type of the kind ``links``: every need

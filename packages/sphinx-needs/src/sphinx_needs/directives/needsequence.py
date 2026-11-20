@@ -9,6 +9,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsSequenceType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
@@ -222,9 +223,8 @@ def process_needsequence(
                 origin_docname=current_needsequence["docname"],
             )
         for need_id in start_needs_id:
-            try:
-                need = all_needs_dict[need_id.strip()]
-            except KeyError:
+            # a part address reads as its need
+            if (need := need_at(all_needs_dict, need_id.strip())) is None:
                 raise NeedSequenceException(
                     "Given {} in needsequence unknown. File {}:{}".format(
                         need_id,

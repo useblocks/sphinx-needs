@@ -20,6 +20,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs import _read_watch
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.derive import (
@@ -167,7 +168,8 @@ def copy(
        :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     :param option: Name of the option to copy
-    :param need_id: id of the need, which contains the source option. If None, current need is taken
+    :param need_id: id of the need, which contains the source option. If None, current need is taken.
+        A need part's address (``ID.part``) reads as the part's need.
     :param upper: Is set to True, copied value will be uppercase (each item, for a list)
     :param lower: Is set to True, copied value will be lowercase (each item, for a list)
     :param filter: :ref:`filter_string`; of the needs it matches,
@@ -176,7 +178,10 @@ def copy(
     :return: string of copied need option
     """
     if need_id:
-        need = needs[need_id]
+        # a part address reads as its need; one naming no need fails as it always did
+        if (named := need_at(needs, need_id)) is None:
+            raise KeyError(need_id)
+        need = named
 
     if filter:
         location = (

@@ -51,6 +51,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final, TypeVar
 
+from sphinx_needs._part_address import need_at
 from sphinx_needs.derive import DeriveCall, is_union
 from sphinx_needs.functions.common import (
     calc_sum,
@@ -851,9 +852,12 @@ class _CallReads:
         option = args.get("option")
         need_id = args.get("need_id")
         filter_string = args.get("filter")
-        if need_id and need_id not in self.project.needs:
-            return  # the call fails: no such need
-        source = need_id or self.need.id
+        source = self.need.id
+        if need_id:
+            # a part address reads as its need
+            if (named := need_at(self.project.needs, need_id)) is None:
+                return  # the call fails: no such need
+            source = named.id
         if not filter_string:
             self._read(source, option)
             return

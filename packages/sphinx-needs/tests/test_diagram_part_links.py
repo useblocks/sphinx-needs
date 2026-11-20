@@ -14,12 +14,14 @@ it ended the build.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import plantuml
 
+from sphinx_needs.directives.needsequence import NeedSequenceException
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -338,6 +340,94 @@ def test_needsequence_link_types(test_app: Sphinx, uml: str, warnings: list[str]
 
     assert build_warnings(app) == warnings
     assert sources == [uml]
+
+
+# --- needsequence starts ----------------------------------------------------------------
+#
+# Where a need is expected, a part address reads as its need (design/parts-contract.md): a
+# start ``USER_A.a1`` draws the sequence of ``USER_A``. A part the need does not have ends
+# the build as a need that does not exist does, naming the start as written; the part
+# address of a need that has the part ended it too.
+
+STARTS = """\
+Starts
+======
+
+.. req:: User A
+   :id: {ns}USER_A
+   :links: {ns}MSG_1
+
+   The sender, with :np:`(a1) a part`.
+
+.. spec:: Message 1
+   :id: {ns}MSG_1
+   :links: {ns}USER_B
+
+.. req:: User B
+   :id: {ns}USER_B
+
+.. needsequence::
+   :start: {start}
+"""
+
+
+def _starts(start: str, conf: str = CONF, ns: str = "") -> dict[str, object]:
+    return _project(conf, STARTS.format(start=start, ns=ns))
+
+
+def _sequence_of_user_a(ns: str = "") -> str:
+    name = ns.replace("::", "__")
+    # a receiver whose name is not its id is declared, with its id as its title
+    receiver = f'participant "{ns}USER_B" as {name}USER_B\n' if ns else ""
+    return (
+        "@startuml\n\n' Nodes definition \n\n"
+        f'participant "User A" as {name}USER_A\n'
+        f"{receiver}"
+        "\n' Connection definition \n\n"
+        f"{name}USER_A -> {name}USER_B: Message 1\n"
+        "\n@enduml"
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "ns"),
+    [
+        pytest.param(_starts("USER_A"), "", id="the-need"),
+        pytest.param(_starts("USER_A.a1"), "", id="a-part-of-it"),
+        pytest.param(
+            _starts("nc::USER_A.a1", NAMESPACED_CONF, "nc::"),
+            "nc::",
+            id="a-part-of-a-namespaced-need",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_needsequence_start_a_part_address_reads_as_its_need(test_app: Sphinx, ns: str):
+    app = test_app
+    sources = _capture(app)
+    app.build()
+    assert build_warnings(app) == []
+    assert sources == [_sequence_of_user_a(ns)]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "start"),
+    [
+        pytest.param(_starts("USER_A.zz"), "USER_A.zz", id="part-missing"),
+        pytest.param(_starts("NOPE_1"), "NOPE_1", id="need-missing"),
+        pytest.param(_starts("NOPE_1.a1"), "NOPE_1.a1", id="part-of-a-missing-need"),
+    ],
+    indirect=["test_app"],
+)
+def test_needsequence_start_that_does_not_resolve(test_app: Sphinx, start: str):
+    with pytest.raises(
+        NeedSequenceException,
+        match=re.escape(f"Given {start} in needsequence unknown. File index:"),
+    ) as excinfo:
+        test_app.build()
+    # raised on its own, not while handling a failed lookup
+    assert excinfo.value.__cause__ is None
+    assert excinfo.value.__context__ is None
 
 
 # --- needgantt ---------------------------------------------------------------------------

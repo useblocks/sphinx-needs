@@ -8,6 +8,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import log_warning
+from sphinx_needs.roles.need_outgoing import role_target_need
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger
 
 
@@ -29,7 +30,9 @@ def process_need_incoming(
     # for node_need_backref in doctree.findall(NeedIncoming):
     for node_need_backref in found_nodes:
         node_link_container = nodes.inline()
-        ref_need = all_needs[node_need_backref["reftarget"]]
+        ref_need = role_target_need(app, all_needs, node_need_backref, fromdocname)
+        if ref_need is None:
+            continue
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_backref.attributes:
@@ -67,7 +70,7 @@ def process_need_incoming(
                             _docname,
                             target_need["id_parent"],
                             node_need_backref[0].deepcopy(),
-                            node_need_backref["reftarget"],
+                            ref_need["id"],
                         )
                     elif target_need["is_external"]:
                         assert target_need["external_url"] is not None, (

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from docutils import nodes
+from sphinxcontrib.plantuml import plantuml
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
@@ -515,3 +516,278 @@ def test_needuml_save_without_plantuml(test_app):
 
     saved = Path(app.outdir, "my_needumls", "_out", "my_needuml.puml")
     assert not saved.exists(), f"an empty file was written to {saved}"
+
+
+# --- a part address where a need is expected -------------------------------------------
+#
+# Where a need is expected, a part address reads as its need (design/parts-contract.md):
+# ``uml()`` and ``flow()`` given ``REQ_1.p1``, and ``import()`` following a link to it,
+# draw ``REQ_1`` exactly as they draw it given ``REQ_1``. An address naming a part its
+# need does not have ends the build as one naming no need does, naming the address as
+# written. All three ended the build on the part address itself.
+
+PART_ADDRESS_CONF = 'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n'
+
+PART_ADDRESS = """\
+Part addresses
+==============
+
+.. req:: Target
+   :id: REQ_1
+
+   The target, with :np:`(p1) the part`.
+
+   .. needarch::
+
+      component "arch of REQ_1"
+
+.. req:: Drawn by flow
+   :id: REQ_2
+
+   A need with no diagram, with :np:`(p2) its part`.
+
+.. spec:: Imports through a part link
+   :id: SPEC_1
+   :links: REQ_1.p1
+
+   .. needarch::
+
+      {{import("links")}}
+
+.. spec:: Imports the need
+   :id: SPEC_2
+   :links: REQ_1
+
+   .. needarch::
+
+      {{import("links")}}
+
+.. needuml::
+
+   {{uml("REQ_1")}}
+
+.. needuml::
+
+   {{uml("REQ_1.p1")}}
+
+.. needuml::
+
+   {{flow("REQ_2")}}
+
+.. needuml::
+
+   {{flow("REQ_2.p2")}}
+"""
+
+PART_ADDRESS_PROJECT = {
+    "buildername": "html",
+    "files": [
+        (Path("conf.py"), PART_ADDRESS_CONF),
+        (Path("index.rst"), PART_ADDRESS),
+    ],
+}
+
+
+def _plantuml_sources(app) -> list[str]:
+    """The PlantUML source of every diagram on the resolved pages, in page order."""
+    sources: list[str] = []
+
+    def collect(app_, doctree, docname):
+        sources.extend(node["uml"] for node in doctree.findall(plantuml))
+
+    app.connect("doctree-resolved", collect, priority=900)
+    return sources
+
+
+@pytest.mark.parametrize(
+    "test_app", [PART_ADDRESS_PROJECT], indirect=True, ids=["found"]
+)
+def test_needuml_a_part_address_reads_as_its_need(test_app):
+    """``uml()``, ``flow()`` and the links ``import()`` follows read ``REQ_1.p1`` as
+    ``REQ_1``: each diagram is the one the need's own id gives."""
+    app = test_app
+    sources = _plantuml_sources(app)
+    app.build()
+    assert_no_warnings(app)
+    _arch, by_part_link, by_need_link, by_need, by_part, flow_need, flow_part = sources
+    assert 'component "arch of REQ_1"' in by_need_link
+    assert by_part_link == by_need_link
+    assert 'component "arch of REQ_1"' in by_need
+    assert by_part == by_need
+    assert "as REQ_2" in flow_need
+    assert flow_part == flow_need
+
+
+ONCE = """\
+Once
+====
+
+.. req:: Target
+   :id: REQ_1
+
+   The target, with :np:`(p1) the part`.
+
+.. needuml::
+
+   {{flow("REQ_1")}}
+   {{flow("REQ_1.p1")}}
+   {{uml("REQ_1.p1")}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), PART_ADDRESS_CONF), (Path("index.rst"), ONCE)],
+        }
+    ],
+    indirect=True,
+    ids=["once"],
+)
+def test_needuml_a_need_and_its_part_are_drawn_once(test_app):
+    """A diagram draws a need once however it is named: the need's id and a part
+    address of it are one need, so the second and third calls draw nothing."""
+    app = test_app
+    sources = _plantuml_sources(app)
+    app.build()
+    assert_no_warnings(app)
+    (source,) = sources
+    assert source.count(" as REQ_1") == 1
+
+
+DOTTED_ID = """\
+Dotted id
+=========
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+
+.. needuml::
+
+   {{flow("REQ_9.x")}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_ADDRESS_CONF),
+                (Path("index.rst"), DOTTED_ID),
+            ],
+        }
+    ],
+    indirect=True,
+    ids=["no-need-REQ_9"],
+)
+def test_needuml_a_need_id_holding_a_dot_is_read_whole(test_app):
+    """``flow("REQ_9.x")`` draws the need ``REQ_9.x``, there being no need ``REQ_9``.
+
+    This pins what 9.3.0 did: an id naming a need whole is that need, before any part
+    address is read. It takes no side on what a need id holding a ``.`` should mean.
+    """
+    app = test_app
+    sources = _plantuml_sources(app)
+    app.build()
+    assert_no_warnings(app)
+    (source,) = sources
+    assert "**A need whose id**" in source
+    assert '<size:10>REQ_9.x</size>" as REQ_9.x [[../index.html#REQ_9.x]]' in source
+
+
+UNRESOLVED = """\
+Unresolved
+==========
+
+.. req:: Target
+   :id: REQ_1
+
+   The target, with :np:`(p1) the part`.
+
+.. needuml::
+
+   {{{{{call}("{target}")}}}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app,message",
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), PART_ADDRESS_CONF),
+                    (Path("index.rst"), UNRESOLVED.format(call=call, target=target)),
+                ],
+            },
+            f"Jinja function {name} is called with undefined need_id: '{target}'.",
+            id=f"{call}-{outcome}",
+        )
+        for call, name in (("uml", "uml()"), ("flow", "flow"))
+        for outcome, target in (
+            ("part-missing", "REQ_1.p9"),
+            ("need-missing", "NOPE_1"),
+            ("part-of-a-missing-need", "NOPE_1.p1"),
+        )
+    ],
+    indirect=["test_app"],
+)
+def test_needuml_an_address_that_does_not_resolve(test_app, message):
+    """A part the need does not have ends the build as a need that does not exist
+    does, the message naming the address as written."""
+    with pytest.raises(NeedumlException, match=re.escape(message)):
+        test_app.build()
+
+
+IMPORT_LINK = """\
+Import
+======
+
+.. req:: Target
+   :id: REQ_1
+
+   The target, with :np:`(p1) the part`.
+
+.. spec:: Imports
+   :id: SPEC_1
+   :links: {link}
+
+   .. needarch::
+
+      {{{{import("links")}}}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app,link",
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), PART_ADDRESS_CONF),
+                    (Path("index.rst"), IMPORT_LINK.format(link=link)),
+                ],
+            },
+            link,
+            id=name,
+        )
+        for name, link in (("part-missing", "REQ_1.p9"), ("need-missing", "NOPE_1"))
+    ],
+    indirect=["test_app"],
+)
+def test_needuml_import_of_a_link_that_does_not_resolve(test_app, link):
+    """``import()`` of a link to a part the need does not have ends the build as one
+    to a need that does not exist does, naming the link as written."""
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape(
+            f"Jinja function uml() is called with undefined need_id: '{link}'."
+        ),
+    ):
+        test_app.build()
