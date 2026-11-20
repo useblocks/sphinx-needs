@@ -77,7 +77,7 @@ Bug fixes
   :ref:`needtable` ``:show_parts:`` rows and :ref:`needflow` labels, so a needflow image is written again under a new
   name; and on the page where a part directly follows a character other than white space, such as punctuation:
   ``(\ :np:`(p1) first`)`` renders ``(first p1)`` where it rendered ``( first p1)``. A filter comparing
-  ``content == " first"`` must drop the space. The first build after upgrading reads every document again.
+  ``content == " first"`` must drop the space. The first build after upgrading reads every document again. (:pr:`2555`)
 
 Internal changes
 ................
