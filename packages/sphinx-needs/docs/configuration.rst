@@ -609,10 +609,12 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
      - whether a link to no need is allowed: likewise
    * - ``summary``
      - whether the link type is a summary (:ref:`needs_derive_summary`): likewise
+   * - ``dependent``
+     - which end of a link depends on the other (:ref:`needs_links`): likewise
    * - ``color``, ``style``, ``style_part``, ``style_start``, ``style_end``
      - the links' color, and their line styles in a :ref:`needflow` (see :ref:`links_style`): likewise
 
-A link type's ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``summary``, ``color`` and ``style*`` are the same on every need type:
+A link type's ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``summary``, ``dependent``, ``color`` and ``style*`` are the same on every need type:
 the first declaration of a link type declared on need types alone without a declaring ancestor sets them,
 and its other declarations may repeat them (below).
 On any other link type a declaration giving them, even with the link type's own value, is one ``needs.config`` warning,
@@ -790,10 +792,11 @@ is refused on every entry, one ``needs.type_conflict`` warning each, and does no
    needs_types['spec'].links['x'] declares 'x', whose back links would be 'x_back', which is a field; the entry is ignored
 
 Every type that declares it agrees on its shape: whether it is derived, and the keys a :ref:`needs_links` entry gives a link type
-for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``summary``, ``color``, ``style``, ``style_part``, ``style_start`` and ``style_end``.
+for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``summary``, ``dependent``, ``color``, ``style``, ``style_part``, ``style_start`` and ``style_end``.
 The first declaration of a type none of whose ancestors declares it, in the order the types are resolved (as for a field), sets them,
 an empty one too: the keys it gives, the defaults of a ``needs_links`` entry for the others
 (``incoming`` is ``"<name> incoming"``, ``outgoing`` the name, ``copy`` and ``allow_dead_links`` are ``false``,
+``dependent`` is ``"source"``,
 and ``summary`` is ``false``, or ``true`` where a ``copy`` or ``collect`` computes the link type:
 a derived one, in the ``derive`` of a declaration not refused for another key),
 and derived if it gives a ``derive``.
@@ -1321,6 +1324,36 @@ Each configured link can define:
   a rule (``derive``, ``derive_by_type``) does not give it, where it is no role (``needs.derive_invalid``).
   A value that is not a boolean is a ``needs.config`` warning, and ignored.
   *New in version 9.2.0.*
+- ``dependent`` (optional): Which end of a link depends on the other:
+  ``"source"``, **the need the link is written on** depends on the need it points to;
+  ``"target"``, the need it points to depends on the need the link is written on;
+  ``"both"``, each depends on the other.
+  Default: ``"source"``.
+  A specification written ``:satisfies: REQ_1`` depends on ``REQ_1`` (``satisfies`` is ``"source"``);
+  a requirement written ``:satisfied_by: COMP_1`` is one ``COMP_1`` depends on (``satisfied_by`` is ``"target"``);
+  two peers, one written ``:related: SPEC_2``, each depend on the other (``related`` is ``"both"``):
+
+  .. code-block:: toml
+
+     [needs.links.satisfied_by]
+     outgoing = "is satisfied by"
+     dependent = "target"
+
+  sphinx-needs checks and keeps it and does not act on it; impact analysis reads it (ubCode's today).
+  No link, check, view or exported file changes with it: it is not in the :ref:`needs.json <needs_builder_format>`.
+  A core link type (``links``, ``parent_needs``) is ``"source"`` unless its entry here gives it.
+  It is a link type's on every need type, as ``summary`` is: on a link type declared here, a need type's entry
+  (:ref:`needs_types_fields`) giving it is a ``needs.config`` warning, the key ignored;
+  a link type declared on need types alone takes it from the first need type's entry declaring it,
+  which the others may repeat (:ref:`needs_types_fields`).
+  It is accepted beside any rule (``derive``, ``derive_by_type``); a rule itself does not give it, where it is no role (``needs.derive_invalid``).
+  On a summary link type (``summary = true``, or one a ``copy`` or ``collect`` computes) or a :ref:`union <needs_derive_union>`
+  it is kept and means nothing: impact analysis follows the link types it is computed from.
+  A value that is none of the three names is a ``needs.config`` warning, and ignored::
+
+     needs_links['satisfied_by'] has a 'dependent' that is not one of 'source', 'target' and 'both' (got 'upstream'); the key is ignored
+
+  *New in version 9.4.0.*
 - ``target_types`` (optional): The need types the links may point to, a list of directive names, such as ``["req"]``.
   A link to a need of a listed type, or of a type inheriting from one (``inherits``, transitively), is accepted;
   each other link is reported, and kept, one ``needs.link_target_type`` warning at the need it is set in::
@@ -1378,7 +1411,7 @@ Any other key in an entry, such as a misspelt ``target_types``, and a keyword th
 :ref:`needs_fields` entry, one ``needs.config`` warning per key
 (an ``option``, left from a :ref:`needs_extra_links` entry, is accepted where it repeats the entry's name, and reported where it gives another)::
 
-   needs_links['verifies'] has an unknown key 'target_type'; known keys are allow_dead_links, color, copy, default, derive, derive_by_type, description, incoming, outgoing, parse_conditions, parse_dynamic_functions, parse_variants, predicates, schema, style, style_end, style_part, style_start, target_types; the key is ignored
+   needs_links['verifies'] has an unknown key 'target_type'; known keys are allow_dead_links, color, copy, default, dependent, derive, derive_by_type, description, incoming, outgoing, parse_conditions, parse_dynamic_functions, parse_variants, predicates, schema, style, style_end, style_part, style_start, summary, target_types; the key is ignored
    needs_links['verifies'].schema has an unknown keyword 'uniqueItems'; known keywords of a link type's schema are contains, items, maxContains, maxItems, minContains, minItems, type; the keyword is ignored
 
 A need type may declare a link type anew for its needs, narrowing it: see :ref:`needs_types_fields`.

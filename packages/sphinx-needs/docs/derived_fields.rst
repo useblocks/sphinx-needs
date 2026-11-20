@@ -188,7 +188,8 @@ Bear in mind:
 - **One name, one shape.** A field or link type means the same thing on every need type that declares it:
   its type (``number`` here) and whether it is derived belong to the field, not to a need type,
   and so, for a link type, do how its links are drawn, whether a dead link is allowed,
-  whether its links are copied into ``links`` and whether it is a summary
+  whether its links are copied into ``links``, whether it is a summary
+  and which end of a link depends on the other (``dependent``)
   (for a link type declared on need types alone, the first need type declaring it, in the order the types are given,
   sets them; an entry giving another value is reported (``needs.type_conflict``) and ignored).
   A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
