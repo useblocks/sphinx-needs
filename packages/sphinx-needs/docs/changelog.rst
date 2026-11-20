@@ -7,6 +7,23 @@ Changelog
 Unreleased
 ----------
 
+Bug fixes
+.........
+
+- 🐛 Where a need is expected, a :ref:`need part <need_part>`'s address ``ID.part`` reads as its need, as a link to a
+  part already did
+
+  The targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml` and
+  :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`, the
+  ``need_id`` of ``copy`` and ``links_from_content``, and the ``from`` of a :ref:`derived field <needs_derive>` each
+  read the part's need. The roles, the needuml functions and needsequence ended the build on a part address; the
+  others reported an error and read nothing. An address naming a part its need does not have is treated as an id
+  naming no need. **Changed output**: a ``:need_outgoing:`` or
+  ``:need_incoming:`` naming no need, which ended the build too, is now reported as ``:need:`` reports one (a
+  ``needs.link_ref`` warning) and rendered as an unresolved reference. The need card's outgoing row shows a link to a
+  part of an external need as it shows one to a local part, linked to the part's anchor as ``:need:`` links it, where
+  it showed the need's id and linked the need.
+
 Internal changes
 ................
 

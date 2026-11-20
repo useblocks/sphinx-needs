@@ -168,7 +168,8 @@ def copy(
        :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     :param option: Name of the option to copy
-    :param need_id: id of the need, which contains the source option. If None, current need is taken
+    :param need_id: id of the need, which contains the source option. If None, current need is taken.
+        A need part's address (``ID.part``) reads as the part's need.
     :param upper: Is set to True, copied value will be uppercase (each item, for a list)
     :param lower: Is set to True, copied value will be lowercase (each item, for a list)
     :param filter: :ref:`filter_string`; of the needs it matches,
@@ -581,6 +582,7 @@ def links_from_content(
           Links retrieved from content of :need:`CON_SPEC_1`
 
     :param need_id: ID of need, which provides the content. If not set, current need is used.
+        A need part's address (``ID.part``) reads as the part's need.
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """

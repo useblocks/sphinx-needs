@@ -124,7 +124,7 @@ start
 ~~~~~
 
 The ``:start:`` option takes a comma separated list of need ids and uses it as the starting point for
-further examination of sequence data.
+further examination of sequence data. A need part's address (``ID.part``) reads as the part's need.
 
 First need of ``:start:`` gets painted first. The need includes all related messages and other participants.
 

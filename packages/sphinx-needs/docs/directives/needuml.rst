@@ -186,6 +186,7 @@ flow(id)
 ~~~~~~~~
 Loads a Sphinx-Need object as PlantUML object.
 We use the same layout used for :ref:`needflow`.
+A need part's address (``ID.part``) as ``id`` reads as the part's need.
 
 This functions represents each Need the same way.
 
@@ -245,6 +246,7 @@ Sphinx-Need picks the text of the field specified by ``option``), or by the free
 uml(id)
 ~~~~~~~
 Loads a Sphinx-Need object as PlantUML object or reuses the stored PlantUML code inside the Sphinx-Need object.
+A need part's address (``ID.part``) as ``id`` reads as the part's need.
 
 If diagram code is available in the need data under ``arch``, the stored PlantUML diagram gets imported.
 
