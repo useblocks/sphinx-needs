@@ -834,6 +834,169 @@ def test_graphviz_draws_a_part_without_text(test_app):
     assert {"SP_1.p1", "SP_2"} <= set(titles)
 
 
+#: two need types whose title is empty, or white space only: ``dot`` refuses both
+#: (a tab is white space it refuses, where it accepts a blank)
+EMPTY_TYPE_TITLE_CONF_PY = """\
+extensions = ["sphinx_needs"]
+needs_id_regex = "^[A-Z0-9_]+$"
+needs_flow_engine = "graphviz"
+graphviz_output_format = "svg"
+needs_types = [
+    {"directive": "req", "title": "", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
+    {"directive": "tsk", "title": "\\t", "prefix": "T_", "color": "#DF744A", "style": "node"},
+]
+"""
+
+EMPTY_TYPE_TITLE = """\
+Empty type title
+================
+
+.. req:: A requirement
+   :id: R_1
+
+   :np:`(p1) a part` of it.
+
+.. req:: Another requirement
+   :id: R_2
+
+.. tsk:: A task
+   :id: T_1
+   :links: R_2
+
+.. needflow::
+   :show_legend:
+{debug}"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EMPTY_TYPE_TITLE_CONF_PY),
+                (Path("index.rst"), EMPTY_TYPE_TITLE.format(debug="   :debug:\n")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_label_without_type_title_drops_the_empty_line(test_app):
+    """A need whose type has an empty (or white-space only) title is labelled by
+    what is left: its title and its id, as a node and as a cluster alike.
+
+    The type title went into ``<font point-size="12">...</font>`` unconditionally,
+    and dot refuses the empty font element as a syntax error, so the whole diagram
+    failed to render. A part keeps its type line, which says ``(part)`` whatever
+    the type title is.
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+    # the block is numbered, so a line does not start with what it holds
+    labels = dict(re.findall(r'"(R_1\.p1|R_2|T_1)" \[label=(<.*?>), ', debug))
+    cluster = re.search(r'"cluster_R_1" \{\s*\d*\s*label=(<.*?>);', debug)
+
+    assert cluster is not None, debug
+    assert cluster.group(1) == (
+        '<<b>A requirement</b><br align="center"/>'
+        '<font point-size="10">R_1</font><br align="center"/>>'
+    )
+    assert labels == {
+        "R_1.p1": '<<font point-size="12"> (part)</font><br align="left"/>'
+        '<b>a part</b><br align="left"/>'
+        '<font point-size="10">R_1.<b align="left">p1</b></font><br align="left"/>>',
+        "R_2": '<<b>Another<br align="left"/>requirement</b><br align="left"/>'
+        '<font point-size="10">R_2</font><br align="left"/>>',
+        "T_1": '<<b>A task</b><br align="left"/>'
+        '<font point-size="10">T_1</font><br align="left"/>>',
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EMPTY_TYPE_TITLE_CONF_PY),
+                (Path("index.rst"), EMPTY_TYPE_TITLE.format(debug="")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_draws_a_need_whose_type_has_no_title(test_app):
+    """The diagram renders through a real ``dot`` run, its in-diagram legend included."""
+    app = test_app
+    app.build()
+
+    assert_no_warnings(app)
+
+    svg = _get_svg(app.config, Path(app.outdir), "index.html", "needflow-index-0")
+    # Sphinx rewrites the svg through ElementTree, which writes it with a namespace prefix
+    titles = re.findall(r"<(?:\w+:)?title>([^<]*)</(?:\w+:)?title>", svg)
+    assert {"cluster_R_1", "R_1.p1", "R_2", "T_1", "legend"} <= set(titles)
+
+
+#: the epub builder writes with the html translator, but looks its node visitors up
+#: under its own name, and falls back to html's only while no extension registered
+#: one for ``epub``
+EPUB_CONF_PY = """\
+extensions = ["sphinx_needs"]
+needs_id_regex = "^[A-Z0-9_]+$"
+needs_flow_engine = "graphviz"
+graphviz_output_format = "svg"
+version = "1.0"
+copyright = "the authors"
+"""
+
+EPUB_NEEDFLOW = """\
+Needflow in an epub
+===================
+
+.. req:: A requirement
+   :id: R_1
+
+.. req:: Another requirement
+   :id: R_2
+   :links: R_1
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "epub",
+            "files": [
+                (Path("conf.py"), EPUB_CONF_PY),
+                (Path("index.rst"), EPUB_NEEDFLOW),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_needflow_builds_with_epub(test_app):
+    """A page with a graphviz needflow builds with ``epub``, its diagram written as
+    the ``html`` builder writes it.
+
+    The needflow's node had an ``html`` visitor only, and the epub build ended with
+    ``departing unknown node type: NeedflowGraphiz``.
+    """
+    app = test_app
+    app.build()
+
+    assert not [w for w in build_warnings(app) if "unknown node type" in w]
+    xhtml = (Path(app.outdir) / "index.xhtml").read_text("utf8")
+    img = re.search(r'<img src="([^"]+\.svg)" alt="needflow graphviz diagram"', xhtml)
+    assert img is not None, xhtml
+    assert (Path(app.outdir) / img.group(1)).is_file()
+
+
 CLASS_AND_DEBUG = """\
 Class and debug
 ===============

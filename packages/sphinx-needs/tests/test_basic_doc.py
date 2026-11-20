@@ -165,6 +165,32 @@ def test_build_epub(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
+    [{"buildername": "epub", "srcdir": "doc_test/doc_basic"}],
+    indirect=True,
+)
+def test_every_html_visitor_is_registered_for_epub(test_app: SphinxTestApp):
+    """Every node sphinx-needs gives an ``html`` visitor has the same one for ``epub``.
+
+    The epub builder looks a node's visitors up under its own name, and falls back
+    to the ``html`` ones only while no extension has registered any for ``epub``;
+    sphinx-data-viewer, which sphinx-needs loads, does. So a node registered for
+    ``html`` alone ends an epub build on its first occurrence.
+    """
+    handlers = test_app.registry.translation_handlers
+    ours = {
+        name: pair
+        for name, pair in handlers["html"].items()
+        if pair[0].__module__.startswith("sphinx_needs.")
+    }
+    # the node the defect was found on, so the selection cannot pass vacuously
+    assert "NeedflowGraphiz" in ours
+    epub = handlers.get("epub", {})
+    missing = sorted(name for name, pair in ours.items() if epub.get(name) != pair)
+    assert not missing, f"registered for html, not the same for epub: {missing}"
+
+
+@pytest.mark.parametrize(
+    "test_app",
     [{"buildername": "json", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
