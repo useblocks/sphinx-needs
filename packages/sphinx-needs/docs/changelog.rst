@@ -10,18 +10,19 @@ Unreleased
 Bug fixes
 .........
 
-- 🐛 Where a need is expected, a :ref:`need part <need_part>`'s address ``ID.part`` reads as its need, as a link to a
-  part already did
+- 🐛 In the places below that take a need id, a :ref:`need part <need_part>`'s address ``ID.part`` reads as its need,
+  as a link to a part already did
 
-  The targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml` and
-  :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`, and
-  the ``need_id`` of ``copy`` each read the part's need. The roles, the needuml functions and needsequence ended the
-  build on a part address, and ``copy`` reported an error and copied nothing. An address naming a part its need does
-  not have is treated as an id naming no need. **Changed output**: a ``:need_outgoing:`` or
-  ``:need_incoming:`` naming no need, which ended the build too, is now reported as ``:need:`` reports one (a
-  ``needs.link_ref`` warning) and rendered as an unresolved reference. The need card's outgoing row shows a link to a
-  part of an external need as it shows one to a local part, linked to the part's anchor as ``:need:`` links it, where
-  it showed the need's id and linked the need.
+  The places: the targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml`
+  and :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`,
+  and the ``need_id`` of ``copy``. The roles, the needuml functions and needsequence ended the build on a part
+  address, and ``copy`` reported an error and copied nothing. An address naming a part its need does not have is
+  treated as an id naming no need, except that the two roles report it as ``:need:`` reports a missing part.
+  **Changed output**: a ``:need_outgoing:`` or ``:need_incoming:`` naming no need, which ended the build too, is now
+  reported as ``:need:`` reports one (a ``needs.link_ref`` warning) and rendered as an unresolved reference. The need
+  card's outgoing row and the list ``:need_outgoing:`` renders show a link to a part of an external need as they show
+  one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
+  the need.
 
 Internal changes
 ................
