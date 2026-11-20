@@ -95,7 +95,7 @@ Bug fixes
   :ref:`needs_types`: ``dot`` refused the empty ``<font point-size="12"></font>`` that took the type's place, and the
   whole diagram was not rendered. A node whose type title is empty, or white space only, now has no type line and
   is labelled by the rest (its title, where it has one, and its id); a :ref:`need part <need_part>` keeps its
-  ``(part)`` line. Every other node's label does not change. (:pr:`0000`)
+  ``(part)`` line. Every other node's label does not change. (:pr:`2561`)
 
 - 🐛 A page with a :ref:`needflow` drawn with the graphviz engine builds with the ``epub`` builder, which ended the
   build on it (``departing unknown node type: NeedflowGraphiz``): ``epub`` writes with the html writer but looks the
@@ -105,7 +105,7 @@ Bug fixes
   :ref:`need part <need_part>` in a section title, no longer end an ``epub`` build either. **Changed output**: a
   :ref:`needtable` in an epub carries the attributes it carries in html (``data-needstable-*`` on the table,
   ``data-*`` and ``scope`` on its rows and header cells). ``html``, ``latex`` and every other builder's output does
-  not change. (:pr:`0000`)
+  not change. (:pr:`2561`)
 
 Internal changes
 ................
