@@ -33,20 +33,21 @@
 #     `0123456789abcdef0123456789abcdef01234567` and a newline; `.git/config` is
 #     `[remote "origin"]`, a newline, a tab, `url = https://github.com/example/case.git`
 #     and a newline
-#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`) and those the loaded extensions add
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`), matched at the start
+#     of the id; the need types are the default ones (`req`, `spec`, `impl`, `test`) and
+#     those the loaded extensions add
 #   - `parts.<ID>` is the SET of the need's parts, each its id and its text, the text
 #     exactly as the tool stores it (a leading space included); `{}` says the need has
-#     none. A need the case does not name there is not compared. The order of a need's
-#     parts is compared ONLY through `order.<ID>`, the part ids in the order they are
-#     written, which only cases whose purpose is that order carry
-#   - `dead.<ID>` is the set of the need's dead links, each the address as written with
-#     its condition taken off (`REQ_1.nope` for `REQ_1.nope[status == "x"]`); `[]` says it
-#     has none
+#     none. A need the case does not name there is not compared
+#   - `dead.<ID>` is the set of the need's links the tool reports as dead, each the address
+#     as written with its condition taken off
+#     (`REQ_1.nope` for `REQ_1.nope[status == "x"]`); `[]` says it reports none. No case
+#     sets `allow_dead_links`
 #   - `back.<ADDRESS>`, the address a need's id or `<ID>.<part>` (split at the first `.`),
 #     gives per link type the set of the ids of the needs whose links of that type are
-#     back links of that need or part; `[]` says there are none. A link type it does not
-#     name is not compared
+#     back links of that need or part; `[]` says there are none. It names only link types
+#     the case has (`links`, or one its `config` declares); a link type it does not name is
+#     not compared
 #   - `findings` are compared as a MULTISET of `class`, the name of a class of finding of
 #     the contract; a runner maps its tool's own codes to the classes, and messages,
 #     locations and severities are NOT compared. The classes, and sphinx-needs' codes --
@@ -57,12 +58,17 @@
 #         link condition         needs.link_condition_failed
 #     -- every other finding is each tool's own and not compared, unless the case says
 #     `clean = true`: then the project reports nothing at all but its `findings`
-#   - each `[[case.filters]]` entry is one filter string, evaluated over the needs of the
-#     built project and their parts (`include_parts = true`, required) as a filter written
-#     in `index.rst` is; `expected` lists the ids it selects, sorted, a part as
-#     `<need>.<part>`, and the filter reports nothing. An entry pins only what a part
-#     ANSWERS; which of needs and parts a filter selects when it does not ask for parts is
-#     not settled, and no entry pins it
+#   - a report, for `clean = true` and for a filter that "reports nothing", is any warning
+#     or error the build emits
+#   - each `[[case.filters]]` entry is one filter string in the portable filter language
+#     (the one `filter_conformance.toml` pins), evaluated after the build, when derived
+#     values are final, over the needs of the built project and their parts
+#     (`include_parts = true`, required) as a filter written in `index.rst` is. That means
+#     only that `c.this_doc()` compares with `index`: it says nothing about which
+#     candidates a directive on that page would have. `expected` lists the ids it selects,
+#     sorted by code point, a part as `<need>.<part>`, and the filter reports nothing. An
+#     entry pins only what a part ANSWERS; which of needs and parts a filter selects when
+#     it does not ask for parts is not settled, and no entry pins it
 #   - `expected` -- every key of `[case.expect]` and every filter's `expected` -- is what the
 #     CONTRACT says. A case carrying `divergent` is one a tool answers otherwise: each key
 #     names a tool (`sphinx-needs`, `ubcode`), its value what that tool answers instead and
@@ -93,12 +99,11 @@
 #   [case.expect]
 #     findings         - `[]` for none, or one `{ class = "..." }` per finding
 #     parts.<ID>       - { <part id> = "<text>" }, `{}` for none
-#     order.<ID>       - optional; [the part ids, in written order]
 #     dead.<ID>        - optional; [the addresses of its dead links]
 #     back.<ADDRESS>   - optional; { <link type> = [the ids of its back links] }
 #   [[case.filters]]
 #     filter         - the filter string
-#     expected       - the ids it selects, sorted
+#     expected       - the ids it selects, sorted by code point
 #     include_parts  - true
 #     why            - optional; one line saying what the entry pins
 
@@ -481,9 +486,9 @@ findings = [{ class = "duplicate part id" }, { class = "duplicate part id" }]
 REQ_1 = { p1 = " the first", p2 = " another" }
 
 [[case]]
-name = "duplicates-the-first-keeps-its-place"
+name = "duplicates-a-repetition-after-other-parts"
 section = "duplicates"
-why = "a need holds its parts in the order they are written, a repeated id keeping the first's place: p2, p10, p1, not p1, p10, p2 or p1, p2, p10"
+why = "an id marked again after other parts is still the first's part, with the first's text, and one finding"
 config = '''
 [needs]
 '''
@@ -497,8 +502,6 @@ source = '''
 findings = [{ class = "duplicate part id" }]
 [case.expect.parts]
 REQ_1 = { p2 = " second", p10 = " tenth", p1 = " first" }
-[case.expect.order]
-REQ_1 = ["p2", "p10", "p1"]
 
 [[case]]
 name = "duplicates-in-a-list2need-item"

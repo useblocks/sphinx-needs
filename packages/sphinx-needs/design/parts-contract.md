@@ -45,8 +45,7 @@ states, each with the id and the text the record gives.
 
 A need has at most one part of an id. When its content marks an id twice, the first is the
 part, its text the first's, and the need gets one finding, `duplicate part id`, for each
-repetition; this holds on every route content takes to a need. A need holds its parts in
-the order they are written in its content.
+repetition; this holds on every route content takes to a need.
 
 ## 4. A hidden need has its parts (corpus: `placement`)
 
@@ -101,6 +100,7 @@ counts a part link as a link to the need.
 
 This page is silent on these on purpose; each waits on a ruling of its own.
 
+- The order of a need's parts.
 - Parts a need states that its content does not mark.
 - Which parts an imported need gets when its record and its content give different parts.
 - Whether a filter, a view or a count that does not ask for parts selects them.

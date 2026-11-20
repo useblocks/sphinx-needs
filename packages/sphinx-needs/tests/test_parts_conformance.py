@@ -1,18 +1,18 @@
 """Need parts, held to the shared conformance corpus.
 
 ``tests/fixtures/parts_conformance.toml`` is the executable half of
-``design/parts-contract.md``. This repository is its repository of record and ubCode
-vendors it, so every case is a statement both tools are held to. Each case is one project,
-built with the ``html`` builder (a role outside every need is reported where a page is
-written), and four things are asserted:
+``design/parts-contract.md``. This repository is its repository of record and ubCode is
+to vendor it, so every case is a statement both tools are held to. Each case is one
+project, built with the ``html`` builder (a role outside every need is reported where a
+page is written), and four things are asserted:
 
-* every case's outcome: each named need's parts as a set of id and text, their written
-  order where a case pins it, each named need's dead links, the back links of each named
-  need and part per link type, the findings of the contract as a multiset of classes (and
-  nothing else where the case says ``clean``), and what each filter selects over needs and
-  parts;
-* a case marked ``divergent`` for sphinx-needs FAILS, and the test fails when it passes,
-  so a fix cannot leave its marker behind;
+* every case's outcome: each named need's parts as a set of id and text, each named
+  need's dead links, the back links of each named need and part per link type, the
+  findings of the contract as a multiset of classes (and nothing else where the case says
+  ``clean``), and what each filter selects over needs and parts;
+* a case marked ``divergent`` for sphinx-needs FAILS with exactly the problems recorded
+  for it, fails as a second deviation with any others, and fails when it passes, so a fix
+  cannot leave its marker behind;
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage;
 * the shape of every case, its section and its markers, and the classes and codes the
@@ -135,7 +135,7 @@ _CASE_KEYS = {
     "expect",
     "filters",
 }
-_EXPECT_KEYS = {"findings", "parts", "order", "dead", "back"}
+_EXPECT_KEYS = {"findings", "parts", "dead", "back"}
 _ENTRY_KEYS = {"filter", "expected", "include_parts", "why"}
 
 #: A record's code: the ``[needs.<code>]`` that ends it.
@@ -201,9 +201,6 @@ def test_every_case_has_a_complete_expectation() -> None:
         for need_id, parts in expect.get("parts", {}).items():
             assert isinstance(parts, dict), (name, need_id)
             assert all(isinstance(text, str) for text in parts.values()), name
-        for need_id, order in expect.get("order", {}).items():
-            # an order is pinned beside the set it orders
-            assert sorted(order) == sorted(expect["parts"][need_id]), (name, need_id)
         for need_id, dead in expect.get("dead", {}).items():
             assert dead == sorted(set(dead)), (name, need_id)
         # a back-link pin names a link type the case has: `links`, or one its
@@ -335,7 +332,7 @@ def _check(
     expect = case["expect"]
     problems: list[str] = []
 
-    # the parts, as a set; their order only where it is pinned
+    # the parts, as a set of id and text
     for need_id, parts in expect.get("parts", {}).items():
         if need_id not in needs:
             problems.append(f"{need_id}: no such need")
@@ -343,12 +340,6 @@ def _check(
         stored = {pid: part["content"] for pid, part in needs[need_id]["parts"].items()}
         if stored != parts:
             problems.append(f"{need_id}: parts {stored!r}, expected {parts!r}")
-    for need_id, order in expect.get("order", {}).items():
-        if need_id in needs and list(needs[need_id]["parts"]) != order:
-            problems.append(
-                f"{need_id}: parts in the order {list(needs[need_id]['parts'])}, "
-                f"expected {order}"
-            )
 
     # the findings, a multiset of classes; and, in a clean case, nothing else
     codes = [m[1] if (m := _CODE.search(w)) else None for w in warnings]
@@ -365,7 +356,9 @@ def _check(
         if others:
             problems.append(f"reports {others}, expected nothing but its findings")
 
-    # the dead links, read from the tool's own report, and its flag on the need
+    # the dead links, read from the tool's own report, and its flag on the need. The
+    # flag, ``has_dead_links``, is a cross-check of this runner alone: the corpus
+    # defines ``dead`` as the links a tool reports, and says nothing of the flag
     dead: dict[str, set[str]] = {}
     for warning in warnings:
         if (match := _DEAD.search(warning)) is not None:
@@ -431,7 +424,6 @@ _FAITHFUL = {
     "expect": {
         "findings": [{"class": "duplicate part id"}, {"class": "dead link"}],
         "parts": {"REQ_1": {"p1": " one", "p2": " two"}, "REQ_2": {}},
-        "order": {"REQ_1": ["p1", "p2"]},
         "dead": {"TEST_C": ["REQ_1."], "REQ_1": []},
         "back": {
             "REQ_1": {"tests": ["TEST_A", "TEST_B", "TEST_C"]},
@@ -452,8 +444,6 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
         ("parts", {"REQ_1": {"p1": " one ", "p2": " two"}, "REQ_2": {}}),
         # one skipping a need the case names with no parts
         ("parts", {"REQ_1": {}, "REQ_2": {}}),
-        # one ignoring the written order where a case pins it
-        ("order", {"REQ_1": ["p2", "p1"]}),
         # one counting the findings as a set
         ("findings", [{"class": "duplicate part id"}] * 2 + [{"class": "dead link"}]),
         ("findings", [{"class": "dead link"}]),
@@ -468,7 +458,6 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
     ids=[
         "texts",
         "a-need-with-no-parts",
-        "order",
         "findings-as-a-set",
         "a-finding-left-out",
         "a-parts-back-links-are-not-its-needs",
