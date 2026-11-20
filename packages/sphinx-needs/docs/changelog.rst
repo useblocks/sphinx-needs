@@ -17,7 +17,7 @@ Improvements
   ``needs.config`` warning, and ignored. On a link type declared on need types alone it is part of the link type's
   shape, as ``summary`` is: the first need type declaring it sets it, and another value is a
   ``needs.type_conflict``. It is not in the ``needs.json``. ``ENV_DATA_VERSION`` is 30: the first build after
-  upgrading reads every document again. (:pr:`XXXX`)
+  upgrading reads every document again. (:pr:`2554`)
 
 Bug fixes
 .........
