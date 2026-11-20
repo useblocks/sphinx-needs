@@ -451,10 +451,13 @@ def test_network_validates_the_need_of_a_part_link(test_app: SphinxTestApp) -> N
     rule asking for a ``spec``, and the need path names the link as written."""
     test_app.build()
     findings = [f for f in _schema_findings(test_app) if f[0] == "IMPL_7"]
-    assert [path for _, path, _ in findings] == [
-        "IMPL_7 > links > REQ_1.r1",
-        "IMPL_7 > links",
-    ], findings
+    assert findings == [
+        (
+            "IMPL_7",
+            "IMPL_7 > links > REQ_1.r1",
+            '"spec" was expected [sn_schema_violation.network_local_fail]',
+        )
+    ]
     assert {need for need, _, _ in _schema_findings(test_app)} == {
         "IMPL_3",
         "IMPL_4",
