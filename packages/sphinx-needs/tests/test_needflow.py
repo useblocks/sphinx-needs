@@ -829,8 +829,9 @@ def test_graphviz_draws_a_part_without_text(test_app):
     assert_no_warnings(app)
 
     svg = _get_svg(app.config, Path(app.outdir), "index.html", "needflow-index-0")
-    assert "<title>SP_1.p1</title>" in svg
-    assert "<title>SP_2</title>" in svg
+    # Sphinx rewrites the svg through ElementTree, which writes it with a namespace prefix
+    titles = re.findall(r"<(?:\w+:)?title>([^<]*)</(?:\w+:)?title>", svg)
+    assert {"SP_1.p1", "SP_2"} <= set(titles)
 
 
 CLASS_AND_DEBUG = """\
