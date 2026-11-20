@@ -91,6 +91,22 @@ Bug fixes
   diagram was not rendered. Such a node is now labelled by its type and id. The PlantUML engine was not affected.
   (:issue:`2557`, :pr:`2558`)
 
+- 🐛 A :ref:`needflow` drawn with the graphviz engine renders when it draws a need whose type has an empty title in
+  :ref:`needs_types`: ``dot`` refused the empty ``<font point-size="12"></font>`` that took the type's place, and the
+  whole diagram was not rendered. A node whose type title is empty, or white space only, now has no type line and
+  is labelled by the rest (its title, where it has one, and its id); a :ref:`need part <need_part>` keeps its
+  ``(part)`` line. Every other node's label does not change. (:pr:`2561`)
+
+- 🐛 A page with a :ref:`needflow` drawn with the graphviz engine builds with the ``epub`` builder, which ended the
+  build on it (``departing unknown node type: NeedflowGraphiz``): ``epub`` writes with the html writer but looks the
+  visitors of a node up under its own name, and another extension sphinx-needs loads registers one there, so a node
+  registered for ``html`` alone was unknown to it. Every node sphinx-needs registers for ``html`` is now registered
+  for ``epub`` with the same visitors. So a ``:need:`` role in the title of a page that a toctree lists, and a
+  :ref:`need part <need_part>` in a section title, no longer end an ``epub`` build either. **Changed output**: a
+  :ref:`needtable` in an epub carries the attributes it carries in html (``data-needstable-*`` on the table,
+  ``data-*`` and ``scope`` on its rows and header cells). ``html``, ``latex`` and every other builder's output does
+  not change. (:pr:`2561`)
+
 Internal changes
 ................
 
