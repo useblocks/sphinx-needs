@@ -58,7 +58,7 @@
         'content': dict({
           'doctype': '.rst',
           'parts': dict({
-            'p1': ' the part',
+            'p1': 'the part',
           }),
           'text': 'A body with :np:`(p1) the part`.',
         }),
