@@ -233,12 +233,13 @@ def test_walk_ignores_links_to_needs_outside_the_view():
 
 
 def _parts_and_links() -> list[NeedItem]:
-    """``REQ_1``, with the parts ``p1`` and ``p2``, linked by ``A`` whole, by ``B`` at
-    ``p1`` and by ``C`` at ``p2``; ``REQ_1`` links ``UP_1``."""
+    """``REQ_1``, with the parts ``p1``, ``p2`` and ``p3``, linked by ``A`` whole, by
+    ``B`` at ``p1`` and by ``C`` at ``p2``, nothing linking ``p3``; ``REQ_1`` links
+    ``UP_1``."""
     return [
         need(
             "REQ_1",
-            parts=("p1", "p2"),
+            parts=("p1", "p2", "p3"),
             links=["UP_1"],
             incoming=["A", "B", "C"],
             part_incoming={"p1": ["B"], "p2": ["C"]},
@@ -263,6 +264,30 @@ def test_walk_from_a_part_steps_first_through_the_part(direction, expected):
     links naming ``p1`` alone, its first outgoing step ``REQ_1``'s links."""
     walked = filter_by_tree(
         view(*_parts_and_links()), "REQ_1.p1", ["links"], direction, None
+    )
+    assert set(walked) == expected
+
+
+@pytest.mark.parametrize(
+    ("direction", "expected"),
+    [("incoming", {"REQ_1"}), ("both", {"REQ_1", "UP_1"})],
+)
+def test_walk_from_a_part_nothing_links_steps_in_nowhere(direction, expected):
+    """``p3``'s back links are empty, however many ``REQ_1`` has: the first incoming
+    step follows nothing."""
+    walked = filter_by_tree(
+        view(*_parts_and_links()), "REQ_1.p3", ["links"], direction, None
+    )
+    assert set(walked) == expected
+
+
+@pytest.mark.parametrize(
+    ("depth", "expected"), [(0, {"REQ_1"}), (1, {"REQ_1", "B", "UP_1"})]
+)
+def test_walk_from_a_part_counts_depth_from_its_need(depth, expected):
+    """The part's need is the root, at depth 0: the part is no hop of its own."""
+    walked = filter_by_tree(
+        view(*_parts_and_links()), "REQ_1.p1", ["links"], "both", depth
     )
     assert set(walked) == expected
 
