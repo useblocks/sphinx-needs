@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795164542055,
+  "lastUpdate": 1795167978793,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30450,6 +30450,48 @@ window.BENCHMARK_DATA = {
             "value": 193.241271,
             "unit": "MB",
             "extra": "Commit: 52e8530865a42da9404f96965e71bb161b169636\nBranch: master\nTime: 2026-11-20T09:47:20+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aab60c20edee515dbed3f0520b57f5c93d4b04b7",
+          "message": "🐛 sphinx-needs: a part address where a need is expected reads as its need (#2551)\n\nIn the places below that take a need id, a need part's address `ID.part`\nnow reads as its need, as a link to a part already did (the first rule\nof `design/parts-contract.md`). The two roles, the needuml functions and\nneedsequence ended the build on a part address.\n\n| place | before, given `REQ_1.p1` (REQ_1 has p1) | after |\n|---|---|---|\n| `:need_outgoing:` target | build ends (`ExtensionError`, `KeyError:\n'REQ_1.p1'`) | REQ_1's outgoing links, rendered as for `REQ_1` |\n| `:need_incoming:` target | build ends | REQ_1's incoming links,\nrendered as for `REQ_1` |\n| needuml `uml()`, `flow()`, the links `import()` follows | build ends\n(`NeedumlException … undefined need_id`) | REQ_1 drawn, the source\nidentical to the one `REQ_1` gives |\n| needsequence `:start:` | build ends (`NeedSequenceException …\nunknown`) | the sequence starting at REQ_1 |\n| `copy(…, need_id=…)` | warning, no value | REQ_1's value |\n| need card outgoing row and the list `:need_outgoing:` renders, link to\na part of an EXTERNAL need | the need's id, linking the need | the\npart's address (the part's text too with `needs_show_link_title`),\nlinking the part's anchor, as `:need:` does |\n\nAn address naming a part its need does not have is treated as an id\nnaming no need is, its report naming the address as written, except that\nthe two roles report it as `:need:` reports a missing part (`linked need\npart … not found`, no did-you-mean hint).\n\n**Changed output.** `:need_outgoing:` and `:need_incoming:` naming NO\nneed also ended the build. They now report it as `:need:` does (`linked\nneed X not found`, with `:need:`'s did-you-mean hint where namespaced\nids give one, `needs.link_ref`) and render an unresolved reference, and\nthe build goes on.\n\nOne private lookup does it for the five places that take a need id\n(`sphinx_needs/_part_address.py`, `need_at`): an id naming a need whole\nis that need, as it always was (a need id holding a `.` is untouched);\nany other address is split as a link's is and names the need when the\nneed has the part. The card row reads a LINK, and reads it as a link is\nread: split first. The order in which dynamic functions are computed\nreads the same need for `copy`, so a value the need computes is read\nafter it is computed.\n\nThe parts corpus gains two cases in its `derived` section: `copy` given\na part address, and `copy` given a part its need does not have. Every\nother place is pinned by ordinary tests beside the existing ones\n(`test_need_outgoing_incoming.py` new; `test_needuml.py`,\n`test_diagram_part_links.py`, `test_dynamic_functions.py`).\n\nLeft for a later change: needextend and needextract arguments, needflow\n`root_id`, codelinks `@need-ids:`, schema network validation, the\npermalink page, needtable link cells, the empty part `REQ_1.`, and a\nderived field's `from` and `links_from_content(need_id)`, whose reading\nof a part address the derive corpus pins as a failed read.",
+          "timestamp": "2026-11-20T10:44:30+01:00",
+          "tree_id": "caa2129a9468a2c6cac719783048a5b50718ea0a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/aab60c20edee515dbed3f0520b57f5c93d4b04b7"
+        },
+        "date": 1795167977919,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07373967600000242,
+            "unit": "s",
+            "extra": "Commit: aab60c20edee515dbed3f0520b57f5c93d4b04b7\nBranch: master\nTime: 2026-11-20T10:44:30+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.816827912000008,
+            "unit": "s",
+            "extra": "Commit: aab60c20edee515dbed3f0520b57f5c93d4b04b7\nBranch: master\nTime: 2026-11-20T10:44:30+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 190.616195,
+            "unit": "MB",
+            "extra": "Commit: aab60c20edee515dbed3f0520b57f5c93d4b04b7\nBranch: master\nTime: 2026-11-20T10:44:30+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
