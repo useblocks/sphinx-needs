@@ -21,7 +21,7 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.string_links import (
     CompiledStringLink,
     compiled_string_links,
@@ -216,9 +216,6 @@ def row_col_maker(
             data = [value]
 
         for index, datum in enumerate(data):
-            link_id = datum
-            link_part = None
-
             needs_schema = SphinxNeedsData(env).get_schema()
             link_list = []
             for link_field in needs_schema.iter_link_fields():
@@ -231,9 +228,13 @@ def row_col_maker(
                 if need_key in link_conf.options and len(datum) != 0
             ]
 
-            if need_key in link_list and "." in datum:
-                link_id = datum.split(".")[0]
-                link_part = datum.split(".")[1]
+            # a link is read as a link is read everywhere: its address split once,
+            # at the first `.` (a value of a column holding no links names a need)
+            link = (
+                NeedLink.parse_address(datum)
+                if need_key in link_list
+                else NeedLink(id=datum)
+            )
 
             datum_text = prefix + str(datum)
             text_col = nodes.Text(datum_text)
@@ -263,7 +264,15 @@ def row_col_maker(
                             )
                             ref_col["refuri"] += "#" + datum
                     elif ref_lookup:
-                        temp_need = all_needs[link_id]
+                        # a link to a need that does not exist is written as text
+                        # (the KeyError below), and so is a link to a part its need
+                        # does not have: both are dead links
+                        temp_need = all_needs[link.id]
+                        if (
+                            link.part is not None
+                            and temp_need.get_part(link.part) is None
+                        ):
+                            raise KeyError(datum)
                         if temp_need["is_external"]:
                             assert temp_need["external_url"] is not None, (
                                 "external_url must be set for external needs"
@@ -278,8 +287,8 @@ def row_col_maker(
                                 fromdocname, _docname
                             )
                             ref_col["refuri"] += "#" + temp_need["id"]
-                            if link_part:
-                                ref_col["refuri"] += "." + link_part
+                            if link.part is not None:
+                                ref_col["refuri"] += "." + link.part
 
                 except KeyError:
                     para_col += text_col
