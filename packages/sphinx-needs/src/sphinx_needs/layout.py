@@ -28,6 +28,7 @@ from sphinx.util.logging import getLogger
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
+from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.string_links import (
@@ -614,15 +615,21 @@ class LayoutHandler:
 
         nodes_id_text = nodes.Text(self.need["id"])
         if self.fromdocname and (_docname := self.need["docname"]):
-            id_ref = make_refnode(
-                self.app.builder,
-                fromdocname=self.fromdocname,
-                todocname=_docname,
-                targetid=self.need["id"],
-                child=nodes_id_text.deepcopy(),
-                title=self.need["id"],
-            )
-            id_container += id_ref
+            try:
+                id_ref = make_refnode(
+                    self.app.builder,
+                    fromdocname=self.fromdocname,
+                    todocname=_docname,
+                    targetid=self.need["id"],
+                    child=nodes_id_text.deepcopy(),
+                    title=self.need["id"],
+                )
+            except NoUri:
+                # the builder leaves the need's page out (a need drawn on another
+                # page, by needextract): the id alone
+                id_container += nodes_id_text
+            else:
+                id_container += id_ref
         return id_container
 
     def meta_all(

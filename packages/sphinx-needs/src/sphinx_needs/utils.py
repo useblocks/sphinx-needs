@@ -19,6 +19,7 @@ from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
+from sphinx_needs.errors import NoUri
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
@@ -33,6 +34,7 @@ from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 if TYPE_CHECKING:
     import matplotlib
     from matplotlib.figure import FigureBase
+    from sphinx.builders import Builder
 
 
 logger = get_logger(__name__)
@@ -172,6 +174,21 @@ def counted_ids(ids: Collection[str], noun: str = "", /) -> str:
     return f"{counted} ({named})"
 
 
+def relative_uri(builder: Builder, fromdocname: str, todocname: str) -> str | None:
+    """The URI of ``todocname`` relative to ``fromdocname``, or ``None`` when the
+    builder leaves ``todocname`` out of its output.
+
+    ``latex`` and ``texinfo`` write only the documents their toctrees reach, and raise
+    :class:`~sphinx.errors.NoUri` for any other, such as an ``:orphan:`` page. A caller
+    given ``None`` writes the text it would have linked, as Sphinx writes a
+    cross-reference whose target the builder leaves out.
+    """
+    try:
+        return builder.get_relative_uri(fromdocname, todocname)
+    except NoUri:
+        return None
+
+
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
@@ -258,11 +275,10 @@ def row_col_maker(
                             )
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
-                        elif _docname := need_info["docname"]:
-                            ref_col["refuri"] = builder.get_relative_uri(
-                                fromdocname, _docname
-                            )
-                            ref_col["refuri"] += "#" + datum
+                        elif (_docname := need_info["docname"]) and (
+                            uri := relative_uri(builder, fromdocname, _docname)
+                        ) is not None:
+                            ref_col["refuri"] = uri + "#" + datum
                     elif ref_lookup:
                         # a link to a need that does not exist is written as text
                         # (the KeyError below), and so is a link to a part its need
@@ -285,11 +301,10 @@ def row_col_maker(
                             )
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
-                        elif _docname := temp_need["docname"]:
-                            ref_col["refuri"] = builder.get_relative_uri(
-                                fromdocname, _docname
-                            )
-                            ref_col["refuri"] += "#" + temp_need["id"]
+                        elif (_docname := temp_need["docname"]) and (
+                            uri := relative_uri(builder, fromdocname, _docname)
+                        ) is not None:
+                            ref_col["refuri"] = uri + "#" + temp_need["id"]
                             if link.part is not None:
                                 ref_col["refuri"] += "." + link.part
 
@@ -302,7 +317,8 @@ def row_col_maker(
                     else:
                         # a need in no document and not external (``add_need(docname=None)``)
                         # has nothing to link to, and a reference with no target would
-                        # end the HTML build; the text alone (#2244)
+                        # end the HTML build; the text alone (#2244). So has a need on a
+                        # page the builder leaves out (`relative_uri` gave ``None``)
                         para_col += text_col
             elif matching_link_confs:
                 para_col += match_string_link(
