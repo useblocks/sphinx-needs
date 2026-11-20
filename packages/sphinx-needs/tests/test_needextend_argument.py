@@ -435,3 +435,79 @@ def test_a_part_address_written_as_a_filter_is_a_filter(test_app: Sphinx):
     assert "names a part" not in warnings[0]
     assert "Provided id" not in warnings[0]
     assert needs_by_id(app)["REQ_1"]["tags"] == []
+
+
+FILTER_INDEX = """\
+Index
+=====
+
+.. req:: Req title
+   :id: REQ_1
+   :status: open
+   :ASIL_LEVEL: B
+
+   Text with :np:`(p1) the part`.
+
+.. spec:: Spec one
+   :id: SPEC_1
+   :status: closed
+   :ASIL_LEVEL: A
+
+.. needextend:: {argument}
+   :+tags: x
+"""
+
+# matched in full, it accepts the word before the first ``.`` of each argument below
+FILTER_CONF = (
+    CONF
+    + 'needs_fields = {"ASIL_LEVEL": {"nullable": True}}\n'
+    + 'needs_id_regex = "^[A-Za-z0-9_]+"\n'
+)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extended"),
+    [
+        (
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), FILTER_CONF),
+                    (
+                        Path("index.rst"),
+                        FILTER_INDEX.format(argument='ASIL_LEVEL.startswith("B")'),
+                    ),
+                ],
+            },
+            "REQ_1",
+        ),
+        (
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), FILTER_CONF),
+                    (
+                        Path("index.rst"),
+                        FILTER_INDEX.format(argument='type.startswith("sp")'),
+                    ),
+                ],
+            },
+            "SPEC_1",
+        ),
+    ],
+    ids=["upper-case-field", "method-call"],
+    indirect=["test_app"],
+)
+def test_a_filter_whose_first_word_is_id_like_is_a_filter(
+    test_app: Sphinx, extended: str
+):
+    """A one-word argument holding ``(`` is a filter, whatever the text before its
+    first ``.``: it is never read as a part address, and extends the need it selects."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    needs = needs_by_id(app)
+    assert {need_id: needs[need_id]["tags"] for need_id in ("REQ_1", "SPEC_1")} == {
+        need_id: ["x"] if need_id == extended else [] for need_id in ("REQ_1", "SPEC_1")
+    }

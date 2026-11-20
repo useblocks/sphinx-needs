@@ -887,3 +887,186 @@ def test_needextract_an_address_that_does_not_resolve(test_app, argument):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "<h1>Extract" in html
     assert _extracted(app) == []
+
+
+# -- A filter is never read as a part address ---------------------------------
+#
+# An argument is read as a part address only when what follows its first ``.`` is a
+# part id (letters, digits, ``_`` and ``-``, and ``.`` for a part a record states). A
+# filter whose text before its first ``.`` the id pattern accepts (a ``needs_filter_data``
+# name, an upper-case field, or, under a project's ``needs_id_regex``, any field) is a
+# filter, as in 9.3.0: what follows its first ``.`` holds a ``(``, a space or a quote.
+
+FILTER_NEEDS = """\
+Needs
+=====
+
+.. req:: Req title
+   :id: REQ_1
+   :status: open
+   :ASIL_LEVEL: B
+
+   Text with :np:`(p1) the part`.
+
+.. spec:: Spec one
+   :id: SPEC_1
+   :status: closed
+   :ASIL_LEVEL: A
+"""
+
+FILTER_CONF = CONF + 'needs_fields = {"ASIL_LEVEL": {"nullable": True}}\n'
+
+# a name the (deprecated) ``needs_filter_data`` gives every filter
+FILTER_DATA = 'needs_filter_data = {"CURRENT_VERSION": "1.0"}\n'
+FILTER_DATA_DEPRECATED = (
+    "WARNING: needs_filter_data is deprecated and will be removed in a future "
+    "version. Use needs_variant_data instead. [needs.deprecated]"
+)
+
+# matched in full, it accepts every word of these arguments before their first ``.``
+LOWER_CASE_ID_REGEX = 'needs_id_regex = "^[A-Za-z0-9_]+"\n'
+
+EXTERNAL_PART_JSON = """\
+{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {
+  "id": "EXT_1", "type": "req", "title": "External", "docname": "ext",
+  "parts": {"a.b": {"id": "a.b", "content": "a record part whose id holds a dot"}}
+}}}}}
+"""
+
+EXTERNAL_CONF = (
+    CONF
+    + "needs_external_needs = [\n"
+    + '    {"base_url": "http://example.org/", "json_path": "external.json",'
+    + ' "id_prefix": ""}\n'
+    + "]\n"
+)
+
+
+def _filter_app(argument: str, *, id_regex: bool) -> dict[str, object]:
+    """A project whose index extracts ``argument`` from the needs of another page."""
+    index = f"""\
+Extract
+=======
+
+.. toctree::
+
+   needs
+
+.. needextract:: {argument}
+"""
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("conf.py"),
+                FILTER_CONF + FILTER_DATA + (LOWER_CASE_ID_REGEX if id_regex else ""),
+            ),
+            (Path("index.rst"), index),
+            (Path("needs.rst"), FILTER_NEEDS),
+        ],
+    }
+
+
+FILTERS = [
+    ('CURRENT_VERSION.startswith("1") and status == "open"', ["REQ_1"]),
+    ('ASIL_LEVEL.startswith("B")', ["REQ_1"]),
+    ('status.upper() == "OPEN"', ["REQ_1"]),
+    ('title.startswith("Req t")', ["REQ_1"]),
+    ('type.startswith("sp")', ["SPEC_1"]),
+    # the needs are on another page than the extract: it selects none
+    ("c.this_doc()", []),
+]
+FILTER_IDS = [
+    "filter-data-name",
+    "upper-case-field",
+    "method-call-compared",
+    "method-call-with-a-space",
+    "method-call",
+    "this-doc",
+]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extracted"),
+    [
+        *((_filter_app(argument, id_regex=False), ids) for argument, ids in FILTERS),
+        *((_filter_app(argument, id_regex=True), ids) for argument, ids in FILTERS),
+    ],
+    ids=[
+        *(f"default-id-regex-{name}" for name in FILTER_IDS),
+        *(f"project-id-regex-{name}" for name in FILTER_IDS),
+    ],
+    indirect=["test_app"],
+)
+def test_needextract_a_filter_is_read_as_a_filter(test_app, extracted):
+    """Each argument is a filter, run as one, as in 9.3.0: the needs it selects are
+    extracted (``c.this_doc()`` selects none on this page, and says so), and nothing is
+    reported but the configuration's deprecation."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [FILTER_DATA_DEPRECATED]
+    assert _extracted(app) == extracted
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert ("No needs passed the filters" in html) is (not extracted)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "argument", "extracted"),
+    [
+        (_filter_app("REQ_1.p1", id_regex=True), "REQ_1.p1", ["REQ_1"]),
+        (_filter_app("REQ_1.p9", id_regex=True), "REQ_1.p9", []),
+        (_filter_app("NOPE_1.p1", id_regex=True), "NOPE_1.p1", []),
+    ],
+    ids=["a-part-of-it", "part-missing", "part-of-a-missing-need"],
+    indirect=["test_app"],
+)
+def test_needextract_a_part_address_under_a_project_id_regex(
+    test_app, argument, extracted
+):
+    """Under a project's id pattern too, a part address names its need, and one that
+    does not resolve is reported as an id naming no need is."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [
+        FILTER_DATA_DEPRECATED,
+        *(
+            []
+            if extracted
+            else [
+                f"<srcdir>/index.rst:8: WARNING: Requested need {argument!r} not "
+                "found. [needs.needextract]"
+            ]
+        ),
+    ]
+    assert _extracted(app) == extracted
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EXTERNAL_CONF),
+                (Path("external.json"), EXTERNAL_PART_JSON),
+                (Path("index.rst"), "Extract\n=======\n\n.. needextract:: EXT_1.a.b\n"),
+            ],
+        }
+    ],
+    ids=["record-part"],
+    indirect=True,
+)
+def test_needextract_a_record_part_whose_id_holds_a_dot(test_app):
+    """A part a record states may hold a ``.``: ``EXT_1.a.b`` is the part ``a.b`` of the
+    external need EXT_1, so the argument names EXT_1, which needextract reports it
+    cannot extract (an external need has no content here), rather than an invalid
+    filter."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [
+        "<srcdir>/index.rst:4: WARNING: External needs cannot be used as targets by "
+        "needextract (ID 'EXT_1'). [needs.needextract]"
+    ]
