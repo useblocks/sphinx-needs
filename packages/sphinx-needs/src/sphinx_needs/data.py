@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 28
+ENV_DATA_VERSION: Final = 29
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -211,6 +211,11 @@ its namespace, a tuple of segments, and its local id, read from its id where it 
 before has neither, so its first ``need.id_local`` would end with an ``AttributeError``
 rather than re-reading the documents; every project re-reads its sources once after
 upgrading.
+
+Version 29 adds a field to every stored link type
+(:class:`~sphinx_needs.needs_schema.LinkSchema`): ``dependent``, which end of a link
+depends on the other, as the link type's entry gives it (``"source"`` unless given). A
+schema pickled by version 28 has no such field.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

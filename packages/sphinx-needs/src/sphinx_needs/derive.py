@@ -333,6 +333,13 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
                 f"{prefix}: 'summary' is not a role; whether a link type is a summary "
                 "is given on its needs_links entry, beside derive",
             )
+        if unknown[0] == "dependent":
+            # which end depends on the other is the link type's, under every rule of it
+            return DeriveInvalid(
+                kind,
+                f"{prefix}: 'dependent' is not a role; which end of a link depends on "
+                "the other is given on the link type's entry, beside derive",
+            )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
     if on_link and kind not in LINK_KINDS | PATH_KINDS:
         return DeriveInvalid(

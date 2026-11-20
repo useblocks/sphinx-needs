@@ -22,7 +22,7 @@ from typing import (
 import jsonschema_rs
 
 from sphinx_needs._wording import joined
-from sphinx_needs.config import NeedFields
+from sphinx_needs.config import LINK_DEPENDENT_VALUES, LinkDependent, NeedFields
 from sphinx_needs.derive import (
     Derive,
     DeriveInvalid,
@@ -854,6 +854,14 @@ class LinkSchema:
     ``collect`` rule computes it): its links materialise a path, not an edge, so it is
     read where it is named, and left out of every view reading all link types (a
     needflow without ``link_types``). Like ``display``, the same on every need type."""
+    dependent: LinkDependent = "source"
+    """Which end of a link depends on the other (``dependent``): ``"source"``, the need
+    the link is written on; ``"target"``, the need it points to; ``"both"``, each on
+    the other. Like ``display``, the same on every need type.
+
+    sphinx-needs does not act on it: it is kept as given for the tools that do
+    (impact analysis). On a summary link type or a ``union`` it is kept and means
+    nothing: impact analysis follows the link types it is computed from."""
     target_types: LinkTargetTypes | None = None
     """The need types the links may point to (``target_types``); ``None``: any.
 
@@ -920,6 +928,13 @@ class LinkSchema:
             raise ValueError("directive_option must be a boolean.")
         if not isinstance(self.summary, bool):
             raise ValueError("summary must be a boolean.")
+        if not (
+            isinstance(self.dependent, str) and self.dependent in LINK_DEPENDENT_VALUES
+        ):
+            raise ValueError(
+                "dependent must be one of "
+                f"{joined([repr(v) for v in LINK_DEPENDENT_VALUES])}."
+            )
         if not isinstance(self.predicate_defaults, tuple) or not all(
             isinstance(pair, tuple) and len(pair) == 2
             for pair in self.predicate_defaults
@@ -1341,8 +1356,9 @@ class LinkShape(FieldShape, Protocol):
 
     Besides a field's shape, how its links are drawn (``display``), whether they are
     copied into ``links`` (``copy``), whether a dead link is allowed
-    (``allow_dead_links``) and whether it is a summary (``summary``): every need type
-    declares a link type with the same ones.
+    (``allow_dead_links``), whether it is a summary (``summary``) and which end of a
+    link depends on the other (``dependent``): every need type declares a link type
+    with the same ones.
     """
 
     @property
@@ -1362,6 +1378,9 @@ class LinkShape(FieldShape, Protocol):
 
     @property
     def summary(self) -> bool: ...
+
+    @property
+    def dependent(self) -> LinkDependent: ...
 
     def union_on(self, need: NeedItem) -> DeriveRule | None: ...
 
@@ -2511,8 +2530,8 @@ def narrowing_problems(
        reports on each need); a literal the declaration introduces must be valid
        against its schema; a dynamic function or a variant is not checked;
     10. for a link type, the same ``display``, ``copy``, ``allow_dead_links``,
-        ``summary`` and ``parse_conditions``: a link type is drawn and resolved the
-        same on every need type;
+        ``summary``, ``dependent`` and ``parse_conditions``: a link type is drawn and
+        resolved the same on every need type;
     11. for a link type whose ``base`` has ``target_types``, ``target_types`` whose
         accepted types (a listed type and the types inheriting from it, the EXPANDED
         sets compared) are among those of ``base``: a link a need of the type may
@@ -2581,6 +2600,7 @@ def narrowing_problems(
             ("copy", overlay.copy == base.copy),
             ("allow_dead_links", overlay.allow_dead_links == base.allow_dead_links),
             ("summary", overlay.summary == base.summary),
+            ("dependent", overlay.dependent == base.dependent),
             ("parse_conditions", overlay.parse_conditions == base.parse_conditions),
         ):
             if not same:

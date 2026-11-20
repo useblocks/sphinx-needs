@@ -12,7 +12,9 @@ from typing import (
     Literal,
     NoReturn,
     SupportsIndex,
+    TypeAlias,
     TypedDict,
+    get_args,
 )
 
 from sphinx.application import Sphinx
@@ -593,6 +595,16 @@ Values can be:
 """
 
 
+LinkDependent: TypeAlias = Literal["source", "target", "both"]
+"""Which end of a link depends on the other, as a link type's ``dependent`` names it:
+the need the link is written on (``"source"``), the need it points to
+(``"target"``), or each on the other (``"both"``)."""
+
+#: The values of a link type's ``dependent``: the names of :data:`LinkDependent`, the
+#: one place they are written.
+LINK_DEPENDENT_VALUES: Final[tuple[LinkDependent, ...]] = get_args(LinkDependent)
+
+
 class NeedLinksConfig(TypedDict, total=False):
     """Defines a link type for needs (used in needs_links dict)"""
 
@@ -630,6 +642,21 @@ class NeedLinksConfig(TypedDict, total=False):
     ``link_types``). A link type a ``copy`` or ``collect`` rule computes is one. Default:
     False. On a link type declared on need types alone, the first root declaration's
     ``summary`` sets it (the others may repeat it).
+    """
+    dependent: NotRequired[LinkDependent]
+    """Which end of a link depends on the other: ``"source"``, the need the link is
+    written on depends on the need it points to (a specification's ``satisfies`` a
+    requirement); ``"target"``, the need it points to depends on the need the link is
+    written on (a requirement's ``satisfied_by`` a component); ``"both"``, each depends
+    on the other (a ``related`` between two peers). Default: ``"source"``.
+
+    sphinx-needs checks it and keeps it (:attr:`.LinkSchema.dependent`), and does not
+    act on it; impact analysis reads it. A value that is none of the names is a
+    ``needs.config`` finding, and ignored. On a link type declared on need types
+    alone, the first root declaration's ``dependent`` sets it (the others may repeat
+    it). On a summary link type (``summary = true``, or one a ``copy`` or ``collect``
+    computes) or a ``union`` it is kept and means nothing: impact analysis follows the
+    link types it is computed from.
     """
     target_types: NotRequired[list[str]]
     """
@@ -779,9 +806,10 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
 class NeedTypeLinkDeclaration(TypedDict, total=False):
     """A need type's declaration of a link type: a narrowing of its declaration.
 
-    The display, ``copy`` and ``allow_dead_links`` keys are a link type's on every need
-    type: a declaration gives them only of a link type declared on need types alone,
-    whose first root declaration sets them, as a ``needs_links`` entry would.
+    The display, ``copy``, ``allow_dead_links``, ``summary`` and ``dependent`` keys are
+    a link type's on every need type: a declaration gives them only of a link type
+    declared on need types alone, whose first root declaration sets them, as a
+    ``needs_links`` entry would.
     """
 
     description: str
@@ -795,6 +823,8 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     outgoing: str
     copy: bool
     allow_dead_links: bool
+    summary: bool
+    dependent: LinkDependent
     color: str
     style: str
     style_part: str
