@@ -11,7 +11,7 @@ Bug fixes
 .........
 
 - 🐛 In the places below that take a need id, a :ref:`need part <need_part>`'s address ``ID.part`` reads as its need,
-  as a link to a part already did
+  as a link to a part already did.
 
   The places: the targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml`
   and :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`,
