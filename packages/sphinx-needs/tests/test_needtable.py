@@ -390,16 +390,18 @@ def test_needtable_link_cell_reads_a_link_as_a_link_is_read(test_app):
 
 # A need whose id holds a ``.`` beside a need named by the text before that ``.``: a link
 # naming the dotted need whole is a link to that need, rendered as in 9.3.0, in the
-# forward column and in the back-link column (where it names the source of a link). What
-# such a link means is not settled; it is not read as a part ``1`` of REQ_005, which
-# REQ_005 does not have.
+# forward column and in the back-link column (where it names the source of a link),
+# whether or not REQ_005 has parts. What such a link means is not settled; it is not
+# read as a part ``1`` of REQ_005, which REQ_005 does not have.
 
 DOTTED_BESIDE_INDEX = """\
 Cells
 =====
 
-.. req:: No parts
+.. req:: The need named by the text before the dot
    :id: REQ_005
+
+   {prefix_parts}
 
 .. req:: A need whose id holds a dot, beside REQ_005
    :id: REQ_005.1
@@ -431,23 +433,24 @@ Cells
             "buildername": "html",
             "files": [
                 (Path("conf.py"), 'extensions = ["sphinx_needs"]\n'),
-                (Path("index.rst"), DOTTED_BESIDE_INDEX),
+                (Path("index.rst"), DOTTED_BESIDE_INDEX.format(prefix_parts=parts)),
             ],
         }
+        for parts in ("", "Text with :np:`(p1) a part` and :np:`(p2) another`.")
     ],
-    ids=["dotted-beside"],
+    ids=["dotted-beside", "dotted-beside-a-prefix-with-parts"],
     indirect=True,
 )
 def test_needtable_link_cell_a_dotted_need_beside_its_prefix(test_app):
-    """The cell links ``REQ_005.1`` as in 9.3.0, in both columns. Resolution reports
-    SPEC_1's link dead, as in 9.3.0 (its address split at the first ``.``): that
-    reading of a link to a need whose id holds a ``.`` is not settled, and not changed
-    here."""
+    """The cell links ``REQ_005.1`` as in 9.3.0, in both columns, whether REQ_005 has
+    parts or none (it has no part ``1``). Resolution reports SPEC_1's link dead, as in
+    9.3.0 (its address split at the first ``.``): that reading of a link to a need whose
+    id holds a ``.`` is not settled, and not changed here."""
     app = test_app
     app.build()
 
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:14: WARNING: Need 'SPEC_1' has unknown outgoing link "
+        "<srcdir>/index.rst:16: WARNING: Need 'SPEC_1' has unknown outgoing link "
         "'REQ_005.1' in field 'links' [needs.link_outgoing]"
     ]
     outgoing, incoming = _link_cells(app)
