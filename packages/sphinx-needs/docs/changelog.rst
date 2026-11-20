@@ -22,7 +22,7 @@ Bug fixes
   reported as ``:need:`` reports one (a ``needs.link_ref`` warning) and rendered as an unresolved reference. The need
   card's outgoing row and the list ``:need_outgoing:`` renders show a link to a part of an external need as they show
   one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
-  the need.
+  the need. (:pr:`2551`)
 
 - 🐛 Seven more places read a :ref:`need part <need_part>`'s address ``ID.part``, or a link to a part, as a link to a
   part is read: the address is split once at its first ``.``, and names the need when the need has the part.
@@ -69,8 +69,9 @@ Internal changes
   with no fields, no type and no outgoing links. Its cases, one project each, pin the role's grammar, which need a
   part belongs to, a repeated id, the address ``ID.part[condition]``, links to a part and their back links, and what
   a part answers in a filter that asks for parts; ``design/parts-contract.md`` states the rules and names what is
-  not settled yet. This repository is the corpus's repository of record, and ubCode is to vendor it. One case is
+  not on the page yet. This repository is the corpus's repository of record, and ubCode is to vendor it. One case is
   marked as an expected failure of sphinx-needs: a hidden need has no parts (:issue:`1321`). No behaviour changes.
+  (:pr:`2550`)
 
 .. _`release:9.3.0`:
 
