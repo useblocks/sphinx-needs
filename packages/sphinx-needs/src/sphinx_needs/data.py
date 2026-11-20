@@ -224,10 +224,10 @@ while ``needs.json`` says ``ID.``.
 Version 30 changes what a stored value means: the text of a need part written
 ``(id) text`` (:class:`~sphinx_needs.need_item.NeedPartData` ``content``) no longer keeps
 the white space at its ends, so ``(p1) first`` stores ``first`` where version 29 stored
-`` first``. It is decided when a document is read, and the shape is unchanged, so without
-the bump an upgraded build would keep the spaced texts of the documents whose sources did
-not change, in filters, labels and ``needs.json``, beside the stripped texts of those it
-re-reads.
+``" first"``. It is decided when a document is read, and the shape is unchanged, so
+without the bump an upgraded build would keep the spaced texts of the documents whose
+sources did not change, in filters, labels and ``needs.json``, beside the stripped texts
+of those it re-reads.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

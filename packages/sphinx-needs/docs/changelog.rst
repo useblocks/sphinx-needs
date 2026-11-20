@@ -68,16 +68,16 @@ Bug fixes
   ``(id)`` (:issue:`1437`): ``(p1) first`` has the text ``first``, where it had ``" first"``, and a text written on the
   line after its ``(id)`` no longer starts with a line break. White space at the end, which a MyST role can hold, is
   removed too; white space and line breaks inside the text are kept. White space is Unicode's ``White_Space``. No
-  part id changes, and a part with no ``(id)`` keeps its whole text as written. A text a record states, the
-  ``parts`` of an external need or the ``parts`` given to ``add_need``, is kept as given.
+  part id changes, and a part with no ``(id)`` keeps its whole text as written. A text a record states is kept as
+  given: the ``parts`` of an external need, and ``parts`` given to ``add_need`` where it keeps them.
 
   **Changed output**: a part's text wherever it is shown or read: in needs.json ``parts`` (and ``content.parts`` of
   the draft format 2a1); as ``content`` in a filter; in the text of ``:need:`` and of a need card's link to a part,
   whose 30-character cut (:ref:`needs_role_need_max_title_length` for ``:need:``) now counts from the first word; in
   :ref:`needtable` ``:show_parts:`` rows and :ref:`needflow` labels, so a needflow image is written again under a new
-  name; and on the page where a part follows punctuation, as ``(\ :np:`(p1) first`)``, which renders ``(first p1)``
-  where it rendered ``( first p1)``. A filter comparing ``content == " first"`` must drop the space. The first build
-  after upgrading reads every document again.
+  name; and on the page where a part directly follows a character other than white space, such as punctuation:
+  ``(\ :np:`(p1) first`)`` renders ``(first p1)`` where it rendered ``( first p1)``. A filter comparing
+  ``content == " first"`` must drop the space. The first build after upgrading reads every document again.
 
 Internal changes
 ................
