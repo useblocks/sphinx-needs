@@ -93,8 +93,8 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
 
     The node only marks where a part is while needs are collected and resolved; what a
     reader sees is its ``inline`` (the part's text, with its id and its link). Removing
-    the wrapper before any writer runs means no writer, of Sphinx or of another
-    extension, has to know the node.
+    the wrapper before a writer runs means a writer, of Sphinx or of another extension,
+    need not know the node for a part in a page's body.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
     and for every document: a part on a page holding no need is in the tree too.

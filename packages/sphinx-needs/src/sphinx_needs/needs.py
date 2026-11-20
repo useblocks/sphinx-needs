@@ -513,7 +513,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     )
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
-    # last: no writer sees a NeedPart, so every builder writes a part (#2556)
+    # last: a writer gets a part in a page's body without its NeedPart wrapper (#2556)
     app.connect("doctree-resolved", unwrap_need_parts, priority=900)
 
     app.connect("write-started", process_schemas)
