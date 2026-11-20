@@ -299,12 +299,14 @@ _UNION = {"kind": "union", "fields": ["satisfies", "satisfied_by"]}
 _BY_TYPE = {"spec": {"kind": "links", "where": "type == 'req'"}}
 _COPY = {"kind": "copy", "field": "id", "over": "satisfies"}
 _SELECTED = {"kind": "links", "where": "type == 'comp'"}
+_MENTIONED = {"kind": "content_links"}
 needs_links = {
     "satisfies": {**DEPENDENT.get("satisfies", {})},
     "satisfied_by": {"outgoing": "is satisfied by", **DEPENDENT.get("satisfied_by", {})},
     "trace": {"derive": _UNION, **DEPENDENT.get("trace", {})},
     "refines": {"derive_by_type": _BY_TYPE, **DEPENDENT.get("refines", {})},
     "selected": {"derive": _SELECTED, **DEPENDENT.get("selected", {})},
+    "mentions": {"derive": _MENTIONED, **DEPENDENT.get("mentions", {})},
     "covers": {"summary": True, **DEPENDENT.get("covers", {})},
 }
 needs_extra_links = [{"option": "old", **DEPENDENT.get("old", {})}]
@@ -335,6 +337,7 @@ EVERY_ROUTE = {
     "trace": "both",
     "refines": "target",
     "selected": "target",
+    "mentions": "target",
     "covers": "target",
     "old": "target",
     "realised_by": "target",
@@ -359,6 +362,8 @@ Every route
    :satisfied_by: REQ_1
    :covers: REQ_1
    :old: REQ_1
+
+   Mentions :need:`REQ_1`.
 """
 
 
@@ -393,7 +398,8 @@ def test_dependent_on_a_summary_or_union_link_type(
     make_app: Any, tmp_path: Path
 ) -> None:
     """On a summary link type (``summary = true``, a ``copy`` or ``collect``), a union,
-    and a ``links`` rule's link type (an ordinary one for ``dependent``), beside a
+    and a ``links`` or ``content_links`` rule's link type (an ordinary one for
+    ``dependent``), beside a
     ``derive`` or a ``derive_by_type``, on a ``needs_links`` entry and on a need type's
     declaration alike, ``dependent`` is accepted with no finding -- no
     ``derive_invalid``, as ``summary = false`` beside a copy is -- and kept as given;
@@ -419,6 +425,7 @@ def test_needs_json_is_the_same_with_dependent_as_without(
     assert needs["SPEC_1"]["trace"] == ["REQ_1"]
     assert needs["SPEC_1"]["refines"] == ["REQ_1"]
     assert needs["SPEC_1"]["selected"] == ["COMP_1"]
+    assert needs["SPEC_1"]["mentions"] == ["REQ_1"]
     assert needs["SPEC_1"]["chain"] == ["REQ_1"]
     assert needs["SPEC_1"]["both_ways"] == ["REQ_1"]
     assert needs["REQ_1"]["realised_by"] == ["COMP_1"]

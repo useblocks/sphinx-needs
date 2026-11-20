@@ -655,8 +655,9 @@ class NeedLinksConfig(TypedDict, total=False):
     ``needs.config`` finding, and ignored. On a link type declared on need types
     alone, the first root declaration's ``dependent`` sets it (the others may repeat
     it). On a summary link type (``summary = true``, or one a ``copy`` or ``collect``
-    computes) or a ``union`` it is kept and means nothing: impact analysis follows the
-    link types it is computed from.
+    computes) or a ``union`` it is kept and means nothing: impact analysis does not
+    follow such a link type, and follows the link types a computed one is computed
+    from.
     """
     target_types: NotRequired[list[str]]
     """

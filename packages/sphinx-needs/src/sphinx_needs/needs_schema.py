@@ -861,7 +861,8 @@ class LinkSchema:
 
     sphinx-needs does not act on it: it is kept as given for the tools that do
     (impact analysis). On a summary link type or a ``union`` it is kept and means
-    nothing: impact analysis follows the link types it is computed from."""
+    nothing: impact analysis does not follow such a link type, and follows the link
+    types a computed one is computed from."""
     target_types: LinkTargetTypes | None = None
     """The need types the links may point to (``target_types``); ``None``: any.
 

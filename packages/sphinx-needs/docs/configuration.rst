@@ -1348,7 +1348,8 @@ Each configured link can define:
   which the others may repeat (:ref:`needs_types_fields`).
   It is accepted beside any rule (``derive``, ``derive_by_type``); a rule itself does not give it, where it is no role (``needs.derive_invalid``).
   On a summary link type (``summary = true``, or one a ``copy`` or ``collect`` computes) or a :ref:`union <needs_derive_union>`
-  it is kept and means nothing: impact analysis follows the link types it is computed from.
+  it is kept and means nothing: impact analysis does not follow such a link type,
+  and follows the link types a computed one is computed from.
   A value that is none of the three names is a ``needs.config`` warning, and ignored::
 
      needs_links['satisfied_by'] has a 'dependent' that is not one of 'source', 'target' and 'both' (got 'upstream'); the key is ignored
