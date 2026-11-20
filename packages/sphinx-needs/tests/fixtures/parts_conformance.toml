@@ -14,7 +14,9 @@
 # excludes it: every `config`, `source` and `files` body, `'''...'''` or `"""..."""`, is
 # the INPUT of a case, and a part's text is compared character for character, so a
 # formatter touching one silently changes what the case tests. A change here is a change
-# to the contract, and owes ubCode a re-vendor. Invisible characters are written as escapes.
+# to the contract, and owes ubCode a re-vendor. A character that cannot be seen (a tab, a
+# no-break space, a control character) is written as an escape, so a body holding one is
+# a `"""..."""` string.
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (its `[needs]` table, and the
@@ -287,7 +289,7 @@ REQ_1 = { m1 = "first line\nsecond line" }
 [[case]]
 name = "grammar-all-white-space-before-the-text"
 section = "grammar"
-why = "all the white space before the text is removed, of any kind and any length: several spaces, a no-break space and a tab (in MyST, as reStructuredText turns a tab into spaces) after (id) all leave the text alone"
+why = "the white space before the text is removed whatever its kind and number: several spaces, a no-break space, and a tab (written in MyST: reStructuredText turns a tab into spaces before a role reads it)"
 extensions = ["myst_parser"]
 config = '''
 [needs]
@@ -300,7 +302,7 @@ source = """
 .. req:: Parts
    :id: REQ_1
 
-   :np:`(a1)   after spaces` and :np:`(a2) after a no-break space`
+   :np:`(a1)   after spaces` and :np:`(a2)\u00A0after a no-break space`
 """
 files = { "page.md" = """# Page
 
@@ -319,7 +321,7 @@ REQ_MD = { a3 = "after a tab" }
 [[case]]
 name = "grammar-a-control-character-is-no-white-space"
 section = "grammar"
-why = "only white space is removed: U+001F, a control character that is no white space, after (id) and a space is kept, and the text begins with it"
+why = "only white space is removed: after (id) and a space, U+001F (a control character that is no white space) is kept, and the text begins with it"
 config = '''
 [needs]
 '''
@@ -352,7 +354,7 @@ files = { "page.md" = """# Page
 ```{req} Trailing
 :id: REQ_MD
 
-A part {np}`(c1) before spaces   ` and {np}`(c2) before a no-break space `.
+A part {np}`(c1) before spaces   ` and {np}`(c2) before a no-break space\u00A0`.
 ```
 """ }
 [case.expect]
@@ -378,13 +380,13 @@ files = { "page.md" = """# Page
 ```{req} Untrimmed
 :id: REQ_MD
 
-A part {np}`  no id, both ends kept `.
+A part {np}`  no id, both ends kept\u00A0`.
 ```
 """ }
 [case.expect]
 findings = []
 [case.expect.parts]
-REQ_MD = { 77E = "  no id, both ends kept " }
+REQ_MD = { 77E = "  no id, both ends kept\u00A0" }
 
 # --- placement -------------------------------------------------------------------------
 
