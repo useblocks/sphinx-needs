@@ -20,6 +20,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs import _read_watch
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.derive import (
@@ -176,7 +177,10 @@ def copy(
     :return: string of copied need option
     """
     if need_id:
-        need = needs[need_id]
+        # a part address reads as its need; one naming no need fails as it always did
+        if (named := need_at(needs, need_id)) is None:
+            raise KeyError(need_id)
+        need = named
 
     if filter:
         location = (
@@ -581,7 +585,9 @@ def links_from_content(
     :return: List of linked need-ids in content
     """
     if need_id:
-        source_need_id = need_id
+        # a part address reads as its need; one naming no need is reported below
+        source = need_at(needs, need_id)
+        source_need_id = need_id if source is None else source["id"]
     elif need is None:
         raise ValueError("No need found for links_from_content")
     elif isinstance(need, NeedPartItem):
@@ -972,7 +978,11 @@ def execute_rule(
         return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
         found = links_from_content(app, need, needs, need_id=rule.from_need)
-        source_id = need["id"] if rule.from_need is None else rule.from_need
+        source_id = need["id"]
+        if rule.from_need is not None:
+            # as links_from_content reads it: a part address reads as its need
+            source = need_at(needs, rule.from_need)
+            source_id = rule.from_need if source is None else source["id"]
         if SphinxNeedsData(app.env).get_need_node(source_id) is None:
             # a failed read (no such need, a part, a need without stored content),
             # which links_from_content reported: no value, so the field keeps its
@@ -996,9 +1006,10 @@ def execute_rule(
     if rule.kind == "copy" and rule.over is None:
         source = need
         if rule.from_need is not None:
-            if rule.from_need not in needs:
+            # a part address reads as its need
+            if (named := need_at(needs, rule.from_need)) is None:
                 raise ValueError(f"'from' names no need: {rule.from_need!r}")
-            source = needs[rule.from_need]
+            source = named
         assert rule.field is not None, "copy has a field"
         if reads is not None:
             reads.note_read(source, rule.field)

@@ -377,9 +377,12 @@ def _starts(start: str, conf: str = CONF, ns: str = "") -> dict[str, object]:
 
 def _sequence_of_user_a(ns: str = "") -> str:
     name = ns.replace("::", "__")
+    # a receiver whose name is not its id is declared, with its id as its title
+    receiver = f'participant "{ns}USER_B" as {name}USER_B\n' if ns else ""
     return (
         "@startuml\n\n' Nodes definition \n\n"
         f'participant "User A" as {name}USER_A\n'
+        f"{receiver}"
         "\n' Connection definition \n\n"
         f"{name}USER_A -> {name}USER_B: Message 1\n"
         "\n@enduml"

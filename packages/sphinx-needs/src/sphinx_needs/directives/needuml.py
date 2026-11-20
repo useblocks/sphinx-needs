@@ -12,6 +12,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs._jinja import render_template_string
+from sphinx_needs._part_address import need_at
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -403,10 +404,12 @@ class JinjaFunctions:
         return self.processed_need_ids
 
     def uml_from_need(self, need_id: str, key: str = "diagram", **kwargs: Any) -> str:
-        if need_id not in self.needs:
+        # a part address reads as its need, which is drawn as if named by its id
+        if (need := need_at(self.needs, need_id)) is None:
             raise NeedumlException(
                 f"Jinja function uml() is called with undefined need_id: '{need_id}'."
             )
+        need_id = need["id"]
 
         if self.data_in_processed_data(
             need_id=need_id, art="uml", key=key, kwargs=kwargs
@@ -454,10 +457,12 @@ class JinjaFunctions:
         return uml
 
     def flow(self, need_id: str) -> str:
-        if need_id not in self.needs:
+        # a part address reads as its need, which is drawn as if named by its id
+        if (need := need_at(self.needs, need_id)) is None:
             raise NeedumlException(
                 f"Jinja function flow is called with undefined need_id: '{need_id}'."
             )
+        need_id = need["id"]
 
         if self.data_in_processed_data(need_id=need_id, art="flow", key="", kwargs={}):
             return ""

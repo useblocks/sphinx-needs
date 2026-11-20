@@ -127,7 +127,7 @@ def test_a_part_address_reads_as_its_need(test_app: Sphinx, role: str):
             ("need-missing", "NOPE_1", False),
             ("part-of-a-missing-need", "NOPE_1.p1", False),
             # a condition is not taken off: ``p1[…]`` is a part REQ_1 does not have
-            ("condition-after-the-part", 'REQ_1.p1[status == "open"]', True),
+            ("condition-after-the-part", "REQ_1.p1[is_need]", True),
         )
     ],
     indirect=["test_app"],
@@ -222,7 +222,7 @@ Card
 
 .. spec:: Linker
    :id: SPEC_1
-   :links: EXT_1.rp, EXT_1, REQ_1.p1, EXT_1.a.b
+   :links: EXT_1, EXT_1.a.b, EXT_1.rp, REQ_1.p1
 
 Out: :need_outgoing:`EXT_1.rp`
 """
@@ -243,7 +243,7 @@ def _row(html: str, need_id: str) -> str:
     """The links of the outgoing row of the card of *need_id*."""
     card = html[html.index(f'id="{need_id}"') :]
     match = re.search(
-        r'outgoing: </span><span class="links"><span>(.*?)</span></span>', card, re.S
+        r'outgoing: <span class="links"><span>(.*?)</span></span>', card, re.S
     )
     assert match is not None
     return match[1]
@@ -265,7 +265,8 @@ _URL = "http://example.org/__error__.html"
             _external(EXTERNAL_CONF + "needs_show_link_title = True\n"),
             (
                 "a record part (EXT_1.rp)",
-                "local part (REQ_1.p1)",
+                # the text of a part marked `(p1) local part` keeps its leading space
+                " local part (REQ_1.p1)",
                 "a dotted part (EXT_1.a.b)",
             ),
             id="show-link-title",
@@ -287,12 +288,12 @@ def test_the_card_row_keeps_an_external_parts_address(
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     external, local, dotted = texts
     assert _row(html, "SPEC_1") == (
+        f'<a class="external_link reference external" href="{_URL}#EXT_1">EXT_1</a>, '
+        f'<a class="external_link reference external" href="{_URL}#EXT_1.a.b">'
+        f"{dotted}</a>, "
         f'<a class="external_link reference external" href="{_URL}#EXT_1.rp">'
         f"{external}</a>, "
-        f'<a class="external_link reference external" href="{_URL}#EXT_1">EXT_1</a>, '
-        f'<a class="reference internal" href="#REQ_1.p1" title="SPEC_1">{local}</a>, '
-        f'<a class="external_link reference external" href="{_URL}#EXT_1.a.b">'
-        f"{dotted}</a>"
+        f'<a class="reference internal" href="#REQ_1.p1" title="SPEC_1">{local}</a>'
     )
     # a role naming the external part lists the external need's links
     assert _paragraph(html, "Out") == (

@@ -1,0 +1,37 @@
+"""Where a need is expected, a part address reads as its need.
+
+The first rule of ``design/parts-contract.md``, for every place that is given the id of
+ONE need and reads that need: a role's target, a needuml function's argument, a
+needsequence start, a dynamic function's ``need_id``, a derived field's ``from``.
+:func:`need_at` is the one lookup they share; each place keeps its own report of an
+address that does not resolve.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+
+from sphinx_needs.need_item import NeedItem, NeedLink
+
+
+def need_at(needs: Mapping[str, NeedItem], address: str, /) -> NeedItem | None:
+    """The need *address* names where a need is expected, or ``None``.
+
+    An address naming a need whole is that need, as it always was (a need id holding a
+    ``.`` included: what such an id means is not settled, so it is not changed here).
+    Any other address is split as a link's address is
+    (:meth:`~sphinx_needs.need_item.NeedLink.parse_address`: at its first ``.``, a
+    namespace staying with the need's id), and names the need when the need has the
+    part. A part the need does not have names nothing, as an id naming no need does:
+    the caller reports it as it reports such an id, naming the address as written. No
+    condition is taken off: ``REQ_1.p1[cond]`` names the part ``p1[cond]``.
+
+    :param needs: The needs, by id.
+    :param address: A need id, or ``<need id>.<part id>``.
+    """
+    if (need := needs.get(address)) is not None:
+        return need
+    link = NeedLink.parse_address(address)
+    if link.part is None or (need := needs.get(link.id)) is None:
+        return None
+    return need if need.get_part(link.part) is not None else None
