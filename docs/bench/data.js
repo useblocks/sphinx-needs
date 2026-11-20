@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795185770709,
+  "lastUpdate": 1795195542494,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30618,6 +30618,48 @@ window.BENCHMARK_DATA = {
             "value": 194.571337,
             "unit": "MB",
             "extra": "Commit: a2c2a8679784bf21ea1845248947b5abb29e0b82\nBranch: master\nTime: 2026-11-20T15:41:25+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "06558915ea9c303b7da2193ed86a65c6147c2e6f",
+          "message": "🐛 sphinx-needs: need parts build with text, man and epub, and a graphviz needflow draws a part with no text (#2558)\n\nTwo fixes for need parts (`:np:` / `:need_part:`).\n\n**A part in a need's content no longer stops a builder.** Only `html`\nand `latex` knew the node that marks a part, so `text`, `man` and `epub`\nended the build on a page with a part (`departing unknown node type:\nNeedPart`), and `texinfo` warned. The marker is now removed from the\nresolved document before a writer runs, leaving the part as the inline\ntext it is, with its id and its link, for Sphinx's writers and another\nextension's alike. A new test builds a page with parts with every\nbuilder the running Sphinx registers, so a builder added later is\ncovered without a new test.\n\n- `html` and `latex` output does not change: compared byte for byte\nagainst `master` over every test fixture, the documentation's html, and\nthe documentation's latex without one page that does not build with\nlatex on `master` either.\n- **Changed output**: `xml` and `pseudoxml` no longer write a `NeedPart`\nelement around a part; the part's `inline` inside it is written as\nbefore.\n- Not covered: a part written in a section title. It is outside every\nneed and is reported as that; Sphinx copies a title into its tables of\ncontents when the page is read, before this change can reach it, so such\na part still ends the `text` and `epub` builds.\n\n**A graphviz needflow draws a part with no text.** The label put the\npart's text in `<b>…</b>` even when there was none, and `dot` refuses an\nempty `<b></b>`, so the whole diagram was not rendered. The same held\nfor a need with no title. The empty line is now left out, and the node\nis labelled by its type and id. The PlantUML engine was not affected,\nand its source does not change.\n\n**How it was checked.**\n\n- The tests were committed first and failed against the unfixed code:\n`text`, `man` and `epub` raised, `texinfo` warned, and `dot` reported\nits syntax error. Removing the fix for one builder alone makes the\nall-builders test name that builder.\n- A review attacked the change through what the comparison could not\nsee: a writer of another extension, Sphinx 7.4 and 9.2, MyST, a parallel\nbuild, an incremental build that reads nothing again, needs copied by\n`needextract`, and the label through a real `dot` for a part with no\ntext, a need with no title and a text of html-special characters. It\nfound both fixes correct for every part in a need, three sentences that\nclaimed more than the fix does, and two checks the all-builders test\nlacked; all are addressed here.\n\nCloses #2556\nCloses #2557",
+          "timestamp": "2026-11-20T18:23:52+01:00",
+          "tree_id": "f13bec4b5eff8b2d748c74c9dd1fba5586178954",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/06558915ea9c303b7da2193ed86a65c6147c2e6f"
+        },
+        "date": 1795195541840,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07759981900000668,
+            "unit": "s",
+            "extra": "Commit: 06558915ea9c303b7da2193ed86a65c6147c2e6f\nBranch: master\nTime: 2026-11-20T18:23:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 15.729321956999996,
+            "unit": "s",
+            "extra": "Commit: 06558915ea9c303b7da2193ed86a65c6147c2e6f\nBranch: master\nTime: 2026-11-20T18:23:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 194.726864,
+            "unit": "MB",
+            "extra": "Commit: 06558915ea9c303b7da2193ed86a65c6147c2e6f\nBranch: master\nTime: 2026-11-20T18:23:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
