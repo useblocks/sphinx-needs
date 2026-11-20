@@ -34,7 +34,7 @@ Please read :ref:`filter` for more information.
 
 It also supports arguments as filter string,
 which works like the option ``filter``, but also
-supports need ID as filter argument.
+supports need ID as filter argument. A need part's address (``ID.part``) reads as the part's need.
 
 .. syntax-example::
 
