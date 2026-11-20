@@ -979,6 +979,33 @@ X_B_TST1 = []
 [case.expect.back]
 "X_A_REQ1.ip" = { tests = ["X_B_TST1"] }
 
+[[case]]
+name = "links-a-network-rule-reads-the-need"
+section = "links"
+why = "a schema's network rule validates the need a link to a part names: a part of a spec satisfies a rule asking for a link to a spec, and nothing is reported"
+clean = true
+config = '''
+[[needs.schema_definitions.schemas]]
+select = { properties = { type = { const = "impl" } } }
+validate = { network = { links = { contains = { local = { properties = { type = { const = "spec" } } } }, minContains = 1 } } }
+'''
+source = '''
+.. spec:: A specification
+   :id: SPEC_1
+
+   :np:`(s1) a specification's part`
+
+.. impl:: Links the part
+   :id: IMPL_1
+   :links: SPEC_1.s1
+'''
+[case.expect]
+findings = []
+[case.expect.dead]
+IMPL_1 = []
+[case.expect.back]
+"SPEC_1.s1" = { links = ["IMPL_1"] }
+
 # --- answers ---------------------------------------------------------------------------
 
 [[case]]

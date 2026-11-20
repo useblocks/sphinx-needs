@@ -313,3 +313,106 @@ def test_an_existing_id_holding_a_filter_character_is_written_bracketed(
     assert warnings[0].startswith("<srcdir>/index.rst:7: WARNING: "), warnings[0]
     assert "'REQ_001(A)'" in warnings[0]
     assert "Provided id" not in warnings[0]
+
+
+PART_INDEX = """\
+Index
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   Text with :np:`(p1) the part`.
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+
+.. needextend:: {argument}
+   :+tags: x
+"""
+
+
+def _part_app(argument: str, **overrides: object) -> dict[str, object]:
+    return {
+        "buildername": "html",
+        "files": [
+            (Path("conf.py"), CONF),
+            (Path("index.rst"), PART_INDEX.format(argument=argument)),
+        ],
+        **overrides,
+    }
+
+
+def _names_a_part(argument: str) -> str:
+    return (
+        f"Provided id {argument!r} for needextend names a part of the need 'REQ_1': "
+        "a part has no fields and cannot be extended; extend the need."
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "argument"),
+    [
+        (_part_app("REQ_1.p1"), "REQ_1.p1"),
+        (_part_app("<REQ_1.p1>"), "REQ_1.p1"),
+    ],
+    ids=["bare", "bracketed"],
+    indirect=["test_app"],
+)
+def test_a_part_address_is_refused_naming_the_part(test_app: Sphinx, argument: str):
+    """A part has no fields, so it cannot be extended: the address is refused with the
+    warning an id naming no need gets, and its message says the address names a part
+    of the need and to extend the need. Nothing is extended."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:12: WARNING: {_names_a_part(argument)} [needs.needextend]"
+    ]
+    assert needs_by_id(app)["REQ_1"]["tags"] == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_part_app("REQ_1.p1", confoverrides={"needs_needextend_strict": True})],
+    ids=["strict"],
+    indirect=True,
+)
+def test_a_part_address_under_strict_ends_the_build(test_app: Sphinx):
+    """Strictness is as for an id naming no need: the build ends, with the message."""
+    with pytest.raises(NeedsInvalidFilter, match=re.escape(_names_a_part("REQ_1.p1"))):
+        test_app.build()
+
+
+@pytest.mark.parametrize(
+    ("test_app", "argument"),
+    [
+        (_part_app("REQ_1.p9"), "REQ_1.p9"),
+        (_part_app("NOPE_1.p1"), "NOPE_1.p1"),
+    ],
+    ids=["part-missing", "part-of-a-missing-need"],
+    indirect=["test_app"],
+)
+def test_an_address_naming_no_part_is_reported_as_before(
+    test_app: Sphinx, argument: str
+):
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:12: WARNING: Provided id {argument!r} for needextend "
+        "does not exist. [needs.needextend]"
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_app("REQ_9.x")], ids=["no-need-REQ_9"], indirect=True
+)
+def test_a_need_id_holding_a_dot_is_extended_as_before(test_app: Sphinx):
+    """``REQ_9.x`` is a need (there is no need ``REQ_9``): it is extended, as in 9.3.0,
+    which takes no side on what such an id should mean."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    assert needs_by_id(app)["REQ_9.x"]["tags"] == ["x"]

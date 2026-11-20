@@ -430,6 +430,123 @@ def test_needsequence_start_that_does_not_resolve(test_app: Sphinx, start: str):
     assert excinfo.value.__context__ is None
 
 
+# --- needflow ----------------------------------------------------------------------------
+#
+# A ``:root_id:`` naming a part starts the walk at the part's need, and the walk follows a
+# link to a part to the part's need; a dead part link is not followed. An edge is a part
+# edge when its link names a part; the id of the need the link starts at plays no part.
+
+FLOW_CONF = CONF + 'needs_flow_engine = "plantuml"\n'
+
+ROOTS = """\
+Roots
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. spec:: Links a part
+   :id: SPEC_1
+   :links: REQ_1.p1
+
+.. req:: Unconnected
+   :id: REQ_2
+
+.. impl:: Links a part its need does not have
+   :id: IMPL_1
+   :links: REQ_2.zz
+
+.. needflow::
+   :root_id: REQ_1
+
+.. needflow::
+   :root_id: REQ_1.p1
+
+.. needflow::
+   :root_id: SPEC_1
+   :root_direction: outgoing
+
+.. needflow::
+   :root_id: IMPL_1
+"""
+
+
+def _drawn(uml: str) -> tuple[set[str], set[str]]:
+    """The names a diagram draws a node as, and its edges, each as written."""
+    names = set(re.findall(r'^\s*(?:node|rectangle) ".*" as (\S+)', uml, re.M))
+    edges = {line.strip() for line in uml.splitlines() if "->" in line}
+    return names, edges
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(FLOW_CONF, ROOTS)], ids=["roots"], indirect=True
+)
+def test_needflow_root_id_a_part_address_reads_as_its_need(test_app: Sphinx):
+    app = test_app
+    sources = _capture(app)
+    app.build()
+    assert build_warnings(app) == [_dead("IMPL_1", 16, "REQ_2.zz")]
+
+    assert len(sources) == 4
+    of_the_need, of_the_part, outgoing_from_spec, from_a_dead_link = sources
+    # the root REQ_1.p1 draws what the root REQ_1 draws
+    assert of_the_part == of_the_need
+    assert _drawn(of_the_need) == (
+        {"REQ_1", "REQ_1.p1", "REQ_1.p2", "SPEC_1"},
+        {"SPEC_1 -[dotted]-> REQ_1.p1"},
+    )
+    # the walk follows SPEC_1's link to REQ_1.p1 to REQ_1
+    assert _drawn(outgoing_from_spec) == _drawn(of_the_need)
+    # and does not follow a link to a part REQ_2 does not have
+    assert _drawn(from_a_dead_link) == ({"IMPL_1"}, set())
+
+
+EDGES = """\
+Edges
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one`
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+   :links: REQ_1
+
+.. spec:: Links
+   :id: SPEC_1
+   :links: REQ_1, REQ_1.p1, REQ_9.x
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(FLOW_CONF, EDGES)], ids=["edges"], indirect=True
+)
+def test_needflow_a_part_edge_is_one_whose_link_names_a_part(test_app: Sphinx):
+    """``REQ_9.x`` is a need, and there is no need ``REQ_9``. Its link to ``REQ_1`` is
+    drawn as a link between needs; it was drawn as a part edge because its id holds a
+    ``.``. ``SPEC_1``'s link to ``REQ_9.x`` names the part ``x`` of ``REQ_9`` as a link is
+    read, which resolution reports dead: what a link to a need whose id holds a ``.``
+    means is not settled, and its edge is drawn as in 9.3.0."""
+    app = test_app
+    sources = _capture(app)
+    app.build()
+    assert build_warnings(app) == [_dead("SPEC_1", 13, "REQ_9.x")]
+
+    [uml] = sources
+    assert _drawn(uml)[1] == {
+        "REQ_9.x --> REQ_1",
+        "SPEC_1 --> REQ_1",
+        "SPEC_1 -[dotted]-> REQ_1.p1",
+        "SPEC_1 -[dotted]-> REQ_9.x",
+    }
+
+
 # --- needgantt ---------------------------------------------------------------------------
 
 GANTT = """\

@@ -770,3 +770,120 @@ def test_needextract_discards_post_transform_state(test_app):
 
     state = Path(app.outdir, "state.log").read_text(encoding="utf8").split()
     assert state == ["sentinel=False", "highlight_language=''"], state
+
+
+# -- A part address as the argument ------------------------------------------
+#
+# Given a need part's address ``ID.part``, needextract extracts the need, as it does
+# for ``ID``: the argument names one need. An address naming a part its need does not
+# have, or a part of no need, is reported as an id naming no need is, naming the
+# address as written; such an argument was read as a filter string and reported as an
+# invalid filter. A need id holding a ``.`` is read whole, as it was.
+
+PART_NEEDS = """\
+Needs
+=====
+
+.. req:: Parts
+   :id: REQ_1
+
+   Text with :np:`(p1) the part`.
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+"""
+
+NAMESPACED_PART_NEEDS = """\
+Needs
+=====
+
+.. req:: In a namespace
+   :id: nc::REQ_3
+
+   Text with :np:`(p3) a namespaced part`.
+"""
+
+NAMESPACED_CONF = CONF + "needs_namespaced_ids = True\n"
+
+
+def _extract_app(argument: str, *, namespaced: bool = False) -> dict[str, object]:
+    """A project whose index extracts ``argument`` and whose needs are on another page."""
+    index = f"""\
+Extract
+=======
+
+.. toctree::
+
+   needs
+
+.. needextract:: {argument}
+"""
+    return {
+        "buildername": "html",
+        "files": [
+            (Path("conf.py"), NAMESPACED_CONF if namespaced else CONF),
+            (Path("index.rst"), index),
+            (Path("needs.rst"), NAMESPACED_PART_NEEDS if namespaced else PART_NEEDS),
+        ],
+    }
+
+
+def _extracted(app) -> list[str]:
+    """The ids of the need cards on the index page, which only the extract puts there."""
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    return tree.xpath("//table[contains(concat(' ', @class, ' '), ' need ')]/@id")
+
+
+@pytest.mark.parametrize(
+    ("test_app", "extracted"),
+    [
+        (_extract_app("REQ_1"), "REQ_1"),
+        (_extract_app("REQ_1.p1"), "REQ_1"),
+        (_extract_app("nc::REQ_3.p3", namespaced=True), "nc::REQ_3"),
+        (_extract_app("REQ_9.x"), "REQ_9.x"),
+    ],
+    ids=["the-need", "a-part-of-it", "a-part-of-a-namespaced-need", "a-dotted-need-id"],
+    indirect=["test_app"],
+)
+def test_needextract_a_part_address_extracts_its_need(test_app, extracted):
+    """The need is extracted, as for its id, and nothing is reported.
+
+    ``REQ_9.x`` is a need whose id holds a ``.``, and there is no need ``REQ_9``: it is
+    read whole, as in 9.3.0, which takes no side on what such an id should mean.
+    """
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == []
+    assert _extracted(app) == [extracted]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "argument"),
+    [
+        (_extract_app("REQ_1.p9"), "REQ_1.p9"),
+        (_extract_app("NOPE_1.p1"), "NOPE_1.p1"),
+        (_extract_app("NOPE_1"), "NOPE_1"),
+        (_extract_app("nc::REQ_3.p9", namespaced=True), "nc::REQ_3.p9"),
+    ],
+    ids=[
+        "part-missing",
+        "part-of-a-missing-need",
+        "need-missing",
+        "namespaced-part-missing",
+    ],
+    indirect=["test_app"],
+)
+def test_needextract_an_address_that_does_not_resolve(test_app, argument):
+    """Reported as an id naming no need is, naming the address as written; nothing is
+    extracted, and the page is written."""
+    app = test_app
+    app.build()
+
+    assert warning_lines(app) == [
+        f"<srcdir>/index.rst:8: WARNING: Requested need {argument!r} not found. "
+        "[needs.needextract]"
+    ]
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert "<h1>Extract" in html
+    assert _extracted(app) == []
