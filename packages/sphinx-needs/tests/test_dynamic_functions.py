@@ -1067,6 +1067,36 @@ def test_a_part_address_as_need_id_reads_as_its_need(test_app):
     assert needs["SPEC_3"]["got"] == "External"
 
 
+NEED_ID_DOTTED = """\
+Need ids
+========
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+   :owner: bob
+
+.. spec:: Copies from it
+   :id: SPEC_9
+   :got: [[copy("owner", need_id="REQ_9.x")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_need_id_project(NEED_ID_DOTTED)], indirect=True, ids=["no-need-REQ_9"]
+)
+def test_a_need_id_holding_a_dot_is_read_whole(test_app):
+    """``copy(..., need_id="REQ_9.x")`` copies from the need ``REQ_9.x``, there being no
+    need ``REQ_9``.
+
+    This pins what 9.3.0 did: an id naming a need whole is that need, before any part
+    address is read. It takes no side on what a need id holding a ``.`` should mean.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["SPEC_9"]["got"] == "bob"
+
+
 NEED_ID_UNRESOLVED = """\
 Need ids
 ========

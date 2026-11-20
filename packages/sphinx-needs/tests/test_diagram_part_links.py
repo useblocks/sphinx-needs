@@ -423,8 +423,11 @@ def test_needsequence_start_that_does_not_resolve(test_app: Sphinx, start: str):
     with pytest.raises(
         NeedSequenceException,
         match=re.escape(f"Given {start} in needsequence unknown. File index:"),
-    ):
+    ) as excinfo:
         test_app.build()
+    # raised on its own, not while handling a failed lookup
+    assert excinfo.value.__cause__ is None
+    assert excinfo.value.__context__ is None
 
 
 # --- needgantt ---------------------------------------------------------------------------

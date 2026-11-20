@@ -644,6 +644,7 @@ Once
         }
     ],
     indirect=True,
+    ids=["once"],
 )
 def test_needuml_a_need_and_its_part_are_drawn_once(test_app):
     """A diagram draws a need once however it is named: the need's id and a part
@@ -654,6 +655,48 @@ def test_needuml_a_need_and_its_part_are_drawn_once(test_app):
     assert_no_warnings(app)
     (source,) = sources
     assert source.count(" as REQ_1") == 1
+
+
+DOTTED_ID = """\
+Dotted id
+=========
+
+.. req:: A need whose id holds a dot
+   :id: REQ_9.x
+
+.. needuml::
+
+   {{flow("REQ_9.x")}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_ADDRESS_CONF),
+                (Path("index.rst"), DOTTED_ID),
+            ],
+        }
+    ],
+    indirect=True,
+    ids=["no-need-REQ_9"],
+)
+def test_needuml_a_need_id_holding_a_dot_is_read_whole(test_app):
+    """``flow("REQ_9.x")`` draws the need ``REQ_9.x``, there being no need ``REQ_9``.
+
+    This pins what 9.3.0 did: an id naming a need whole is that need, before any part
+    address is read. It takes no side on what a need id holding a ``.`` should mean.
+    """
+    app = test_app
+    sources = _plantuml_sources(app)
+    app.build()
+    assert_no_warnings(app)
+    (source,) = sources
+    assert "**A need whose id**" in source
+    assert '<size:10>REQ_9.x</size>" as REQ_9.x [[../index.html#REQ_9.x]]' in source
 
 
 UNRESOLVED = """\
