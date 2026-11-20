@@ -791,6 +791,11 @@ Needs
 
 .. req:: A need whose id holds a dot
    :id: REQ_9.x
+
+.. req:: A need whose id the default pattern accepts by its prefix alone
+   :id: REQ_001-A
+
+   Text with :np:`(p1) its part`.
 """
 
 NAMESPACED_PART_NEEDS = """\
@@ -848,6 +853,7 @@ def _invalid_filter(argument: str, error: str) -> str:
         (_extract_app("REQ_1"), "REQ_1"),
         (_extract_app("REQ_1.p1"), "REQ_1"),
         (_extract_app("REQ_1.é1"), "REQ_1"),
+        (_extract_app("REQ_001-A.p1"), "REQ_001-A"),
         (_extract_app("nc::REQ_3.p3", namespaced=True), "nc::REQ_3"),
         (_extract_app("REQ_9.x"), "REQ_9.x"),
     ],
@@ -855,6 +861,7 @@ def _invalid_filter(argument: str, error: str) -> str:
         "the-need",
         "a-part-of-it",
         "a-non-ascii-part",
+        "a-part-of-a-need-the-id-pattern-matches-by-prefix",
         "a-part-of-a-namespaced-need",
         "a-dotted-need-id",
     ],
@@ -865,6 +872,8 @@ def test_needextract_a_part_address_extracts_its_need(test_app, extracted):
 
     ``REQ_9.x`` is a need whose id holds a ``.``, and there is no need ``REQ_9``: it is
     read whole, as in 9.3.0, which takes no side on what such an id should mean.
+    ``REQ_001-A.p1`` resolves although the id pattern does not accept ``REQ_001-A`` in
+    full: that the need exists and has the part decides, not the pattern.
     """
     app = test_app
     app.build()
