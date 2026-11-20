@@ -2,7 +2,9 @@
 
 A part is a named, addressable piece of ONE need: an id, a text, and the links that point at
 it. It has no fields, no type of its own, no lifecycle and no outgoing links; anything that
-needs one of those is a child need. Where a need is expected, a part address reads as its need.
+needs one of those is a need of its own: it is not a piece of a sentence, it has its own
+id, and a link to it does not count for a need it is nested in. Where a need is expected,
+a part address reads as its need.
 
 This page states what a part is and how it is addressed. Its executable half is
 `tests/fixtures/parts_conformance.toml`, run by `tests/test_parts_conformance.py`; this
@@ -18,8 +20,8 @@ reports them under codes of its own, which the corpus header maps.
 the markup's backslash escapes are removed, is read as `(id) text`: an opening parenthesis
 at its very start, an id, a closing parenthesis, and the rest.
 
-- **The id** is one or more characters, each a Unicode letter or digit (what Python's
-  `str.isalnum` accepts), `_` or `-`. Case is kept; nothing else is an id character, so a
+- **The id** is one or more characters, each a letter or a number by its Unicode general
+  category (L or N: what Python's `str.isalnum` accepts), `_` or `-`. Case is kept; nothing else is an id character, so a
   space, a `.`, a `:` or a `(` inside the parentheses means the text has no id.
 - **The text** is everything after the closing parenthesis, exactly as the markup gives the
   role's content: a leading space is kept (`(p1) first` has the text ` first`), the text may
@@ -60,7 +62,8 @@ A link or a reference names a part as `ID.part`, optionally followed by a condit
 the text before it is the need's id, the text after it the part's id. So a part id may hold
 a `.` (a record may state one), `EXT_1.a.b` naming the part `a.b` of `EXT_1`, and a `.` in
 a condition is never a separator. An address ending in `.` names the empty part, which no
-need has.
+need has. The first `.` always separates: a need whose id holds a `.` cannot be the target
+of a link or of a reference.
 
 With namespaced ids, the namespace is split from the need's id only after the part is
 split off, and a namespace segment holds no `.`: the grammar of a need id, section 14 of
@@ -89,7 +92,7 @@ A filter that asks for parts tests the parts beside the needs. A part answers it
 `is_need` (false), its text as `content`, no links out (every link type is empty), and its
 own back links (`<link type>_back`). Every other name it answers is its need's: the need's
 type, status and fields, and the id facets (`c.id.ns`, `c.id.local`, `c.in_namespace()`)
-included. A part's `title` is not settled here (section 9).
+included. A part's `title` is not on this page yet (section 9).
 
 ## 8. Through a part to its need (corpus: `derived`)
 
@@ -98,9 +101,11 @@ that follows a link through a part reads the need's values, and a count over bac
 counts a part link as a link to the need. The corpus pins this for links, and pins each
 other place a need id is given as that place comes to follow it.
 
-## 9. Not settled here
+## 9. Not on this page yet
 
-This page is silent on these on purpose; each waits on a ruling of its own.
+These are decided but not yet built in both tools; each joins this page and the corpus
+with the change that builds it. Two are open: whether a need id that holds a `.` is
+warned on or refused, and parts in a graph query schema.
 
 - The order of a need's parts.
 - Parts a need states that its content does not mark.
