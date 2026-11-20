@@ -28,8 +28,10 @@
 #     `myst_parser`, `sphinx_codelinks` or `sphinx_test_reports`. The Python runner adds
 #     them to `conf.py`, points the last two at the case's `ubproject.toml`, and SKIPS a
 #     case whose extension is not installed; ubCode's runner models each from its table of
-#     the same file. A case loading `sphinx_codelinks` is a git checkout: the RUNNER writes
-#     two files beside `ubproject.toml`. `.git/HEAD` is
+#     the same file; a runner that needs no extension for MyST reads the MyST documents of
+#     a case loading `myst_parser` with its own MyST reading. A case loading
+#     `sphinx_codelinks` is a git checkout: the RUNNER writes two files beside
+#     `ubproject.toml`. `.git/HEAD` is
 #     `0123456789abcdef0123456789abcdef01234567` and a newline; `.git/config` is
 #     `[remote "origin"]`, a newline, a tab, `url = https://github.com/example/case.git`
 #     and a newline
@@ -71,8 +73,10 @@
 #     it does not ask for parts is not settled, and no entry pins it
 #   - `expected` -- every key of `[case.expect]` and every filter's `expected` -- is what the
 #     CONTRACT says. A case carrying `divergent` is one a tool answers otherwise: each key
-#     names a tool (`sphinx-needs`, `ubcode`), its value what that tool answers instead and
-#     the issue that tracks it. The runner of a named tool runs the case and requires it to
+#     names a tool (`sphinx-needs`, `ubcode`), its value what that tool answers instead. A
+#     marker for `sphinx-needs` ends with the issue that tracks it, `(#N)`, or with
+#     `(not filed yet)`; a marker for `ubcode` names no issue, as the filter corpus's
+#     markers name none. The runner of a named tool runs the case and requires it to
 #     FAIL, and fails it when it passes, so a fix removes the marker in the same change;
 #     every other runner runs it as any case. (The filter corpus's `divergent` names a tool
 #     the same way; there the named runner skips the entry.)
@@ -150,6 +154,7 @@ REQ_1 = { a-b = " dash", x_1 = " underscore", 42 = " digits", -Ab_ = " mixed" }
 name = "grammar-a-unicode-id"
 section = "grammar"
 why = "an id character is any Unicode letter or digit, not only ASCII ones"
+divergent = { ubcode = "an id character is ASCII only: the part is 48A with the text (é1) unicode id" }
 config = '''
 [needs]
 '''
@@ -186,6 +191,7 @@ REQ_1 = { 92C = "no id given", BB3 = "é sans id" }
 name = "grammar-a-character-before-the-parenthesis"
 section = "grammar"
 why = "the (id) must open the text: !(p4) is no id, so the hash of the whole text is the id and the whole text, ! included, the text"
+divergent = { ubcode = "a leading ! disables the role: no part at all" }
 config = '''
 [needs]
 '''
@@ -222,6 +228,7 @@ REQ_1 = { 78D = "(a.b) dotted id", C24 = "(a b) spaced id", 81F = "(a:b) colon i
 name = "grammar-the-text-is-never-a-reference"
 section = "grammar"
 why = "a text ending in <target> is kept whole: the role is not a reference, and no target is split off"
+divergent = { ubcode = "the role is read as title <target>: the text is ' see', the target split off" }
 config = '''
 [needs]
 '''
@@ -410,6 +417,7 @@ IMPL_BLK = { c1 = " in code" }
 name = "placement-a-test-case-body"
 section = "placement"
 why = "the body of a test case is its content: a role in it is the test case's part, and nothing is reported"
+divergent = { ubcode = "a test case's body gives no parts, and its role is reported as outside a need" }
 clean = true
 extensions = ["sphinx_test_reports"]
 config = '''
@@ -471,6 +479,7 @@ TEST_1 = []
 name = "duplicates-the-first-wins"
 section = "duplicates"
 why = "an id marked again in one need is the first's part, its text the first's, and each repetition is one finding"
+divergent = { ubcode = "the LAST part of a repeated id wins (the findings are reported)" }
 config = '''
 [needs]
 '''
@@ -489,6 +498,7 @@ REQ_1 = { p1 = " the first", p2 = " another" }
 name = "duplicates-a-repetition-after-other-parts"
 section = "duplicates"
 why = "an id marked again after other parts is still the first's part, with the first's text, and one finding"
+divergent = { ubcode = "the LAST part of a repeated id wins" }
 config = '''
 [needs]
 '''
@@ -525,6 +535,7 @@ REQ_L2N = { l1 = " the first" }
 name = "duplicates-in-imported-content"
 section = "duplicates"
 why = "the first wins in the content of an imported need too, with one finding; the record states no parts, so nothing competes with the content"
+divergent = { ubcode = "the LAST part of a repeated id wins, and nothing is reported" }
 config = '''
 [needs]
 '''
@@ -541,6 +552,7 @@ IMP_1 = { ip = " the first" }
 name = "duplicates-in-a-multi-line-need-in-code"
 section = "duplicates"
 why = "the first wins in the body of a multi-line need in code too, with one finding"
+divergent = { ubcode = "the LAST part of a repeated id wins, and nothing is reported" }
 extensions = ["sphinx_codelinks"]
 config = '''
 [needs]
@@ -882,6 +894,7 @@ TEST_1 = ["REQ_1.nope"]
 name = "links-a-missing-need"
 section = "links"
 why = "a link to a part of a need that does not exist is dead, one finding, named by its address with its condition taken off"
+divergent = { ubcode = "the dead link is named without its part: NOPE_1" }
 config = '''
 [needs.links.tests]
 '''
@@ -1075,7 +1088,7 @@ expected = ["SPEC_1"]
 include_parts = true
 
 [[case.filters]]
-filter = 'is_part and links == [] and tests == []'
+filter = 'is_part and len(links) == 0 and len(tests) == 0'
 expected = ["SPEC_1.s1"]
 include_parts = true
 
@@ -1114,7 +1127,7 @@ expected = ["REQ_1"]
 include_parts = true
 
 [[case.filters]]
-filter = 'is_part and tests_back == []'
+filter = 'is_part and len(tests_back) == 0'
 expected = ["REQ_1.p2"]
 include_parts = true
 

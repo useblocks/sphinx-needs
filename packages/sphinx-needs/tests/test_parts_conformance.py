@@ -35,9 +35,11 @@ from typing import Any
 
 import pytest
 
+from sphinx_needs import filter_common
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_parts
+from sphinx_needs.ubquery import try_build_simple_predicate
 from sphinx_needs_testkit import build_warnings
 from sphinx_needs_testkit.conformance import case_files, params, uninstalled_extension
 
@@ -236,6 +238,17 @@ def test_every_marker_names_a_known_tool() -> None:
     assert marked == set(MARKED_PROBLEMS), (
         "every case marked for sphinx-needs, and no other, has its problems recorded"
     )
+
+
+def test_every_filter_is_in_the_portable_language() -> None:
+    """Every filter string is answered by the portable tier, never by ``eval``: the
+    parsed tier compiles it, as ``tests/test_filter_conformance.py`` asks it."""
+    for case in CASES:
+        for entry in case.get("filters", []):
+            where = f"{case['name']}: {entry['filter']!r}"
+            tier, reason = filter_common._filter_tier(entry["filter"])
+            assert tier in ("index", "fast"), f"{where} falls to eval ({reason})"
+            assert try_build_simple_predicate(entry["filter"]) is not None, where
 
 
 def test_the_header_lists_every_class_and_section() -> None:
