@@ -64,6 +64,18 @@ Bug fixes
 
   The first build after upgrading reads every document again. (:pr:`2552`, :pr:`2553`)
 
+- 🐛 A page with a :ref:`need part <need_part>` builds with every builder, a third-party one included. ``text``,
+  ``man`` and ``epub`` ended the build on it (``departing unknown node type: NeedPart``), and ``texinfo`` warned
+  ``unknown node type``: only ``html`` and ``latex`` knew the node. Every writer now gets the part as the inline text
+  it is, with its id and its link. **Changed output**: ``xml`` and ``pseudoxml`` no longer write a ``NeedPart``
+  element around a part; the part's ``inline`` (class ``need-part``, the part's id) inside it is written as before.
+  ``html`` and ``latex`` output does not change. (:issue:`2556`)
+
+- 🐛 A :ref:`needflow` drawn with the graphviz engine renders when it draws a :ref:`need part <need_part>` with no
+  text, or a need with no title: ``dot`` refused the empty ``<b></b>`` that took the text's place, and the whole
+  diagram was not rendered. Such a node is now labelled by its type and id. The PlantUML engine was not affected.
+  (:issue:`2557`)
+
 Internal changes
 ................
 
