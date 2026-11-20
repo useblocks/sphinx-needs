@@ -88,6 +88,21 @@ def process_need_part(
             )
 
 
+def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> None:
+    """Replace every ``NeedPart`` in a resolved doctree by the nodes it holds.
+
+    The node only marks where a part is while needs are collected and resolved; what a
+    reader sees is its ``inline`` (the part's text, with its id and its link). Removing
+    the wrapper before any writer runs means no writer, of Sphinx or of another
+    extension, has to know the node.
+
+    Connected late to ``doctree-resolved``, after the handlers that still read the node,
+    and for every document: a part on a page holding no need is in the tree too.
+    """
+    for node in list(doctree.findall(NeedPart)):
+        node.replace_self(list(node.children))
+
+
 def update_need_with_parts(
     env: BuildEnvironment, need: NeedItem, part_nodes: list[NeedPart]
 ) -> None:

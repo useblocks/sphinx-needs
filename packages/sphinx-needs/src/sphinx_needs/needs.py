@@ -206,7 +206,12 @@ from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, NeedFuncRole, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
-from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
+from sphinx_needs.roles.need_part import (
+    NeedPart,
+    NeedPartRole,
+    process_need_part,
+    unwrap_need_parts,
+)
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.roles.variant import VariantRole
 from sphinx_needs.schema.config import (
@@ -508,6 +513,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     )
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
+    # last: no writer sees a NeedPart, so every builder writes a part (#2556)
+    app.connect("doctree-resolved", unwrap_need_parts, priority=900)
 
     app.connect("write-started", process_schemas)
     app.connect("write-started", ensure_post_process_needs_data)
