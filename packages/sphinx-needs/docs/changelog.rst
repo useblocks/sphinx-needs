@@ -68,8 +68,8 @@ Bug fixes
   ``(id)`` (:issue:`1437`): ``(p1) first`` has the text ``first``, where it had ``" first"``, and a text written on the
   line after its ``(id)`` no longer starts with a line break. White space at the end, which a MyST role can hold, is
   removed too; white space and line breaks inside the text are kept. White space is Unicode's ``White_Space``. No
-  part id changes, and a part with no ``(id)`` keeps its whole text as written. A text a record states is kept as
-  given: the ``parts`` of an external need, and ``parts`` given to ``add_need`` where it keeps them.
+  part id changes, and a part with no ``(id)`` keeps its whole text as written. A part a record states keeps its
+  text as given wherever that part is kept, as the ``parts`` of an external need are.
 
   **Changed output**: a part's text wherever it is shown or read: in needs.json ``parts`` (and ``content.parts`` of
   the draft format 2a1); as ``content`` in a filter; in the text of ``:need:`` and of a need card's link to a part,
