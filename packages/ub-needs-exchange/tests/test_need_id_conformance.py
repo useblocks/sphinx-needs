@@ -2,15 +2,19 @@
 
 ``tests/fixtures/need_id_conformance.toml`` is the executable half of section 14 of
 ``design/exchange-contract.md``: how an id splits into a namespace and a local id at
-``::``, how a namespace is parsed from its text, and how a pair is joined. This package
+``::``, how a namespace is parsed from its text, how a pair is joined, and the prefix that
+joins an id to a namespace. This package
 is its repository of record and ubCode is to vendor it, so every case is a statement both
 tools are to be held to. Asserted here:
 
-* every case of each of the three tables;
+* every case of each of the four tables;
 * the two laws of the module over every text the corpus holds -- ``join_id(*split_id(x))
   == x`` for every text, and ``split_id(join_id(ns, local)) == (ns, local)`` wherever
   ``join_id`` accepts the pair (for the empty namespace, wherever ``local`` does not
   itself split) -- and that splitting never raises;
+* the two laws of ``namespace_prefix`` over every text and every namespace the corpus
+  holds: where ``join_id(ns + xns, xlocal)`` accepts the split of a text, it is the prefix
+  followed by the text; where it refuses, the prefix followed by the text is a plain id;
 * the number of cases of each table, so that a trimmed corpus is a red test rather than
   quietly reduced coverage;
 * the corpus's own form: unique names, only the keys of each table, pure ASCII.
@@ -39,6 +43,7 @@ from ub_needs_exchange import (
     id_problem,
     is_segment,
     join_id,
+    namespace_prefix,
     parse_namespace,
     split_id,
 )
@@ -49,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "need_id_conformance.toml"
 #:
 #: Raising one is the normal consequence of adding a case; lowering one needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNTS = {"split": 65, "namespace": 19, "join": 20}
+EXPECTED_CASE_COUNTS = {"split": 65, "namespace": 19, "join": 20, "prefix": 22}
 
 #: The keys a case of each table may carry, as the header defines them: those it must,
 #: and the alternative sets of which it carries exactly one.
@@ -57,11 +62,13 @@ REQUIRED_KEYS = {
     "split": {"name", "why", "id"},
     "namespace": {"name", "why", "text"},
     "join": {"name", "why", "namespace", "local"},
+    "prefix": {"name", "why", "namespace"},
 }
 OUTCOME_KEYS = {
     "split": ({"namespace", "local"}, {"problem"}),
     "namespace": ({"segments"}, {"invalid"}),
     "join": ({"id"}, {"invalid"}),
+    "prefix": ({"prefix"}, {"prefix", "id", "prefixed", "inside"}, {"invalid"}),
 }
 
 #: The problem classes the header defines.
@@ -77,12 +84,14 @@ CORPUS = _corpus()
 SPLIT = CORPUS.get("split", [])
 NAMESPACE = CORPUS.get("namespace", [])
 JOIN = CORPUS.get("join", [])
+PREFIX = CORPUS.get("prefix", [])
 
 
 def _texts() -> list[str]:
-    """Every string the corpus holds: ids, local ids, namespace texts and segments."""
+    """Every string the corpus holds: ids, local ids, namespace texts, segments and
+    prefixes."""
     found: set[str] = set()
-    for table in (SPLIT, NAMESPACE, JOIN):
+    for table in (SPLIT, NAMESPACE, JOIN, PREFIX):
         for case in table:
             for key, value in case.items():
                 if key in {"name", "why"}:
@@ -102,7 +111,7 @@ def _namespaces() -> list[tuple[str, ...]]:
     for case in NAMESPACE:
         if "segments" in case:
             found.add(tuple(case["segments"]))
-    for case in JOIN:
+    for case in (*JOIN, *PREFIX):
         found.add(tuple(case["namespace"]))
     return sorted(found)
 
@@ -122,7 +131,7 @@ def test_the_corpus_still_has_every_case() -> None:
     )
 
 
-def test_the_corpus_has_only_its_three_tables() -> None:
+def test_the_corpus_has_only_its_four_tables() -> None:
     assert set(CORPUS) == set(EXPECTED_CASE_COUNTS)
 
 
@@ -151,10 +160,15 @@ def test_every_case_uses_only_the_keys_of_its_table(table: str) -> None:
                 assert all(isinstance(item, str) for item in value), name
             elif key == "invalid":
                 assert value is True, name
+            elif key == "inside":
+                assert isinstance(value, bool), name
             elif key == "problem":
                 assert value in PROBLEMS, name
             else:
                 assert isinstance(value, str), name
+        if "id" in case:  # only a non-empty namespace puts its prefix before an id
+            assert case["namespace"], name
+            assert case["prefixed"] == case["prefix"] + case["id"], name
 
 
 def test_the_corpus_file_is_pure_ascii() -> None:
@@ -212,6 +226,26 @@ def test_join(case: dict[str, Any]) -> None:
         assert join_id(namespace, case["local"]) == case["id"]
 
 
+@pytest.mark.parametrize("case", PREFIX, ids=[case["name"] for case in PREFIX])
+def test_prefix(case: dict[str, Any]) -> None:
+    namespace = tuple(case["namespace"])
+    if "invalid" in case:
+        with pytest.raises(ValueError):
+            namespace_prefix(namespace)
+        return
+    prefix = namespace_prefix(namespace)
+    assert prefix == case["prefix"]
+    if "id" in case:
+        prefixed = prefix + case["id"]
+        assert prefixed == case["prefixed"]
+        split_namespace = split_id(prefixed)[0]
+        inside = split_namespace[: len(namespace)] == namespace
+        assert inside == case["inside"]
+        if not inside:  # outside means a plain id, not some other namespace
+            assert split_namespace == ()
+            assert id_problem(prefixed) is not None
+
+
 # --- the laws, over every text the corpus holds --------------------------------------
 
 
@@ -258,3 +292,43 @@ def test_join_refuses_what_would_not_split_back() -> None:
             assert not splits_back, (namespace, local)
         else:
             assert splits_back, (namespace, local)
+
+
+def test_the_prefix_joins_what_join_accepts() -> None:
+    """``namespace_prefix(ns) + x == join_id(ns + xns, xlocal)`` for every namespace of
+    the corpus the prefix accepts and every text of the corpus whose split joins under it,
+    with ``(xns, xlocal) = split_id(x)``; and where ``join_id`` refuses, the prefixed text
+    is a plain id, which splits to the empty namespace with a problem. Both counts are
+    positive controls: some pairs join and some do not."""
+    accepted = refused = 0
+    for namespace, text in itertools.product(NAMESPACES, TEXTS):
+        try:
+            prefix = namespace_prefix(namespace)
+        except ValueError:
+            continue
+        text_namespace, local = split_id(text)
+        try:
+            joined = join_id(namespace + text_namespace, local)
+        except ValueError:
+            assert namespace != (), (namespace, text)
+            assert split_id(prefix + text) == ((), prefix + text), (namespace, text)
+            assert id_problem(prefix + text) is not None, (namespace, text)
+            refused += 1
+        else:
+            assert prefix + text == joined, (namespace, text)
+            accepted += 1
+    assert accepted > 0
+    assert refused > 0
+
+
+def test_the_prefix_refuses_exactly_what_join_refuses() -> None:
+    """The prefix accepts a namespace exactly when ``join_id`` accepts it with a local id
+    that joins any namespace (``X``), so the two never disagree about a segment."""
+    for namespace in NAMESPACES:
+        try:
+            join_id(namespace, "X")
+        except ValueError:
+            with pytest.raises(ValueError):
+                namespace_prefix(namespace)
+        else:
+            namespace_prefix(namespace)
