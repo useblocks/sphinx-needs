@@ -2,11 +2,14 @@
 
 Every rule of the grammar is pinned by ``tests/fixtures/need_id_conformance.toml``, which
 ``test_need_id_conformance.py`` runs. What a case cannot state is tested here: the
-messages of a refusal, the types the functions take and give, and that splitting never
-raises whatever the text.
+messages of a refusal, the types the functions take and give, that splitting never
+raises whatever the text, and the two laws of ``namespace_prefix`` over every short text of
+a small alphabet.
 """
 
 from __future__ import annotations
+
+import itertools
 
 import pytest
 
@@ -15,6 +18,7 @@ from ub_needs_exchange import (
     format_namespace,
     id_problem,
     join_id,
+    namespace_prefix,
     need_id,
     parse_namespace,
     split_id,
@@ -36,6 +40,7 @@ def test_the_public_names():
         "split_id",
         "id_problem",
         "join_id",
+        "namespace_prefix",
         "parse_namespace",
         "format_namespace",
     }
@@ -142,3 +147,106 @@ def test_a_refused_namespace_is_named_with_its_piece_and_the_rule():
     assert "ASCII letters, ASCII digits, '_' or '-'" in str(info.value)
     with pytest.raises(ValueError, match=r"its piece '' is not"):
         parse_namespace("nc::")
+
+
+# --- namespace_prefix ----------------------------------------------------------------
+
+#: The alphabet of the laws below: a letter, the colon the separator is made of, and three
+#: characters that are not segment characters. Every text over it up to ``LAW_LENGTH``
+#: characters, the empty one included, is checked -- 488 281 texts, about a second.
+LAW_ALPHABET = "a: _."
+LAW_LENGTH = 8
+
+
+def _law_texts():
+    for length in range(LAW_LENGTH + 1):
+        for chars in itertools.product(LAW_ALPHABET, repeat=length):
+            yield "".join(chars)
+
+
+@pytest.mark.parametrize("namespace", [("SUP",), ("SUP", "m2")], ids=["one", "two"])
+def test_the_prefix_laws_over_every_short_text(namespace):
+    """For every text ``x`` of the alphabet, with ``(xns, xlocal) = split_id(x)``: where
+    ``join_id(namespace + xns, xlocal)`` is accepted it equals the prefix followed by
+    ``x`` (L1); where it is refused, the prefix followed by ``x`` is a plain id, with a
+    problem (L2). It is refused exactly when ``x`` is empty, starts with ``:``, or holds
+    ``::`` and does not split cleanly. Both counts are positive controls."""
+    prefix = namespace_prefix(namespace)
+    accepted = refused = 0
+    for text in _law_texts():
+        text_namespace, local = split_id(text)
+        cannot_be_joined = (
+            not text
+            or text.startswith(SEPARATOR[0])
+            or (SEPARATOR in text and id_problem(text) is not None)
+        )
+        try:
+            joined = join_id(namespace + text_namespace, local)
+        except ValueError:
+            if not cannot_be_joined:
+                pytest.fail(f"{text!r} is refused under {namespace!r}, unexpectedly")
+            prefixed = prefix + text
+            if split_id(prefixed) != ((), prefixed) or id_problem(prefixed) is None:
+                pytest.fail(f"L2 fails on {text!r} under {namespace!r}")
+            refused += 1
+        else:
+            if cannot_be_joined:
+                pytest.fail(f"{text!r} is joined under {namespace!r}, unexpectedly")
+            if joined != prefix + text:
+                pytest.fail(f"L1 fails on {text!r} under {namespace!r}")
+            accepted += 1
+    assert (accepted, refused) == (327640, 160641)
+
+
+def test_the_prefix_of_the_empty_namespace_is_empty():
+    assert namespace_prefix(()) == ""
+    assert namespace_prefix([]) == ""
+    assert namespace_prefix(segment for segment in ()) == ""
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda: ["nc", "m2"],
+        lambda: ("nc", "m2"),
+        lambda: (segment for segment in ["nc", "m2"]),
+        lambda: iter(["nc", "m2"]),
+    ],
+    ids=["list", "tuple", "generator", "iterator"],
+)
+def test_the_prefix_takes_any_sequence_of_segments(make):
+    """A generator is read once: its segments are checked and joined, not lost."""
+    prefix = namespace_prefix(make())
+    assert prefix == "nc::m2::"
+    assert type(prefix) is str
+
+
+def test_the_prefix_ends_in_the_separator_and_joins_like_join_id():
+    """The prefix is the namespace's text and the separator, and put before a local id
+    it is exactly what ``join_id`` makes."""
+    assert namespace_prefix(["SUP"]) == format_namespace(["SUP"]) + SEPARATOR
+    assert namespace_prefix(["SUP"]) + "REQ_1" == join_id(["SUP"], "REQ_1")
+
+
+@pytest.mark.parametrize("text", ["SUP", "", "nc::m2"])
+def test_the_prefix_refuses_a_bare_string(text):
+    """A ``str`` is refused with the module's ``TypeError``, its advice included: ``"SUP"``
+    is not the namespace ``S::U::P``."""
+    with pytest.raises(TypeError, match=rf"not the string {text!r}") as info:
+        namespace_prefix(text)
+    assert f"parse_namespace({text!r})" in str(info.value)
+
+
+@pytest.mark.parametrize(
+    "namespace", [["nc", "nc.x"], [""], ["a::b"], ["nc\n"]], ids=repr
+)
+def test_a_refused_prefix_is_named_in_join_ids_words(namespace):
+    """The message names the segment and the rule, in exactly the words ``join_id``
+    uses for the same namespace."""
+    with pytest.raises(ValueError) as info:
+        namespace_prefix(namespace)
+    with pytest.raises(ValueError) as joined:
+        join_id(namespace, "X")
+    assert str(info.value) == str(joined.value)
+    assert f"{namespace[-1]!r} is not a namespace segment" in str(info.value)
+    assert "ASCII letters, ASCII digits, '_' or '-'" in str(info.value)

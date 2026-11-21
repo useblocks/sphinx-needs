@@ -3,6 +3,20 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **``namespace_prefix``: the text that joins an id to a namespace.**
+  ``namespace_prefix(["SUP"])`` is ``"SUP::"`` (and ``""`` for the empty namespace), so a
+  caller that puts a namespace in front of ids -- every id of a file, say -- never spells
+  the separator itself, and gets the namespace checked: a segment that is not a segment
+  is refused as ``join_id`` refuses it. Put before an id that can be joined, the prefix
+  gives exactly what ``join_id`` gives (``SUP::nc::REQ_1``, in the namespace
+  ``SUP::nc``); put before one that cannot (``a::::b``, ``:X``), it gives a plain id
+  outside the namespace, and what that costs is the caller's to decide.
+  ``design/exchange-contract.md`` §14 rule 10 states the two laws, and
+  ``tests/fixtures/need_id_conformance.toml`` has a fourth table, ``[[prefix]]``.
+
 .. _`release:1.2.0`:
 
 1.2.0
