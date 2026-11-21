@@ -521,9 +521,6 @@ def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
         # ``false``, the default, says nothing, as on min and max without transitive
         if raw.get("include_self") and "join" not in raw:
             return "takes the role 'include_self' only with 'join'"
-    if kind == "links" and "join" in raw and raw.get("include_parts"):
-        # a join's candidates are needs only
-        return "takes the role 'include_parts' only without 'join'"
     if kind in {"any", "all"} and ("field" in raw) == ("test" in raw):
         return "takes exactly one of the roles 'field' and 'test'"
     if kind in {"min", "max"} and raw.get("include_self") and not raw.get("transitive"):

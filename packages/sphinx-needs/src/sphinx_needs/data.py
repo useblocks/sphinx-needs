@@ -42,15 +42,15 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 31
+ENV_DATA_VERSION: Final = 32
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
 ``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
 change of what the stored values mean, or of what is rendered from them (versions 8, 10
-to 12, 15, 17, 19 to 25, 27, 29 and 30), leaves the shape as it was, so that test cannot
-see it, and the bump is needed all the same.
+to 12, 15, 17, 19 to 25, 27, 29, 30 and 32), leaves the shape as it was, so that test
+cannot see it, and the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
@@ -234,6 +234,14 @@ of the needs ``needs_external_needs`` loaded, which the next build removes befor
 loads its sources again (:attr:`SphinxNeedsData.external_needs_loaded`). An environment
 pickled by version 30 has none, so the external needs it holds would stay beside those
 the next build loads, under an id its sources no longer give.
+
+Version 32 changes what the stored values mean again: a derived field's ``from``
+(``copy`` and ``content_links``) and the ``need_id`` of ``links_from_content`` given a need
+part's address ``ID.part`` read the part's need, where version 31 failed the read and left
+the field empty; and ``include_parts`` beside a derived ``links`` rule's ``join``, refused
+(``needs.derive_invalid``) and so empty, now links the needs and parts that match. The
+configuration does not change, so without the bump an upgraded build would keep the empty
+values on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

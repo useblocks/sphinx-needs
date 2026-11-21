@@ -3,6 +3,7 @@
 import pytest
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_test_reports.functions import tr_link
 
 
 @pytest.mark.parametrize(
@@ -66,3 +67,58 @@ def test_the_readers_of_its_links_hold_them(test_app):
     assert needs["REQ_A"]["cov_u"] == ["TEST_1", "TEST_3"]
     assert needs["REQ_A"]["verified"] == ["TEST_1", "TEST_2", "TEST_3"]
     assert needs["TEST_1"]["verified"] == ["TEST_2", "TEST_3"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/tr_link_parts"}],
+    indirect=True,
+)
+def test_include_parts_makes_the_parts_candidates_too(test_app):
+    """``tr_link(test_option, target_option, include_parts=True)`` compares the parts of
+    every need too, each read as a part answers a filter (its own ``id`` and
+    ``id_complete``, its need's ``case``), after its need in part-id order, and links a
+    matching part as ``<need>.<part>`` (#1955). It compares as ``tr_link`` always has: a
+    value whole, once per value that matches (the stored list keeps each link once), in
+    the order the project holds the needs, the reader and its own part included. Without
+    the keyword, no part is a candidate, as before. A ``links`` rule reading the links it
+    computes still waits for them: the declared reads hold for a part too.
+    """
+    app = test_app
+    app.build()
+    assert app._warning.getvalue() == ""
+
+    needs = dict(SphinxNeedsData(app.env).get_needs_view())
+    assert needs["SPEC_1"]["off"] == ["REQ_2"]
+    assert needs["SPEC_1"]["by_address"] == ["REQ_1.p1", "REQ_2"]
+    assert needs["SPEC_2"]["off"] == []
+    assert needs["SPEC_2"]["by_part_id"] == ["REQ_1.p1"]
+    assert needs["SPEC_3"]["by_case"] == ["REQ_1", "REQ_2", "SPEC_3"]
+    assert needs["SPEC_3"]["by_case_parts"] == [
+        "REQ_1",
+        "REQ_1.p1",
+        "REQ_1.p2",
+        "REQ_2",
+        "SPEC_3",
+        "SPEC_3.q",
+    ]
+    assert needs["REQ_1"]["covered"] == ["SPEC_1"]
+    assert needs["SPEC_1"]["covered"] == []
+
+    # what the function returns, before sphinx-needs stores it: a link once per value
+    # that matches, the parts after their need in part-id order (REQ_1 writes p2 first)
+    view = SphinxNeedsData(app.env).get_needs_view()
+    by_address = tr_link(
+        app, view["SPEC_1"], view, "case", "id_complete", include_parts=True
+    )
+    assert by_address == ["REQ_1.p1", "REQ_1.p1", "REQ_2"]
+    # `include_parts` is given by name: a third positional argument, which `tr_link`
+    # has always ignored, links no part
+    assert tr_link(app, view["SPEC_1"], view, "case", "id_complete", True) == ["REQ_2"]
+    by_case = tr_link(app, view["SPEC_3"], view, "case", "case", include_parts=True)
+    assert by_case == ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_2", "SPEC_3", "SPEC_3.q"]
+    assert tr_link(app, view["SPEC_3"], view, "case", "case") == [
+        "REQ_1",
+        "REQ_2",
+        "SPEC_3",
+    ]

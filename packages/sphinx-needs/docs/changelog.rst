@@ -7,6 +7,17 @@ Changelog
 Unreleased
 ----------
 
+Improvements
+............
+
+- ✨ A join can link :ref:`need parts <need_part>`: :ref:`links_from_match` takes ``include_parts``, and so does a
+  derived ``links`` rule with :ref:`join <needs_derive_join>`, where it was refused (``needs.derive_invalid``). With
+  it, the parts of every need are candidates too, each read as a part answers a filter: its own ``id``,
+  ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other field. So
+  ``[[links_from_match("id_complete", "case", include_parts=True)]]`` links the parts whose address the need's
+  ``case`` names. A part that matches is linked as ``<need>.<part>``, after its need, in part-id order, and the
+  need's own parts are left out with it unless ``include_self``. Without it, nothing changes. (:pr:`2567`)
+
 Bug fixes
 .........
 
@@ -15,15 +26,18 @@ Bug fixes
 
   The places: the targets of :ref:`role_need_outgoing` and :ref:`role_need_incoming`, the :ref:`needuml_jinja_uml`
   and :ref:`needuml_jinja_flow` functions and the links ``import()`` follows, the ``:start:`` of :ref:`needsequence`,
-  and the ``need_id`` of ``copy``. ``:need_incoming:`` given a part address lists the links that point at the part,
+  the ``need_id`` of ``copy`` and of ``links_from_content``, and the ``from`` of a :ref:`derived field
+  <needs_derive>`'s ``copy`` and ``content_links`` rules; ``links_from_content`` and ``content_links`` read the
+  need's whole content. ``:need_incoming:`` given a part address lists the links that point at the part,
   its own back links. The roles, the needuml functions and needsequence ended the build on a part
-  address, and ``copy`` reported an error and copied nothing. An address naming a part its need does not have is
+  address, and ``copy``, ``links_from_content`` and a rule's ``from`` reported an error and gave no value. An
+  address naming a part its need does not have is
   treated as an id naming no need, except that the two roles report it as ``:need:`` reports a missing part.
   **Changed output**: a ``:need_outgoing:`` or ``:need_incoming:`` naming no need, which ended the build too, is now
   reported as ``:need:`` reports one (a ``needs.link_ref`` warning) and rendered as an unresolved reference. The need
   card's outgoing row and the list ``:need_outgoing:`` renders show a link to a part of an external need as they show
   one to a local part, linked to the part's anchor as ``:need:`` links it, where they showed the need's id and linked
-  the need. (:pr:`2551`, :pr:`2553`)
+  the need. (:pr:`2551`, :pr:`2553`, :pr:`2567`)
 
 - 🐛 Seven more places read a :ref:`need part <need_part>`'s address ``ID.part``, or a link to a part, as a link to a
   part is read: the address is split once at its first ``.``, and names the need when the need has the part.
@@ -122,6 +136,12 @@ Bug fixes
   project that has taken one of their ids, and an external need an extension added through ``add_external_need``, are
   left as they are. A fresh build does not change. The first build after upgrading reads every document again.
   (:issue:`2523`, :pr:`2565`)
+
+- 🐛 An incremental build re-writes the page of a need showing a value copied from another need, a derived ``copy``
+  rule's ``from`` or the ``need_id`` of ``copy`` naming it, in two cases where the page kept the old value until a
+  full build: the need named has a ``.`` in its id and changed, and a need whose id is a part's address ``ID.part``
+  was added or removed in another document, so the copy reads that need, or the part's need again. The page of the
+  need a :ref:`needextend` names by an id holding a ``.`` is re-written when the extend changes, likewise. (:pr:`2567`)
 
 Internal changes
 ................
