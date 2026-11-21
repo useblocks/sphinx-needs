@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795289709611,
+  "lastUpdate": 1795292755100,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30996,6 +30996,48 @@ window.BENCHMARK_DATA = {
             "value": 188.993968,
             "unit": "MB",
             "extra": "Commit: dd956b34fdd64a8ae0a1052cd847c1685601d596\nBranch: master\nTime: 2026-11-21T20:33:26+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b2e7c7a2052807b8a32c01fd4022ff299761f1a5",
+          "message": "✨ sphinx-needs: a `namespace` for `needimport` and for external needs sources (#2568)\n\nA project that imports a supplier's needs can now put them into a\nnamespace, so that the supplier's ids cannot clash with its own:\n\n```rst\n.. needimport:: supplier/needs.json\n   :namespace: SUP\n```\n\n```python\nneeds_external_needs = [\n    {\"json_path\": \"supplier/needs.json\", \"base_url\": \"https://supplier.example/docs\", \"namespace\": \"SUP\"},\n]\n```\n\n`[[needs.external_needs]]` in `ubproject.toml` takes `namespace = \"SUP\"`\ntoo.\n\nThe file's `REQ_1` becomes `SUP::REQ_1`, its `nc::REQ_2` becomes\n`SUP::nc::REQ_2`, and every reference inside the file to one of its own\nneeds follows: links, parts, link conditions, the file schema's link\ndefaults, ids in the content, an external need's URL and its parts'\nanchors. A namespace may have several levels (`sup::m2`).\n\n`:namespace: SUP` is exactly `:id_prefix: SUP::`, with the namespace\nchecked: the two give the same needs, field for field, the same\n`needs.json` and the same pages. `id_prefix` is unchanged, and nothing\nis deprecated.\n\nRelated: #1560.\n\n#### What is refused\n\nA value that is not a namespace (`SUP::` is told to drop the trailing\n`::`; `a b` is told the rule a segment obeys), and `namespace` together\nwith `id_prefix`. At a `needimport` that is one `needs.needimport`\nwarning at the directive, and nothing is imported. For an external\nsource it stops the build, as a missing `base_url` does, naming the\nsource by its index; an empty `namespace`, and one that is not a string,\nare refused there too.\n\n#### Two notices, one per import, never one per need\n\n- With `needs_namespaced_ids` off (the 9.x default), the ids get the\nprefix all the same and are read as plain ids. The import says so once,\nas `needs.namespaced_ids_off`, the type a namespace filter's warning\nalready has with the switch off.\n- With it on, a need whose id cannot be joined to a namespace (`a::::b`,\nor an id starting with `:`) is imported as `SUP::a::::b`: a plain id\noutside the namespace, which the file's links still reach. The import\ngives one warning of a new type, `needs.import_namespace`, saying how\nmany there are and naming the first five.\n\n`suppress_warnings = [\"needs.import_namespace\"]` silences the second\nalone. `needs.namespaced_ids_off` silences the first, together with the\nnamespace filters' warning of the same type.\n\n#### Older versions\n\nsphinx-needs 9.3.0 ignores a source's `namespace` key without a word\n(the needs arrive with the file's own ids), and reports `:namespace:` on\n`needimport` as an unknown option, importing nothing from that\ndirective. A `conf.py` can require this release with `needs_extensions =\n{\"sphinx_needs\": \"9.4\"}`. The docs say both, and mark the option as\nadded in 9.4.0.\n\n#### What does not change\n\nNothing new is stored on a need or in the environment, so\n`ENV_DATA_VERSION` does not move. A project that uses neither the option\nnor the key builds the same output with the same warnings (24 of the\nrepository's import projects compared with master in review, and 43\nconstructed ones).\n\n#### Release order\n\nThe code calls `ub_needs_exchange.namespace_prefix`, which is on master\n(#2566) and not yet on PyPI: ub-needs-exchange has to be released before\nthe next sphinx-needs release. Until then the check that imports the\nwheel against the published siblings fails on that one name.\n\n#### How it was tested\n\n- `tests/test_import_namespace.py`: sibling projects, one with\n`namespace` and one with the equal `id_prefix`, compared need by need,\nwith `needs.json`, the page and the warnings, for both readers, with\nnamespaced ids on and off, and with several levels; every refusal with\nits message; the two notices (once per import, their counts and names,\nnone when every id joins); suppression by type, each alone. Three cases\nin `tests/test_external_needs_incremental.py` for a source whose\n`namespace` changes between two builds. All were committed first and\nshown red.\n- Two reviews. One built 84 pairs of sibling projects from a hostile\nfile (serial and with `-j 4`), every refusal with its advice fed back,\nthe notice in every combination of switch, selection, include and\nincremental build, and found the option equal to its prefix throughout.\nThe other re-ran every proof and gate and tried 22 wrong versions of its\nown; the two that passed are now pinned.\n- Suites: sphinx-needs 5744 passed; the touched files on Sphinx 7, 8 and\n9; lint, typecheck and the docs build without a warning.",
+          "timestamp": "2026-11-21T21:24:40+01:00",
+          "tree_id": "7d6a9643f6103e1202751edfa039f33b3a747692",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b2e7c7a2052807b8a32c01fd4022ff299761f1a5"
+        },
+        "date": 1795292754832,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0508648160000007,
+            "unit": "s",
+            "extra": "Commit: b2e7c7a2052807b8a32c01fd4022ff299761f1a5\nBranch: master\nTime: 2026-11-21T21:24:40+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 9.408025658,
+            "unit": "s",
+            "extra": "Commit: b2e7c7a2052807b8a32c01fd4022ff299761f1a5\nBranch: master\nTime: 2026-11-21T21:24:40+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 193.160682,
+            "unit": "MB",
+            "extra": "Commit: b2e7c7a2052807b8a32c01fd4022ff299761f1a5\nBranch: master\nTime: 2026-11-21T21:24:40+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
           }
         ]
       }
