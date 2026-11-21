@@ -107,6 +107,12 @@ Need
    :members:
    :exclude-members: create_need
 
+No function here takes a namespace: a :ref:`namespaced id <namespaced_ids>` is built with
+``ub_needs_exchange.join_id`` and given as the id, so
+``create_need(..., id=join_id(["SUP"], "REQ_1"))`` creates the need ``SUP::REQ_1``, in the
+namespace ``SUP`` with :ref:`needs_namespaced_ids` on, and so does ``add_external_need``
+given the same id.
+
 .. _api_migrating_add_need:
 
 Migrating from ``add_need``

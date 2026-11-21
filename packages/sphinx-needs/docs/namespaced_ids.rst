@@ -94,9 +94,18 @@ Because the local id is tried first, a pattern cannot refuse a namespace:
 Namespaces from an import
 -------------------------
 
-With namespaced ids on, an :ref:`needimport` or :ref:`needs_external_needs` ``id_prefix`` that ends in ``::``
-puts the imported needs into a namespace: with ``:id_prefix: supplier::`` the file's ``REQ_1`` is ``supplier::REQ_1``, and its
-``nc::REQ_2`` is ``supplier::nc::REQ_2``. A prefix that does not end in ``::`` (``SUP_``) joins the id's first
+:ref:`needimport`'s ``:namespace:`` option (:ref:`needimport_namespace`) and the ``namespace`` key of a
+:ref:`needs_external_needs` source put the imported needs into a namespace: with ``:namespace: supplier`` the
+file's ``REQ_1`` is ``supplier::REQ_1``, its ``nc::REQ_2`` is ``supplier::nc::REQ_2``, and the file's links to its
+own needs follow. The namespace is checked, may have several levels (``supplier::m2``), and is not given beside
+an ``id_prefix``. With namespaced ids off the ids get the prefix all the same but are read as plain ids, and each
+such import gives one ``needs.namespaced_ids_off`` warning. With them on, a need of the file whose id cannot be
+joined to a namespace (``a::::b``, or an id starting with ``:``) is imported as ``supplier::a::::b``, a plain id
+outside the namespace that the file's links still reach, and each import holding such ids gives one
+``needs.import_namespace`` warning.
+
+An ``id_prefix`` that ends in ``::`` does the same, unchecked and without either warning: ``:id_prefix:
+supplier::`` is ``:namespace: supplier``. A prefix that does not end in ``::`` (``SUP_``) joins the id's first
 segment instead.
 
 Filtering by namespace

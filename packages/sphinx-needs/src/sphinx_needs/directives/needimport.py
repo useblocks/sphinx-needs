@@ -14,6 +14,7 @@ from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
 import ub_needs_exchange as exchange
+from sphinx_needs._namespaced_ids import import_prefix, report_import_namespace
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -58,6 +59,7 @@ class NeedimportDirective(SphinxDirective):
         "ids": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,
+        "namespace": directives.unchanged_required,
         "tags": directives.unchanged_required,
         "style": directives.unchanged_required,
         "layout": directives.unchanged_required,
@@ -100,6 +102,23 @@ class NeedimportDirective(SphinxDirective):
                 "needs_import_restrict_content is on",
                 location,
             )
+
+        # a namespace is its prefix: resolved here, once, and the import then does what
+        # an ``id_prefix`` of that text does
+        namespace: str | None = self.options.get("namespace")
+        if namespace is not None:
+            if "id_prefix" in self.options:
+                example = namespace if _names_a_namespace(namespace) else "SUP"
+                return self._refuse(
+                    "needimport: :namespace: and :id_prefix: cannot both be given: "
+                    f"':namespace: {example}' is "
+                    f"':id_prefix: {import_prefix(example)}'; give one of them",
+                    location,
+                )
+            try:
+                id_prefix = import_prefix(namespace)
+            except ValueError as err:
+                return self._refuse(f"needimport: :namespace: {err}", location)
 
         # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
@@ -235,6 +254,16 @@ class NeedimportDirective(SphinxDirective):
                     need["tags"] = (
                         f"{need_tags},{','.join(tags)}" if need_tags else tags
                     )
+
+        if namespace is not None:
+            report_import_namespace(
+                f"Needs import file {source_name}",
+                namespace,
+                id_prefix,
+                needs_list,
+                namespaced=needs_config.namespaced_ids,
+                location=location,
+            )
 
         # a link is prefixed when its target is a need of the file, imported here or not
         import_prefix_link_edit(
@@ -438,6 +467,15 @@ class NeedimportDirective(SphinxDirective):
     @property
     def docname(self) -> str:
         return self.env.docname
+
+
+def _names_a_namespace(text: str) -> bool:
+    """Whether *text* is a namespace an import can be given."""
+    try:
+        import_prefix(text)
+    except ValueError:
+        return False
+    return True
 
 
 def _split_tags(tags: str) -> list[str]:

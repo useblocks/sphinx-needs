@@ -112,6 +112,48 @@ This may be useful to avoid duplicated ids.
     ``REQ_1.SUB_2`` and ``SUB_2``, ``x::REQ_1.SUB_2`` becomes ``x::REQ_1.imp_SUB_2``
     with the prefix ``imp_``.
 
+.. _needimport_namespace:
+
+namespace
+~~~~~~~~~
+
+.. versionadded:: 9.4.0
+
+Puts the imported needs into a :ref:`namespace <namespaced_ids>`, so that a supplier's
+ids cannot clash with this project's: with ``:namespace: SUP``, the file's ``REQ_1`` is
+imported as ``SUP::REQ_1`` and its ``nc::REQ_2`` as ``SUP::nc::REQ_2``, and every
+reference inside the file to one of its own needs (a link, a link default of the file's
+schema, an id written in the content) gets the same ``SUP::`` in front, as described for
+``id_prefix`` above. A namespace may have several levels: ``:namespace: sup::m2`` gives
+``sup::m2::REQ_1``.
+
+.. code-block:: rst
+
+   .. needimport:: supplier/needs.json
+      :namespace: SUP
+
+``:namespace: SUP`` is ``:id_prefix: SUP::``, with the namespace checked: it is one or more
+segments joined by ``::``, each segment one or more ASCII letters, ASCII digits, ``_`` or
+``-``. A value that is not a namespace (``SUP::``, ``a b``), and ``:namespace:`` given
+together with ``:id_prefix:``, are each one ``needs.needimport`` warning at the directive,
+saying what to write instead, and the directive imports nothing.
+
+The ids are read as a namespace only with :ref:`needs_namespaced_ids` on. With it off (the
+default in 9.x) the prefix is added all the same, every id is a plain id, and the directive
+gives one ``needs.namespaced_ids_off`` warning saying so.
+
+With it on, a need of the file whose id cannot be joined to a namespace -- an id that
+starts with ``:``, or that holds ``::`` but is not a namespaced id, such as ``a::::b`` -- is
+imported all the same, as ``SUP::a::::b``: a plain id, outside the namespace, which the
+links of the file still reach. The directive then gives one ``needs.import_namespace``
+warning, saying how many of the needs it imports are outside the namespace and naming the
+first five. Add ``"needs.import_namespace"`` to ``suppress_warnings`` to silence that
+warning alone; ``"needs.namespaced_ids_off"`` silences the other, and with it the warning
+of a filter that reads a namespace while namespaced ids are off, which has the same type.
+
+A sphinx-needs older than 9.4.0 does not know the option: it reports ``unknown option:
+"namespace"`` (a docutils error) and imports nothing from the directive.
+
 version
 ~~~~~~~
 

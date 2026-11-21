@@ -9,6 +9,7 @@ from sphinx.environment import BuildEnvironment
 
 import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
+from sphinx_needs._namespaced_ids import import_prefix, report_import_namespace
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -73,6 +74,10 @@ def load_external_needs(
                 "json_path or json_url must be configured to use external_needs."
             )
 
+        # the prefix is added as written, to the ids and to the links between the
+        # file's needs; a namespace is its prefix
+        id_prefix = source_id_prefix(source, idx)
+
         source_str = source.get("json_url", "") or source.get("json_path", "")
         try:
             document = _read_source(app, source)
@@ -110,10 +115,16 @@ def load_external_needs(
 
         log.debug(f"Loading {len(records)} needs.")
 
-        # the prefix is added as written, to the ids and to the links between the
-        # file's needs
-        id_prefix = source.get("id_prefix", "")
         needs = {r.key: r.fields for r in records}
+        if "namespace" in source:
+            report_import_namespace(
+                f"External needs source {source_str!r}",
+                source["namespace"],
+                id_prefix,
+                needs,
+                namespaced=needs_config.namespaced_ids,
+                location=None,
+            )
         # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
         # project's, else the file's as a needimport names it
         origin = writing_project(selected.data) or _source_label(app, source)
@@ -216,6 +227,52 @@ def load_external_needs(
     data.external_needs_loaded = sorted(added)
 
 
+def source_id_prefix(source: ExternalSource, index: int, /) -> str:
+    """The prefix an external source puts in front of the ids of its file, and of the
+    links between them: its ``namespace``'s (``SUP`` gives ``SUP::``), else its
+    ``id_prefix``, else none. Every reader of a source's prefix reads it here.
+
+    :param source: The source, as configured.
+    :param index: Its index in ``needs_external_needs``, which a refusal names.
+    :raises NeedsExternalException: If the source gives both keys, or a ``namespace``
+        that is not a namespace (an empty one included).
+    """
+    if "namespace" not in source:
+        return source.get("id_prefix", "")
+    namespace = source["namespace"]
+    if "id_prefix" in source:
+        example = namespace if isinstance(namespace, str) and namespace else "SUP"
+        try:
+            example_prefix = import_prefix(example)
+        except ValueError:
+            example, example_prefix = "SUP", import_prefix("SUP")
+        raise NeedsExternalException(
+            f"namespace and id_prefix are both configured in external_needs item "
+            f"{index}, but only one is allowed: namespace {example!r} is id_prefix "
+            f"{example_prefix!r}."
+        )
+    if namespace == "":
+        raise NeedsExternalException(
+            f"namespace is empty in external_needs item {index}: an empty namespace "
+            "puts no need into a namespace; remove the key."
+        )
+    try:
+        return import_prefix(namespace)
+    except ValueError as err:
+        raise NeedsExternalException(
+            f"namespace in external_needs item {index}: {err}."
+        ) from None
+
+
+def external_source_prefixes(config: NeedsSphinxConfig, /) -> set[str]:
+    """The prefix of each external source of the project (:func:`source_id_prefix`), as
+    a part's URL is computed from them (``utils.external_part_url``)."""
+    return {
+        source_id_prefix(source, index)
+        for index, source in enumerate(config.external_needs)
+    }
+
+
 def _read_source(app: Sphinx, source: ExternalSource) -> exchange.Document:
     """Download or read an external source's needs.json.
 
@@ -279,5 +336,6 @@ def _refuse_need(need_id: str, source_str: str, err: InvalidNeedException) -> No
 
 class NeedsExternalException(BaseException):
     """Raised for an external source whose configuration is wrong (no ``base_url``;
-    both or neither of ``json_path`` and ``json_url``). A source whose needs.json cannot
+    both or neither of ``json_path`` and ``json_url``; both ``namespace`` and
+    ``id_prefix``, or a ``namespace`` that is not one). A source whose needs.json cannot
     be obtained or read is a ``needs.external_needs`` warning instead."""

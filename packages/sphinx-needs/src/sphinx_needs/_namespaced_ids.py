@@ -16,16 +16,19 @@ the id never changes after creation, so they cannot go stale. The design record 
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from sphinx_needs.logging import get_logger, log_warning
 from ub_needs_exchange import (
     EMPTY_LOCAL,
     EMPTY_SEGMENT,
     SEGMENT_CHARACTER,
     SEPARATOR,
     id_problem,
+    namespace_prefix,
+    parse_namespace,
     split_id,
 )
 
@@ -33,6 +36,11 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
     from sphinx_needs.need_item import NeedItem
+
+log = get_logger(__name__)
+
+#: how many of the ids an import leaves outside its namespace its notice names
+_OUTSIDE_NAMED = 5
 
 #: the attribute of the application that holds the build's hints (never the
 #: environment, which Sphinx pickles)
@@ -91,6 +99,117 @@ def unclean_id_message(need_id: str, problem: str, /) -> str:
         f"({_REASONS[problem]}), so it is read as a plain id. Correct the id, set "
         "needs_namespaced_ids = False to read no id as namespaced, or suppress the "
         "warning type needs.id_namespace."
+    )
+
+
+def import_prefix(namespace: object, /) -> str:
+    """The prefix an import's ``namespace`` stands for (``needimport``'s
+    ``:namespace:``, a ``needs_external_needs`` source's ``namespace``): the text that
+    joins an id to the namespace, ``ub_needs_exchange.namespace_prefix`` of the
+    namespace *namespace* names (``"SUP"`` gives ``"SUP::"``, ``"sup::m2"`` gives
+    ``"sup::m2::"``). From there the import does exactly what an ``id_prefix`` of that
+    text does: the option is its prefix, and nothing else is kept of it.
+
+    :param namespace: The option's value, as written.
+    :raises ValueError: If it is not a namespace: not a string, empty, or a text that
+        ``ub_needs_exchange.parse_namespace`` refuses. The message names the value and
+        says what to write instead: for a namespace followed by the separator, the
+        namespace without it; otherwise the rule a segment obeys.
+    """
+    if not isinstance(namespace, str):
+        raise ValueError(f"{namespace!r} is not a namespace: it must be a string")
+    if not namespace:
+        raise ValueError(
+            "'' is not a namespace: an empty namespace puts no need into a namespace"
+        )
+    try:
+        return namespace_prefix(parse_namespace(namespace))
+    except ValueError:
+        bare = namespace.removesuffix(SEPARATOR)
+        if bare != namespace and _is_namespace(bare):
+            raise ValueError(
+                f"{namespace!r} is not a namespace: write the namespace without the "
+                f"trailing {SEPARATOR!r}, {bare!r}"
+            ) from None
+        raise
+
+
+def _is_namespace(text: str) -> bool:
+    """Whether *text* names a namespace that is not the empty one."""
+    try:
+        return bool(parse_namespace(text))
+    except ValueError:
+        return False
+
+
+def ids_outside(prefix: str, ids: Iterable[str], /) -> list[str]:
+    """The ids, of *ids*, that the import *prefix* of a namespace leaves OUTSIDE it:
+    ``prefix + id`` does not split cleanly, so it is a plain id (``SUP::a::::b``,
+    ``SUP:::X``), in the order given. Decided by ``ub_needs_exchange.id_problem``,
+    never by the id's text; an empty id, which no import creates, is not one of them.
+
+    :param prefix: A namespace's prefix (:func:`import_prefix`), not empty.
+    :param ids: The ids of the file, as written there.
+    """
+    return [id for id in ids if id and id_problem(prefix + id) is not None]
+
+
+def report_import_namespace(
+    source: str,
+    namespace: str,
+    prefix: str,
+    ids: Iterable[str],
+    /,
+    *,
+    namespaced: bool,
+    location: str | tuple[str, int] | None,
+) -> None:
+    """The one notice of an import under a namespace, if it has one: given once per
+    ``needimport`` directive (at it) and once per external source.
+
+    With ``needs_namespaced_ids`` off, a ``needs.namespaced_ids_off`` warning: the
+    prefix is added all the same, and the ids are read as plain ids. With it on, a
+    ``needs.import_namespace`` warning when some of *ids* cannot be joined to the
+    namespace (:func:`ids_outside`), naming how many, the first few, and why; none when
+    every id joins. An import with an ``id_prefix`` gives neither, and does not call
+    this.
+
+    :param source: How the import's warnings name the file it reads.
+    :param namespace: The import's namespace, as written.
+    :param prefix: Its prefix (:func:`import_prefix`).
+    :param ids: The ids, as the file writes them, of the needs the import selects: a
+        record refused afterwards (a duplicate id, say) is counted all the same.
+    :param namespaced: ``needs_namespaced_ids``.
+    :param location: Where the warning is given.
+    """
+    if not namespaced:
+        log_warning(
+            log,
+            f"{source}: the namespace {namespace!r} puts {prefix!r} in front of the "
+            "file's ids, but namespaced ids are off for this project, so they are read "
+            "as plain ids, in no namespace. Set needs_namespaced_ids = True to read "
+            f"{SEPARATOR!r} in an id as a namespace separator, or suppress "
+            "needs.namespaced_ids_off.",
+            "namespaced_ids_off",
+            location=location,
+        )
+        return
+    ids = [id for id in ids if id]
+    if not (outside := ids_outside(prefix, ids)):
+        return
+    named = ", ".join(repr(id) for id in outside[:_OUTSIDE_NAMED])
+    if (more := len(outside) - _OUTSIDE_NAMED) > 0:
+        named += f" and {more} more"
+    log_warning(
+        log,
+        f"{source}: the namespace {namespace!r} does not hold {len(outside)} of the "
+        f"{len(ids)} needs imported: {named}. An id that starts with "
+        f"{SEPARATOR[0]!r}, or holds {SEPARATOR!r} but is not a namespaced id, cannot "
+        "be joined to a namespace: such a need has a plain id, imported with "
+        f"{prefix!r} in front, outside the namespace. Correct the ids in the file, or "
+        "suppress needs.import_namespace.",
+        "import_namespace",
+        location=location,
     )
 
 

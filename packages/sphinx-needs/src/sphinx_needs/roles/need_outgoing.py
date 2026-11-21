@@ -77,9 +77,10 @@ def process_need_outgoing(
     needs_schema = SphinxNeedsData(env).get_schema()
 
     # the external sources' prefixes, as `:need:` reads them for a part's anchor
-    external_id_prefixes = {
-        source.get("id_prefix", "") for source in needs_config.external_needs
-    }
+    # (imported here: the loader's module imports the API, which imports this one)
+    from sphinx_needs.external_needs import external_source_prefixes
+
+    external_id_prefixes = external_source_prefixes(needs_config)
 
     # for node_need_ref in doctree.findall(NeedOutgoing):
     for node_need_ref in found_nodes:
