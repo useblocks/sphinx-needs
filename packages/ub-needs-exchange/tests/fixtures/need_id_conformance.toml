@@ -955,3 +955,9 @@ name = "prefix-a-segment-ending-in-a-line-feed"
 why = "a trailing line feed is a bad character, not ignored"
 namespace = ["nc\u000a"]
 invalid = true
+
+[[prefix]]
+name = "prefix-an-empty-segment-after-a-valid-one"
+why = "every segment is checked, not only the first"
+namespace = ["nc", ""]
+invalid = true
