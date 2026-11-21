@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 30
+ENV_DATA_VERSION: Final = 31
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -228,6 +228,12 @@ the white space at its ends, so ``(p1) first`` stores ``first`` where version 29
 without the bump an upgraded build would keep the spaced texts of the documents whose
 sources did not change, in filters, labels and ``needs.json``, beside the stripped texts
 of those it re-reads.
+
+Version 31 adds an attribute to the environment, ``_needs_external_needs_loaded``: the ids
+of the needs ``needs_external_needs`` loaded, which the next build removes before it
+loads its sources again (:attr:`SphinxNeedsData.external_needs_loaded`). An environment
+pickled by version 30 has none, so the external needs it holds would stay beside those
+the next build loads, under an id its sources no longer give.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -1257,6 +1263,22 @@ class SphinxNeedsData:
     @builtin_services_read_with.setter
     def builtin_services_read_with(self, value: tuple[str, ...]) -> None:
         self.env._needs_builtin_services_read_with = value
+
+    @property
+    def external_needs_loaded(self) -> list[str]:
+        """The ids of the needs ``needs_external_needs`` loaded when this environment
+        last loaded its sources, which the next build removes before it loads them
+        again.
+
+        Empty for a fresh environment. An external need added otherwise, such as through
+        :func:`~sphinx_needs.api.need.add_external_need` while a document is read, is
+        not one of them, and that step does not remove it.
+        """
+        return getattr(self.env, "_needs_external_needs_loaded", [])
+
+    @external_needs_loaded.setter
+    def external_needs_loaded(self, value: list[str]) -> None:
+        self.env._needs_external_needs_loaded = value
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
