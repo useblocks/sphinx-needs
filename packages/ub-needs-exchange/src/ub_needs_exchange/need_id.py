@@ -30,6 +30,7 @@ __all__ = (
     "id_problem",
     "is_segment",
     "join_id",
+    "namespace_prefix",
     "parse_namespace",
     "split_id",
 )
@@ -65,6 +66,16 @@ def _segments(namespace: Iterable[str]) -> tuple[str, ...]:
             f"pass {advice}"
         )
     return tuple(namespace)
+
+
+def _check_segments(segments: tuple[str, ...]) -> None:
+    """Refuse a segment that is not a segment, naming it and the rule."""
+    for segment in segments:
+        if not is_segment(segment):
+            raise ValueError(
+                f"{segment!r} is not a namespace segment: a segment is one or more "
+                "ASCII letters, ASCII digits, '_' or '-'"
+            )
 
 
 def is_segment(text: str) -> bool:
@@ -125,12 +136,7 @@ def join_id(namespace: Iterable[str], local: str) -> str:
     segments = _segments(namespace)
     if not segments:
         return local
-    for segment in segments:
-        if not is_segment(segment):
-            raise ValueError(
-                f"{segment!r} is not a namespace segment: a segment is one or more "
-                "ASCII letters, ASCII digits, '_' or '-'"
-            )
+    _check_segments(segments)
     if not local:
         raise ValueError("the local id of a namespaced id must not be empty")
     if SEPARATOR in local:
@@ -144,6 +150,32 @@ def join_id(namespace: Iterable[str], local: str) -> str:
             f"later {SEPARATOR!r}, and the id would split there"
         )
     return SEPARATOR.join(segments) + SEPARATOR + local
+
+
+def namespace_prefix(namespace: Iterable[str]) -> str:
+    """The text that, put before an id, joins the id to *namespace* (contract section
+    14): the namespace's text followed by ``::``, so ``("nc", "m2")`` gives
+    ``"nc::m2::"``. The empty namespace gives ``""``.
+
+    Two laws hold for every text ``x``. Where ``x`` can be joined to the namespace -- its
+    own namespace, if any, under *namespace* and its local id after it, as
+    :func:`join_id` accepts them -- the prefix followed by ``x`` is that joined id:
+    ``namespace_prefix(["SUP"]) + "nc::REQ_1"`` is ``SUP::nc::REQ_1``, in the namespace
+    ``SUP::nc``. Where it cannot (``x`` is empty, starts with ``:``, or holds ``::`` and
+    does not split cleanly, as ``a::::b`` does), the prefix followed by ``x`` is a plain
+    id, OUTSIDE the namespace: ``SUP::a::::b`` splits to the empty namespace. It never
+    looks at an id: what an id left outside costs is the consumer's to decide.
+
+    :raises TypeError: If *namespace* is a ``str``: it is a sequence of segments (parse a
+        namespace's text with :func:`parse_namespace` first).
+    :raises ValueError: If a segment is not a segment (see :func:`is_segment`). The
+        message names the segment and the rule.
+    """
+    segments = _segments(namespace)
+    if not segments:
+        return ""
+    _check_segments(segments)
+    return SEPARATOR.join(segments) + SEPARATOR
 
 
 def parse_namespace(text: str) -> tuple[str, ...]:

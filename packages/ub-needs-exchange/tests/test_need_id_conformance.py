@@ -166,7 +166,7 @@ def test_every_case_uses_only_the_keys_of_its_table(table: str) -> None:
                 assert value in PROBLEMS, name
             else:
                 assert isinstance(value, str), name
-        if "id" in case:  # only a non-empty namespace puts its prefix before an id
+        if table == "prefix" and "id" in case:  # only with a non-empty namespace
             assert case["namespace"], name
             assert case["prefixed"] == case["prefix"] + case["id"], name
 

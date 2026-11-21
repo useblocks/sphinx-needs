@@ -22,6 +22,7 @@ from ub_needs_exchange.need_id import (
     id_problem,
     is_segment,
     join_id,
+    namespace_prefix,
     parse_namespace,
     split_id,
 )
@@ -103,6 +104,7 @@ __all__ = [
     "join_id",
     "load",
     "map_legacy_keys",
+    "namespace_prefix",
     "parse",
     "parse_namespace",
     "split_id",
