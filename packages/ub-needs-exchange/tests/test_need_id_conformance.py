@@ -54,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "need_id_conformance.toml"
 #:
 #: Raising one is the normal consequence of adding a case; lowering one needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNTS = {"split": 65, "namespace": 19, "join": 20, "prefix": 23}
+EXPECTED_CASE_COUNTS = {"split": 65, "namespace": 19, "join": 20, "prefix": 24}
 
 #: The keys a case of each table may carry, as the header defines them: those it must,
 #: and the alternative sets of which it carries exactly one.

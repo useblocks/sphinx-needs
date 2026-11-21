@@ -822,6 +822,12 @@ namespace = ["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"]
 prefix = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-::"
 
 [[prefix]]
+name = "prefix-segments-starting-with-a-digit-and-a-hyphen"
+why = "a segment character may stand in any position: a leading digit or hyphen is not refused"
+namespace = ["007", "-"]
+prefix = "007::-::"
+
+[[prefix]]
 name = "prefix-a-plain-id"
 why = "a plain id joins the namespace as its local id"
 namespace = ["SUP"]

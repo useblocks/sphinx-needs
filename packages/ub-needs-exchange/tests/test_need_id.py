@@ -169,19 +169,29 @@ def test_the_prefix_laws_over_every_short_text(namespace):
     """For every text ``x`` of the alphabet, with ``(xns, xlocal) = split_id(x)``: where
     ``join_id(namespace + xns, xlocal)`` is accepted it equals the prefix followed by
     ``x`` (L1); where it is refused, the prefix followed by ``x`` is a plain id, with a
-    problem (L2). Both counts are positive controls."""
+    problem (L2). It is refused exactly when ``x`` is empty, starts with ``:``, or holds
+    ``::`` and does not split cleanly. Both counts are positive controls."""
     prefix = namespace_prefix(namespace)
     accepted = refused = 0
     for text in _law_texts():
         text_namespace, local = split_id(text)
+        cannot_be_joined = (
+            not text
+            or text.startswith(SEPARATOR[0])
+            or (SEPARATOR in text and id_problem(text) is not None)
+        )
         try:
             joined = join_id(namespace + text_namespace, local)
         except ValueError:
+            if not cannot_be_joined:
+                pytest.fail(f"{text!r} is refused under {namespace!r}, unexpectedly")
             prefixed = prefix + text
             if split_id(prefixed) != ((), prefixed) or id_problem(prefixed) is None:
                 pytest.fail(f"L2 fails on {text!r} under {namespace!r}")
             refused += 1
         else:
+            if cannot_be_joined:
+                pytest.fail(f"{text!r} is joined under {namespace!r}, unexpectedly")
             if joined != prefix + text:
                 pytest.fail(f"L1 fails on {text!r} under {namespace!r}")
             accepted += 1
