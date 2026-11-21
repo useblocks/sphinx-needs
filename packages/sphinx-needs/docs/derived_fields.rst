@@ -339,7 +339,7 @@ Pick a kind by what the need should show:
    * - ``links``
      - a link type
      - ``where`` or ``join``
-     - the other of the two; ``include_self``; ``include_parts`` (not with ``join``)
+     - the other of the two; ``include_self``; ``include_parts``
      - a link list
    * - ``content_links``
      - a link type
@@ -558,8 +558,11 @@ The rules:
 - **Candidates.** Each need that matches, once, however many values it shares,
   in :ref:`need-id order <needs_id_order>`.
   This need is left out unless ``include_self = true``.
-  Needs only: a need part is never a candidate (a need with parts matches as itself),
-  and ``include_parts`` cannot be given beside ``join``.
+  A need part is a candidate only with ``include_parts = true``, on ``links``: then each need's parts are candidates
+  too, each read as a part answers a :ref:`filter <filter_string>` (its own ``id``, ``id_complete`` and ``content``,
+  no ``parent_need``, its need's value of every other field), and a part that matches is linked as ``<need>.<part>``, after its need,
+  in part-id order, once; this need's own parts are left out with it unless ``include_self = true``.
+  Without it, a need with parts matches as itself.
 - **links and copy.** A ``where`` beside ``join`` narrows the candidates: it is tested on each,
   and a candidate it does not hold on, or cannot be evaluated on, is dropped without a warning.
   ``links`` links the candidates left: it requires ``where`` or ``join``, and takes both.
@@ -593,6 +596,7 @@ the arguments come in the swapped order, the field read on every need first.
 compares each need's ``target_option`` whole (so an array, a number or a comma-separated value never matches,
 and an unstripped one only as written), and fails when this need's ``test_option`` is an array or a number;
 ``links_from_match`` reads both sides by value and fails the call on a number or boolean field.
+The nearest form of ``tr_link(…, include_parts=True)`` adds ``include_parts`` to either.
 
 .. _`needs_derive_kind_sum`:
 
@@ -830,7 +834,8 @@ Bear in mind:
 Its candidates are every need, and with ``include_parts`` every need's parts (after it, in part-id order),
 in :ref:`need-id order <needs_id_order>`;
 this need and its parts are left out unless ``include_self``.
-With ``join``, the needs that match (:ref:`needs_derive_join`), in the same order.
+With ``join``, the needs that match, and with ``include_parts`` the parts that match (:ref:`needs_derive_join`),
+in the same order.
 ``needs.json`` writes the list sorted naturally, as every link list.
 
 .. _`needs_derive_kind_content_links`:
@@ -850,7 +855,8 @@ without a second, written link to keep in step with the text.
 
 A need whose content says ``:need:`REQ_1``` holds ``REQ_1`` in ``mentions``, and ``REQ_1`` holds it in ``mentions_back``.
 
-Its links are the ``:need:`` references of this need's content (or of the content of the need ``from`` names),
+Its links are the ``:need:`` references of this need's content (or of the content of the need ``from`` names,
+the whole content of the part's need where ``from`` names a :ref:`need part <need_part>`),
 in document order, each once: a reference to a part is a part link, a reference to this need is kept,
 a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
 nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
@@ -1218,10 +1224,13 @@ The table is the reference; each kind's section above shows its roles in use.
    * - ``from``
      - a need id
      - The one need whose ``field`` (``copy``) or content (``content_links``) is read.
+       A :ref:`need part <need_part>`'s address ``ID.part`` reads the part's need (its whole content);
+       an id naming a need as written is that need, a ``.`` in it or not.
    * - ``join``
      - ``{ field = …, equals = … }``
      - ``links``, ``copy``: the candidates are the needs whose ``field`` equals one of this need's ``equals`` values,
-       each once, in :ref:`need-id order <needs_id_order>`. Both are text fields, a string split on ``,`` or an array of strings,
+       each once, in :ref:`need-id order <needs_id_order>` (and on ``links`` with ``include_parts``, the parts too).
+       Both are text fields, a string split on ``,`` or an array of strings,
        compared value by value (see :ref:`needs_derive_join`).
    * - ``where``
      - a filter string
@@ -1251,7 +1260,7 @@ The table is the reference; each kind's section above shows its roles in use.
        ``copy`` with ``join``: this need may be a candidate.
    * - ``include_parts``
      - ``true`` / ``false`` (default)
-     - ``links`` without ``join``: the parts of every need are candidates too, a passing part linked as ``<need>.<part>``.
+     - ``links``: the parts of every need are candidates too (with ``join``, those that match), a passing part linked as ``<need>.<part>``.
    * - ``after``
      - ``"derived"``
      - Compute the field after every other rule of the need.
@@ -1382,7 +1391,7 @@ or names what a fingerprint does not include (nothing a need has, or a name it n
 a ``where`` or ``test`` that does not parse or reads more than the candidate,
 an empty ``where`` on ``links`` (it would link every need),
 a ``where`` or ``select`` on a ``copy`` with neither ``over`` nor ``join``,
-a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
+a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields,
 a ``union`` naming what is not a link type (a field, a ``<link type>_back``, a name declared nowhere), ``parent_needs``,
 a summary link type, no link type, or one twice,
 ``summary`` in a rule, where it is no role,
@@ -1406,7 +1415,7 @@ so the keys beside it are still refused, which its finding says.
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
 a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
-or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
+or a ``from`` naming no need (or a part its need does not have), and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
 (``needs.dynamic_function``); a result is checked even when it equals the empty value,
 such as a ``count`` of ``0`` under ``minimum = 1``.
 To silence a warning, add its type to Sphinx's ``suppress_warnings``:
@@ -1461,8 +1470,8 @@ The built-in functions are the per-need spellings of the kinds:
      - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
    * - ``links_from_filter(filter, include_self, include_parts)``
      - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
-   * - ``links_from_match(field, equals, include_self, filter)``
-     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self``,
+   * - ``links_from_match(field, equals, include_self, filter, include_parts)``
+     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self`` and ``include_parts``,
        and the ``where`` ``filter``
 
 A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,

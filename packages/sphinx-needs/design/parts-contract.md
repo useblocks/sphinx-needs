@@ -111,7 +111,11 @@ included. A part's `title` is not on this page yet (section 9).
 Where a need is expected, a part address reads as its need: a derived field or a function
 that follows a link through a part reads the need's values, and a count over back links
 counts a part link as a link to the need. The corpus pins this for links, and pins each
-other place a need id is given as that place comes to follow it.
+other place a need id is given as that place comes to follow it. A derived field's rule
+`from` (`copy` and `content_links`) and the `need_id` of `links_from_content` follow it:
+given a part address they read the part's need, `content_links` the need's whole content,
+not the part's text; `tests/fixtures/derive_conformance.toml` pins them. There as
+elsewhere, a part the need does not have names nothing, as an id naming no need does.
 
 Two places that take a need id ask which needs link to it, and given a part address they
 answer for the part: `:need_incoming:` lists the part's back links, and a needflow

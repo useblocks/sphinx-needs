@@ -153,7 +153,9 @@ _SELECTORS: Final[Mapping[str, frozenset[str]]] = {
     "calc_sum": frozenset({"option", "filter", "links_only"}),
     "links_from_content": frozenset({"need_id", "filter"}),
     "links_from_filter": frozenset({"filter", "include_self", "include_parts"}),
-    "links_from_match": frozenset({"field", "equals", "filter", "include_self"}),
+    "links_from_match": frozenset(
+        {"field", "equals", "filter", "include_self", "include_parts"}
+    ),
 }
 #: the selectors that hold a flag, not a name or a filter
 _FLAGS: Final = frozenset({"links_only", "include_self", "include_parts"})
@@ -945,7 +947,12 @@ class _CallReads:
         names = self._filter(filter_string)
         if names is None:
             return
-        source = args.get("need_id") or self.need.id
+        source = self.need.id
+        if need_id := args.get("need_id"):
+            # a part address reads as its need
+            if (named := need_at(self.project.needs, need_id)) is None:
+                return  # the call fails: no such need
+            source = named.id
         for target in self.project.content_refs(source):
             for read in sorted(names.names | names.current):
                 self._read(target, read)
@@ -1114,7 +1121,7 @@ class _RuleReads(_CallReads):
             for name in sorted(where):
                 self._column(name, None, rule.where)
         elif rule.kind == "content_links":
-            source = rule.from_need or self.need.id
+            source = self._from_need(rule.from_need)
             for target in self.project.content_refs(source):
                 for name in sorted(where):
                     self._read(target, name)
@@ -1127,7 +1134,7 @@ class _RuleReads(_CallReads):
                 if name not in rule.exclude:
                     self._read(self.need.id, name)
         elif rule.kind == "copy" and rule.over is None:
-            self._read(rule.from_need or self.need.id, rule.field)
+            self._read(self._from_need(rule.from_need), rule.field)
         elif rule.path:
             self._path(rule.over, rule.field, where)
         else:
@@ -1145,6 +1152,15 @@ class _RuleReads(_CallReads):
             self.reads.scope = _appended(
                 self.reads.scope, OutOfScope(self.what, tuple(self.scope))
             )
+
+    def _from_need(self, from_need: str | None) -> str:
+        """The id of the need a rule reads: its own, or the one ``from`` names, a part
+        address reading as its need; an address naming no need is returned as written,
+        which names no need here either, so the rule reads nothing."""
+        if from_need is None:
+            return self.need.id
+        named = need_at(self.project.needs, from_need)
+        return from_need if named is None else named.id
 
     def _path(self, over: str | None, field: str | None, where: frozenset[str]) -> None:
         """The reads of a ``copy`` or ``collect`` on a link type, computed with the

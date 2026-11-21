@@ -539,7 +539,7 @@ def links_from_content(
 
        This function requires the source need to have a stored doctree node.
        It will emit a warning and return an empty list for needs without a
-       stored node (e.g. external needs or need parts).
+       stored node (e.g. external needs).
 
     Example:
 
@@ -582,11 +582,16 @@ def links_from_content(
           Links retrieved from content of :need:`CON_SPEC_1`
 
     :param need_id: ID of need, which provides the content. If not set, current need is used.
+        A need part's address (``ID.part``) reads the part's need, its whole content; an
+        address naming a part the need does not have names no need.
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
     if need_id:
-        source_need_id = need_id
+        # a part address reads as its need, the need's whole content; an address
+        # naming no need, or a part the need does not have, fails below as it always did
+        named = need_at(needs, need_id)
+        source_need_id = need_id if named is None else named["id"]
     elif need is None:
         raise ValueError("No need found for links_from_content")
     elif isinstance(need, NeedPartItem):
@@ -758,6 +763,7 @@ def links_from_match(
     equals: str,
     include_self: bool = False,
     filter: str | None = None,
+    include_parts: bool = False,
     *,
     reads: UnresolvedReads | None = None,
 ) -> list[NeedLink]:
@@ -780,11 +786,15 @@ def links_from_match(
     ``equals`` share a value, compared exactly (case-sensitive). Each need is linked
     once, however many values it shares, in need-id order, comparing ids as strings
     (so ``REQ_10`` comes before ``REQ_9``); the link list is sorted for the output
-    anyway. Only whole needs are candidates, never their parts. The need that contains
-    the call is not linked, even if it matches, unless ``include_self=True``.
+    anyway. Only whole needs are candidates: set ``include_parts=True`` to match the
+    parts of every need as well, each read as the part answers a filter (its own ``id``,
+    ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other
+    field), after its need in part-id order, each once; a part that matches is linked as
+    ``<need id>.<part id>``. The need that contains the call is not linked, even if it
+    matches, and neither are its own parts, unless ``include_self=True``.
 
-    ``filter`` keeps only the matches that pass it, and is read as
-    :func:`links_from_filter` reads its filter (``current_need`` is the need that
+    ``filter`` keeps only the matches that pass it, a part tested as a part, and is read
+    as :func:`links_from_filter` reads its filter (``current_need`` is the need that
     contains the call). No match gives no links. The call fails, and links nothing, if
     ``field`` or ``equals`` is empty, or names a field that does not hold text (a number,
     a boolean, a link type).
@@ -811,13 +821,16 @@ def links_from_match(
     whole (so an array, a number or a comma-separated value never matches, and an
     unstripped one only as written), and fails when this need's ``test_option`` is an
     array or a number; ``links_from_match`` reads both sides by value and fails the call
-    on a number or boolean field.
+    on a number or boolean field. The nearest spelling of
+    ``tr_link(…, include_parts=True)`` adds ``include_parts=True``.
 
     :param field: The field read on every need.
     :param equals: The field of this need whose values a need's ``field`` must share.
-    :param include_self: If True, the current need is linked too, if it matches.
+    :param include_self: If True, the current need, and its own parts, are linked
+        too, if they match.
     :param filter: :ref:`filter_string`, which a matching need must pass too.
-    :return: The links to the needs that match.
+    :param include_parts: If True, the parts of every need are candidates as well.
+    :return: The links to the needs (and parts) that match.
     """
     for key, name in (("field", field), ("equals", equals)):
         if not isinstance(name, str) or not name.strip():
@@ -842,17 +855,30 @@ def links_from_match(
         raise ValueError(_constant_filter_message(filter))
     if need is None:
         return []
-    matched = join_matches(
-        need, needs, field, equals, include_self=include_self, reads=reads
+    matched = join_candidates(
+        need,
+        needs,
+        field,
+        equals,
+        include_self=include_self,
+        include_parts=include_parts,
+        reads=reads,
     )
     if filter:
         # imported here, as the order module imports this one
         from sphinx_needs.functions.order import filter_names
 
         config = NeedsSphinxConfig(app.config)
-        # every need, for a filter naming ``needs``; built only for one
-        every = list(needs.values()) if filter_names(filter).opaque else None
-        kept: list[NeedItem] = []
+        # every candidate, for a filter naming ``needs`` (the parts too with
+        # ``include_parts``, as for links_from_filter); built only for one
+        every: list[NeedItem | NeedPartItem] | None = None
+        if filter_names(filter).opaque:
+            every = (
+                _every_need_and_part(needs, include_parts=True)
+                if include_parts
+                else list(needs.values())
+            )
+        kept: list[NeedItem | NeedPartItem] = []
         for candidate in matched:
             try:
                 passes = filter_single_need(
@@ -870,7 +896,14 @@ def links_from_match(
             if passes:
                 kept.append(candidate)
         matched = kept
-    return [NeedLink(id=candidate["id"]) for candidate in matched]
+    return [_link_to(candidate) for candidate in matched]
+
+
+def _link_to(candidate: NeedItem | NeedPartItem) -> NeedLink:
+    """The link to a need, or to a part as ``<need id>.<part id>``."""
+    if candidate["is_part"]:
+        return NeedLink(id=candidate["id_parent"], part=candidate["id"])
+    return NeedLink(id=candidate["id"])
 
 
 def _every_need_and_part(
@@ -960,6 +993,22 @@ def execute_rule(
     config = NeedsSphinxConfig(app.config)
     link_fields = frozenset(schema.iter_link_field_names())
     if rule.join is not None:
+        if rule.kind == "links":
+            found = join_candidates(
+                need,
+                needs,
+                rule.join.field,
+                rule.join.equals,
+                include_self=rule.include_self,
+                include_parts=rule.include_parts,
+                reads=reads,
+            )
+            # a ``where`` is tested on each match, a part as a part
+            return [
+                _link_to(match)
+                for match in found
+                if _passes(match, rule.where, config, reads)
+            ]
         matched = join_matches(
             need,
             needs,
@@ -970,18 +1019,22 @@ def execute_rule(
         )
         # a ``where`` is tested on each match, before a copy's ``select``
         matched = [m for m in matched if _passes(m, rule.where, config, reads)]
-        if rule.kind == "links":
-            return [NeedLink(id=match["id"]) for match in matched]
         return _rule_copy_over(need, matched, rule, field_schema, reads)
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
-        found = links_from_content(app, need, needs, need_id=rule.from_need)
-        source_id = need["id"] if rule.from_need is None else rule.from_need
+        source_id = need["id"]
+        if rule.from_need is not None:
+            # a part address reads as its need, resolved once for both reads below
+            named = need_at(needs, rule.from_need)
+            source_id = rule.from_need if named is None else named["id"]
+        found = links_from_content(
+            app, need, needs, need_id=None if rule.from_need is None else source_id
+        )
         if SphinxNeedsData(app.env).get_need_node(source_id) is None:
-            # a failed read (no such need, a part, a need without stored content),
-            # which links_from_content reported: no value, so the field keeps its
-            # placeholder, which its schema does not check
+            # a failed read (no such need, a part the need does not have, a need
+            # without stored content), which links_from_content reported: no value, so
+            # the field keeps its placeholder, which its schema does not check
             return None
         if rule.where is None:
             return found
@@ -1001,9 +1054,11 @@ def execute_rule(
     if rule.kind == "copy" and rule.over is None:
         source = need
         if rule.from_need is not None:
-            if rule.from_need not in needs:
+            # a part address reads as its need; one naming no need, or a part the need
+            # does not have, fails the rule
+            if (named := need_at(needs, rule.from_need)) is None:
                 raise ValueError(f"'from' names no need: {rule.from_need!r}")
-            source = needs[rule.from_need]
+            source = named
         assert rule.field is not None, "copy has a field"
         if reads is not None:
             reads.note_read(source, rule.field)
@@ -1119,7 +1174,8 @@ def join_matches(
 
     Both sides are compared by :func:`join_values`; each need matched once, however many
     values it shares, in need-id order (the ids compared as strings). Needs only: a
-    part is never one. ``need`` itself only with ``include_self``.
+    part is never one (:func:`join_candidates` adds the parts). ``need`` itself only
+    with ``include_self``.
 
     The index of ``field`` is built once per stratum of the pass (the link fields, the
     other fields, the late rules), shared by every rule and call of the stratum reading
@@ -1145,6 +1201,74 @@ def join_matches(
     if not include_self:
         found.discard(need["id"])
     return [needs[need_id] for need_id in sorted(found)]
+
+
+def _join_part_index(
+    needs: NeedsMutable | NeedsView, field: str
+) -> dict[str, list[tuple[str, str]]]:
+    """Every need's parts by the values of ``field`` (:func:`join_values`), each part's
+    read as the part answers a filter: its own ``id``, ``id_complete`` and ``content``,
+    its need's value of every other field. Each value gives the ``(need id, part id)`` of
+    the parts holding it."""
+    ids: dict[str, list[tuple[str, str]]] = {}
+    for need_id, candidate in needs.items():
+        for part in candidate.iter_part_items():
+            for value in join_values(part.get(field)):
+                ids.setdefault(value, []).append((need_id, part["id"]))
+    return ids
+
+
+def join_candidates(
+    need: NeedItem | NeedPartItem,
+    needs: NeedsMutable | NeedsView,
+    field: str,
+    equals: str,
+    *,
+    include_self: bool,
+    include_parts: bool,
+    reads: UnresolvedReads | None,
+) -> list[NeedItem | NeedPartItem]:
+    """The needs :func:`join_matches` matches, and with ``include_parts`` the parts too.
+
+    A part matches when its ``field``, read as the part answers a filter, shares a value
+    with ``need``'s ``equals``. The candidates come as :func:`links_from_filter` takes
+    them with ``include_parts``: in need-id order, each need's matching parts after it
+    (or where it would be, when the need itself does not match) in part-id order, each
+    once, the ids compared as strings; ``need``'s own parts only with ``include_self``.
+
+    The index of the parts by ``field`` is shared as the needs' is (``reads.shared``).
+    A part's value is its need's or its own, never computed: the needs' index notes the
+    reads of a value not computed yet.
+    """
+    matched = join_matches(
+        need, needs, field, equals, include_self=include_self, reads=reads
+    )
+    if not include_parts:
+        return list(matched)
+    shared = None if reads is None else reads.shared
+    key = ("join-parts", field)
+    index: dict[str, list[tuple[str, str]]] | None = (
+        None if shared is None else shared.get(key)
+    )
+    if index is None:
+        index = _join_part_index(needs, field)
+        if shared is not None:
+            shared[key] = index
+    parts: dict[str, set[str]] = {}
+    for value in join_values(need.get(equals)):
+        for need_id, part_id in index.get(value, ()):
+            parts.setdefault(need_id, set()).add(part_id)
+    if not include_self:
+        parts.pop(need["id"], None)
+    whole = {match["id"]: match for match in matched}
+    found: list[NeedItem | NeedPartItem] = []
+    for need_id in sorted(whole.keys() | parts.keys()):
+        if need_id in whole:
+            found.append(whole[need_id])
+        for part_id in sorted(parts.get(need_id, ())):
+            if (part := needs[need_id].get_part_item(part_id)) is not None:
+                found.append(part)
+    return found
 
 
 def over_candidates(

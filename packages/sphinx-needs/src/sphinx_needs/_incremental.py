@@ -29,6 +29,13 @@ When something changed, the pages re-written are:
 - the pages of the needs linking to them, which show their titles;
 - the pages whose need roles name any of those needs.
 
+An address naming one need (a ``from``, the ``need_id`` of ``copy``, an extend by id) is
+read as the need of that whole id, a ``.`` in it or not, and else, for a ``from`` or a
+``copy``, as the need of the part it names (an extend by a part's address is refused).
+Both ids are followed (:func:`_named_ids`), so that a need of the whole id added or
+removed in another document is followed too; an id followed and not read costs a page at
+most.
+
 Both narrowings are allow-lists, so that what they do not know costs a page, never leaves
 one stale: a computed value reads only its own need when it is a built-in call or derive
 rule whose every argument is known to name its own fields (not a back-link field, which
@@ -318,8 +325,10 @@ def _dependents(
             continue
         if not extend["filter_is_id"]:
             _merge(filter_reads, extend_reads)
-        elif (target := _target_id(extend)) in needs:
-            reads[target] = _merge(reads[target] or _Reads(), extend_reads)
+            continue
+        for target in _named_ids(extend["filter"]):
+            if target in needs:
+                reads[target] = _merge(reads[target] or _Reads(), extend_reads)
 
     # the pages whose roles name a moved need: a role's text may show its line number
     # (``[[lineno]]``, ``needs_role_need_template``)
@@ -370,9 +379,8 @@ def _dependents(
     filter_links: set[str] = set()
     for extend in every_extend:
         if extend["filter_is_id"]:
-            extend_links.setdefault(_target_id(extend), set()).update(
-                _extend_link_ids(extend)
-            )
+            for target in _named_ids(extend["filter"]):
+                extend_links.setdefault(target, set()).update(_extend_link_ids(extend))
         else:
             filter_links.update(_extend_link_ids(extend))
 
@@ -394,7 +402,9 @@ def _dependents(
     # the affected needs: those that changed, those an extend that changed names, and
     # those computing a value from a need affected (until no more is)
     affected = set(changed)
-    affected.update(_target_id(extend) for extend in changed_extends)
+    affected.update(
+        target for extend in changed_extends for target in _named_ids(extend["filter"])
+    )
     affected.update(
         need_id for need_id, r in reads.items() if r is not None and r.always
     )
@@ -474,9 +484,14 @@ def _extend_data(extend: NeedsExtendType | None) -> dict[str, object] | None:
     return {key: value for key, value in extend.items() if key != "lineno"}
 
 
-def _target_id(extend: NeedsExtendType) -> str:
-    """The id of the need an extend names (``filter_is_id``), without a part."""
-    return NeedLink.parse_address(extend["filter"]).id
+def _named_ids(address: str) -> set[str]:
+    """The ids of the needs an address naming one need may read: the address as written,
+    which a need's id may be (a ``.`` in it or not) and is read first, and the id before
+    its first ``.``, which is the need of the part it names where a part's address is
+    read (a ``from``, a ``copy``; an extend refuses one). Both, so that what is read
+    costs a page at most, never leaves one stale: a need of the whole id may be added or
+    removed elsewhere."""
+    return {address, NeedLink.parse_address(address).id}
 
 
 def _link_ids(need: NeedItem) -> Iterable[str]:
@@ -632,9 +647,7 @@ def _read_calls(items: Iterable[object], reads: _Reads) -> None:
             if filter_text not in (None, "") or not isinstance(need_id, str | None):
                 reads.always = True
             elif need_id:
-                (reads.back_of if back else reads.needs).add(
-                    NeedLink.parse_address(need_id).id
-                )
+                (reads.back_of if back else reads.needs).update(_named_ids(need_id))
             elif back:
                 # its own back links: the needs linking to it
                 reads.back = True
@@ -694,9 +707,7 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
         # a filter reading the back links of the candidates, or other needs
         reads.always = True
     if rule.from_need is not None:
-        (reads.back_of if back else reads.needs).add(
-            NeedLink.parse_address(rule.from_need).id
-        )
+        (reads.back_of if back else reads.needs).update(_named_ids(rule.from_need))
     if rule.join is not None or rule.transitive:
         reads.always = True
     if rule.over is not None:

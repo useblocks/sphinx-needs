@@ -1749,6 +1749,209 @@ def test_a_failed_read_leaves_the_placeholder_unchecked(test_app):
     assert _needs(app)["REQ_001"]["from_missing"] == []
 
 
+PART_ADDRESS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "owner": {"schema": {"type": "string"}},
+    "from_owner": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "owner", "from": "REQ_001.p1"},
+    },
+    "missing_owner": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "owner", "from": "REQ_001.nope"},
+    },
+}
+needs_links = {
+    "from_refs": {"derive": {"kind": "content_links", "from": "REQ_001.p1"}},
+    "missing_refs": {"derive": {"kind": "content_links", "from": "REQ_001.nope"}},
+    "inline_refs": {},
+}
+"""
+
+PART_ADDRESS_INDEX = """\
+Read
+====
+
+.. req:: With a part
+   :id: REQ_001
+   :owner: alice
+
+   A part, :np:`(p1) the part`, and :need:`REQ_002`.
+
+.. req:: Named with a dot
+   :id: REQ_001.p1
+   :owner: bob
+
+   It references :need:`REQ_003`.
+
+.. req:: Two
+   :id: REQ_002
+
+.. spec:: Three
+   :id: REQ_003
+   :inline_refs: [[links_from_content("REQ_001.p1")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PART_ADDRESS_CONF),
+                (Path("index.rst"), PART_ADDRESS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_from_reads_a_need_named_whole_before_a_part(test_app):
+    """``from`` (and ``links_from_content``'s ``need_id``) naming a need as written is that
+    need, a ``.`` in its id or not: ``REQ_001.p1`` is the need of that id, not the part
+    ``p1`` of ``REQ_001``. A part the need does not have fails the read as an id naming no
+    need does, with the same warning, naming the address as written."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:10: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:19: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_001': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+        "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_001.p1': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_002': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+        "<srcdir>/index.rst:19: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_003': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+    ]
+    needs = _needs(app)
+    for need in needs.values():
+        assert need["from_owner"] == "bob"
+        assert need["from_refs"] == ["REQ_003"]
+        assert need["missing_owner"] is None
+        assert need["missing_refs"] == []
+    assert needs["REQ_003"]["inline_refs"] == ["REQ_003"]
+
+
+WHOLE_DERIVED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "src": {"schema": {"type": "string"}},
+    "a_out": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "z_mid", "from": "REQ_001.p1"},
+    },
+    "z_mid": {"schema": {"type": "string"}, "derive": {"kind": "copy", "field": "src"}},
+}
+"""
+
+WHOLE_DERIVED_INDEX = """\
+Read
+====
+
+.. req:: With a part
+   :id: REQ_001
+   :src: from-req-001
+
+   A part, :np:`(p1) the part`.
+
+.. req:: Named with a dot
+   :id: REQ_001.p1
+   :src: from-the-dotted-need
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), WHOLE_DERIVED_CONF),
+                (Path("index.rst"), WHOLE_DERIVED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_from_waits_for_a_field_derived_on_a_need_named_whole(test_app):
+    """The order of the rules reads ``from`` as the rule does, the whole id first:
+    ``a_out`` copies ``z_mid`` from the need ``REQ_001.p1``, where a rule derives it and
+    sorts after ``a_out``, so ``a_out`` waits for that need, not for ``REQ_001``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert needs["REQ_001"]["a_out"] == "from-the-dotted-need"
+    assert needs["REQ_001.p1"]["a_out"] == "from-the-dotted-need"
+
+
+MATCH_NEEDS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"key": {"schema": {"type": "string"}}, "ref": {"schema": {"type": "string"}}}
+needs_links = {"needs_only": {}, "with_parts": {}}
+"""
+
+#: a filter naming ``needs``: true when it holds a part
+_ANY_PART = "any(n['is_part'] for n in needs)"
+
+MATCH_NEEDS_INDEX = f"""\
+Read
+====
+
+.. req:: With a part
+   :id: REQ_001
+   :key: K
+
+   A part, :np:`(p1) the part`.
+
+.. spec:: Reader
+   :id: SPEC_001
+   :ref: K
+   :needs_only: [[links_from_match("key", "ref", filter="{_ANY_PART}")]]
+   :with_parts: [[links_from_match("key", "ref", filter="{_ANY_PART}", include_parts=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), MATCH_NEEDS_CONF),
+                (Path("index.rst"), MATCH_NEEDS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_match_filter_names_the_parts_with_include_parts(test_app):
+    """``needs`` in ``links_from_match``'s filter holds every candidate, as in
+    ``links_from_filter``'s: with ``include_parts``, the parts too."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    reader = _needs(app)["SPEC_001"]
+    assert reader["needs_only"] == []
+    assert reader["with_parts"] == ["REQ_001", "REQ_001.p1"]
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {

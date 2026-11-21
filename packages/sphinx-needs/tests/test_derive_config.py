@@ -1348,13 +1348,6 @@ _JOIN = {"kind": "links", "join": {"field": "name", "equals": "ref"}}
             id="links-neither-where-nor-join",
         ),
         pytest.param(
-            {**_JOIN, "include_parts": True},
-            True,
-            "links",
-            "kind 'links' takes the role 'include_parts' only without 'join'",
-            id="include-parts-beside-join",
-        ),
-        pytest.param(
             {**_JOIN, "where": " "},
             True,
             "links",
@@ -1436,8 +1429,7 @@ _JOIN = {"kind": "links", "join": {"field": "name", "equals": "ref"}}
 )
 def test_parse_derive_refuses_a_join(raw, on_link, kind, reason):
     """A ``join`` is a table of exactly ``field`` and ``equals``, each naming a field;
-    ``links`` requires ``where`` or ``join`` and takes no ``include_parts`` beside a
-    ``join``; ``copy`` takes one of ``from``, ``over`` and ``join``, ``select`` with
+    ``links`` requires ``where`` or ``join``; ``copy`` takes one of ``from``, ``over`` and ``join``, ``select`` with
     ``over`` or ``join`` and ``include_self`` with ``join``; no other kind takes it.
     One problem per rule, the first in the order the problems are looked for."""
     assert parse_derive(raw, on_link=on_link) == DeriveInvalid(kind, reason)
@@ -1447,6 +1439,14 @@ def test_parse_derive_reads_a_join_beside_include_parts_false():
     """``include_parts = false`` is the default, so it says nothing beside a ``join``."""
     assert parse_derive({**_JOIN, "include_parts": False}, on_link=True) == DeriveRule(
         kind="links", join=DeriveJoin("name", "ref")
+    )
+
+
+def test_parse_derive_reads_a_join_beside_include_parts():
+    """``include_parts = true`` beside a ``join`` makes the parts of every need
+    candidates of the join too, as it does beside a ``where``."""
+    assert parse_derive({**_JOIN, "include_parts": True}, on_link=True) == DeriveRule(
+        kind="links", join=DeriveJoin("name", "ref"), include_parts=True
     )
 
 
