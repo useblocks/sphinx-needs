@@ -137,6 +137,12 @@ Bug fixes
   left as they are. A fresh build does not change. The first build after upgrading reads every document again.
   (:issue:`2523`, :pr:`2565`)
 
+- 🐛 An incremental build re-writes the page of a need showing a value copied from another need, a derived ``copy``
+  rule's ``from`` or the ``need_id`` of ``copy`` naming it, in two cases where the page kept the old value until a
+  full build: the need named has a ``.`` in its id and changed, and a need whose id is a part's address ``ID.part``
+  was added or removed in another document, so the copy reads that need, or the part's need again. The page of the
+  need a :ref:`needextend` names by an id holding a ``.`` is re-written when the extend changes, likewise. (:pr:`0000`)
+
 Internal changes
 ................
 
