@@ -16,10 +16,11 @@ the id never changes after creation, so they cannot go stale. The design record 
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from sphinx_needs.logging import get_logger, log_warning
 from ub_needs_exchange import (
     EMPTY_LOCAL,
     EMPTY_SEGMENT,
@@ -35,6 +36,11 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
     from sphinx_needs.need_item import NeedItem
+
+log = get_logger(__name__)
+
+#: how many of the ids an import leaves outside its namespace its notice names
+_OUTSIDE_NAMED = 5
 
 #: the attribute of the application that holds the build's hints (never the
 #: environment, which Sphinx pickles)
@@ -134,6 +140,76 @@ def _is_namespace(text: str) -> bool:
         return bool(parse_namespace(text))
     except ValueError:
         return False
+
+
+def ids_outside(prefix: str, ids: Iterable[str], /) -> list[str]:
+    """The ids, of *ids*, that the import *prefix* of a namespace leaves OUTSIDE it:
+    ``prefix + id`` does not split cleanly, so it is a plain id (``SUP::a::::b``,
+    ``SUP:::X``), in the order given. Decided by ``ub_needs_exchange.id_problem``,
+    never by the id's text; an empty id, which no import creates, is not one of them.
+
+    :param prefix: A namespace's prefix (:func:`import_prefix`), not empty.
+    :param ids: The ids of the file, as written there.
+    """
+    return [id for id in ids if id and id_problem(prefix + id) is not None]
+
+
+def report_import_namespace(
+    source: str,
+    namespace: str,
+    prefix: str,
+    ids: Iterable[str],
+    /,
+    *,
+    namespaced: bool,
+    location: str | tuple[str, int] | None,
+) -> None:
+    """The one notice of an import under a namespace, if it has one: given once per
+    ``needimport`` directive (at it) and once per external source.
+
+    With ``needs_namespaced_ids`` off, a ``needs.namespaced_ids_off`` warning: the
+    prefix is added all the same, and the ids are read as plain ids. With it on, a
+    ``needs.import_namespace`` warning when some of *ids* cannot be joined to the
+    namespace (:func:`ids_outside`), naming how many, the first few, and why; none when
+    every id joins. An import with an ``id_prefix`` gives neither, and does not call
+    this.
+
+    :param source: How the import's warnings name the file it reads.
+    :param namespace: The import's namespace, as written.
+    :param prefix: Its prefix (:func:`import_prefix`).
+    :param ids: The ids, as the file writes them, of the needs the import creates.
+    :param namespaced: ``needs_namespaced_ids``.
+    :param location: Where the warning is given.
+    """
+    if not namespaced:
+        log_warning(
+            log,
+            f"{source}: the namespace {namespace!r} puts {prefix!r} in front of the "
+            "file's ids, but namespaced ids are off for this project, so they are read "
+            "as plain ids, in no namespace. Set needs_namespaced_ids = True to read "
+            f"{SEPARATOR!r} in an id as a namespace separator, or suppress "
+            "needs.namespaced_ids_off.",
+            "namespaced_ids_off",
+            location=location,
+        )
+        return
+    ids = [id for id in ids if id]
+    if not (outside := ids_outside(prefix, ids)):
+        return
+    named = ", ".join(repr(id) for id in outside[:_OUTSIDE_NAMED])
+    if (more := len(outside) - _OUTSIDE_NAMED) > 0:
+        named += f" and {more} more"
+    log_warning(
+        log,
+        f"{source}: {len(outside)} of the {len(ids)} needs imported into the namespace "
+        f"{namespace!r} are outside it: {named}. An id that starts with "
+        f"{SEPARATOR[0]!r}, or holds {SEPARATOR!r} but is not a namespaced id, cannot "
+        "be joined to a namespace, so each of these is a plain id, imported with "
+        f"{prefix!r} in front. Correct the ids in the file, or suppress "
+        "needs.import_namespace.",
+        "import_namespace",
+        location=location,
+    )
 
 
 def id_matched_by_patterns(

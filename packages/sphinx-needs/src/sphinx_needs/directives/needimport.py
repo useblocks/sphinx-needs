@@ -14,7 +14,7 @@ from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
 import ub_needs_exchange as exchange
-from sphinx_needs._namespaced_ids import import_prefix
+from sphinx_needs._namespaced_ids import import_prefix, report_import_namespace
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -254,6 +254,16 @@ class NeedimportDirective(SphinxDirective):
                     need["tags"] = (
                         f"{need_tags},{','.join(tags)}" if need_tags else tags
                     )
+
+        if namespace is not None:
+            report_import_namespace(
+                f"Needs import file {source_name}",
+                namespace,
+                id_prefix,
+                needs_list,
+                namespaced=needs_config.namespaced_ids,
+                location=location,
+            )
 
         # a link is prefixed when its target is a need of the file, imported here or not
         import_prefix_link_edit(

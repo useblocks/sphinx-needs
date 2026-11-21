@@ -9,7 +9,7 @@ from sphinx.environment import BuildEnvironment
 
 import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
-from sphinx_needs._namespaced_ids import import_prefix
+from sphinx_needs._namespaced_ids import import_prefix, report_import_namespace
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -116,6 +116,15 @@ def load_external_needs(
         log.debug(f"Loading {len(records)} needs.")
 
         needs = {r.key: r.fields for r in records}
+        if "namespace" in source:
+            report_import_namespace(
+                f"External needs source {source_str!r}",
+                source["namespace"],
+                id_prefix,
+                needs,
+                namespaced=needs_config.namespaced_ids,
+                location=None,
+            )
         # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
         # project's, else the file's as a needimport names it
         origin = writing_project(selected.data) or _source_label(app, source)
