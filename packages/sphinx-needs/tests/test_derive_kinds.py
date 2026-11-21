@@ -1749,6 +1749,103 @@ def test_a_failed_read_leaves_the_placeholder_unchecked(test_app):
     assert _needs(app)["REQ_001"]["from_missing"] == []
 
 
+PART_ADDRESS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "owner": {"schema": {"type": "string"}},
+    "from_owner": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "owner", "from": "REQ_001.p1"},
+    },
+    "missing_owner": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "owner", "from": "REQ_001.nope"},
+    },
+}
+needs_links = {
+    "from_refs": {"derive": {"kind": "content_links", "from": "REQ_001.p1"}},
+    "missing_refs": {"derive": {"kind": "content_links", "from": "REQ_001.nope"}},
+    "inline_refs": {},
+}
+"""
+
+PART_ADDRESS_INDEX = """\
+Read
+====
+
+.. req:: With a part
+   :id: REQ_001
+   :owner: alice
+
+   A part, :np:`(p1) the part`, and :need:`REQ_002`.
+
+.. req:: Named with a dot
+   :id: REQ_001.p1
+   :owner: bob
+
+   It references :need:`REQ_003`.
+
+.. req:: Two
+   :id: REQ_002
+
+.. spec:: Three
+   :id: REQ_003
+   :inline_refs: [[links_from_content("REQ_001.p1")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PART_ADDRESS_CONF),
+                (Path("index.rst"), PART_ADDRESS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_from_reads_a_need_named_whole_before_a_part(test_app):
+    """``from`` (and ``links_from_content``'s ``need_id``) naming a need as written is that
+    need, a ``.`` in its id or not: ``REQ_001.p1`` is the need of that id, not the part
+    ``p1`` of ``REQ_001``. A part the need does not have fails the read as an id naming no
+    need does, with the same warning, naming the address as written."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:10: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:19: WARNING: links_from_content: no stored node for need "
+        "'REQ_001.nope' [needs.dynamic_function]",
+        "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_001': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+        "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_001.p1': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_002': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+        "<srcdir>/index.rst:19: WARNING: Error while resolving dynamic values for field "
+        "'missing_owner', of need 'REQ_003': 'from' names no need: 'REQ_001.nope' "
+        "[needs.dynamic_function]",
+    ]
+    needs = _needs(app)
+    for need in needs.values():
+        assert need["from_owner"] == "bob"
+        assert need["from_refs"] == ["REQ_003"]
+        assert need["missing_owner"] is None
+        assert need["missing_refs"] == []
+    assert needs["REQ_003"]["inline_refs"] == ["REQ_003"]
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {

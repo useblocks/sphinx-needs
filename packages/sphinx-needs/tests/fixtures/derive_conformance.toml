@@ -203,6 +203,105 @@ need = "SPEC_1"
 field = "from_missing"
 
 [[case]]
+name = "copy-from-a-part"
+why = "copy with from naming a need part's address ID.part reads the part's need, on every need holding the rule, the part's need included, in a derive and in a derive_by_type; from naming a part the need does not have, or a part of no need, fails the rule on each need holding it, as from naming no need does"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.part_owner]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "REQ_1.p1" }
+
+[needs.fields.spec_part_owner]
+schema = { type = "string" }
+derive_by_type.spec = { kind = "copy", field = "owner", from = "REQ_1.p1" }
+
+[needs.fields.missing_part]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "REQ_1.nope" }
+
+[needs.fields.part_of_no_need]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "NOPE_1.p1" }
+'''
+source = '''
+.. req:: Owned, with a part
+   :id: REQ_1
+   :owner: alice
+
+   A part: :np:`(p1) the part`.
+
+.. spec:: Reads it
+   :id: SPEC_1
+   :owner: bob
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+part_owner = "alice"
+[case.expect.needs.SPEC_1]
+part_owner = "alice"
+spec_part_owner = "alice"
+[case.expect.nulls]
+REQ_1 = ["spec_part_owner", "missing_part", "part_of_no_need"]
+SPEC_1 = ["missing_part", "part_of_no_need"]
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "missing_part"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "part_of_no_need"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+field = "missing_part"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+field = "part_of_no_need"
+
+[[case]]
+name = "copy-from-a-part-of-a-derived-value"
+why = "copy with from naming a part reads a field its need derives in the same step once it is computed: the rule waits for the part's need, as for a need named whole (REQ_1's own rule sorts before its count, and reads 2, not the count's empty value)"
+config = '''
+[needs.links.tests]
+
+[needs.fields.zz_tested]
+schema = { type = "integer" }
+derive = { kind = "count", over = "tests_back" }
+
+[needs.fields.part_tested]
+schema = { type = "integer" }
+derive = { kind = "copy", field = "zz_tested", from = "REQ_1.p1" }
+'''
+source = '''
+.. req:: Tested
+   :id: REQ_1
+
+   A part: :np:`(p1) the part`.
+
+.. test:: Tests the need
+   :id: TEST_1
+   :tests: REQ_1
+
+.. test:: Tests the part
+   :id: TEST_2
+   :tests: REQ_1.p1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+zz_tested = 2
+part_tested = 2
+[case.expect.needs.TEST_1]
+zz_tested = 0
+part_tested = 2
+[case.expect.needs.TEST_2]
+part_tested = 2
+
+[[case]]
 name = "copy-over-link-select"
 why = "copy over a link type: first is the lowest id among the targets that set the field; unique the same, reporting several; list every value in written order, duplicates kept, a list's items each. With no candidate (REQ_1), or candidates none of which sets the field (SPEC_2), list is [], a list as collect's, and first / unique leave the field unset (A-19)"
 config = '''
@@ -1035,13 +1134,10 @@ l_from = ["NOPE_1", "REQ_1", "REQ_1.p", "SPEC_1"]
 
 [[case]]
 name = "content-links-from-no-need"
-why = "content_links with from naming no need, or naming a part, gives [] and a dynamic_function on each need holding the rule; so does the inline links_from_content naming no need (A-22). The findings' field is left out: the message of the failed read names the need it read, not the field"
+why = "content_links with from naming no need gives [] and a dynamic_function on each need holding the rule; so does the inline links_from_content naming no need (A-22). The findings' field is left out: the message of the failed read names the need it read, not the field"
 config = '''
 [needs.links.from_missing]
 derive = { kind = "content_links", from = "NOPE_9" }
-
-[needs.links.from_part]
-derive = { kind = "content_links", from = "REQ_1.p" }
 
 [needs.links.inline_missing]
 '''
@@ -1058,19 +1154,84 @@ source = '''
 [case.expect]
 [case.expect.needs.REQ_1]
 from_missing = []
-from_part = []
 [case.expect.needs.SPEC_1]
 from_missing = []
-from_part = []
 inline_missing = []
 [[case.expect.findings]]
 code = "dynamic_function"
 need = "REQ_1"
 [[case.expect.findings]]
 code = "dynamic_function"
+need = "SPEC_1"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+
+[[case]]
+name = "content-links-from-a-part"
+why = "content_links with from naming a need part's address ID.part links the references of the part's need's whole content, those written outside the part's text included, on every need holding the rule; so does the inline links_from_content given the address; from naming a part the need does not have, or a part of no need, gives [] and a dynamic_function on each need holding the rule or the call, as from naming no need does. The findings' field is left out, as in content-links-from-no-need"
+config = '''
+[needs.links.l_part]
+derive = { kind = "content_links", from = "REQ_1.p1" }
+
+[needs.links.l_missing_part]
+derive = { kind = "content_links", from = "REQ_1.nope" }
+
+[needs.links.l_part_of_no_need]
+derive = { kind = "content_links", from = "NOPE_1.p1" }
+
+[needs.links.inline_part]
+
+[needs.links.inline_missing_part]
+
+[needs.links.inline_part_of_no_need]
+'''
+source = '''
+.. req:: With a part
+   :id: REQ_1
+
+   Before the part, :need:`SPEC_1`; the part, :np:`(p1) the part`; after it, :need:`REQ_2`.
+
+.. req:: Referenced
+   :id: REQ_2
+
+.. spec:: Calls it
+   :id: SPEC_1
+   :inline_part: [[links_from_content("REQ_1.p1")]]
+   :inline_missing_part: [[links_from_content("REQ_1.nope")]]
+   :inline_part_of_no_need: [[links_from_content("NOPE_1.p1")]]
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+l_part = ["REQ_2", "SPEC_1"]
+l_missing_part = []
+l_part_of_no_need = []
+[case.expect.needs.REQ_2]
+l_part = ["REQ_2", "SPEC_1"]
+[case.expect.needs.SPEC_1]
+l_part = ["REQ_2", "SPEC_1"]
+l_missing_part = []
+l_part_of_no_need = []
+inline_part = ["REQ_2", "SPEC_1"]
+inline_missing_part = []
+inline_part_of_no_need = []
+[[case.expect.findings]]
+code = "dynamic_function"
 need = "REQ_1"
 [[case.expect.findings]]
 code = "dynamic_function"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_2"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_2"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+[[case.expect.findings]]
+code = "dynamic_function"
 need = "SPEC_1"
 [[case.expect.findings]]
 code = "dynamic_function"
@@ -1078,6 +1239,44 @@ need = "SPEC_1"
 [[case.expect.findings]]
 code = "dynamic_function"
 need = "SPEC_1"
+
+[[case]]
+name = "content-links-from-a-part-where"
+why = "content_links with from naming a part, and the inline links_from_content given its address, keep the references of the part's need that the where (the filter) holds on, and wait for what it reads on those needs when the same step computes it: REQ_1's and REQ_2's rules sort before REQ_2's marks, and read it computed"
+config = '''
+[needs.links.marks]
+derive = { kind = "links", where = "id == 'SPEC_9'" }
+
+[needs.links.l_marked]
+derive = { kind = "content_links", from = "REQ_1.p1", where = "'SPEC_9' in marks" }
+
+[needs.links.inline_marked]
+'''
+source = '''
+.. req:: With a part
+   :id: REQ_1
+   :inline_marked: [[links_from_content("REQ_1.p1", filter="'SPEC_9' in marks")]]
+
+   The part, :np:`(p1) the part`; the need references :need:`REQ_2` and :need:`SPEC_9`.
+
+.. req:: Marked
+   :id: REQ_2
+
+.. spec:: Not marked
+   :id: SPEC_9
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+marks = ["SPEC_9"]
+l_marked = ["REQ_2"]
+inline_marked = ["REQ_2"]
+[case.expect.needs.REQ_2]
+marks = ["SPEC_9"]
+l_marked = ["REQ_2"]
+[case.expect.needs.SPEC_9]
+marks = []
+l_marked = ["REQ_2"]
 
 [[case]]
 name = "candidate-order"
@@ -4074,7 +4273,7 @@ field = "own_loop"
 
 [[case]]
 name = "join-invalid-shapes"
-why = "a join that cannot be read is refused at load, one finding per rule: beside over or from, on a kind other than links and copy, missing field or equals, a name that is no field, a link type, a number, not a table, an extra key, include_parts beside it, include_self on copy without it, links with neither where nor join"
+why = "a join that cannot be read is refused at load, one finding per rule: beside over or from, on a kind other than links and copy, missing field or equals, a name that is no field, a link type, a number, not a table, an extra key, include_self on copy without it, links with neither where nor join"
 config = '''
 [needs.fields.ref]
 schema = { type = "string" }
@@ -4108,8 +4307,6 @@ derive = { kind = "links", join = { field = "num", equals = "ref" } }
 derive = { kind = "links", join = "name" }
 [needs.links.j_extra]
 derive = { kind = "links", join = { field = "name", equals = "ref", ignore_case = true } }
-[needs.links.j_parts]
-derive = { kind = "links", join = { field = "name", equals = "ref" }, include_parts = true }
 [needs.links.j_none]
 derive = { kind = "links", include_self = true }
 '''
@@ -4128,7 +4325,6 @@ j_link = []
 j_number = []
 j_notable = []
 j_extra = []
-j_parts = []
 j_none = []
 [case.expect.nulls]
 REQ_1 = ["c_over", "c_from", "s_join", "c_self"]
@@ -4165,9 +4361,6 @@ field = "j_notable"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "j_extra"
-[[case.expect.findings]]
-code = "derive_invalid"
-field = "j_parts"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "j_none"
@@ -4263,6 +4456,188 @@ inline = []
 code = "dynamic_function"
 need = "TEST_3"
 field = "inline"
+
+[[case]]
+name = "join-inline-parts"
+why = "links_from_match with include_parts: the candidates are every need and each need's parts, a part's field read as the part answers a filter (its own id_complete; key, its need's), a matching part linked as <need>.<part>, after its need, in part-id order (the ids in code-point order: p1, p10, p2, read through a copy into an array field), each once; the reader and its own parts are left out unless include_self; filter is tested on a part as a part; without include_parts no part is a candidate"
+config = '''
+[needs.fields.case]
+schema = { type = "string" }
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.links.off]
+[needs.links.off_key]
+[needs.links.by_address]
+[needs.links.by_key]
+[needs.links.by_key_self]
+[needs.links.parts_only]
+[needs.fields.by_key_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "by_key" }
+'''
+source = '''
+.. req:: With parts
+   :id: REQ_1
+   :key: K
+
+   Parts :np:`(p2) two`, :np:`(p10) ten` and :np:`(p1) one`.
+
+.. req:: Without parts
+   :id: REQ_2
+   :key: K
+
+.. test:: Reader
+   :id: TEST_1
+   :case: REQ_1.p1, REQ_1.p2, REQ_1.p1, REQ_1.nope, REQ_2
+   :ref: K
+   :off: [[links_from_match("id_complete", "case")]]
+   :off_key: [[links_from_match("key", "ref")]]
+   :by_address: [[links_from_match("id_complete", "case", include_parts=True)]]
+   :by_key: [[links_from_match("key", "ref", include_parts=True)]]
+   :parts_only: [[links_from_match("key", "ref", include_parts=True, filter="is_part")]]
+
+.. test:: Reader with a part of its own
+   :id: TEST_2
+   :key: K
+   :ref: K
+   :by_key: [[links_from_match("key", "ref", include_parts=True)]]
+   :by_key_self: [[links_from_match("key", "ref", include_self=True, include_parts=True)]]
+
+   Its own part, :np:`(q) mine`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+off = ["REQ_2"]
+off_key = ["REQ_1", "REQ_2", "TEST_2"]
+by_address = ["REQ_1.p1", "REQ_1.p2", "REQ_2"]
+by_key = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", "TEST_2.q"]
+by_key_in_order = ["REQ_1", "REQ_1.p1", "REQ_1.p10", "REQ_1.p2", "REQ_2", "TEST_2", "TEST_2.q"]
+parts_only = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "TEST_2.q"]
+[case.expect.needs.TEST_2]
+by_key = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2"]
+by_key_in_order = ["REQ_1", "REQ_1.p1", "REQ_1.p10", "REQ_1.p2", "REQ_2"]
+by_key_self = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", "TEST_2.q"]
+
+[[case]]
+name = "join-parts"
+why = "links with join and include_parts: the candidates are every need and each need's parts, a part's field read as the part answers a filter (its own id_complete; key, its need's), a matching part linked as <need>.<part>, after its need, in part-id order (p1, p10, p2, read through a copy into an array field), each once; the reader and its own parts are left out unless include_self; where is tested on a part as a part"
+config = '''
+[needs.fields.case]
+schema = { type = "string" }
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.links.by_address]
+derive = { kind = "links", join = { field = "id_complete", equals = "case" }, include_parts = true }
+[needs.links.by_key]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, include_parts = true }
+[needs.links.by_key_self]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, include_parts = true, include_self = true }
+[needs.links.parts_only]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, include_parts = true, where = "is_part" }
+[needs.fields.by_key_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "by_key" }
+'''
+source = '''
+.. req:: With parts
+   :id: REQ_1
+   :key: K
+
+   Parts :np:`(p2) two`, :np:`(p10) ten` and :np:`(p1) one`.
+
+.. req:: Without parts
+   :id: REQ_2
+   :key: K
+
+.. test:: Reader
+   :id: TEST_1
+   :case: REQ_1.p1, REQ_1.p2, REQ_1.p1, REQ_1.nope, REQ_2
+   :ref: K
+
+.. test:: Reader with a part of its own
+   :id: TEST_2
+   :key: K
+   :ref: K
+
+   Its own part, :np:`(q) mine`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+by_address = ["REQ_1.p1", "REQ_1.p2", "REQ_2"]
+by_key = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", "TEST_2.q"]
+by_key_in_order = ["REQ_1", "REQ_1.p1", "REQ_1.p10", "REQ_1.p2", "REQ_2", "TEST_2", "TEST_2.q"]
+parts_only = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "TEST_2.q"]
+[case.expect.needs.TEST_2]
+by_address = []
+by_key = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2"]
+by_key_in_order = ["REQ_1", "REQ_1.p1", "REQ_1.p10", "REQ_1.p2", "REQ_2"]
+by_key_self = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", "TEST_2.q"]
+parts_only = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10"]
+[case.expect.needs.REQ_1]
+by_key = []
+by_key_self = []
+
+[[case]]
+name = "join-parts-inline-equivalence"
+why = "links_from_match(field, equals, include_self, filter, include_parts) is the inline spelling of links with join, include_self, where and include_parts: the same links, parts included, as the declared rule on the same sources"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.links.declared]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, include_parts = true, where = "is_part or status == 'open'" }
+[needs.links.inline]
+[needs.links.declared_self]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, include_parts = true, include_self = true }
+[needs.links.inline_self]
+'''
+source = '''
+.. req:: Closed, with a part
+   :id: REQ_1
+   :key: K
+   :status: closed
+
+   A part, :np:`(p1) one`.
+
+.. req:: Open
+   :id: REQ_2
+   :key: K
+   :status: open
+
+.. test:: Reader
+   :id: TEST_1
+   :ref: K
+   :inline: [[links_from_match("key", "ref", include_parts=True, filter="is_part or status == 'open'")]]
+   :inline_self: [[links_from_match("key", "ref", True, include_parts=True)]]
+
+.. test:: Reader with a part of its own
+   :id: TEST_2
+   :key: K
+   :ref: K
+   :inline: [[links_from_match("key", "ref", False, "is_part or status == 'open'", True)]]
+   :inline_self: [[links_from_match("key", "ref", include_self=True, include_parts=True)]]
+
+   Its own part, :np:`(q) mine`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+declared = ["REQ_1.p1", "REQ_2", "TEST_2.q"]
+inline = ["REQ_1.p1", "REQ_2", "TEST_2.q"]
+declared_self = ["REQ_1", "REQ_1.p1", "REQ_2", "TEST_2", "TEST_2.q"]
+inline_self = ["REQ_1", "REQ_1.p1", "REQ_2", "TEST_2", "TEST_2.q"]
+[case.expect.needs.TEST_2]
+declared = ["REQ_1.p1", "REQ_2"]
+inline = ["REQ_1.p1", "REQ_2"]
+declared_self = ["REQ_1", "REQ_1.p1", "REQ_2", "TEST_2", "TEST_2.q"]
+inline_self = ["REQ_1", "REQ_1.p1", "REQ_2", "TEST_2", "TEST_2.q"]
 
 # --- a dense derived link type: derive_max_links_per_need ---------------------------------
 
