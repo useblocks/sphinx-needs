@@ -539,7 +539,7 @@ def links_from_content(
 
        This function requires the source need to have a stored doctree node.
        It will emit a warning and return an empty list for needs without a
-       stored node (e.g. external needs or need parts).
+       stored node (e.g. external needs).
 
     Example:
 
@@ -582,6 +582,8 @@ def links_from_content(
           Links retrieved from content of :need:`CON_SPEC_1`
 
     :param need_id: ID of need, which provides the content. If not set, current need is used.
+        A need part's address (``ID.part``) reads the part's need, its whole content; an
+        address naming a part the need does not have names no need.
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
@@ -784,11 +786,15 @@ def links_from_match(
     ``equals`` share a value, compared exactly (case-sensitive). Each need is linked
     once, however many values it shares, in need-id order, comparing ids as strings
     (so ``REQ_10`` comes before ``REQ_9``); the link list is sorted for the output
-    anyway. Only whole needs are candidates, never their parts. The need that contains
-    the call is not linked, even if it matches, unless ``include_self=True``.
+    anyway. Only whole needs are candidates: set ``include_parts=True`` to match the
+    parts of every need as well, each read as the part answers a filter (its own ``id``,
+    ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other
+    field), after its need in part-id order, each once; a part that matches is linked as
+    ``<need id>.<part id>``. The need that contains the call is not linked, even if it
+    matches, and neither are its own parts, unless ``include_self=True``.
 
-    ``filter`` keeps only the matches that pass it, and is read as
-    :func:`links_from_filter` reads its filter (``current_need`` is the need that
+    ``filter`` keeps only the matches that pass it, a part tested as a part, and is read
+    as :func:`links_from_filter` reads its filter (``current_need`` is the need that
     contains the call). No match gives no links. The call fails, and links nothing, if
     ``field`` or ``equals`` is empty, or names a field that does not hold text (a number,
     a boolean, a link type).
@@ -815,13 +821,16 @@ def links_from_match(
     whole (so an array, a number or a comma-separated value never matches, and an
     unstripped one only as written), and fails when this need's ``test_option`` is an
     array or a number; ``links_from_match`` reads both sides by value and fails the call
-    on a number or boolean field.
+    on a number or boolean field. The nearest spelling of
+    ``tr_link(…, include_parts=True)`` adds ``include_parts=True``.
 
     :param field: The field read on every need.
     :param equals: The field of this need whose values a need's ``field`` must share.
-    :param include_self: If True, the current need is linked too, if it matches.
+    :param include_self: If True, the current need, and its own parts, are linked
+        too, if they match.
     :param filter: :ref:`filter_string`, which a matching need must pass too.
-    :return: The links to the needs that match.
+    :param include_parts: If True, the parts of every need are candidates as well.
+    :return: The links to the needs (and parts) that match.
     """
     for key, name in (("field", field), ("equals", equals)):
         if not isinstance(name, str) or not name.strip():
@@ -1165,7 +1174,8 @@ def join_matches(
 
     Both sides are compared by :func:`join_values`; each need matched once, however many
     values it shares, in need-id order (the ids compared as strings). Needs only: a
-    part is never one. ``need`` itself only with ``include_self``.
+    part is never one (:func:`join_candidates` adds the parts). ``need`` itself only
+    with ``include_self``.
 
     The index of ``field`` is built once per stratum of the pass (the link fields, the
     other fields, the late rules), shared by every rule and call of the stratum reading
