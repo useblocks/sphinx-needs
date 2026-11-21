@@ -17,6 +17,7 @@ def tr_link(
     test_option: str,
     target_option: str,
     *args: Any,
+    include_parts: bool = False,
     **kwargs: Any,
 ) -> list[str]:
     # Guard on the VALUE, not the key: a test field is a key of every need, `None` on
@@ -37,14 +38,27 @@ def tr_link(
 
     links = []
     for need_target in needs.values():
-        # the same on the target side: a need whose target option is unset is no target
-        target_value = need_target.get(target_option)
-        if not target_value:
-            continue
-        for test_opt_raw in test_opt_values:
-            test_opt = test_opt_raw.strip()
-            if test_opt == target_value and len(test_opt) > 0:
-                links.append(need_target["id"])
+        # with `include_parts`, each need's parts are targets too, after it, in part-id
+        # order; a part's target option is read as the part answers a filter (its own
+        # `id`, `id_complete` and `content`, its need's value of every other option)
+        targets: list[NeedItem | NeedPartItem] = [need_target]
+        if include_parts:
+            targets.extend(
+                sorted(need_target.iter_part_items(), key=lambda part: part["id"])
+            )
+        for target in targets:
+            # the same on the target side: a need whose target option is unset is no
+            # target
+            target_value = target.get(target_option)
+            if not target_value:
+                continue
+            for test_opt_raw in test_opt_values:
+                test_opt = test_opt_raw.strip()
+                if test_opt == target_value and len(test_opt) > 0:
+                    # a part is linked by its address, `<need id>.<part id>`
+                    links.append(
+                        target["id_complete"] if target["is_part"] else target["id"]
+                    )
 
     return links
 
