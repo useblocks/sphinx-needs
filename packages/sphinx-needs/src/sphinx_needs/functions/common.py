@@ -586,7 +586,10 @@ def links_from_content(
     :return: List of linked need-ids in content
     """
     if need_id:
-        source_need_id = need_id
+        # a part address reads as its need, the need's whole content; an address
+        # naming no need, or a part the need does not have, fails below as it always did
+        named = need_at(needs, need_id)
+        source_need_id = need_id if named is None else named["id"]
     elif need is None:
         raise ValueError("No need found for links_from_content")
     elif isinstance(need, NeedPartItem):
@@ -976,12 +979,18 @@ def execute_rule(
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
-        found = links_from_content(app, need, needs, need_id=rule.from_need)
-        source_id = need["id"] if rule.from_need is None else rule.from_need
+        source_id = need["id"]
+        if rule.from_need is not None:
+            # a part address reads as its need, resolved once for both reads below
+            named = need_at(needs, rule.from_need)
+            source_id = rule.from_need if named is None else named["id"]
+        found = links_from_content(
+            app, need, needs, need_id=None if rule.from_need is None else source_id
+        )
         if SphinxNeedsData(app.env).get_need_node(source_id) is None:
-            # a failed read (no such need, a part, a need without stored content),
-            # which links_from_content reported: no value, so the field keeps its
-            # placeholder, which its schema does not check
+            # a failed read (no such need, a part the need does not have, a need
+            # without stored content), which links_from_content reported: no value, so
+            # the field keeps its placeholder, which its schema does not check
             return None
         if rule.where is None:
             return found
@@ -1001,9 +1010,11 @@ def execute_rule(
     if rule.kind == "copy" and rule.over is None:
         source = need
         if rule.from_need is not None:
-            if rule.from_need not in needs:
+            # a part address reads as its need; one naming no need, or a part the need
+            # does not have, fails the rule
+            if (named := need_at(needs, rule.from_need)) is None:
                 raise ValueError(f"'from' names no need: {rule.from_need!r}")
-            source = needs[rule.from_need]
+            source = named
         assert rule.field is not None, "copy has a field"
         if reads is not None:
             reads.note_read(source, rule.field)
