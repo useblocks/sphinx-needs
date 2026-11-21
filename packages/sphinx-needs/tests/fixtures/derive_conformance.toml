@@ -4459,7 +4459,7 @@ field = "inline"
 
 [[case]]
 name = "join-inline-parts"
-why = "links_from_match with include_parts: the candidates are every need and each need's parts, a part's field read as the part answers a filter (its own id_complete; key, its need's), a matching part linked as <need>.<part>, after its need, in part-id order (the ids in code-point order: p1, p10, p2, read through a copy into an array field), each once; the reader and its own parts are left out unless include_self; filter is tested on a part as a part; without include_parts no part is a candidate"
+why = "links_from_match with include_parts: the candidates are every need and each need's parts, a part's field read as the part answers a filter (its own id_complete; key, its need's), a matching part linked as <need>.<part>, after its need, in part-id order (the ids in code-point order: p1, p10, p2, read through a copy into an array field), each once (REQ_1.p1, named twice, read once through a copy too); the reader and its own parts are left out unless include_self; filter is tested on a part as a part; without include_parts no part is a candidate"
 config = '''
 [needs.fields.case]
 schema = { type = "string" }
@@ -4476,6 +4476,9 @@ schema = { type = "string" }
 [needs.fields.by_key_in_order]
 schema = { type = "array", items = { type = "string" } }
 derive = { kind = "copy", field = "by_key" }
+[needs.fields.by_address_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "by_address" }
 '''
 source = '''
 .. req:: With parts
@@ -4513,6 +4516,7 @@ findings = []
 off = ["REQ_2"]
 off_key = ["REQ_1", "REQ_2", "TEST_2"]
 by_address = ["REQ_1.p1", "REQ_1.p2", "REQ_2"]
+by_address_in_order = ["REQ_1.p1", "REQ_1.p2", "REQ_2"]
 by_key = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", "TEST_2.q"]
 by_key_in_order = ["REQ_1", "REQ_1.p1", "REQ_1.p10", "REQ_1.p2", "REQ_2", "TEST_2", "TEST_2.q"]
 parts_only = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "TEST_2.q"]
@@ -4523,7 +4527,7 @@ by_key_self = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", 
 
 [[case]]
 name = "join-parts"
-why = "links with join and include_parts: the candidates are every need and each need's parts, a part's field read as the part answers a filter (its own id_complete; key, its need's), a matching part linked as <need>.<part>, after its need, in part-id order (p1, p10, p2, read through a copy into an array field), each once; the reader and its own parts are left out unless include_self; where is tested on a part as a part"
+why = "links with join and include_parts: the candidates are every need and each need's parts, a part's field read as the part answers a filter (its own id_complete; key, its need's), a matching part linked as <need>.<part>, after its need, in part-id order (p1, p10, p2, read through a copy into an array field), each once (REQ_1.p1, named twice, read once through a copy too); the reader and its own parts are left out unless include_self; where is tested on a part as a part"
 config = '''
 [needs.fields.case]
 schema = { type = "string" }
@@ -4542,6 +4546,9 @@ derive = { kind = "links", join = { field = "key", equals = "ref" }, include_par
 [needs.fields.by_key_in_order]
 schema = { type = "array", items = { type = "string" } }
 derive = { kind = "copy", field = "by_key" }
+[needs.fields.by_address_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "by_address" }
 '''
 source = '''
 .. req:: With parts
@@ -4570,6 +4577,7 @@ source = '''
 findings = []
 [case.expect.needs.TEST_1]
 by_address = ["REQ_1.p1", "REQ_1.p2", "REQ_2"]
+by_address_in_order = ["REQ_1.p1", "REQ_1.p2", "REQ_2"]
 by_key = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "REQ_2", "TEST_2", "TEST_2.q"]
 by_key_in_order = ["REQ_1", "REQ_1.p1", "REQ_1.p10", "REQ_1.p2", "REQ_2", "TEST_2", "TEST_2.q"]
 parts_only = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10", "TEST_2.q"]
