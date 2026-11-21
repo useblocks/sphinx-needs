@@ -158,3 +158,48 @@ def test_the_reader_page_follows_the_need_its_copy_reads(
     # the edit changes what the reader shows, so a page left as it was is stale
     assert expected != shown_before
     assert _reader_page(incremental) == expected, "the reader's page was not re-written"
+
+
+EXTEND_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {"owner": {"schema": {"type": "string"}}}
+"""
+EXTEND_INDEX = "Index\n=====\n\n.. toctree::\n\n   reqs\n   extends\n"
+
+
+def _extend_project(target: str, owner: str) -> dict[str, str]:
+    """``needextend`` by id in a document of its own, naming ``target``."""
+    return {
+        "conf.py": EXTEND_CONF,
+        "index.rst": EXTEND_INDEX,
+        "reqs.rst": _reqs(),
+        "extends.rst": f"Extends\n=======\n\n.. needextend:: {target}\n"
+        f"   :owner: {owner}\n",
+    }
+
+
+def _page(srcdir: Path, name: str) -> str:
+    text = (srcdir / "_build" / "html" / f"{name}.html").read_text(encoding="utf-8")
+    match = _BODY.search(text)
+    assert match is not None
+    return _CONTAINER_ID.sub("SNCB-", match.group(1))
+
+
+@pytest.mark.parametrize("target", ["REQ_1", "DOT_1.x"])
+def test_the_page_of_a_need_an_extend_names_follows_the_extend(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, target: str
+) -> None:
+    """A ``needextend`` names its need by the whole id, a ``.`` in it or not: when the
+    extend changes, the page of the need it names is re-written (``REQ_1`` is the
+    control)."""
+    incremental = _write(tmp_path / "incremental", _extend_project(target, "ext1"))
+    assert _build(make_app, incremental, fresh=True) == []
+    shown_before = _page(incremental, "reqs")
+    _write(incremental, _extend_project(target, "ext2"))
+    _build(make_app, incremental, fresh=False)
+
+    fresh = _write(tmp_path / "fresh", _extend_project(target, "ext2"))
+    assert _build(make_app, fresh, fresh=True) == []
+    expected = _page(fresh, "reqs")
+    assert expected != shown_before
+    assert _page(incremental, "reqs") == expected, "the need's page was not re-written"
