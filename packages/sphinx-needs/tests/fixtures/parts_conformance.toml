@@ -560,7 +560,6 @@ IMPL_BLK = { c1 = "in code" }
 name = "placement-a-test-case-body"
 section = "placement"
 why = "the body of a test case is its content: a role in it is the test case's part, and nothing is reported"
-divergent = { ubcode = "a test case's body gives no parts, and its role is reported as outside a need" }
 clean = true
 extensions = ["sphinx_test_reports"]
 config = '''
@@ -615,6 +614,165 @@ REQ_HID = { h1 = "a hidden part" }
 TEST_1 = []
 [case.expect.back]
 "REQ_HID.h1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "placement-a-test-file-and-a-test-suite-body"
+section = "placement"
+why = "the body of a test file or a test suite is its content: a role in it is that need's part, the needs its options expand have none, and a role after it is outside every need"
+clean = true
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-file:: A test file
+   :id: TF_BODY
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+
+   A file body with :np:`(f1) a file part`.
+
+.. test-suite:: A test suite
+   :id: TS_BODY
+   :file: report.xml
+   :suite: pytest
+
+   A suite body with :np:`(s1) a suite part`.
+
+After them :np:`(x1) nowhere`.
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = [{ class = "part outside a need" }]
+[case.expect.parts]
+TF_BODY = { f1 = "a file part" }
+TF_BODY_0EA = {}
+TF_BODY_0EA_A759D = {}
+TS_BODY = { s1 = "a suite part" }
+
+[[case]]
+name = "placement-a-test-report-body-in-myst"
+section = "placement"
+why = "a test file's, a test suite's and a test case's body written in MyST is its content too: the role in each is that need's part"
+clean = true
+extensions = ["myst_parser", "sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+'''
+files = { "page.md" = '''# Page
+
+```{test-file} A test file
+:id: TF_MD
+:file: report.xml
+
+A file body with {np}`(f1) a file part`.
+```
+
+```{test-suite} A test suite
+:id: TS_MD
+:file: report.xml
+:suite: pytest
+
+A suite body with {np}`(s1) a suite part`.
+```
+
+```{test-case} A test case
+:id: TC_MD
+:file: report.xml
+:suite: pytest
+:classname: tests.test_engine
+:case: test_start
+
+A test body with {np}`(t1) a case part`.
+```
+''', "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+TF_MD = { f1 = "a file part" }
+TS_MD = { s1 = "a suite part" }
+TC_MD = { t1 = "a case part" }
+
+[[case]]
+name = "placement-a-test-case-and-a-need-nested-in-each-other"
+section = "placement"
+why = "the innermost need holding a role counts a test-report need like any other, both ways: neither need has the other's parts, an id both mark is one part of each, and an outer need's address of an inner part is dead"
+clean = true
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Outer
+   :id: REQ_OUT
+
+   :np:`(p1) the requirement's`
+
+   .. test-case:: A test case inside
+      :id: TC_IN
+      :file: report.xml
+      :suite: pytest
+      :classname: tests.test_engine
+      :case: test_start
+
+      :np:`(p1) the test case's` and :np:`(t1) inside`
+
+   :np:`(o2) after`
+
+.. test-case:: A test case outside
+   :id: TC_OUT
+   :file: report.xml
+   :suite: pytest
+   :classname: tests.test_engine
+   :case: test_start
+
+   :np:`(t1) before`
+
+   .. req:: Inner
+      :id: REQ_IN
+
+      :np:`(r1) inside`
+
+   :np:`(t2) after`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: TC_IN.t1, REQ_OUT.t1, REQ_IN.r1, TC_OUT.r1
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = [{ class = "dead link" }, { class = "dead link" }]
+[case.expect.parts]
+REQ_OUT = { p1 = "the requirement's", o2 = "after" }
+TC_IN = { p1 = "the test case's", t1 = "inside" }
+TC_OUT = { t1 = "before", t2 = "after" }
+REQ_IN = { r1 = "inside" }
+[case.expect.dead]
+TEST_1 = ["REQ_OUT.t1", "TC_OUT.r1"]
 
 # --- duplicates ------------------------------------------------------------------------
 
@@ -744,6 +902,36 @@ REQ_1 = { p1 = "inside" }
 TEST_1 = {}
 [case.expect.dead]
 TEST_1 = ["REQ_1.x1"]
+
+[[case]]
+name = "duplicates-in-a-test-case-body"
+section = "duplicates"
+why = "the first wins in the body of a test case too, with one finding"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-case:: A test case
+   :id: TC_BODY
+   :file: report.xml
+   :suite: pytest
+   :classname: tests.test_engine
+   :case: test_start
+
+   Marks :np:`(t1) the first` and :np:`(t1) a second`.
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = [{ class = "duplicate part id" }]
+[case.expect.parts]
+TC_BODY = { t1 = "the first" }
 
 # --- stated ----------------------------------------------------------------------------
 
