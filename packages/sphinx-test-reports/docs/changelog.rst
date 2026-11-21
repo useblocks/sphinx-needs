@@ -13,9 +13,10 @@ New and Improved
   ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other
   option), and a part that
   matches is linked by its address, ``<need id>.<part id>``
-  (`#1955 <https://github.com/useblocks/sphinx-needs/issues/1955>`__). Without it, nothing
-  changes. The :doc:`functions` page now says which argument is read where -- the first on
-  the need the call is in, the second on every need, that need included
+  (`#1955 <https://github.com/useblocks/sphinx-needs/issues/1955>`__). It is given by name: a
+  third positional argument is ignored, as it always was. Without it, nothing changes. The
+  :doc:`functions` page now says which argument is read where -- the first on the need the
+  call is in, the second on every need, that need included
   (`#0000 <https://github.com/useblocks/sphinx-needs/pull/0000>`__).
 
 .. _`release:4.0.0`:

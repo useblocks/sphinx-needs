@@ -3934,7 +3934,7 @@ order = ["SPEC_10", "SPEC_9", "TEST_1"]
 
 [[case]]
 name = "join-needs-only"
-why = "a join's candidates are needs only: a part never matches (it carries its need's fields, so its need matches once), and an id naming a part matches nothing"
+why = "without include_parts, a join's candidates are needs only: a part never matches (it carries its need's fields, so its need matches once), and an id naming a part matches nothing"
 config = '''
 [needs.fields.key]
 schema = { type = "string" }

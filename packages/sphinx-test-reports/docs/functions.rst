@@ -33,8 +33,12 @@ If this is the case, their IDs get stored and finally returned.
 
 ``source_option`` can also reference an option with comma separated values.
 In this case a comparison is performed for each value, which may lead to multiple links.
+A need matched by several of the values is linked once for each, and the links come in the order the project holds
+its needs. The page and ``needs.json`` show the list sorted, each link once; a derived field that copies or counts
+the link field reads the list as returned.
 A need's ``target_option`` is compared whole, so one holding comma separated values, a list or a number never
-matches; a ``source_option`` holding a list, or a number other than ``0``, fails the call.
+matches; a ``source_option`` holding a list, a number or a boolean fails the call (other than an empty list, ``0``
+or ``false``, which link nothing).
 
 Sphinx-Needs' built-in
 `links_from_match <https://sphinx-needs.readthedocs.io/en/latest/dynamic_functions.html#links-from-match>`_
@@ -42,11 +46,12 @@ links the same needs for the usage above, with the two arguments in the other or
 ``[[links_from_match('title', 'classname', include_self=True)]]`` for ``[[tr_link('classname', 'title')]]``.
 It also splits a need's ``target_option`` on ``,``, and fails the call on a number or boolean option.
 
-**include_parts** (optional, ``False`` by default): with ``include_parts=True``, the
+**include_parts** (optional, ``False`` by default, and given by name: a third positional argument is ignored, as it
+always was): with ``include_parts=True``, the
 `need parts <https://sphinx-needs.readthedocs.io/en/latest/roles.html#need-part>`_ of every need are compared too.
 A part's ``target_option`` is read as the part answers a filter: its own ``id`` (the part's id), ``id_complete``
 (``<need id>.<part id>``) and ``content`` (its text), no ``parent_need``, and its need's value of every other option.
-A part that matches is linked by its address, ``<need id>.<part id>``.
+A part that matches is linked by its address, ``<need id>.<part id>``, after its need, in part-id order.
 So ``[[tr_link('case_name', 'id_complete', include_parts=True)]]`` links the part a test's ``case_name`` names by its
 address. Without it, only needs are compared.
 
