@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 31,
+  "ENV_DATA_VERSION": 32,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
@@ -7,6 +7,7 @@
     "_needs_all_needumls": "dict[str, NeedsUmlType]",
     "_needs_all_nodes": "dict[str, Need]",
     "_needs_builtin_services_read_with": "tuple[str, ...] | None",
+    "_needs_external_needs_loaded": "list[str]",
     "_needs_is_post_processed": "bool",
     "_needs_resolved_schemas": "list[SchemasRootType]",
     "_needs_role_refs": "dict[str, set[str]]",
