@@ -203,3 +203,41 @@ def test_the_page_of_a_need_an_extend_names_follows_the_extend(
     expected = _page(fresh, "reqs")
     assert expected != shown_before
     assert _page(incremental, "reqs") == expected, "the need's page was not re-written"
+
+
+EXTEND_COPY_INDEX = "Index\n=====\n\n.. toctree::\n\n   reqs\n   extends\n   others\n"
+
+
+def _extend_copy_project(target: str, owner: str) -> dict[str, str]:
+    """``needextend`` by id naming ``target``, which sets its ``owner`` to a copy of
+    ``REQ_2``'s; ``REQ_2`` is in a third document."""
+    return {
+        "conf.py": EXTEND_CONF,
+        "index.rst": EXTEND_COPY_INDEX,
+        "reqs.rst": _reqs(),
+        "extends.rst": f"Extends\n=======\n\n.. needextend:: {target}\n"
+        '   :owner: [[copy("owner", "REQ_2")]]\n',
+        "others.rst": "Others\n======\n\n.. req:: Other\n   :id: REQ_2\n"
+        f"   :owner: {owner}\n",
+    }
+
+
+@pytest.mark.parametrize("target", ["REQ_1", "DOT_1.x"])
+def test_the_page_of_a_need_an_extend_names_follows_what_the_extend_reads(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, target: str
+) -> None:
+    """A value a ``needextend`` by id sets with a dynamic function is computed on the
+    need the extend names, by the whole id: when the need that function reads changes
+    in another document, the page of the extended need is re-written (``REQ_1`` is the
+    control)."""
+    incremental = _write(tmp_path / "incremental", _extend_copy_project(target, "two1"))
+    assert _build(make_app, incremental, fresh=True) == []
+    shown_before = _page(incremental, "reqs")
+    _write(incremental, _extend_copy_project(target, "two2"))
+    _build(make_app, incremental, fresh=False)
+
+    fresh = _write(tmp_path / "fresh", _extend_copy_project(target, "two2"))
+    assert _build(make_app, fresh, fresh=True) == []
+    expected = _page(fresh, "reqs")
+    assert expected != shown_before
+    assert _page(incremental, "reqs") == expected, "the need's page was not re-written"
