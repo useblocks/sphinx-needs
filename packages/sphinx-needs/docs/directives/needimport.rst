@@ -147,8 +147,9 @@ starts with ``:``, or that holds ``::`` but is not a namespaced id, such as ``a:
 imported all the same, as ``SUP::a::::b``: a plain id, outside the namespace, which the
 links of the file still reach. The directive then gives one ``needs.import_namespace``
 warning, saying how many of the needs it imports are outside the namespace and naming the
-first five. Add ``"needs.import_namespace"`` (or ``"needs.namespaced_ids_off"``) to
-``suppress_warnings`` to silence that warning alone.
+first five. Add ``"needs.import_namespace"`` to ``suppress_warnings`` to silence that
+warning alone; ``"needs.namespaced_ids_off"`` silences the other, and with it the warning
+of a filter that reads a namespace while namespaced ids are off, which has the same type.
 
 A sphinx-needs older than 9.4.0 does not know the option: it reports ``unknown option:
 "namespace"`` (a docutils error) and imports nothing from the directive.

@@ -3384,7 +3384,7 @@ keys:
   ``"SUP"`` gives the file's ``REQ_1`` the id ``SUP::REQ_1`` and its ``nc::REQ_2`` the id ``SUP::nc::REQ_2``, and
   ``"sup::m2"`` gives ``sup::m2::REQ_1``. It is ``id_prefix`` with the text ``SUP::``, with the namespace checked,
   and everything said of ``id_prefix`` above applies. The source's configuration is refused, and the build stops, as
-  for a missing ``base_url``, when it gives both ``namespace`` and ``id_prefix``, an empty ``namespace``, or one that
+  for a missing ``base_url``, when it gives both ``namespace`` and ``id_prefix`` (an empty ``id_prefix`` too), an empty ``namespace``, or one that
   is not a namespace (one or more segments joined by ``::``, each one or more ASCII letters, ASCII digits, ``_`` or
   ``-``: not ``SUP::``, not ``a b``); the message names the source by its index and says what to write.
   |br| The ids are read as a namespace only with :ref:`needs_namespaced_ids` on; with it off (the default in 9.x) the
@@ -3394,7 +3394,7 @@ keys:
   file's links still reach, and the source gives one ``needs.import_namespace`` warning naming how many there are and
   the first five.
   |br| **A sphinx-needs older than 9.4.0 ignores the key without a word**: the needs arrive with the ids of the file,
-  outside any namespace, and the links between them still resolve. In ``conf.py``,
+  not in the namespace the key names, and the links between them still resolve. In ``conf.py``,
   ``needs_extensions = {"sphinx_needs": "9.4"}`` makes such a version stop the build instead.
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.

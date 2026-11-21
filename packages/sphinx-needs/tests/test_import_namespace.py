@@ -251,11 +251,11 @@ EXTERNAL_SOURCE = "External needs source 'src.json'"
 def outside(source: str, count: int, total: int, ns: str, ids: str) -> str:
     """The text of the ``needs.import_namespace`` notice."""
     return (
-        f"{source}: {count} of the {total} needs imported into the namespace {ns!r} "
-        f"are outside it: {ids}. An id that starts with ':', or holds '::' but is not "
-        "a namespaced id, cannot be joined to a namespace, so each of these is a plain "
-        f"id, imported with {ns + '::'!r} in front. Correct the ids in the file, or "
-        "suppress needs.import_namespace."
+        f"{source}: the namespace {ns!r} does not hold {count} of the {total} needs "
+        f"imported: {ids}. An id that starts with ':', or holds '::' but is not a "
+        "namespaced id, cannot be joined to a namespace: such a need has a plain id, "
+        f"imported with {ns + '::'!r} in front, outside the namespace. Correct the ids "
+        "in the file, or suppress needs.import_namespace."
     )
 
 

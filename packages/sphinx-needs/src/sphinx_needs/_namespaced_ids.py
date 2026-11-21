@@ -177,7 +177,8 @@ def report_import_namespace(
     :param source: How the import's warnings name the file it reads.
     :param namespace: The import's namespace, as written.
     :param prefix: Its prefix (:func:`import_prefix`).
-    :param ids: The ids, as the file writes them, of the needs the import creates.
+    :param ids: The ids, as the file writes them, of the needs the import selects: a
+        record refused afterwards (a duplicate id, say) is counted all the same.
     :param namespaced: ``needs_namespaced_ids``.
     :param location: Where the warning is given.
     """
@@ -201,12 +202,12 @@ def report_import_namespace(
         named += f" and {more} more"
     log_warning(
         log,
-        f"{source}: {len(outside)} of the {len(ids)} needs imported into the namespace "
-        f"{namespace!r} are outside it: {named}. An id that starts with "
+        f"{source}: the namespace {namespace!r} does not hold {len(outside)} of the "
+        f"{len(ids)} needs imported: {named}. An id that starts with "
         f"{SEPARATOR[0]!r}, or holds {SEPARATOR!r} but is not a namespaced id, cannot "
-        "be joined to a namespace, so each of these is a plain id, imported with "
-        f"{prefix!r} in front. Correct the ids in the file, or suppress "
-        "needs.import_namespace.",
+        "be joined to a namespace: such a need has a plain id, imported with "
+        f"{prefix!r} in front, outside the namespace. Correct the ids in the file, or "
+        "suppress needs.import_namespace.",
         "import_namespace",
         location=location,
     )

@@ -243,8 +243,9 @@ not `None`: `a::::b`, `:X`) gives one `needs.import_namespace` warning, naming h
 the first five; an import whose ids all join gives none. The type is its own, so that it can
 be suppressed without silencing `needs.needimport` (a file that cannot be read). The two are
 exclusive: with the switch off no id is in a namespace, so none is outside one. An
-`id_prefix` gives neither, as before. Counted are the needs the import creates (after
-`:ids:` and `:filter:`), an empty id (refused on its own) left out.
+`id_prefix` gives neither, as before. Counted are the needs the import selects (after
+`:ids:` and `:filter:`; a record refused afterwards, a duplicate id say, is counted all the
+same), an empty id (refused on its own) left out.
 
 **What an older version does.** sphinx-needs 9.3.0 reports `:namespace:` as an unknown
 option (a docutils error; the directive imports nothing), and ignores the source key without
