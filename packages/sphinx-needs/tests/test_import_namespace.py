@@ -417,6 +417,11 @@ NEEDIMPORT_REFUSALS = {
         "needimport: :namespace: and :id_prefix: cannot both be given: "
         "':namespace: SUP' is ':id_prefix: SUP::'; give one of them",
     ),
+    "both-other": (
+        (":namespace: OTHER", ":id_prefix: SUP::"),
+        "needimport: :namespace: and :id_prefix: cannot both be given: "
+        "':namespace: OTHER' is ':id_prefix: OTHER::'; give one of them",
+    ),
     "both-invalid-namespace": (
         (":namespace: a b", ":id_prefix: SUP::"),
         "needimport: :namespace: and :id_prefix: cannot both be given: "
@@ -486,6 +491,17 @@ EXTERNAL_REFUSALS = {
         {"namespace": "SUP", "id_prefix": "SUP::"},
         "namespace and id_prefix are both configured in external_needs item 0, but "
         "only one is allowed: namespace 'SUP' is id_prefix 'SUP::'.",
+    ),
+    "both-other": (
+        {"namespace": "OTHER", "id_prefix": "SUP::"},
+        "namespace and id_prefix are both configured in external_needs item 0, but "
+        "only one is allowed: namespace 'OTHER' is id_prefix 'OTHER::'.",
+    ),
+    "surrounding-space": (
+        {"namespace": " SUP"},
+        "namespace in external_needs item 0: ' SUP' is not a namespace: its piece "
+        "' SUP' is not a segment, which is one or more ASCII letters, ASCII digits, "
+        "'_' or '-'.",
     ),
     "both-invalid-namespace": (
         {"namespace": "a b", "id_prefix": "SUP::"},
