@@ -42,14 +42,14 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 30
+ENV_DATA_VERSION: Final = 31
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
 ``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
 change of what the stored values mean, or of what is rendered from them (versions 8, 10
-to 12, 15, 17, 19 to 25, 27, 29 and 30), leaves the shape as it was, so that test cannot
+to 12, 15, 17, 19 to 25, 27 and 29 to 31), leaves the shape as it was, so that test cannot
 see it, and the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
@@ -228,6 +228,14 @@ the white space at its ends, so ``(p1) first`` stores ``first`` where version 29
 without the bump an upgraded build would keep the spaced texts of the documents whose
 sources did not change, in filters, labels and ``needs.json``, beside the stripped texts
 of those it re-reads.
+
+Version 31 changes what the stored values mean again: a derived field's ``from``
+(``copy`` and ``content_links``) and the ``need_id`` of ``links_from_content`` given a need
+part's address ``ID.part`` read the part's need, where version 30 failed the read and left
+the field empty; and ``include_parts`` beside a derived ``links`` rule's ``join``, refused
+(``needs.derive_invalid``) and so empty, now links the needs and parts that match. The
+configuration does not change, so without the bump an upgraded build would keep the empty
+values on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
