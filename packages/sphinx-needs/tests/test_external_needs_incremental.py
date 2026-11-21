@@ -102,6 +102,14 @@ CASES: dict[str, tuple[dict[str, str], dict[str, str]]] = {
         _project(_conf(_source("a.json", id_prefix="SUP::")), **{"a.json": A}),
         {"conf.py": _conf(_source("a.json", id_prefix="SUP2::"))},
     ),
+    "namespace-changed": (
+        _project(_conf(_source("a.json", namespace="SUP")), **{"a.json": A}),
+        {"conf.py": _conf(_source("a.json", namespace="SUP2"))},
+    ),
+    "id_prefix-to-namespace": (
+        _project(_conf(_source("a.json", id_prefix="SUP::")), **{"a.json": A}),
+        {"conf.py": _conf(_source("a.json", namespace="SUP2"))},
+    ),
     "source-removed": (
         _project(
             _conf(_source("a.json", id_prefix="A_"), _source("b.json", id_prefix="B_")),
@@ -154,6 +162,8 @@ CASES: dict[str, tuple[dict[str, str], dict[str, str]]] = {
 #: the needs the configuration after the change gives, besides ``LOCAL_1``
 EXPECTED_AFTER = {
     "id_prefix-changed": ["SUP2::REQ_1", "SUP2::REQ_2", "SUP2::REQ_3"],
+    "namespace-changed": ["SUP2::REQ_1", "SUP2::REQ_2", "SUP2::REQ_3"],
+    "id_prefix-to-namespace": ["SUP2::REQ_1", "SUP2::REQ_2", "SUP2::REQ_3"],
     "source-removed": ["A_REQ_1", "A_REQ_2", "A_REQ_3"],
     "need-gone-from-the-file": ["REQ_1", "REQ_2"],
     "nothing-changed": ["REQ_1", "REQ_2", "REQ_3"],
@@ -252,6 +262,32 @@ def test_id_prefix_changed_keeps_only_the_new_ids(
             "WARNING: http://ext.example/index.html#REQ_2: Need 'SUP2::REQ_2' has "
             "unknown outgoing link 'MISSING_1' in field 'links' "
             "[needs.external_link_outgoing]"
+        ],
+    )
+
+
+def test_namespace_changed_keeps_only_the_new_ids(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A source's ``namespace`` changed from ``SUP`` to ``SUP2``: the needs of the old
+    namespace are gone, and so are their warnings; the namespace's own notice is given
+    once, for the new one."""
+    before, after = CASES["namespace-changed"]
+    srcdir = _write(tmp_path / "src", before)
+    _build(make_app, srcdir, fresh=True)
+    needs, warnings = _build(make_app, _write(srcdir, after), fresh=False)
+    assert (sorted(needs), warnings) == (
+        ["LOCAL_1", "SUP2::REQ_1", "SUP2::REQ_2", "SUP2::REQ_3"],
+        [
+            "WARNING: External needs source 'a.json': the namespace 'SUP2' puts "
+            "'SUP2::' in front of the file's ids, but namespaced ids are off for this "
+            "project, so they are read as plain ids, in no namespace. Set "
+            "needs_namespaced_ids = True to read '::' in an id as a namespace "
+            "separator, or suppress needs.namespaced_ids_off. "
+            "[needs.namespaced_ids_off]",
+            "WARNING: http://ext.example/index.html#REQ_2: Need 'SUP2::REQ_2' has "
+            "unknown outgoing link 'MISSING_1' in field 'links' "
+            "[needs.external_link_outgoing]",
         ],
     )
 
