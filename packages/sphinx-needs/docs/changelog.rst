@@ -31,7 +31,7 @@ Improvements
   or an id starting with ``:``) is imported as ``SUP::a::::b``, a plain id outside the namespace, and each import
   holding such ids gives one warning of a new type, ``needs.import_namespace``, naming how many and the first
   five. A sphinx-needs older than this one ignores the ``namespace`` key of a source without a word (the needs
-  arrive with the file's own ids), and reports the ``needimport`` option as unknown. (:pr:`0000`)
+  arrive with the file's own ids), and reports the ``needimport`` option as unknown. (:pr:`2568`)
 
 Bug fixes
 .........
