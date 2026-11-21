@@ -1846,6 +1846,60 @@ def test_from_reads_a_need_named_whole_before_a_part(test_app):
     assert needs["REQ_003"]["inline_refs"] == ["REQ_003"]
 
 
+WHOLE_DERIVED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "src": {"schema": {"type": "string"}},
+    "a_out": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "z_mid", "from": "REQ_001.p1"},
+    },
+    "z_mid": {"schema": {"type": "string"}, "derive": {"kind": "copy", "field": "src"}},
+}
+"""
+
+WHOLE_DERIVED_INDEX = """\
+Read
+====
+
+.. req:: With a part
+   :id: REQ_001
+   :src: from-req-001
+
+   A part, :np:`(p1) the part`.
+
+.. req:: Named with a dot
+   :id: REQ_001.p1
+   :src: from-the-dotted-need
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), WHOLE_DERIVED_CONF),
+                (Path("index.rst"), WHOLE_DERIVED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_from_waits_for_a_field_derived_on_a_need_named_whole(test_app):
+    """The order of the rules reads ``from`` as the rule does, the whole id first:
+    ``a_out`` copies ``z_mid`` from the need ``REQ_001.p1``, where a rule derives it and
+    sorts after ``a_out``, so ``a_out`` waits for that need, not for ``REQ_001``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert needs["REQ_001"]["a_out"] == "from-the-dotted-need"
+    assert needs["REQ_001.p1"]["a_out"] == "from-the-dotted-need"
+
+
 MATCH_NEEDS_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True

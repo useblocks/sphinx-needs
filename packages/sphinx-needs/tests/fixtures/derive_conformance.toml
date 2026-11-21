@@ -302,6 +302,40 @@ part_tested = 2
 part_tested = 2
 
 [[case]]
+name = "copy-from-a-missing-part-adds-no-dependency"
+why = "copy with from naming a part its need does not have reads nothing, so the rule waits for no need: from_missing (from REQ_2.nope) and from_whole (from REQ_1, reading from_missing) are no cycle, each from_missing fails the rule, and each from_whole copies REQ_1's empty from_missing"
+config = '''
+[needs.fields.from_missing]
+schema = { type = "string" }
+derive = { kind = "copy", field = "from_whole", from = "REQ_2.nope" }
+
+[needs.fields.from_whole]
+schema = { type = "string" }
+derive = { kind = "copy", field = "from_missing", from = "REQ_1" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two, with a part
+   :id: REQ_2
+
+   A part: :np:`(p1) the part`.
+'''
+[case.expect]
+[case.expect.nulls]
+REQ_1 = ["from_missing", "from_whole"]
+REQ_2 = ["from_missing", "from_whole"]
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "from_missing"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_2"
+field = "from_missing"
+
+[[case]]
 name = "copy-over-link-select"
 why = "copy over a link type: first is the lowest id among the targets that set the field; unique the same, reporting several; list every value in written order, duplicates kept, a list's items each. With no candidate (REQ_1), or candidates none of which sets the field (SPEC_2), list is [], a list as collect's, and first / unique leave the field unset (A-19)"
 config = '''

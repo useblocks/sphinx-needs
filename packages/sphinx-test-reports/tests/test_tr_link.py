@@ -112,6 +112,9 @@ def test_include_parts_makes_the_parts_candidates_too(test_app):
         app, view["SPEC_1"], view, "case", "id_complete", include_parts=True
     )
     assert by_address == ["REQ_1.p1", "REQ_1.p1", "REQ_2"]
+    # `include_parts` is given by name: a third positional argument, which `tr_link`
+    # has always ignored, links no part
+    assert tr_link(app, view["SPEC_1"], view, "case", "id_complete", True) == ["REQ_2"]
     by_case = tr_link(app, view["SPEC_3"], view, "case", "case", include_parts=True)
     assert by_case == ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_2", "SPEC_3", "SPEC_3.q"]
     assert tr_link(app, view["SPEC_3"], view, "case", "case") == [
