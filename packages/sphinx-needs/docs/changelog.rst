@@ -114,6 +114,14 @@ Bug fixes
   output of every other Sphinx builder does not change. (:issue:`166`, :issue:`347`, :issue:`902`, :issue:`1288`,
   :pr:`2564`)
 
+- 🐛 An incremental build holds the needs of :ref:`needs_external_needs` that its configuration gives, and no others.
+  The needs an earlier build loaded stayed in the environment beside the new ones, and kept warning, when a
+  source's ``id_prefix``, ``json_path``, ``json_url`` or ``version`` changed, when a source was removed, or when a
+  need was removed from a source's file; only a build with ``-E`` dropped them. The needs the previous build loaded
+  are now removed before the sources are loaded again. A need of the project that has taken one of their ids is
+  kept, and so is an external need an extension adds through ``add_external_need``. A fresh build does not change.
+  The first build after upgrading reads every document again. (:pr:`0000`)
+
 Internal changes
 ................
 
