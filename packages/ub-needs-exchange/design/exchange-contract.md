@@ -430,8 +430,8 @@ module of the package that knows the separator, and the corpus
 [`tests/fixtures/need_id_conformance.toml`](../tests/fixtures/need_id_conformance.toml) —
 held canonically here, which ubCode is to vendor like the reading corpus — is its
 executable half, run by `tests/test_need_id_conformance.py` (`::test_split`,
-`::test_namespace`, `::test_join`, and the laws below). Corpus names in this section are
-cases of that file.
+`::test_namespace`, `::test_join`, `::test_prefix`, and the laws below). Corpus names in
+this section are cases of that file.
 
 1. **The separator** is the two ASCII characters `::`. Nothing else separates: not a
    single `:`, not a `.`, not a fullwidth colon.
@@ -510,6 +510,25 @@ cases of that file.
    the consumer's.
    Enforced by: `test_reader.py::test_an_id_holding_the_separator_is_read_as_written`
    (`nc::REQ_1`, which splits cleanly, and three ids that do not).
+10. **The prefix of a namespace** (`namespace_prefix`) is the text that, put before an id,
+    joins the id to the namespace: the namespace's text followed by `::` (`SUP::`,
+    `sup::m2::`), and the empty text for the empty namespace. Every segment must be a
+    segment, as for joining (7.); otherwise it is refused (`ValueError`). It never looks
+    at an id. Two laws hold, for every namespace `ns` it accepts and every text `x`, with
+    `(xns, xlocal) = split_id(x)`: where `join_id(ns + xns, xlocal)` is accepted, it
+    equals `namespace_prefix(ns) + x` — `SUP::` before `nc::REQ_1` is `SUP::nc::REQ_1`, in
+    the namespace `SUP::nc`; and where it is refused (only under a non-empty namespace,
+    and then exactly when `x` is empty, starts with `:`, or holds `::` and does not split
+    cleanly), `namespace_prefix(ns) + x` is a plain id (5.), outside the namespace —
+    `SUP::a::::b`, `SUP:::X`, `SUP::`. The package decides nothing about an id left
+    outside: whether it is accepted, warned about or refused is the consumer's (9.).
+    Enforced by: corpus: every `prefix-` case, among them `prefix-a-namespaced-id`,
+    `prefix-an-id-with-an-empty-segment`, `prefix-an-id-starting-with-a-colon`,
+    `prefix-the-empty-id`; `test_need_id_conformance.py::test_prefix`,
+    `…::test_the_prefix_joins_what_join_accepts` (both laws, every text and namespace of
+    the corpus), `…::test_the_prefix_refuses_exactly_what_join_refuses`;
+    `test_need_id.py::test_the_prefix_laws_over_every_short_text` (both laws, and when
+    joining is refused, over every text of five characters up to a length of eight).
 
 | id | namespace | local id | problem |
 |---|---|---|---|

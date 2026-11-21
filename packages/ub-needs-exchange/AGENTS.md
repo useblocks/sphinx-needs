@@ -26,7 +26,7 @@ README.rst · LICENSE
 src/ub_needs_exchange/
 ├── __init__.py           # the public API, re-exported; `__version__`
 ├── reader.py             # parse / load / select_version / records, the codes
-├── need_id.py            # split_id / join_id / parse_namespace: the one place `::` is spelled
+├── need_id.py            # split_id / join_id / parse_namespace / namespace_prefix: the one place `::` is spelled
 └── py.typed
 tests/
 ├── test_reader.py        # what the corpus cannot state: messages, bytes, files, aliasing

@@ -1,5 +1,6 @@
 # Conformance corpus for the GRAMMAR OF A NEED ID: how an id splits into a namespace and a
-# local id at `::`, how a namespace is parsed from its text, and how a pair is joined back.
+# local id at `::`, how a namespace is parsed from its text, how a pair is joined back, and
+# the prefix of a namespace: the text that, put before an id, joins the id to it.
 #
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/ub-needs-exchange/tests/fixtures/need_id_conformance.toml
@@ -45,15 +46,20 @@
 #     table's name; every `why` is one line
 #   - no case carries `divergent` (as the reading corpus's may): this grammar has one
 #     answer, and an implementation passes a case or does not
+#   - the prefix of a namespace `ns` that the prefix accepts obeys two laws for every text
+#     `x`, with `(xns, xlocal)` the split of `x`: where join(ns + xns, xlocal) is accepted,
+#     it equals prefix(ns) + x; where it is refused (`ns` is then not empty),
+#     prefix(ns) + x is a plain id -- it splits to the empty namespace, with a problem
 #
 # `packages/ub-needs-exchange/tests/test_need_id_conformance.py` runs every case against
 # the Python module `ub_needs_exchange.need_id`, holds the module to two laws over every
 # text the corpus holds (join(split(x)) == x; split(join(ns, local)) == (ns, local) where
 # join accepts the pair -- for the empty namespace, where `local` does not itself split),
-# and asserts the COUNT of each table, so a truncated copy is a red test rather than
-# reduced coverage.
+# holds its `namespace_prefix` to the prefix's two laws over every text and every
+# namespace the corpus holds, and asserts the COUNT of each table, so a truncated copy is
+# a red test rather than reduced coverage.
 #
-# Three tables. Each case has a `name` and a `why` (one line saying what the case pins),
+# Four tables. Each case has a `name` and a `why` (one line saying what the case pins),
 # and:
 #
 # [[split]] - splitting an id
@@ -80,6 +86,21 @@
 #   OR
 #   invalid    - true: with a non-empty namespace, a segment is not a segment, or `local`
 #                is empty, holds `::`, or starts with `:` (it would not split back)
+#
+# [[prefix]] - the prefix of a namespace: the text that, put before an id, joins the id
+#              to the namespace
+#   namespace  - the segments
+#   then EITHER
+#   prefix     - the text: the namespace's text followed by `::`, and `""` for the empty
+#                namespace
+#   and, in a case that also puts the prefix before an id (only with a non-empty
+#   namespace):
+#   id         - the id
+#   prefixed   - `prefix` followed by `id`, character for character
+#   inside     - true when `prefixed` splits into a namespace that starts with the given
+#                segments; false when it is a plain id (an id that could not be joined)
+#   OR
+#   invalid    - true: a segment is not a segment, and the prefix is refused
 
 # --- split: plain ids (no `::`) ------------------------------------------------------
 
@@ -767,4 +788,183 @@ name = "join-a-segment-ending-in-a-line-feed"
 why = "a trailing line feed is a bad character"
 namespace = ["nc\u000a"]
 local = "X"
+invalid = true
+
+# --- prefix: the text that joins an id to a namespace ------------------------------
+
+[[prefix]]
+name = "prefix-the-empty-namespace"
+why = "the empty namespace has the empty prefix: an id put after it is unchanged"
+namespace = []
+prefix = ""
+
+[[prefix]]
+name = "prefix-one-segment"
+why = "the baseline: the namespace's text, then `::`"
+namespace = ["SUP"]
+prefix = "SUP::"
+
+[[prefix]]
+name = "prefix-two-segments"
+why = "every segment joined by `::`, and one `::` after the last"
+namespace = ["sup", "m2"]
+prefix = "sup::m2::"
+
+[[prefix]]
+name = "prefix-eight-segments"
+why = "no limit on the number of segments"
+namespace = ["a", "b", "c", "d", "e", "f", "g", "h"]
+prefix = "a::b::c::d::e::f::g::h::"
+
+[[prefix]]
+name = "prefix-a-segment-of-every-segment-character"
+why = "every ASCII letter, every ASCII digit, `_` and `-`, in one segment"
+namespace = ["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"]
+prefix = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-::"
+
+[[prefix]]
+name = "prefix-segments-starting-with-a-digit-and-a-hyphen"
+why = "a segment character may stand in any position: a leading digit or hyphen is not refused"
+namespace = ["007", "-"]
+prefix = "007::-::"
+
+[[prefix]]
+name = "prefix-a-plain-id"
+why = "a plain id joins the namespace as its local id"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "REQ_1"
+prefixed = "SUP::REQ_1"
+inside = true
+
+[[prefix]]
+name = "prefix-a-namespaced-id"
+why = "an id's own namespace goes under the given one: `SUP::nc::REQ_1` is in `SUP::nc`"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "nc::REQ_1"
+prefixed = "SUP::nc::REQ_1"
+inside = true
+
+[[prefix]]
+name = "prefix-an-id-ending-in-a-colon"
+why = "a trailing single colon makes no `::`: `SUP::X:` joins"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "X:"
+prefixed = "SUP::X:"
+inside = true
+
+[[prefix]]
+name = "prefix-an-id-holding-a-dot"
+why = "the local id is unrestricted: a `.` is kept and the id joins"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "REQ_1.p1"
+prefixed = "SUP::REQ_1.p1"
+inside = true
+
+[[prefix]]
+name = "prefix-an-id-with-an-empty-segment"
+why = "`a::::b` does not split cleanly, so `SUP::a::::b` is a plain id, outside `SUP`"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "a::::b"
+prefixed = "SUP::a::::b"
+inside = false
+
+[[prefix]]
+name = "prefix-an-id-starting-with-a-colon"
+why = "`SUP:::X` splits at its last `::`, leaving the head `SUP:`: a plain id, outside `SUP`"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = ":X"
+prefixed = "SUP:::X"
+inside = false
+
+[[prefix]]
+name = "prefix-the-empty-id"
+why = "the prefix alone, `SUP::`, has nothing after its `::`: a plain id, outside `SUP`"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = ""
+prefixed = "SUP::"
+inside = false
+
+[[prefix]]
+name = "prefix-an-id-ending-in-the-separator"
+why = "`nc::` does not split cleanly, so `SUP::nc::` is a plain id, outside `SUP`"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "nc::"
+prefixed = "SUP::nc::"
+inside = false
+
+[[prefix]]
+name = "prefix-a-cpp-name"
+why = "a C++ name does not split cleanly, so the prefixed text is a plain id, outside `SUP`"
+namespace = ["SUP"]
+prefix = "SUP::"
+id = "std::vector<int>::size"
+prefixed = "SUP::std::vector<int>::size"
+inside = false
+
+[[prefix]]
+name = "prefix-a-plain-id-under-two-segments"
+why = "a plain id joins a two-segment namespace"
+namespace = ["sup", "m2"]
+prefix = "sup::m2::"
+id = "REQ_1"
+prefixed = "sup::m2::REQ_1"
+inside = true
+
+[[prefix]]
+name = "prefix-a-namespaced-id-under-two-segments"
+why = "`nc::REQ_1` under `sup::m2` is in `sup::m2::nc`"
+namespace = ["sup", "m2"]
+prefix = "sup::m2::"
+id = "nc::REQ_1"
+prefixed = "sup::m2::nc::REQ_1"
+inside = true
+
+[[prefix]]
+name = "prefix-an-empty-segment"
+why = "an empty segment is not a segment: `::` alone is not a prefix"
+namespace = [""]
+invalid = true
+
+[[prefix]]
+name = "prefix-a-segment-holding-the-separator"
+why = "a namespace's TEXT is not a segment: `a::b` must be given as two segments"
+namespace = ["a::b"]
+invalid = true
+
+[[prefix]]
+name = "prefix-a-segment-with-a-space"
+why = "a space is not a segment character"
+namespace = ["my ns"]
+invalid = true
+
+[[prefix]]
+name = "prefix-a-segment-with-a-dot"
+why = "a `.` is not a segment character"
+namespace = ["nc.m2"]
+invalid = true
+
+[[prefix]]
+name = "prefix-a-segment-of-a-non-ascii-letter"
+why = "a non-ASCII letter is not a segment character"
+namespace = ["caf\u00e9"]
+invalid = true
+
+[[prefix]]
+name = "prefix-a-segment-ending-in-a-line-feed"
+why = "a trailing line feed is a bad character, not ignored"
+namespace = ["nc\u000a"]
+invalid = true
+
+[[prefix]]
+name = "prefix-an-empty-segment-after-a-valid-one"
+why = "every segment is checked, not only the first"
+namespace = ["nc", ""]
 invalid = true
