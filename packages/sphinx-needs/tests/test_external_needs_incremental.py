@@ -368,9 +368,10 @@ def test_an_external_need_of_the_api_stays(
 def test_the_record_leaves_out_an_external_need_of_the_api(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
-    """The record of the needs loaded names only those the sources gave, not every
-    external need: the need of the API, in a document not read again, is not in the
-    environment saved with that record, and the build after it still holds the need."""
+    """The record of the needs loaded names only those loaded from the sources, not
+    every external need: the need of the API, in a document not read again, is not in
+    the record the environment is saved with, and the build after it still holds the
+    need."""
     srcdir = _write(
         tmp_path / "src",
         _project(

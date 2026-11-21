@@ -1266,9 +1266,9 @@ class SphinxNeedsData:
 
     @property
     def external_needs_loaded(self) -> list[str]:
-        """The ids of the needs that ``needs_external_needs`` gave when this
-        environment last loaded its sources, which the next build removes before it
-        loads them again.
+        """The ids of the needs ``needs_external_needs`` loaded when this environment
+        last loaded its sources, which the next build removes before it loads them
+        again.
 
         Empty for a fresh environment. An external need added otherwise, such as through
         :func:`~sphinx_needs.api.need.add_external_need` while a document is read, is
