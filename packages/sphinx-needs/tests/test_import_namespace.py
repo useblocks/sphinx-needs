@@ -432,6 +432,11 @@ NEEDIMPORT_REFUSALS = {
         "needimport: :namespace: 'a b' is not a namespace: its piece 'a b' is not a "
         "segment, which is one or more ASCII letters, ASCII digits, '_' or '-'",
     ),
+    "separator-twice": (
+        (":namespace: SUP::::",),
+        "needimport: :namespace: 'SUP::::' is not a namespace: its piece '' is not a "
+        "segment, which is one or more ASCII letters, ASCII digits, '_' or '-'",
+    ),
     "empty-segment": (
         (":namespace: ::SUP",),
         "needimport: :namespace: '::SUP' is not a namespace: its piece '' is not a "
@@ -479,6 +484,11 @@ def test_needimport_empty_namespace_is_docutils_error(
 EXTERNAL_REFUSALS = {
     "both": (
         {"namespace": "SUP", "id_prefix": "SUP::"},
+        "namespace and id_prefix are both configured in external_needs item 0, but "
+        "only one is allowed: namespace 'SUP' is id_prefix 'SUP::'.",
+    ),
+    "both-invalid-namespace": (
+        {"namespace": "a b", "id_prefix": "SUP::"},
         "namespace and id_prefix are both configured in external_needs item 0, but "
         "only one is allowed: namespace 'SUP' is id_prefix 'SUP::'.",
     ),
@@ -630,6 +640,21 @@ def test_notice_names_the_first_five(
     assert [w for w in built.warnings if "[needs.import_namespace]" in w] == [
         at_import(outside(IMPORT_SOURCE, 8, 8, "SUP", names), "import_namespace")
     ]
+
+
+def test_notice_leaves_out_an_empty_id(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """An empty id is refused on its own (``needs.import_need``), and is not counted
+    among the needs the import brings into the namespace, nor outside it."""
+    data = _needs_json({"": _rec(""), ":X": _rec(":X")})
+    built = _build(
+        make_app, tmp_path / "src", _import_project(":namespace: SUP", data=data)
+    )
+    assert [w for w in built.warnings if "[needs.import_namespace]" in w] == [
+        at_import(outside(IMPORT_SOURCE, 1, 1, "SUP", "':X'"), "import_namespace")
+    ]
+    assert sorted(built.needs) == ["LOCAL_1", "SUP:::X"]
 
 
 def test_external_notice_once_per_source(
