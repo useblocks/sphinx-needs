@@ -2068,7 +2068,10 @@ def add_external_need(
     :param app: Sphinx application object.
     :param need_type: Name of the need type to create.
     :param title: String as title.
-    :param id: ID as string. If not given, a id will get generated.
+    :param id: ID as string. If not given, a id will get generated. A namespaced id is
+        built with ``ub_needs_exchange.join_id``: ``id=join_id(["SUP"], "REQ_1")`` is
+        ``SUP::REQ_1``, the need ``REQ_1`` in the namespace ``SUP`` (with
+        ``needs_namespaced_ids`` on); this function takes no namespace of its own.
     :param external_url: URL as string, which shall be used as link to the original need source
     :param content: Content as single string.
     :param status: Status as string.

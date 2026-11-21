@@ -7,6 +7,24 @@ Changelog
 Unreleased
 ----------
 
+Improvements
+............
+
+- ✨ **An import under a namespace**: ``:namespace: SUP`` on :ref:`needimport` (:ref:`needimport_namespace`), or
+  ``namespace = "SUP"`` on a :ref:`needs_external_needs` source, puts the file's needs into the namespace ``SUP``,
+  so that a supplier's ids cannot clash with the project's: the file's ``REQ_1`` becomes ``SUP::REQ_1``, its
+  ``nc::REQ_2`` becomes ``SUP::nc::REQ_2``, and every reference inside the file to one of its own needs follows.
+  It is ``id_prefix`` with the text ``SUP::``, with the namespace checked; several levels are allowed
+  (``sup::m2``). A value that is not a namespace, or one given beside an ``id_prefix``, is refused: at a
+  ``needimport`` with one ``needs.needimport`` warning, and the directive imports nothing; for a source, as a
+  missing ``base_url`` is, stopping the build. With :ref:`needs_namespaced_ids` off (the default in 9.x) the ids
+  get the prefix all the same and are read as plain ids, and each such import gives one
+  ``needs.namespaced_ids_off`` warning. With it on, a need whose id cannot be joined to a namespace (``a::::b``,
+  or an id starting with ``:``) is imported as ``SUP::a::::b``, a plain id outside the namespace, and each import
+  holding such ids gives one warning of a new type, ``needs.import_namespace``, naming how many and the first
+  five. A sphinx-needs older than this one ignores the ``namespace`` key of a source without a word (the needs
+  arrive with the file's own ids), and reports the ``needimport`` option as unknown. (:pr:`0000`)
+
 Bug fixes
 .........
 

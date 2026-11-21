@@ -10,7 +10,8 @@ need-id corpus of ub-needs-exchange (the grammar), the "namespaced ids" section 
 `tests/test_namespaced_ids.py` (the rest).
 
 Status: describes the implementation as it is (unreleased). The filter names and the
-need attributes are **experimental**; the configuration value is not.
+need attributes are **experimental**; the configuration value is not, nor is the
+`namespace` of an import (section 10).
 
 ## 1. The model
 
@@ -201,20 +202,69 @@ nothing), which keeps such a filter unreported. Where there is no check context 
 `needimport` filter, a field's predicate, a variant condition) a read of `c` is refused
 already, and that refusal stands alone.
 
-## 10. Deliberately absent
+## 10. The namespace of an import
 
-- a `namespace` option on `needimport` and `needs_external_needs`, beside `id_prefix`
-  (later; with the switch on, an `id_prefix` ending in `::` already gives a namespace;
-  `id_prefix` is unchanged);
+**The rule.** `needimport`'s `:namespace:` and a `needs_external_needs` source's
+`namespace` key are the `id_prefix` of the namespace's text followed by the separator, with
+the value checked: `namespace = SUP` is `id_prefix = SUP::`. The value is resolved ONCE, at
+the option's boundary, into that prefix text (`_namespaced_ids.import_prefix`, through
+`ub_needs_exchange.namespace_prefix(parse_namespace(text))`; no consumer spells the
+separator), and below it the existing prefix path runs unchanged: ids, links to the file's
+own ids, parts, conditions, the file schema's link defaults, the content rewrite, external
+URLs, duplicates. The two spellings give the same needs, field for field, the same
+`needs.json` and the same pages (`tests/test_import_namespace.py` builds both and compares).
+Every reader of an external source's prefix -- the loader, and the set a part's external
+URL is computed from, read by `:need:` and `:need_outgoing:` -- reads it through one
+helper, `external_needs.source_id_prefix`. Nothing is stored: the option is its prefix,
+and `ENV_DATA_VERSION` does not move.
+
+**Why a prefix, not a join per id.** Wherever `join_id` accepts an id of the file under the
+namespace, the prefix followed by the id IS that joined id (the first law of
+`namespace_prefix`, rule 10 of section 14 of ub-needs-exchange's contract, pinned by its
+need-id corpus); wherever it refuses, the prefixed text is a plain id outside the namespace (the
+second law). So the prefix is the join on every id that can be joined, and on the others it
+keeps the import whole: no need is lost, and every link of the file to it still resolves, as
+with `id_prefix`.
+
+**The refusals.** Both options together; a value that is not a namespace (one that ends in
+the separator is told to drop it; any other is told the rule a segment obeys); for a source,
+an empty value or one that is not a string. Each goes through the place's existing refusal
+path: at a `needimport`, one `needs.needimport` warning at the directive and nothing
+imported, as for a file that cannot be read (an empty `:namespace:` is docutils' "argument
+required"); for a source, `NeedsExternalException`, which stops the build, as a missing
+`base_url` does, naming the source by its index.
+
+**The notices: one per import, never per need.** With the switch off (the 9.x default) the
+prefix is added all the same, and each import under a namespace gives one
+`needs.namespaced_ids_off` warning: its ids are plain, so a namespace filter over them would
+select nothing (section 9's rule, applied where the namespace is written). With the switch
+on, an import whose ids include some that cannot be joined (`id_problem(prefix + id)` is
+not `None`: `a::::b`, `:X`) gives one `needs.import_namespace` warning, naming how many and
+the first five; an import whose ids all join gives none. The type is its own, so that it can
+be suppressed without silencing `needs.needimport` (a file that cannot be read). The two are
+exclusive: with the switch off no id is in a namespace, so none is outside one. An
+`id_prefix` gives neither, as before. Counted are the needs the import creates (after
+`:ids:` and `:filter:`), an empty id (refused on its own) left out.
+
+**What an older version does.** sphinx-needs 9.3.0 reports `:namespace:` as an unknown
+option (a docutils error; the directive imports nothing), and ignores the source key without
+a word: the needs arrive with the file's ids. The docs say so, and point at Sphinx's
+`needs_extensions`.
+
+## 11. Deliberately absent
+
 - `c.` values as needtable columns or sort keys (later, a resolver that serves `c.source`
   too);
 - short references, a bare id written inside a namespaced need naming a need of that
   namespace (later: a recon, a ruling on the lookup order, a build);
 - any `needs.json` key: format 2 is to carry `ns` beside the full `id` (later);
-- an index-tier arm for `c.in_namespace` (the fast tier answers it, section 11);
+- an index-tier arm for `c.in_namespace` (the fast tier answers it, section 12);
 - a lint for a filter that names a namespace no need has, or a bare-id filter (a namespace
   no need is in selects nothing, as any filter matching nothing does);
-- any change to `id_prefix`;
+- any change to `id_prefix`, and any deprecation of it (a text prefix that is not a
+  namespace, `SUP_`, has no `namespace` spelling);
+- a `namespace` argument on a Python function (`add_external_need`, `create_need`): a
+  caller builds the id with `ub_needs_exchange.join_id`;
 - did-you-mean hints on `needextend` and `needextract` "not found" messages.
 
 **Alternatives considered.**
@@ -226,7 +276,7 @@ already, and that refusal stands alone.
 - *Root-level filter names* (`ns`, `local_id`): lost because they would have to be
   reserved field names, where `c.` can be shadowed by nothing.
 
-## 11. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine, with `needs_namespaced_ids = True`)
+## 12. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine, with `needs_namespaced_ids = True`)
 
 - **Memory**: the needs of a 10 000-need build, held after a pickle round trip
   (`tracemalloc`), against the base without namespaces, the arms interleaved with a null arm
