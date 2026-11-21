@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795247519123,
+  "lastUpdate": 1795264023865,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30786,6 +30786,48 @@ window.BENCHMARK_DATA = {
             "value": 194.729117,
             "unit": "MB",
             "extra": "Commit: 98c03da5087aea00efa51e41c6fe9e5afec48c2e\nBranch: master\nTime: 2026-11-21T08:50:17+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a649855b8c667bbbca6724ba597577f0ea12f57e",
+          "message": "🧪 sphinx-needs: the need-parts corpus holds parts in test-report bodies, and one ubcode marker goes (#2563)\n\nThe need-parts corpus now pins where a part written in the body of a\ntest-report directive belongs, and the parts contract says it.\n\n- **Four cases.** `placement-a-test-file-and-a-test-suite-body`: a role\nin a `test-file` or `test-suite` body is that need's part, the suite and\ncase needs a test file's `:auto_suites:` / `:auto_cases:` expand have no\nparts, and a role after both directives is outside every need.\n`placement-a-test-report-body-in-myst`: the same for all three\ndirectives written in MyST.\n`placement-a-test-case-and-a-need-nested-in-each-other`: the innermost\nneed counts a test-report need like any other, a test case in a\nrequirement and a requirement in a test case; neither has the other's\nparts, an id both mark is one part of each, and the outer need's address\nof an inner part is dead. `duplicates-in-a-test-case-body`: the first of\na repeated id wins in a test case body too, with one finding.\n- **The contract.** Section 2 of `design/parts-contract.md` named only\nthe body of a test case; it now names the test file's and test suite's\nbodies, says the needs a test file's options expand have no parts, and\nsays the innermost-need rule holds whatever directive made each need.\n- **One marker.** `placement-a-test-case-body` loses its `ubcode`\ndivergence marker: ubCode is changing to give a part in a test-report\nbody to that need, and its runner requires a marked case to fail, so the\nmarker leaves the corpus first.\n\nTests and one design file only; nothing in `src/` changes, and\nsphinx-needs already answers every case. The case count goes from 52 to\n56.\n\nRun: `uv run poe test-needs tests/test_parts_conformance.py` (Python\n3.13, Sphinx 9.2), the same file in the Sphinx 7 (Python 3.11) and\nSphinx 8 (Python 3.12) cells, each `78 passed, 1 xfailed`; `uv run poe\nlint`. Each new case was checked to go red under a mutation: parts\ncollected through a nested need, the last of a repeated id kept, and a\ntest suite's body dropped.",
+          "timestamp": "2026-11-21T13:25:20+01:00",
+          "tree_id": "5ba62b17eead03c4d6e144c533f09d097a7ed139",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a649855b8c667bbbca6724ba597577f0ea12f57e"
+        },
+        "date": 1795264023197,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07378149499999864,
+            "unit": "s",
+            "extra": "Commit: a649855b8c667bbbca6724ba597577f0ea12f57e\nBranch: master\nTime: 2026-11-21T13:25:20+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.773546840999998,
+            "unit": "s",
+            "extra": "Commit: a649855b8c667bbbca6724ba597577f0ea12f57e\nBranch: master\nTime: 2026-11-21T13:25:20+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 193.701244,
+            "unit": "MB",
+            "extra": "Commit: a649855b8c667bbbca6724ba597577f0ea12f57e\nBranch: master\nTime: 2026-11-21T13:25:20+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
