@@ -22,6 +22,7 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
 INDEX = """\
@@ -144,6 +145,10 @@ CASES: dict[str, tuple[dict[str, str], dict[str, str]]] = {
             )
         },
     ),
+    "all-sources-removed": (
+        _project(_conf(_source("a.json")), **{"a.json": A}),
+        {"conf.py": _conf()},
+    ),
 }
 
 #: the needs the configuration after the change gives, besides ``LOCAL_1``
@@ -158,6 +163,7 @@ EXPECTED_AFTER = {
     "target_url-changed": ["REQ_1", "REQ_2", "REQ_3"],
     "source-added": ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"],
     "sources-reordered": ["A_REQ_1", "A_REQ_2", "A_REQ_3", "B_SPEC_1"],
+    "all-sources-removed": [],
 }
 
 
@@ -168,21 +174,38 @@ def _write(srcdir: Path, files: Mapping[str, str]) -> Path:
     return srcdir
 
 
+def _held(app: SphinxTestApp) -> dict[str, tuple[bool, str | None, str]]:
+    """The needs held: ``is_external``, ``external_url`` and title by id, from
+    ``needs.json``, which lists the external needs too."""
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = data["versions"][data["current_version"]]["needs"]
+    return {
+        need_id: (need["is_external"], need["external_url"], need["title"])
+        for need_id, need in needs.items()
+    }
+
+
 def _build(
     make_app: Callable[..., SphinxTestApp], srcdir: Path, *, fresh: bool
 ) -> tuple[dict[str, tuple[bool, str | None, str]], list[str]]:
-    """Build, and return the needs held (``is_external``, ``external_url`` and title by
-    id, from ``needs.json``, which lists the external needs too) and the warnings."""
+    """Build, and return the needs held and the warnings."""
     app = make_app("html", srcdir=srcdir, freshenv=fresh)
     try:
         app.build()
-        data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
-        needs = data["versions"][data["current_version"]]["needs"]
-        held = {
-            need_id: (need["is_external"], need["external_url"], need["title"])
-            for need_id, need in needs.items()
-        }
-        return held, build_warnings(app)
+        return _held(app), build_warnings(app)
+    finally:
+        app.cleanup()
+
+
+def _build_and_record(
+    make_app: Callable[..., SphinxTestApp], srcdir: Path, *, fresh: bool
+) -> tuple[dict[str, tuple[bool, str | None, str]], list[str]]:
+    """Build, and return the needs held and the environment's record of the ids
+    ``needs_external_needs`` loaded."""
+    app = make_app("html", srcdir=srcdir, freshenv=fresh)
+    try:
+        app.build()
+        return _held(app), list(SphinxNeedsData(app.env).external_needs_loaded)
     finally:
         app.cleanup()
 
@@ -276,12 +299,14 @@ from sphinx_needs.api import add_external_need
 
 
 class ExternalProbe(SphinxDirective):
+    optional_arguments = 1
+
     def run(self):
         add_external_need(
             self.env.app,
             "req",
             "an external need of the API",
-            id="R_API",
+            id=self.arguments[0] if self.arguments else "R_API",
             external_url="http://example.org/api.html",
         )
         return []
@@ -293,24 +318,35 @@ def setup(app):
 '''
 
 
+#: a need ``API_EXT`` adds, as ``_held`` gives it
+API_NEED = (True, "http://example.org/api.html", "an external need of the API")
+
+#: a second document, which an incremental build does not read again unless it changes
+OTHER = ":orphan:\n\nOther\n=====\n"
+
+
+def _api_conf(*sources: dict[str, str]) -> str:
+    """``conf.py`` of a project that also loads ``external_api_ext.py``, beside it."""
+    return (
+        "import sys\nfrom pathlib import Path\n\n"
+        "sys.path.insert(0, str(Path(__file__).parent))\n"
+        'sys.modules.pop("external_api_ext", None)\n'
+        + _conf(*sources).replace(
+            '["sphinx_needs"]', '["sphinx_needs", "external_api_ext"]'
+        )
+    )
+
+
 def test_an_external_need_of_the_api_stays(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
     """An external need an extension added while a document was read is not one
     ``needs_external_needs`` loaded: it stays when that document is not read again,
     as the needs of the document's own directives do."""
-    conf = (
-        "import sys\nfrom pathlib import Path\n\n"
-        "sys.path.insert(0, str(Path(__file__).parent))\n"
-        'sys.modules.pop("external_api_ext", None)\n'
-        + _conf(_source("a.json", id_prefix="SUP::")).replace(
-            '["sphinx_needs"]', '["sphinx_needs", "external_api_ext"]'
-        )
-    )
     srcdir = _write(
         tmp_path / "src",
         _project(
-            conf,
+            _api_conf(_source("a.json", id_prefix="SUP::")),
             **{
                 "a.json": A,
                 "external_api_ext.py": API_EXT,
@@ -326,3 +362,83 @@ def test_an_external_need_of_the_api_stays(
     )
     second, _ = _build(make_app, srcdir, fresh=False)
     assert second == first
+
+
+def test_the_record_leaves_out_an_external_need_of_the_api(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The record of the needs loaded names only those the sources gave, not every
+    external need: the need of the API, in a document not read again, is not in the
+    environment saved with that record, and the build after it still holds the need."""
+    srcdir = _write(
+        tmp_path / "src",
+        _project(
+            _api_conf(_source("a.json")),
+            **{
+                "a.json": A,
+                "external_api_ext.py": API_EXT,
+                "other.rst": OTHER + "\n.. external-probe::\n",
+            },
+        ),
+    )
+    first, _ = _build_and_record(make_app, srcdir, fresh=True)
+    # index.rst changed, other.rst not: the environment is saved again, with the record
+    second, record = _build_and_record(
+        make_app, _write(srcdir, {"index.rst": INDEX + "\nChanged.\n"}), fresh=False
+    )
+    third, _ = _build_and_record(make_app, srcdir, fresh=False)
+    assert "R_API" not in record
+    assert record == ["REQ_1", "REQ_2", "REQ_3"]
+    assert [needs.get("R_API") for needs in (first, second, third)] == [API_NEED] * 3
+
+
+def test_no_source_empties_the_record(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """Once no source is configured, the record of the needs loaded is empty, in the
+    environment an incremental build that reads a document again saves."""
+    srcdir = _write(
+        tmp_path / "src", _project(_conf(_source("a.json")), **{"a.json": A})
+    )
+    _, record = _build_and_record(make_app, srcdir, fresh=True)
+    assert record == ["REQ_1", "REQ_2", "REQ_3"]
+    needs, record = _build_and_record(
+        make_app,
+        _write(srcdir, {"conf.py": _conf(), "index.rst": INDEX + "\nChanged.\n"}),
+        fresh=False,
+    )
+    assert (sorted(needs), record) == (["LOCAL_1"], [])
+
+
+def test_an_external_need_of_the_api_under_an_id_loaded_before_stays(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The sources are emptied (a document read again); then an extension adds an
+    external need under an id they had loaded: the build after, which reads nothing
+    again, still holds it."""
+    srcdir = _write(
+        tmp_path / "src",
+        _project(
+            _api_conf(_source("a.json")),
+            **{"a.json": A, "external_api_ext.py": API_EXT, "other.rst": OTHER},
+        ),
+    )
+    first, _ = _build(make_app, srcdir, fresh=True)
+    assert first["REQ_1"] == (
+        True,
+        "http://ext.example/index.html#REQ_1",
+        "Title of REQ_1",
+    )
+    no_source, _ = _build(
+        make_app,
+        _write(srcdir, {"conf.py": _api_conf(), "index.rst": INDEX + "\nChanged.\n"}),
+        fresh=False,
+    )
+    assert sorted(no_source) == ["LOCAL_1"]
+    probed, _ = _build(
+        make_app,
+        _write(srcdir, {"other.rst": OTHER + "\n.. external-probe:: REQ_1\n"}),
+        fresh=False,
+    )
+    unchanged, _ = _build(make_app, srcdir, fresh=False)
+    assert [needs.get("REQ_1") for needs in (probed, unchanged)] == [API_NEED] * 2
