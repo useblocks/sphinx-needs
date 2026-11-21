@@ -1846,6 +1846,58 @@ def test_from_reads_a_need_named_whole_before_a_part(test_app):
     assert needs["REQ_003"]["inline_refs"] == ["REQ_003"]
 
 
+MATCH_NEEDS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"key": {"schema": {"type": "string"}}, "ref": {"schema": {"type": "string"}}}
+needs_links = {"needs_only": {}, "with_parts": {}}
+"""
+
+#: a filter naming ``needs``: true when it holds a part
+_ANY_PART = "any(n['is_part'] for n in needs)"
+
+MATCH_NEEDS_INDEX = f"""\
+Read
+====
+
+.. req:: With a part
+   :id: REQ_001
+   :key: K
+
+   A part, :np:`(p1) the part`.
+
+.. spec:: Reader
+   :id: SPEC_001
+   :ref: K
+   :needs_only: [[links_from_match("key", "ref", filter="{_ANY_PART}")]]
+   :with_parts: [[links_from_match("key", "ref", filter="{_ANY_PART}", include_parts=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), MATCH_NEEDS_CONF),
+                (Path("index.rst"), MATCH_NEEDS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_match_filter_names_the_parts_with_include_parts(test_app):
+    """``needs`` in ``links_from_match``'s filter holds every candidate, as in
+    ``links_from_filter``'s: with ``include_parts``, the parts too."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    reader = _needs(app)["SPEC_001"]
+    assert reader["needs_only"] == []
+    assert reader["with_parts"] == ["REQ_001", "REQ_001.p1"]
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {
