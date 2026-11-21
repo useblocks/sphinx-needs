@@ -18,6 +18,7 @@ from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filt
 from sphinx_needs.utils import (
     add_doc,
     check_and_calc_base_url_rel_path,
+    relative_uri,
     remove_node_from_tree,
 )
 
@@ -150,13 +151,17 @@ def process_needlist(
                     ref.append(title)
                     para += ref
                 elif _docname := need_info["docname"]:
-                    target_id = need_info["id_parent"]
-                    ref = nodes.reference("", "")
-                    ref["refdocname"] = _docname
-                    ref["refuri"] = builder.get_relative_uri(fromdocname, _docname)
-                    ref["refuri"] += "#" + target_id
-                    ref.append(title)
-                    para += ref
+                    uri = relative_uri(builder, fromdocname, _docname)
+                    if uri is None:
+                        # the builder leaves the need's page out: the text alone
+                        para += title
+                    else:
+                        target_id = need_info["id_parent"]
+                        ref = nodes.reference("", "")
+                        ref["refdocname"] = _docname
+                        ref["refuri"] = uri + "#" + target_id
+                        ref.append(title)
+                        para += ref
                 line_block.append(para)
             content.append(line_block)
 
