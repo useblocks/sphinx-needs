@@ -121,7 +121,7 @@ Bug fixes
   build loaded are now removed before the sources are loaded again. That step removes nothing else: a need of the
   project that has taken one of their ids, and an external need an extension added through ``add_external_need``, are
   left as they are. A fresh build does not change. The first build after upgrading reads every document again.
-  (:issue:`2523`, :pr:`0000`)
+  (:issue:`2523`, :pr:`2565`)
 
 Internal changes
 ................
