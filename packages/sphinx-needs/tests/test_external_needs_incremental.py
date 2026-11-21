@@ -218,8 +218,9 @@ def test_incremental_build_holds_the_external_needs_of_the_current_configuration
     before: dict[str, str],
     after: dict[str, str],
 ) -> None:
-    """After the change, an incremental build holds the needs, and gives the warnings,
-    of a fresh build of the changed project; each warning once."""
+    """After the change, an incremental build holds the ids a fresh build of the
+    changed project holds, each external or not, with its URL and title, as there; and
+    it gives that build's warnings, each once."""
     srcdir = _write(tmp_path / "incremental", before)
     _build(make_app, srcdir, fresh=True)
     incremental, incremental_warnings = _build(
