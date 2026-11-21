@@ -17,7 +17,7 @@ New and Improved
   third positional argument is ignored, as it always was. Without it, nothing changes. The
   :doc:`functions` page now says which argument is read where -- the first on the need the
   call is in, the second on every need, that need included
-  (`#0000 <https://github.com/useblocks/sphinx-needs/pull/0000>`__).
+  (`#2567 <https://github.com/useblocks/sphinx-needs/pull/2567>`__).
 
 .. _`release:4.0.0`:
 
