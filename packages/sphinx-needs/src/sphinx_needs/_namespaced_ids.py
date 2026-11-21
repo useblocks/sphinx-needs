@@ -26,6 +26,8 @@ from ub_needs_exchange import (
     SEGMENT_CHARACTER,
     SEPARATOR,
     id_problem,
+    namespace_prefix,
+    parse_namespace,
     split_id,
 )
 
@@ -92,6 +94,46 @@ def unclean_id_message(need_id: str, problem: str, /) -> str:
         "needs_namespaced_ids = False to read no id as namespaced, or suppress the "
         "warning type needs.id_namespace."
     )
+
+
+def import_prefix(namespace: object, /) -> str:
+    """The prefix an import's ``namespace`` stands for (``needimport``'s
+    ``:namespace:``, a ``needs_external_needs`` source's ``namespace``): the text that
+    joins an id to the namespace, ``ub_needs_exchange.namespace_prefix`` of the
+    namespace *namespace* names (``"SUP"`` gives ``"SUP::"``, ``"sup::m2"`` gives
+    ``"sup::m2::"``). From there the import does exactly what an ``id_prefix`` of that
+    text does: the option is its prefix, and nothing else is kept of it.
+
+    :param namespace: The option's value, as written.
+    :raises ValueError: If it is not a namespace: not a string, empty, or a text that
+        ``ub_needs_exchange.parse_namespace`` refuses. The message names the value and
+        says what to write instead: for a namespace followed by the separator, the
+        namespace without it; otherwise the rule a segment obeys.
+    """
+    if not isinstance(namespace, str):
+        raise ValueError(f"{namespace!r} is not a namespace: it must be a string")
+    if not namespace:
+        raise ValueError(
+            "'' is not a namespace: an empty namespace puts no need into a namespace"
+        )
+    try:
+        return namespace_prefix(parse_namespace(namespace))
+    except ValueError:
+        bare = namespace.removesuffix(SEPARATOR)
+        if bare != namespace and _is_namespace(bare):
+            raise ValueError(
+                f"{namespace!r} is not a namespace: write the namespace without the "
+                f"trailing {SEPARATOR!r}, {bare!r}"
+            ) from None
+        raise
+
+
+def _is_namespace(text: str) -> bool:
+    """Whether *text* names a namespace that is not the empty one."""
+    try:
+        return bool(parse_namespace(text))
+    except ValueError:
+        return False
 
 
 def id_matched_by_patterns(

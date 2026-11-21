@@ -17,6 +17,7 @@ namespace gives per import:
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -107,9 +108,7 @@ extensions = ["sphinx_needs"]
 needs_build_json = True
 needs_reproducible_json = True
 needs_builder_filter = ""
-needs_extra_links = [
-    {"option": "satisfies", "incoming": "is satisfied by", "outgoing": "satisfies"}
-]
+needs_links = {"satisfies": {"incoming": "is satisfied by", "outgoing": "satisfies"}}
 """
 
 PAGE_HEAD = """\
@@ -218,7 +217,12 @@ def _build(
             needs={k: dict(v) for k, v in view.items()},
             split={k: (v.id_ns_segments, v.id_local) for k, v in view.items()},
             needs_json=data,
-            page=Path(app.outdir, "index.html").read_text(encoding="utf-8"),
+            # a need's collapse container has a random id
+            page=re.sub(
+                r"SNCB-[0-9a-f]{8}",
+                "SNCB-",
+                Path(app.outdir, "index.html").read_text(encoding="utf-8"),
+            ),
         )
 
 
@@ -294,28 +298,34 @@ def test_needimport_namespace_is_its_prefix(
         else at_import(switched_off(IMPORT_SOURCE, "SUP"), "namespaced_ids_off")
     )
     _assert_same(namespace, prefix, [notice])
-    assert sorted(namespace.needs) == [
-        "LOCAL_1",
-        "SUP:::X",
-        "SUP::REQ_1",
-        "SUP::REQ_2",
-        "SUP::a::::b",
-        "SUP::nc::REQ_1",
-    ]
+    assert sorted(namespace.needs) == sorted(
+        [
+            "LOCAL_1",
+            "SUP::REQ_1",
+            "SUP::REQ_2",
+            "SUP::nc::REQ_1",
+            "SUP::a::::b",
+            "SUP:::X",
+        ]
+    )
     if namespaced:
         assert namespace.split["SUP::nc::REQ_1"] == (("SUP", "nc"), "REQ_1")
         assert namespace.split["SUP::a::::b"] == ((), "SUP::a::::b")
     else:
         assert namespace.split["SUP::nc::REQ_1"] == ((), "SUP::nc::REQ_1")
-    req_2 = namespace.needs["SUP::REQ_2"]
-    assert req_2["links"] == [
-        "SUP::REQ_1",
-        "SUP::nc::REQ_1.p1",
-        'SUP::REQ_1[status=="open"]',
-        "LOCAL_1",
-        "SUP::a::::b",
-        "SUP:::X",
-    ]
+    # as needs.json writes them, a link's condition included
+    data = namespace.needs_json
+    req_2 = data["versions"][data["current_version"]]["needs"]["SUP::REQ_2"]
+    assert sorted(req_2["links"]) == sorted(
+        [
+            "SUP::REQ_1",
+            "SUP::nc::REQ_1.p1",
+            'SUP::REQ_1[status=="open"]',
+            "LOCAL_1",
+            "SUP::a::::b",
+            "SUP:::X",
+        ]
+    )
     assert req_2["satisfies"] == ["SUP::REQ_1"]
     assert (
         req_2["content"] == "Names SUP::REQ_1, SUP::nc::REQ_1 and :need:`SUP::REQ_1`."
@@ -356,8 +366,8 @@ def test_external_namespace_is_its_prefix(
         "SUP::nc::REQ_1": f"{BASE_URL}/index.html#nc::REQ_1",
     }
     part_href = f'href="{BASE_URL}/index.html#nc::REQ_1.p1"'
-    # once from :need:, once from :need_outgoing:
-    assert namespace.page.count(part_href) == 2
+    # from :need:, from :need_outgoing:, and from the outgoing row of LOCAL_1's card
+    assert namespace.page.count(part_href) == 3
 
 
 # ------------------------------------------------------------------------------------
@@ -479,18 +489,19 @@ EXTERNAL_REFUSALS = {
     ),
     "trailing-separator": (
         {"namespace": "SUP::"},
-        "namespace 'SUP::' in external_needs item 0 is not a namespace: write the "
+        "namespace in external_needs item 0: 'SUP::' is not a namespace: write the "
         "namespace without the trailing '::', 'SUP'.",
     ),
     "not-a-segment": (
         {"namespace": "a b"},
-        "namespace 'a b' in external_needs item 0 is not a namespace: its piece 'a b' "
-        "is not a segment, which is one or more ASCII letters, ASCII digits, '_' or "
-        "'-'.",
+        "namespace in external_needs item 0: 'a b' is not a namespace: its piece "
+        "'a b' is not a segment, which is one or more ASCII letters, ASCII digits, "
+        "'_' or '-'.",
     ),
     "not-a-string": (
         {"namespace": 1},
-        "namespace 1 in external_needs item 0 is not a namespace: it must be a string.",
+        "namespace in external_needs item 0: 1 is not a namespace: it must be a "
+        "string.",
     ),
 }
 
@@ -522,7 +533,7 @@ def test_external_source_refusal_names_its_item(
     )
     with _app(make_app, srcdir) as app, pytest.raises(NeedsExternalException) as raised:
         app.build()
-    assert "in external_needs item 1 " in str(raised.value)
+    assert str(raised.value).startswith("namespace in external_needs item 1: ")
 
 
 def test_external_namespace_from_ubproject_toml(
