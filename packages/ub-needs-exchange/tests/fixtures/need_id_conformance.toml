@@ -1,5 +1,6 @@
 # Conformance corpus for the GRAMMAR OF A NEED ID: how an id splits into a namespace and a
-# local id at `::`, how a namespace is parsed from its text, and how a pair is joined back.
+# local id at `::`, how a namespace is parsed from its text, how a pair is joined back, and
+# the prefix of a namespace: the text that, put before an id, joins the id to it.
 #
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/ub-needs-exchange/tests/fixtures/need_id_conformance.toml

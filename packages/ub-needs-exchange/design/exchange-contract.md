@@ -517,17 +517,18 @@ this section are cases of that file.
     at an id. Two laws hold, for every namespace `ns` it accepts and every text `x`, with
     `(xns, xlocal) = split_id(x)`: where `join_id(ns + xns, xlocal)` is accepted, it
     equals `namespace_prefix(ns) + x` — `SUP::` before `nc::REQ_1` is `SUP::nc::REQ_1`, in
-    the namespace `SUP::nc`; and where it is refused (`x` is empty, starts with `:`, or
-    holds `::` and does not split cleanly), `namespace_prefix(ns) + x` is a plain id
-    (5.), outside the namespace — `SUP::a::::b`, `SUP:::X`, `SUP::`. The package decides
-    nothing about an id left outside: whether it is accepted, warned about or refused is
-    the consumer's (9.).
+    the namespace `SUP::nc`; and where it is refused (only under a non-empty namespace,
+    and then exactly when `x` is empty, starts with `:`, or holds `::` and does not split
+    cleanly), `namespace_prefix(ns) + x` is a plain id (5.), outside the namespace —
+    `SUP::a::::b`, `SUP:::X`, `SUP::`. The package decides nothing about an id left
+    outside: whether it is accepted, warned about or refused is the consumer's (9.).
     Enforced by: corpus: every `prefix-` case, among them `prefix-a-namespaced-id`,
     `prefix-an-id-with-an-empty-segment`, `prefix-an-id-starting-with-a-colon`,
     `prefix-the-empty-id`; `test_need_id_conformance.py::test_prefix`,
     `…::test_the_prefix_joins_what_join_accepts` (both laws, every text and namespace of
     the corpus), `…::test_the_prefix_refuses_exactly_what_join_refuses`;
-    `test_need_id.py::test_the_prefix_laws_over_every_short_text`.
+    `test_need_id.py::test_the_prefix_laws_over_every_short_text` (both laws, and when
+    joining is refused, over every text of five characters up to a length of eight).
 
 | id | namespace | local id | problem |
 |---|---|---|---|

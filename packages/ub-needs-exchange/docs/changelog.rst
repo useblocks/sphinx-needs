@@ -15,8 +15,7 @@ Unreleased
   ``SUP::nc``); put before one that cannot (``a::::b``, ``:X``), it gives a plain id
   outside the namespace, and what that costs is the caller's to decide.
   ``design/exchange-contract.md`` §14 rule 10 states the two laws, and
-  ``tests/fixtures/need_id_conformance.toml`` has a fourth table, ``[[prefix]]``, of 23
-  cases.
+  ``tests/fixtures/need_id_conformance.toml`` has a fourth table, ``[[prefix]]``.
 
 .. _`release:1.2.0`:
 

@@ -161,10 +161,12 @@ def namespace_prefix(namespace: Iterable[str]) -> str:
     own namespace, if any, under *namespace* and its local id after it, as
     :func:`join_id` accepts them -- the prefix followed by ``x`` is that joined id:
     ``namespace_prefix(["SUP"]) + "nc::REQ_1"`` is ``SUP::nc::REQ_1``, in the namespace
-    ``SUP::nc``. Where it cannot (``x`` is empty, starts with ``:``, or holds ``::`` and
-    does not split cleanly, as ``a::::b`` does), the prefix followed by ``x`` is a plain
-    id, OUTSIDE the namespace: ``SUP::a::::b`` splits to the empty namespace. It never
-    looks at an id: what an id left outside costs is the consumer's to decide.
+    ``SUP::nc``. Where it cannot -- under a non-empty namespace, exactly when ``x`` is
+    empty, starts with ``:``, or holds ``::`` and does not split cleanly, as ``a::::b``
+    does -- the prefix followed by ``x`` is a plain id, OUTSIDE the namespace:
+    ``SUP::a::::b`` splits to the empty namespace. (Under the empty namespace every text
+    can be joined: the prefix is empty, and ``x`` stays as it is.) It never looks at an
+    id: what an id left outside costs is the consumer's to decide.
 
     :raises TypeError: If *namespace* is a ``str``: it is a sequence of segments (parse a
         namespace's text with :func:`parse_namespace` first).
