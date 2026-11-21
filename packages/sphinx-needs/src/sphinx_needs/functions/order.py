@@ -153,7 +153,9 @@ _SELECTORS: Final[Mapping[str, frozenset[str]]] = {
     "calc_sum": frozenset({"option", "filter", "links_only"}),
     "links_from_content": frozenset({"need_id", "filter"}),
     "links_from_filter": frozenset({"filter", "include_self", "include_parts"}),
-    "links_from_match": frozenset({"field", "equals", "filter", "include_self"}),
+    "links_from_match": frozenset(
+        {"field", "equals", "filter", "include_self", "include_parts"}
+    ),
 }
 #: the selectors that hold a flag, not a name or a filter
 _FLAGS: Final = frozenset({"links_only", "include_self", "include_parts"})
