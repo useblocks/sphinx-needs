@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 30
+ENV_DATA_VERSION: Final = 31
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -228,6 +228,11 @@ the white space at its ends, so ``(p1) first`` stores ``first`` where version 29
 without the bump an upgraded build would keep the spaced texts of the documents whose
 sources did not change, in filters, labels and ``needs.json``, beside the stripped texts
 of those it re-reads.
+
+Version 31 adds a field to every stored link type
+(:class:`~sphinx_needs.needs_schema.LinkSchema`): ``dependent``, which end of a link
+depends on the other, as the link type's entry gives it (``"source"`` unless given). A
+schema pickled by version 30 has no such field.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

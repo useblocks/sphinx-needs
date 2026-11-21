@@ -46,6 +46,7 @@ from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
     DEFAULT_NEED_TYPES,
+    LINK_DEPENDENT_VALUES,
     LinkOptionsType,
     NeedField,
     NeedFields,
@@ -876,15 +877,17 @@ NEED_TYPE_BACK_LINK_KEYS = ("description", "schema", "severity")
 
 #: The keys of a link type that are the same on every need type -- how its links are
 #: drawn, whether they are copied into ``links``, whether a dead link is allowed,
-#: whether it is a summary: an entry of a link type declared on need types alone may
-#: give them (its first root declaration sets them, the others may repeat them); on a
-#: link type declared otherwise they are refused.
+#: whether it is a summary, which end of a link depends on the other: an entry of a
+#: link type declared on need types alone may give them (its first root declaration
+#: sets them, the others may repeat them); on a link type declared otherwise they are
+#: refused.
 NEED_TYPE_LINK_SHAPE_KEYS = (
     "incoming",
     "outgoing",
     "copy",
     "allow_dead_links",
     "summary",
+    "dependent",
     "color",
     "style",
     "style_part",
@@ -946,6 +949,10 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "copy": ("a boolean", lambda v: isinstance(v, bool)),
     "allow_dead_links": ("a boolean", lambda v: isinstance(v, bool)),
     "summary": ("a boolean", lambda v: isinstance(v, bool)),
+    "dependent": (
+        f"one of {joined([repr(v) for v in LINK_DEPENDENT_VALUES])}",
+        lambda v: isinstance(v, str) and v in LINK_DEPENDENT_VALUES,
+    ),
     "style_part": ("a string", lambda v: isinstance(v, str)),
     "style_start": ("a string", lambda v: isinstance(v, str)),
     "style_end": ("a string", lambda v: isinstance(v, str)),
@@ -984,7 +991,7 @@ def _got(name: str, value: object) -> str:
             if not value
             else "a list with an item that is not a non-empty string"
         )
-    if name in ("severity", "directive_name") and isinstance(value, str):
+    if name in ("severity", "directive_name", "dependent") and isinstance(value, str):
         return repr(value)
     return repr(value) if value == "" else _type_name(value)
 
@@ -1178,7 +1185,8 @@ def _normalise_need_types(
     ``style*`` that is not a string, a ``schema`` or a ``derive`` that is not a
     mapping, a ``nullable``, ``copy``, ``allow_dead_links`` or ``summary`` that is not
     a boolean, ``predicates`` that are not a list of (filter, value) pairs, a
-    ``severity`` that is not one of ``violation``, ``warning`` and ``info``. Only the
+    ``severity`` that is not one of ``violation``, ``warning`` and ``info``, a
+    ``dependent`` that is not one of ``source``, ``target`` and ``both``. Only the
     shape is checked here: what a declaration names, and whether its values apply to
     the field, is for :func:`create_schema`, which knows the fields and every need type.
 
@@ -2801,6 +2809,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     log_warning(LOGGER, text, "config", None)
                     summary = False
             summary = summary or path
+            # which end of a link depends on the other: kept, and acted on nowhere;
+            # accepted beside any rule (on a summary or a union it means nothing)
+            dependent = link.get("dependent", "source")
+            if "dependent" in link:
+                wrong, text = _not_of_their_shape(where, link, ("dependent",))
+                if wrong:
+                    log_warning(LOGGER, text, "config", None)
+                    dependent = "source"
             copied = link.get("copy", False)
             if summary and copied is True and authored:
                 # a copy in links would draw a summary link as an edge of links, which
@@ -2831,6 +2847,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 allow_dead_links=link.get("allow_dead_links", False)
                 and not dead_beside,
                 summary=summary,
+                dependent=dependent,
                 target_types=target_types,
                 derive=derive,
                 derive_by_type=by_type,
@@ -3737,7 +3754,8 @@ def _type_local_links(
     """The link types need types declare that nothing else declares (no link type, no
     field, no core field): each the link type of the types that declare it, of the one
     shape they agree on -- whether it is derived, and its display, ``copy``,
-    ``allow_dead_links`` and ``summary`` (:data:`NEED_TYPE_LINK_SHAPE_KEYS`).
+    ``allow_dead_links``, ``summary`` and ``dependent``
+    (:data:`NEED_TYPE_LINK_SHAPE_KEYS`).
 
     A root declaration is one of a type none of whose ancestors declares the link type:
     an entry refused for the link type's shape declares nothing, so a child of a
@@ -3885,15 +3903,16 @@ def _computes_paths(
 
 
 def _link_shape_defaults(name: str, *, path: bool = False) -> dict[str, Any]:
-    """The display, ``copy``, ``allow_dead_links`` and ``summary`` of a ``needs_links``
-    entry that gives none of them: ``summary`` is true where a ``copy`` or ``collect``
-    computes the link type (*path*)."""
+    """The display, ``copy``, ``allow_dead_links``, ``summary`` and ``dependent`` of a
+    ``needs_links`` entry that gives none of them: ``summary`` is true where a ``copy``
+    or ``collect`` computes the link type (*path*)."""
     display = LinkDisplayConfig(incoming=f"{name} incoming", outgoing=name)
     return {
         **{f.name: getattr(display, f.name) for f in dataclasses.fields(display)},
         "copy": False,
         "allow_dead_links": False,
         "summary": path,
+        "dependent": "source",
     }
 
 
@@ -4060,7 +4079,8 @@ def _resolve_type_declarations(
     that widens the declaration before it (``needs.type_widening``). An entry is taken
     whole or not at all: the type keeps the declaration before it. A ``links`` entry of
     a link type declared otherwise that gives its display, ``copy``,
-    ``allow_dead_links`` or ``summary`` (:data:`NEED_TYPE_LINK_SHAPE_KEYS`) is a
+    ``allow_dead_links``, ``summary`` or ``dependent``
+    (:data:`NEED_TYPE_LINK_SHAPE_KEYS`) is a
     ``needs.config`` finding, those keys ignored (a value repeating the link type's
     own too) and the rest of the entry used: the link type keeps its own on every need
     type.
@@ -4169,9 +4189,9 @@ def _resolve_type_declarations(
                         ]
                     )
                 ):
-                    # a link type declared otherwise is drawn, copied, checked and read
-                    # as a summary or not the same on every need type: as needs_links
-                    # declares it
+                    # a link type declared otherwise is drawn, copied, checked, read as
+                    # a summary or not, and depended on the same on every need type: as
+                    # needs_links declares it
                     named = [repr(k) for k in shape_keys]
                     log_warning(
                         LOGGER,

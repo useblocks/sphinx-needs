@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 30,
+  "ENV_DATA_VERSION": 31,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
@@ -690,6 +690,7 @@
         "copy: bool",
         "allow_dead_links: bool",
         "summary: bool",
+        "dependent: LinkDependent",
         "target_types: LinkTargetTypes | None",
         "derive: Derive | None",
         "derive_by_type: Mapping[str, Derive] | None",

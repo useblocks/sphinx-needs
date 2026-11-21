@@ -177,7 +177,8 @@ def test_an_unknown_key_refuses_a_count(test_app: Any) -> None:
     app.build()
     assert build_warnings(app) == [
         "WARNING: needs_types['req'].links['other_back'] has an unknown key 'bar'; "
-        "known keys are allow_dead_links, color, copy, default, derive, description, "
+        "known keys are allow_dead_links, color, copy, default, dependent, derive, "
+        "description, "
         "incoming, outgoing, predicates, schema, severity, style, style_end, "
         "style_part, style_start, summary, target_types; the key is ignored "
         "[needs.config]",
@@ -285,7 +286,8 @@ def test_a_back_links_name_of_no_link_type_is_checked_as_a_link_type(
         "'allow_dead_links' that is not a boolean (got str) and a 'color' that is not "
         "a string (got int); the keys are ignored [needs.config]",
         "WARNING: needs_types['req'].links['zzz_back'] has an unknown key 'foo'; "
-        "known keys are allow_dead_links, color, copy, default, derive, description, "
+        "known keys are allow_dead_links, color, copy, default, dependent, derive, "
+        "description, "
         "incoming, outgoing, predicates, schema, severity, style, style_end, "
         "style_part, style_start, summary, target_types; the key is ignored "
         "[needs.config]",

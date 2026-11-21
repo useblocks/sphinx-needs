@@ -7,6 +7,18 @@ Changelog
 Unreleased
 ----------
 
+Improvements
+............
+
+- ✨ A link type's entry may say which end of a link depends on the other: ``dependent = "source"`` (the need the
+  link is written on, the default), ``"target"`` (the need it points to) or ``"both"`` (:ref:`needs_links`). It is
+  checked and kept, and sphinx-needs does not act on it, so a configuration shared with a tool that reads it builds
+  under ``-W``: before, the key was reported as unknown. A value that is none of the three names is a
+  ``needs.config`` warning, and ignored. On a link type declared on need types alone it is part of the link type's
+  shape, as ``summary`` is: the first need type declaring it sets it, and another value is a
+  ``needs.type_conflict``. It is not in the ``needs.json``. ``ENV_DATA_VERSION`` is 31: the first build after
+  upgrading reads every document again. (:pr:`2554`)
+
 Bug fixes
 .........
 

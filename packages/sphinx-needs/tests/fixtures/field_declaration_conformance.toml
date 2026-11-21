@@ -46,11 +46,12 @@
 #     first root declaration -- of a type none of whose ancestors declares it -- giving a
 #     `schema` `type`; a root of another shape is refused. A link type need types alone
 #     declare has one shape too: whether it is derived, and its `incoming`, `outgoing`,
-#     `copy`, `allow_dead_links`, `summary`, `color` and `style*` keys, set by its first
-#     root declaration, an empty one included (the `[needs.links.*]` defaults for the
-#     keys it leaves out: `summary` is `false`, or `true` where a `copy` or `collect`
-#     computes the link type -- a derived one, in the `derive` of a declaration not
-#     refused for another key); every other declaration may repeat a value, and no more.
+#     `copy`, `allow_dead_links`, `summary`, `dependent`, `color` and `style*` keys, set
+#     by its first root declaration, an empty one included (the `[needs.links.*]`
+#     defaults for the keys it leaves out: `dependent` is `"source"`; `summary` is
+#     `false`, or `true` where a `copy` or `collect` computes the link type -- a derived
+#     one, in the `derive` of a declaration not refused for another key); every other
+#     declaration may repeat a value, and no more.
 #     Beside such a `copy` or `collect`, `summary = false` is `derive_invalid` in any
 #     declaration, the first root's included, ignored (it sets no shape), and its entry
 #     used
@@ -3236,6 +3237,343 @@ summary = true
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "ev_trace"
+
+[[case]]
+name = "type-local-link-dependent-agreed"
+why = "dependent is part of a link type's shape: the first root declaration giving it sets it for a link type need types alone declare, and every other declaration may repeat it or leave it out; any of \"source\", \"target\" and \"both\" is accepted and changes no value: the links are held as any link type's"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfied_by]
+dependent = "target"
+
+[needs.types.req.links.related]
+dependent = "both"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.satisfied_by]
+dependent = "target"
+
+[needs.types.spec.links.related]
+
+[needs.types.spec.links.satisfies]
+dependent = "source"
+
+[needs.types.comp]
+title = "Component"
+prefix = "C_"
+'''
+source = '''
+.. comp:: Component
+   :id: COMP_1
+
+.. req:: Sets the shapes
+   :id: REQ_1
+   :satisfied_by: COMP_1
+   :related: COMP_1
+
+.. spec:: Repeats one, leaves one out
+   :id: SPEC_1
+   :satisfied_by: COMP_1
+   :related: REQ_1
+   :satisfies: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+satisfied_by = ["COMP_1"]
+related = ["COMP_1"]
+satisfies = []
+[case.expect.needs.SPEC_1]
+satisfied_by = ["COMP_1"]
+related = ["REQ_1"]
+satisfies = ["REQ_1"]
+[case.expect.needs.COMP_1]
+satisfied_by_back = ["REQ_1", "SPEC_1"]
+
+[[case]]
+name = "type-local-link-dependent-disagrees"
+why = "dependent is set by the first root declaration, a silent one too (\"source\"), and another declaration may repeat it and no more: a later root giving \"target\" where the first is silent, or \"source\" where the first gives \"target\", is one type_conflict and does not declare the link type (its need holds [], a link there is undeclared_for_type); a child giving another value is one type_conflict and still declares it through its parent, and a child repeating its parent's value declares it, with no finding"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.links.rel]
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.links.rel]
+dependent = "target"
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.links.up]
+dependent = "target"
+
+[needs.types.cc]
+title = "CC"
+prefix = "CC_"
+inherits = "c"
+
+[needs.types.cc.links.up]
+dependent = "both"
+
+[needs.types.cr]
+title = "CR"
+prefix = "CR_"
+inherits = "c"
+
+[needs.types.cr.links.up]
+dependent = "target"
+
+[needs.types.d]
+title = "D"
+prefix = "D_"
+
+[needs.types.d.links.up]
+dependent = "source"
+'''
+source = '''
+.. a:: Sets rel's shape, silent: source
+   :id: A_001
+
+.. b:: Refused: rel's dependent is source
+   :id: B_001
+   :rel: A_001
+
+.. c:: Sets up's shape: target
+   :id: C_001
+   :up: A_001
+
+.. cc:: Refused child, still declaring
+   :id: CC_001
+   :up: A_001
+
+.. cr:: A child repeating its parent's value
+   :id: CR_001
+   :up: A_001
+
+.. d:: Refused root: up's dependent is target
+   :id: D_001
+   :up: A_001
+'''
+[case.expect]
+[case.expect.needs.B_001]
+rel = []
+[case.expect.needs.C_001]
+up = ["A_001"]
+[case.expect.needs.CC_001]
+up = ["A_001"]
+[case.expect.needs.CR_001]
+up = ["A_001"]
+[case.expect.needs.D_001]
+up = []
+[[case.expect.findings]]
+code = "type_conflict"
+field = "rel"
+type = "b"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "B_001"
+field = "rel"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "up"
+type = "cc"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "up"
+type = "d"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "D_001"
+field = "up"
+type = "d"
+
+[[case]]
+name = "type-local-link-dependent-not-a-name"
+why = "a dependent that is not \"source\", \"target\" or \"both\" (another string, a number, a boolean) is ignored (each tool's configuration finding, not compared) and its entry used: a first root giving one leaves the default, \"source\", so a later root giving \"source\" or another such value agrees, and one giving \"target\" is one type_conflict and does not declare the link type"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.links.rel]
+dependent = "upstream"
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.links.rel]
+dependent = "source"
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.links.rel]
+dependent = 1
+
+[needs.types.d]
+title = "D"
+prefix = "D_"
+
+[needs.types.d.links.rel]
+dependent = true
+
+[needs.types.e]
+title = "E"
+prefix = "E_"
+
+[needs.types.e.links.rel]
+dependent = "target"
+'''
+source = '''
+.. a:: Declares rel, its dependent ignored
+   :id: A_001
+   :rel: A_001
+
+.. b:: Agrees: source
+   :id: B_001
+   :rel: A_001
+
+.. c:: Agrees: its number is ignored
+   :id: C_001
+   :rel: A_001
+
+.. d:: Agrees: its boolean is ignored
+   :id: D_001
+   :rel: A_001
+
+.. e:: Refused: rel's dependent is source
+   :id: E_001
+   :rel: A_001
+'''
+[case.expect]
+[case.expect.needs.A_001]
+rel = ["A_001"]
+[case.expect.needs.B_001]
+rel = ["A_001"]
+[case.expect.needs.C_001]
+rel = ["A_001"]
+[case.expect.needs.D_001]
+rel = ["A_001"]
+[case.expect.needs.E_001]
+rel = []
+[[case.expect.findings]]
+code = "type_conflict"
+field = "rel"
+type = "e"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "E_001"
+field = "rel"
+type = "e"
+
+[[case]]
+name = "type-local-link-dependent-beside-needs-links"
+why = "on a link type declared otherwise, dependent is the [needs.links] entry's: a need type's entry giving it is ignored (each tool's configuration finding, not compared) and the rest of the entry used, so its schema still holds"
+config = '''
+[needs.links.satisfies]
+dependent = "source"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.satisfies]
+dependent = "target"
+schema = { maxItems = 1 }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. req:: Requirement
+   :id: REQ_2
+
+.. spec:: Over its type's maxItems
+   :id: SPEC_1
+   :satisfies: REQ_1, REQ_2
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+satisfies = ["REQ_1", "REQ_2"]
+[[case.expect.findings]]
+code = "link_fail"
+need = "SPEC_1"
+field = "satisfies"
+
+[[case]]
+name = "type-local-link-dependent-on-a-summary-or-union"
+why = "dependent on a summary link type -- summary = true, or one a copy or collect computes -- or on a union is accepted beside its rule, on a [needs.links] entry and on a need type's declaration alike: no derive_invalid (unlike summary = false beside a copy or collect), and the rule computes its links as without it"
+config = '''
+[needs.links.satisfies]
+
+[needs.links.satisfied_by]
+dependent = "target"
+
+[needs.links.trace]
+derive = { kind = "union", fields = ["satisfies", "satisfied_by"] }
+dependent = "both"
+
+[needs.links.covers]
+summary = true
+dependent = "target"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.chain]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+dependent = "target"
+
+[needs.types.spec.links.both_ways]
+derive = { kind = "union", fields = ["satisfies", "satisfied_by"] }
+dependent = "both"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+   :satisfied_by: REQ_1
+   :covers: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+trace = ["REQ_1"]
+chain = ["REQ_1"]
+both_ways = ["REQ_1"]
+covers = ["REQ_1"]
+[case.expect.schema.chain]
+summary = true
+[case.expect.schema.covers]
+summary = true
 
 [[case]]
 name = "link-shape-keys-on-a-narrowing"

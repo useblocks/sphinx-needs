@@ -349,6 +349,12 @@ def test_a_narrowing(
         ),
         pytest.param(
             _link(),
+            _link(dependent="target"),
+            ["Link type 'blocks' declares 'dependent' for every need type."],
+            id="10-dependent",
+        ),
+        pytest.param(
+            _link(),
             _link(parse_conditions=False),
             ["Link type 'blocks' declares 'parse_conditions' for every need type."],
             id="10-parse-conditions",
