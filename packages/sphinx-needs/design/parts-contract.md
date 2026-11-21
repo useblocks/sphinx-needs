@@ -21,8 +21,11 @@ the markup's backslash escapes are removed, is read as `(id) text`: an opening p
 at its very start, an id, a closing parenthesis, and the rest.
 
 - **The id** is one or more characters, each a letter or a number by its Unicode general
-  category (L or N: what Python's `str.isalnum` accepts), `_` or `-`. Case is kept; nothing else is an id character, so a
-  space, a `.`, a `:` or a `(` inside the parentheses means the text has no id.
+  category (L or N, in the Unicode version of the tool that reads it), `_` or `-`. A
+  combining mark (general category M) is no id character: a decomposed `é` (`e` followed by
+  U+0301) or a letter with a vowel sign means the text has no id. Case is kept; nothing else
+  is an id character, so a space, a `.`, a `:` or a `(` inside the parentheses means the text
+  has no id.
 - **The text** is everything after the closing parenthesis, as the markup gives the role's
   content, with the white space at both of its ends removed: `(p1) first`, `(p1)first` and
   `(p1)` followed by a line break and `first` all have the text `first`, and MyST's
@@ -39,11 +42,14 @@ at its very start, an id, a closing parenthesis, and the rest.
 
 ## 2. Which need a part belongs to (corpus: `placement`, `stated`)
 
-A part belongs to the innermost need whose content holds the role: a part written inside a
-nested need is the nested need's, never the outer one's. Content is the need's wherever it
-comes from: its directive's body in reStructuredText or MyST, a file it includes, a list
-item of `list2need`, the body of a multi-line need in source code, or the body of a test
-case. A role outside every need is one finding, `part outside a need`, and makes no part.
+A part belongs to the innermost need whose content holds the role, whatever directive made
+each need: a part written inside a nested need is the nested need's, never the outer one's,
+a test case nested in a requirement as much as a requirement nested in a test case. Content
+is the need's wherever it comes from: its directive's body in reStructuredText or MyST, a
+file it includes, a list item of `list2need`, the body of a multi-line need in source code,
+or the body of a test file, a test suite or a test case; the needs a test file's options
+expand have no body, and so no parts. A role outside every need is one finding,
+`part outside a need`, and makes no part.
 
 An external need, whose content is not part of this project, has the parts its record
 states, each with the id and the text the record gives, as given: section 1's removal of

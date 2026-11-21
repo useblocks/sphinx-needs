@@ -15,8 +15,8 @@
 # the INPUT of a case, and a part's text is compared character for character, so a
 # formatter touching one silently changes what the case tests. A change here is a change
 # to the contract, and owes ubCode a re-vendor. A character that cannot be seen (a tab, a
-# no-break space, a control character) is written as an escape, so a body holding one is
-# a `"""..."""` string.
+# no-break space, a control character) or a combining mark is written as an escape, so a
+# body holding one is a `"""..."""` string.
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (its `[needs]` table, and the
@@ -40,6 +40,8 @@
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`), matched at the start
 #     of the id; the need types are the default ones (`req`, `spec`, `impl`, `test`) and
 #     those the loaded extensions add
+#   - every character of a case is assigned in Unicode 14.0, the oldest version a supported
+#     reader has, so no answer depends on the reader's Unicode tables
 #   - `parts.<ID>` is the SET of the need's parts, each its id and its text, the text
 #     exactly as the tool stores it (an `(id)` part's text has no white space at its
 #     ends, a text a record states is as given); `{}` says the need has none. A need the
@@ -160,7 +162,6 @@ REQ_1 = { a-b = "dash", x_1 = "underscore", 42 = "digits", -Ab_ = "mixed" }
 name = "grammar-a-unicode-id"
 section = "grammar"
 why = "an id character is any Unicode letter or digit, not only ASCII ones"
-divergent = { ubcode = "an id character is ASCII only: the part is 48A with the text (é1) unicode id" }
 config = '''
 [needs]
 '''
@@ -174,6 +175,42 @@ source = '''
 findings = []
 [case.expect.parts]
 REQ_1 = { "é1" = "unicode id" }
+
+[[case]]
+name = "grammar-a-number-of-any-kind-in-an-id"
+section = "grammar"
+why = "a number of any kind is an id character: a superscript two after a letter, an Arabic-Indic digit and a Roman numeral each give an id"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(x²) superscript two` and :np:`(٣) arabic-indic digit` and :np:`(Ⅻ) roman numeral`
+'''
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { "x²" = "superscript two", "٣" = "arabic-indic digit", "Ⅻ" = "roman numeral" }
+
+[[case]]
+name = "grammar-a-combining-mark-is-no-id-character"
+section = "grammar"
+why = "a combining mark is no id character: parentheses holding a decomposed e or a letter with a vowel sign give no id, so the hash of the whole text is the id and the whole text the text"
+config = '''
+[needs]
+'''
+source = """
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(e\u0301) a decomposed e` and :np:`(क\u093F) a vowel sign`
+"""
+[case.expect]
+findings = []
+[case.expect.parts]
+REQ_1 = { 6FE = "(e\u0301) a decomposed e", 296 = "(क\u093F) a vowel sign" }
 
 [[case]]
 name = "grammar-no-id-given"
@@ -197,7 +234,6 @@ REQ_1 = { 92C = "no id given", BB3 = "é sans id", 385 = "backslash" }
 name = "grammar-a-character-before-the-parenthesis"
 section = "grammar"
 why = "the (id) must open the text: !(p4) is no id, so the hash of the whole text is the id and the whole text, ! included, the text"
-divergent = { ubcode = "a leading ! disables the role: no part at all" }
 config = '''
 [needs]
 '''
@@ -234,7 +270,6 @@ REQ_1 = { 78D = "(a.b) dotted id", C24 = "(a b) spaced id", 81F = "(a:b) colon i
 name = "grammar-the-text-is-never-a-reference"
 section = "grammar"
 why = "a text ending in <target> is kept whole: the role is not a reference, and no target is split off"
-divergent = { ubcode = "the role is read as title <target>: the text is 'see', the target split off" }
 config = '''
 [needs]
 '''
@@ -525,7 +560,6 @@ IMPL_BLK = { c1 = "in code" }
 name = "placement-a-test-case-body"
 section = "placement"
 why = "the body of a test case is its content: a role in it is the test case's part, and nothing is reported"
-divergent = { ubcode = "a test case's body gives no parts, and its role is reported as outside a need" }
 clean = true
 extensions = ["sphinx_test_reports"]
 config = '''
@@ -581,13 +615,171 @@ TEST_1 = []
 [case.expect.back]
 "REQ_HID.h1" = { tests = ["TEST_1"] }
 
+[[case]]
+name = "placement-a-test-file-and-a-test-suite-body"
+section = "placement"
+why = "the body of a test file or a test suite is its content: a role in it is that need's part, the needs its options expand have none, and a role after it is outside every need"
+clean = true
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-file:: A test file
+   :id: TF_BODY
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+
+   A file body with :np:`(f1) a file part`.
+
+.. test-suite:: A test suite
+   :id: TS_BODY
+   :file: report.xml
+   :suite: pytest
+
+   A suite body with :np:`(s1) a suite part`.
+
+After them :np:`(x1) nowhere`.
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = [{ class = "part outside a need" }]
+[case.expect.parts]
+TF_BODY = { f1 = "a file part" }
+TF_BODY_0EA = {}
+TF_BODY_0EA_A759D = {}
+TS_BODY = { s1 = "a suite part" }
+
+[[case]]
+name = "placement-a-test-report-body-in-myst"
+section = "placement"
+why = "a test file's, a test suite's and a test case's body written in MyST is its content too: the role in each is that need's part"
+clean = true
+extensions = ["myst_parser", "sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+'''
+files = { "page.md" = '''# Page
+
+```{test-file} A test file
+:id: TF_MD
+:file: report.xml
+
+A file body with {np}`(f1) a file part`.
+```
+
+```{test-suite} A test suite
+:id: TS_MD
+:file: report.xml
+:suite: pytest
+
+A suite body with {np}`(s1) a suite part`.
+```
+
+```{test-case} A test case
+:id: TC_MD
+:file: report.xml
+:suite: pytest
+:classname: tests.test_engine
+:case: test_start
+
+A test body with {np}`(t1) a case part`.
+```
+''', "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+TF_MD = { f1 = "a file part" }
+TS_MD = { s1 = "a suite part" }
+TC_MD = { t1 = "a case part" }
+
+[[case]]
+name = "placement-a-test-case-and-a-need-nested-in-each-other"
+section = "placement"
+why = "the innermost need holding a role counts a test-report need like any other, both ways: neither need has the other's parts, an id both mark is one part of each, and an outer need's address of an inner part is dead"
+clean = true
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. req:: Outer
+   :id: REQ_OUT
+
+   :np:`(p1) the requirement's`
+
+   .. test-case:: A test case inside
+      :id: TC_IN
+      :file: report.xml
+      :suite: pytest
+      :classname: tests.test_engine
+      :case: test_start
+
+      :np:`(p1) the test case's` and :np:`(t1) inside`
+
+   :np:`(o2) after`
+
+.. test-case:: A test case outside
+   :id: TC_OUT
+   :file: report.xml
+   :suite: pytest
+   :classname: tests.test_engine
+   :case: test_start
+
+   :np:`(t1) before`
+
+   .. req:: Inner
+      :id: REQ_IN
+
+      :np:`(r1) inside`
+
+   :np:`(t2) after`
+
+.. test:: Links
+   :id: TEST_1
+   :tests: TC_IN.t1, REQ_OUT.t1, REQ_IN.r1, TC_OUT.r1
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = [{ class = "dead link" }, { class = "dead link" }]
+[case.expect.parts]
+REQ_OUT = { p1 = "the requirement's", o2 = "after" }
+TC_IN = { p1 = "the test case's", t1 = "inside" }
+TC_OUT = { t1 = "before", t2 = "after" }
+REQ_IN = { r1 = "inside" }
+[case.expect.dead]
+TEST_1 = ["REQ_OUT.t1", "TC_OUT.r1"]
+
 # --- duplicates ------------------------------------------------------------------------
 
 [[case]]
 name = "duplicates-the-first-wins"
 section = "duplicates"
 why = "an id marked again in one need is the first's part, its text the first's, and each repetition is one finding"
-divergent = { ubcode = "the LAST part of a repeated id wins (the findings are reported)" }
 config = '''
 [needs]
 '''
@@ -606,7 +798,6 @@ REQ_1 = { p1 = "the first", p2 = "another" }
 name = "duplicates-a-repetition-after-other-parts"
 section = "duplicates"
 why = "an id marked again after other parts is still the first's part, with the first's text, and one finding"
-divergent = { ubcode = "the LAST part of a repeated id wins" }
 config = '''
 [needs]
 '''
@@ -643,7 +834,6 @@ REQ_L2N = { l1 = "the first" }
 name = "duplicates-in-imported-content"
 section = "duplicates"
 why = "the first wins in the content of an imported need too, with one finding; the record states no parts, so nothing competes with the content"
-divergent = { ubcode = "the LAST part of a repeated id wins, and nothing is reported" }
 config = '''
 [needs]
 '''
@@ -660,7 +850,6 @@ IMP_1 = { ip = "the first" }
 name = "duplicates-in-a-multi-line-need-in-code"
 section = "duplicates"
 why = "the first wins in the body of a multi-line need in code too, with one finding"
-divergent = { ubcode = "the LAST part of a repeated id wins, and nothing is reported" }
 extensions = ["sphinx_codelinks"]
 config = '''
 [needs]
@@ -713,6 +902,36 @@ REQ_1 = { p1 = "inside" }
 TEST_1 = {}
 [case.expect.dead]
 TEST_1 = ["REQ_1.x1"]
+
+[[case]]
+name = "duplicates-in-a-test-case-body"
+section = "duplicates"
+why = "the first wins in the body of a test case too, with one finding"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-case:: A test case
+   :id: TC_BODY
+   :file: report.xml
+   :suite: pytest
+   :classname: tests.test_engine
+   :case: test_start
+
+   Marks :np:`(t1) the first` and :np:`(t1) a second`.
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = [{ class = "duplicate part id" }]
+[case.expect.parts]
+TC_BODY = { t1 = "the first" }
 
 # --- stated ----------------------------------------------------------------------------
 
