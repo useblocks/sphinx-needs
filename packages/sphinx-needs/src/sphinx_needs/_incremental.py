@@ -30,9 +30,11 @@ When something changed, the pages re-written are:
 - the pages whose need roles name any of those needs.
 
 An address naming one need (a ``from``, the ``need_id`` of ``copy``, an extend by id) is
-read as the need of that whole id, a ``.`` in it or not, and else as the need of the part
-it names: both ids are followed (:func:`_named_ids`), so that a need of the whole id
-added or removed in another document is followed too.
+read as the need of that whole id, a ``.`` in it or not, and else, for a ``from`` or a
+``copy``, as the need of the part it names (an extend by a part's address is refused).
+Both ids are followed (:func:`_named_ids`), so that a need of the whole id added or
+removed in another document is followed too; an id followed and not read costs a page at
+most.
 
 Both narrowings are allow-lists, so that what they do not know costs a page, never leaves
 one stale: a computed value reads only its own need when it is a built-in call or derive
@@ -485,8 +487,10 @@ def _extend_data(extend: NeedsExtendType | None) -> dict[str, object] | None:
 def _named_ids(address: str) -> set[str]:
     """The ids of the needs an address naming one need may read: the address as written,
     which a need's id may be (a ``.`` in it or not) and is read first, and the id before
-    its first ``.``, a part's need. Both, so that what is read costs a page at most,
-    never leaves one stale: a need of the whole id may be added or removed elsewhere."""
+    its first ``.``, which is the need of the part it names where a part's address is
+    read (a ``from``, a ``copy``; an extend refuses one). Both, so that what is read
+    costs a page at most, never leaves one stale: a need of the whole id may be added or
+    removed elsewhere."""
     return {address, NeedLink.parse_address(address).id}
 
 
