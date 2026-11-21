@@ -35,8 +35,18 @@ def load_external_needs(
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
     needs_schema = data.get_schema()
+
+    # An external need belongs to the build that loaded it: the needs the previous
+    # build loaded are removed first, so that one the sources no longer give (an
+    # ``id_prefix`` changed, a source removed, a need gone from its file) does not stay
+    # beside them. A need of the project that has taken such an id since is kept.
+    env_needs = data.get_needs_mutable()
+    for need_id in data.external_needs_loaded:
+        if (held := env_needs.get(need_id)) is not None and held["is_external"]:
+            data.remove_need(need_id)
+
     # the ids this pass has added: an external need of one of them is a duplicate
-    # across this build's sources, any other is left from the previous build
+    # across this build's sources
     added: set[str] = set()
 
     for idx, source in enumerate(needs_config.external_needs):
@@ -138,10 +148,10 @@ def load_external_needs(
                 and existing["is_external"]
                 and ext_need_id not in added
             ):
-                # an external need left from a previous build: removed before its
-                # record is read again, so a record now refused leaves no need behind.
-                # One added in this pass, by this source or another, is a duplicate:
-                # its creation refuses it
+                # an external need this pass did not load (one added through the
+                # API): removed before the record is read, so a record refused leaves
+                # no need behind. One added in this pass, by this source or another,
+                # is a duplicate: its creation refuses it
                 del_need(app, ext_need_id)
 
             try:
@@ -202,6 +212,8 @@ def load_external_needs(
                 "unknown_external_keys",
                 location=None,
             )
+
+    data.external_needs_loaded = sorted(added)
 
 
 def _read_source(app: Sphinx, source: ExternalSource) -> exchange.Document:
