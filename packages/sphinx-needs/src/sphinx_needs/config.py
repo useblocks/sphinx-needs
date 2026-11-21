@@ -572,6 +572,11 @@ class ExternalSource(TypedDict, total=False):
     id_prefix: str
     """Prefix all IDs from the external source with this string, as written (optional)"""
 
+    namespace: str
+    """Put the needs of the external source into this namespace (optional; not with
+    `id_prefix`): ``SUP`` gives the source's ``REQ_1`` the id ``SUP::REQ_1``, as an
+    `id_prefix` of ``SUP::`` does, with the namespace checked"""
+
     css_class: str
     """Added as the `external_css` field for each need item (optional)"""
 

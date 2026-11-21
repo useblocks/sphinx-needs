@@ -134,10 +134,12 @@ def process_need_ref(
                 location=None,
             )
 
-    # the prefix each external source puts before the ids of its file (external_needs.py)
-    external_id_prefixes = {
-        source.get("id_prefix", "") for source in needs_config.external_needs
-    }
+    # the prefix each external source puts before the ids of its file, its namespace's
+    # or its id_prefix (imported here: the loader's module imports the API, which
+    # imports this one)
+    from sphinx_needs.external_needs import external_source_prefixes
+
+    external_id_prefixes = external_source_prefixes(needs_config)
 
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
