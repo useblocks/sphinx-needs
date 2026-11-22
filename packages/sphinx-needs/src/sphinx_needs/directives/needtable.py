@@ -461,7 +461,13 @@ def process_needtables(
                 for need in filtered_needs
                 if isinstance(need, NeedItem) or need["id_parent"] not in need_rows
             ]
-        _report_parts_in_view(needs_config, filtered_needs, "needtable", node)
+        _report_parts_in_view(
+            needs_config,
+            filtered_needs,
+            "needtable",
+            node,
+            show_parts=current_needtable["show_parts"],
+        )
 
         sort_by = current_needtable["sort"]
         try:

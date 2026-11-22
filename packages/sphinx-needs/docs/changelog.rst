@@ -47,8 +47,9 @@ Improvements
   that from 10.0 draws links to parts of its needs as edges to the parts' needs, saying how many: those of the needs
   its ``max_items`` window keeps once it holds needs alone. Set the value either way (``True`` keeps the views as
   they are, ``False`` selects needs alone now) or suppress the warning type to silence it, until which a ``-W``
-  build of such a project fails on this release. A needtable whose matched parts are each listed under their need
-  with ``:show_parts:`` is not reported, nor is :ref:`needextract`.
+  build of such a project fails on this release. A needtable with ``:show_parts:`` reports the parts whose need it
+  does not list, and is not reported where its matched parts are each listed under their need; :ref:`needextract`
+  is not reported.
   The report is decided from each place's result: it cannot see a view whose filter string, filter code or filter
   function reads ``needs`` itself, nor a chart's ``:filter-func:``, and it can name a place whose output stays the
   same (filter code that builds parts itself, with unsafe filters allowed; a ``:need_count:`` ratio whose two

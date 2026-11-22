@@ -195,6 +195,7 @@ def _report_parts_in_view(
     *,
     counts: bool = False,
     part_links: Callable[[], int] | None = None,
+    show_parts: bool = False,
 ) -> None:
     """Report, while ``needs_views_include_parts`` is unset, a place whose result holds
     a need part (from 10.0 its filter selects needs alone), and a needflow that from
@@ -226,6 +227,8 @@ def _report_parts_in_view(
         keeps of the result's needs, as
         :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`
         counts them; called only while the value is unset.
+    :param show_parts: Whether the place is a needtable with ``:show_parts:``, whose
+        *found* keeps only the parts whose need it does not list, as its message says.
     """
     if config.views_include_parts is not None:
         return
@@ -239,14 +242,16 @@ def _report_parts_in_view(
     reported.add(key)
     log_warning(
         log,
-        _views_include_parts_text(view, len(parts), links, counts=counts),
+        _views_include_parts_text(
+            view, len(parts), links, counts=counts, show_parts=show_parts
+        ),
         "views_include_parts",
         location=location,
     )
 
 
 def _views_include_parts_text(
-    view: str, parts: int, links: int, /, *, counts: bool
+    view: str, parts: int, links: int, /, *, counts: bool, show_parts: bool = False
 ) -> str:
     """The text of :func:`_report_parts_in_view`: what the place's filter selects, what
     changes at 10.0 for its kind of view, and what to set."""
@@ -289,6 +294,9 @@ def _views_include_parts_text(
             f"This {view} counts {selects}"
             if counts
             else f"This {view}'s filter selects {selects}"
+            # a needtable with :show_parts: lists a part under its need when its need
+            # is a row: what it reports are the others
+            + (" whose need it does not list" if show_parts else "")
         )
         text = (
             f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
