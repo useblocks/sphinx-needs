@@ -636,8 +636,8 @@ def count_part_links_to_needs(
     (:func:`_part_link_need`).
 
     Counted from the result as it stands, its parts left out, so it is the number of
-    edges the needflow draws to the parts' needs under ``False``, whether this result
-    holds parts or not. Only the report of the 9.x series asks
+    edges the needflow draws to the parts' needs under ``False`` from the same needs,
+    whether this result holds parts or not. Only the report of the 9.x series asks
     (``needs.views_include_parts``, while the value is unset); it goes with the report
     at 10.0.
     """

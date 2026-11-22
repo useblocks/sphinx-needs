@@ -195,25 +195,27 @@ def _report_parts_in_view(
     counts: bool = False,
     part_links: Callable[[], int] | None = None,
 ) -> None:
-    """Report a place whose output changes at 10.0 while ``needs_views_include_parts``
-    is unset: one whose result holds a need part, which from 10.0 its filter does not
-    select, and a needflow that will then draw links to parts to the parts' needs.
+    """Report, while ``needs_views_include_parts`` is unset, a place whose result holds
+    a need part (from 10.0 its filter selects needs alone), and a needflow whose needs
+    link to parts of its needs (from 10.0 it draws such a link to the part's need).
 
     Decided from the result, never by testing the filter again, so it sees what the
     result holds and no more: not a place whose filter string, filter code or
     ``:filter-func:`` reads ``needs`` itself, nor a chart's ``:filter-func:``, whose
-    output may change all the same; and it reports a place whose output does not change
-    where a part in the result stays (filter code that builds parts itself, with unsafe
-    filters allowed; a ``:need_count:`` ratio whose two halves both hold parts). Once
+    output may change all the same; and it can report a place whose output does not
+    change (filter code that builds parts itself keeps them with unsafe filters allowed;
+    a ``:need_count:`` ratio whose two halves both hold parts can give the same
+    percentage without them). Once
     per build for a place, keyed by what it is (*view*: the directive, or a chart's line
     or cell, or ``:need_count:``, with its filter) and where it is written; never with
     the value set either way. needextract, which drops the parts it matches, does not
-    call it. This is the whole report of the 9.x series: at 10.0 it goes, with its calls
-    and its warning type.
+    call it. This is the whole report of the 9.x series: at 10.0 it goes, with its calls,
+    its warning type and needflow's
+    :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`.
 
     :param found: The place's result, before any ``max_items`` cap: what its filter
-        selects (a capped view whose parts fall beyond the cap still changes, the needs
-        moving up into its window).
+        selects (a capped view whose parts fall beyond the cap still changes, its needs
+        moving up into its window or its total shrinking).
     :param view: What the place is, as the message names it.
     :param location: Where the place is written.
     :param counts: Whether the place counts (a chart, ``:need_count:``) or lists.
