@@ -29,6 +29,7 @@ from sphinxcontrib.plantuml import plantuml
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
+from sphinx_needs.directives.needflow._model import collect_edges
 from sphinx_needs.filter_common import filter_scope_ids
 from sphinx_needs_testkit import build_warnings
 from tests.util import (
@@ -312,6 +313,13 @@ Views
 .. container:: count-id
 
    :need_count:`id == "p1"`
+
+.. container:: scoped-pie
+
+   .. needpie:: scoped pie
+      :filter: is_need
+
+      True
 """
 
 
@@ -433,6 +441,7 @@ def charts(app: SphinxTestApp) -> dict[str, list[Any]]:
         "pie": pie_slice_counts(svg("pie")),
         "bar": bar_sum_labels(svg("bar"), "bar"),
         "scoped bar": bar_sum_labels(svg("scoped bar"), "scoped bar"),
+        "scoped pie": pie_slice_counts(svg("scoped pie")),
     }
 
 
@@ -485,6 +494,8 @@ WITH_PARTS: dict[str, Any] = {
     "pie": [10, 5, 13],
     "bar": ["10", "5"],
     "scoped bar": ["3", "2"],
+    # the scope drops the parts the line holds, so it counts no part and reports none
+    "scoped pie": [8],
     "gantt": 10,
     "count-open": "10",
     "count-is-part": "5",
@@ -506,6 +517,7 @@ NEEDS_ONLY: dict[str, Any] = {
     "pie": [5, 0, 8],
     "bar": ["5", "0"],
     "scoped bar": ["1", "0"],
+    "scoped pie": [8],
     "gantt": 5,
     "count-open": "5",
     "count-is-part": "0",
@@ -644,6 +656,9 @@ def test_a_scoped_chart_counts_over_needs_alone(test_app: SphinxTestApp) -> None
         origin_docname="views",
     )
     assert scope == frozenset({"REQ_A"})
+    # the public method keeps its meaning: needs and parts, whatever the value says
+    every = SphinxNeedsData(test_app.env).get_needs_view().to_list_with_parts()
+    assert sorted(item["id_complete"] for item in every) == sorted(ALL_NEEDS + PARTS)
 
 
 FUNC_VIEWS = """\
@@ -697,6 +712,43 @@ def test_a_filter_func_building_parts_itself(
     test_app.build()
     assert others(test_app) == []
     assert rows(test_app, "built-by-the-func") == expected
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": files("false", conf="needs_allow_unsafe_filters = True\n"),
+        }
+    ],
+    indirect=True,
+)
+def test_filter_code_and_func_are_handed_needs_alone(test_app: SphinxTestApp) -> None:
+    """Under ``False`` filter code and a filter-func are handed needs alone: with unsafe
+    filters allowed their result is taken as it is, so a part they were handed would
+    be a row."""
+    test_app.build()
+    assert others(test_app) == []
+    assert rows(test_app, "nt-code") == OPEN_NEEDS
+    assert rows(test_app, "nt-func") == OPEN_NEEDS
+
+
+@pytest.mark.parametrize("test_app", [project("false")], indirect=True, ids=["false"])
+def test_a_link_to_a_part_the_need_lacks_draws_nothing(test_app: SphinxTestApp) -> None:
+    """A link naming a part ends on its need only when the need has the part: a dead
+    part address draws no edge, as with parts as candidates."""
+    test_app.build()
+    data = SphinxNeedsData(test_app.env)
+    links = data.get_schema().get_link_field("links")
+    assert links is not None
+    source: Any = {"id_complete": "SRC", "links": ["REQ_A.nope", "REQ_A.p1"]}
+    found = [data.get_needs_view()["REQ_A"], source]
+    drawn_ids = {"REQ_A", "SRC"}
+    assert [
+        (edge.source_id, edge.target_id, edge.is_part, edge.target_drawn)
+        for edge in collect_edges(found, [links], drawn_ids, part_links_to_needs=True)
+    ] == [("SRC", "REQ_A", True, True)]
 
 
 # --- the report, while the value is unset ---------------------------------------------
