@@ -1802,9 +1802,9 @@ decides:
   into the window or the total its notice gives shrinks. A needtable with ``:show_parts:`` counts the parts it lists
   on rows of their own, those whose need is not a row; one whose matched parts are each listed under their need is
   not reported.
-* each :ref:`needflow` whose needs link to parts of its needs, saying how many such links it draws to the parts'
-  needs from 10.0, where today it draws no edge for them or an edge to the part (with the parts its filter selects,
-  in one report, where it selects any).
+* each :ref:`needflow` that from 10.0 draws links to parts of its needs as edges to the parts' needs, where today it
+  draws no edge for them or an edge to the part, saying how many: the links of the needs its ``max_items`` window
+  keeps once it holds needs alone (with the parts its filter selects, in one report, where it selects any).
 
 Setting the value either way silences it (``True`` keeps the views as they are, ``False`` selects needs alone now),
 as does ``suppress_warnings = ["needs.views_include_parts"]``. :ref:`needextract`, which never shows a part, is not

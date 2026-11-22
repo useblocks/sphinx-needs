@@ -44,10 +44,11 @@ Improvements
   is ``True`` in 9.x and ``False`` from 10.0. While it is unset, each view, chart line or cell and ``:need_count:``
   whose result holds a need part reports ``needs.views_include_parts``, once, where it is written, saying how many
   need parts its filter selects (a count: how many it counts), before any ``:max_items:`` cap; so does a needflow
-  whose needs link to parts of its needs, saying how many such links it draws to the parts' needs from 10.0. Set
-  the value either way (``True`` keeps the views as they are, ``False`` selects needs alone now) or suppress the
-  warning type to silence it, until which a ``-W`` build of such a project fails on this release. A needtable whose
-  matched parts are each listed under their need with ``:show_parts:`` is not reported, nor is :ref:`needextract`.
+  that from 10.0 draws links to parts of its needs as edges to the parts' needs, saying how many: those of the needs
+  its ``max_items`` window keeps once it holds needs alone. Set the value either way (``True`` keeps the views as
+  they are, ``False`` selects needs alone now) or suppress the warning type to silence it, until which a ``-W``
+  build of such a project fails on this release. A needtable whose matched parts are each listed under their need
+  with ``:show_parts:`` is not reported, nor is :ref:`needextract`.
   The report is decided from each place's result: it cannot see a view whose filter string, filter code or filter
   function reads ``needs`` itself, nor a chart's ``:filter-func:``, and it can name a place whose output stays the
   same (filter code that builds parts itself, with unsafe filters allowed; a ``:need_count:`` ratio whose two

@@ -151,7 +151,8 @@ def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
 
 
 #: What an unset ``needs_views_include_parts`` means: ``True`` through the 9.x series,
-#: each place whose output changes at 10.0, as its result shows, reporting it
+#: each place whose result holds a need part, and each needflow that will draw links
+#: to parts of its needs as edges to the parts' needs, reporting it
 #: (:func:`_report_parts_in_view`).
 #: From 10.0 unset means ``False``: this constant changes, and the report goes.
 _VIEWS_INCLUDE_PARTS_UNSET = True
@@ -196,8 +197,9 @@ def _report_parts_in_view(
     part_links: Callable[[], int] | None = None,
 ) -> None:
     """Report, while ``needs_views_include_parts`` is unset, a place whose result holds
-    a need part (from 10.0 its filter selects needs alone), and a needflow whose needs
-    link to parts of its needs (from 10.0 it draws such a link to the part's need).
+    a need part (from 10.0 its filter selects needs alone), and a needflow that from
+    10.0 draws links to parts of its needs as edges to the parts' needs (those of the
+    needs its ``max_items`` window keeps once it holds needs alone).
 
     Decided from the result, never by testing the filter again, so it sees what the
     result holds and no more: not a place whose filter string, filter code or
@@ -214,14 +216,16 @@ def _report_parts_in_view(
     :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`.
 
     :param found: The place's result, before any ``max_items`` cap: what its filter
-        selects (a capped view whose parts fall beyond the cap still changes, its needs
-        moving up into its window or its total shrinking).
+        selects, whose parts are counted (a capped view whose parts fall beyond the cap
+        still changes, its needs moving up into its window or its total shrinking).
     :param view: What the place is, as the message names it.
     :param location: Where the place is written.
     :param counts: Whether the place counts (a chart, ``:need_count:``) or lists.
-    :param part_links: For a needflow, how many links of its result's needs it draws
-        to the parts' needs where its result holds needs alone; called only while the
-        value is unset.
+    :param part_links: For a needflow, how many links it draws to the parts' needs
+        where its result holds needs alone: those of the needs its ``max_items`` window
+        keeps of the result's needs, as
+        :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`
+        counts them; called only while the value is unset.
     """
     if config.views_include_parts is not None:
         return
