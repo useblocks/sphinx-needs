@@ -966,6 +966,58 @@ def test_each_build_of_one_application_reports_again(
     assert sorted(first) == sorted(second) == sorted(UNSET_REPORTS)
 
 
+#: A need linking two parts of ``REQ_A`` and a part ``REQ_A`` lacks, by a link type that
+#: allows dead links, and a needflow over the two needs alone.
+LINKED_PARTS_VIEWS = """\
+Views
+=====
+
+.. test:: Loose
+   :id: TEST_L
+   :status: done
+   :loose: REQ_A.p1, REQ_A.p2, REQ_A.nope
+
+.. container:: linked-parts
+
+   .. needflow::
+      :filter: id in ["TEST_L", "REQ_A"]
+      :link_types: loose
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": files(
+                value,
+                views=LINKED_PARTS_VIEWS,
+                conf='needs_links["loose"] = {"allow_dead_links": True}\n',
+            ),
+        }
+        for value in VALUES
+    ],
+    indirect=True,
+    ids=list(VALUES),
+)
+def test_a_needflow_reports_each_link_it_will_draw_to_a_parts_need(
+    test_app: SphinxTestApp, request: pytest.FixtureRequest
+) -> None:
+    """One need linking two parts of a need the needflow shows, and a part that need
+    lacks: unset reports two links, each an edge the needflow gains under ``False``,
+    and the dead part address none, as it draws none."""
+    value = request.node.callspec.id
+    diagrams = capture_diagrams(test_app)
+    test_app.build()
+    assert others(test_app) == []
+    gained = [("TEST_L", "REQ_A", True), ("TEST_L", "REQ_A", True)]
+    assert edges(diagrams["linked-parts"]) == (gained if value == "false" else [])
+    assert reports(test_app) == (
+        [_report(11, "needflow", 0, links=len(gained))] if value == "unset" else []
+    )
+
+
 #: A needflow whose ``max_items`` hides every part its filter selects.
 CAPPED_VIEWS = """\
 Views
