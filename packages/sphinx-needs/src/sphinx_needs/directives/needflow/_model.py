@@ -431,15 +431,21 @@ def build_graph(
         origin="needflow",
         location=location,
     )
-    # before the cap, as what its filter selects: the parts it lists, and the links of
-    # its needs to their parts that it draws to the parts' needs where they are needs
-    # alone (counted only while the value is unset)
+    # before the cap, as what its filter selects: the parts it lists; and the links it
+    # draws to the parts' needs where its result holds needs alone, those of the needs
+    # its cap keeps of them (counted only while the value is unset)
     _report_parts_in_view(
         needs_config,
         found_needs,
         "needflow",
         location,
-        part_links=partial(count_part_links_to_needs, found_needs, allowed_link_types),
+        part_links=partial(
+            count_part_links_to_needs,
+            found_needs,
+            allowed_link_types,
+            attributes.get("max_items"),
+            needs_config,
+        ),
     )
     # the cap is applied before any of the drawing data is derived,
     # so that dropped needs cannot be referenced by what is drawn
@@ -628,20 +634,26 @@ def _part_link_need(needs_by_id: Mapping[str, NeedItem], link: str, /) -> str | 
 def count_part_links_to_needs(
     found_needs: Iterable[NeedItem | NeedPartItem],
     allowed_link_types: Iterable[LinkShape],
+    max_items: int | None,
+    config: NeedsSphinxConfig,
     /,
 ) -> int:
-    """How many links of a result's needs a needflow draws to the parts' needs where its
-    result holds needs alone: each link of a need of the result naming a part of a need
-    of the result, by the test :func:`collect_edges` re-points with
-    (:func:`_part_link_need`).
+    """How many links a needflow draws to the parts' needs where its result holds needs
+    alone: the result's needs, its parts left out, cut by the needflow's ``max_items``
+    cap as :func:`~sphinx_needs.filter_common.apply_max_items` cuts them; then each link
+    of a need of that window naming a part of a need of the window, by the test
+    :func:`collect_edges` re-points with (:func:`_part_link_need`).
 
-    Counted from the result as it stands, its parts left out, so it is the number of
-    edges the needflow draws to the parts' needs under ``False`` from the same needs,
-    whether this result holds parts or not. Only the report of the 9.x series asks
-    (``needs.views_include_parts``, while the value is unset); it goes with the report
-    at 10.0.
+    So it is the number of edges the needflow draws to the parts' needs under
+    ``False`` from the same needs, whether this result holds parts or not. Only the
+    report of the 9.x series asks (``needs.views_include_parts``, while the value is
+    unset); it goes with the report at 10.0.
     """
-    needs_by_id = _needs_by_id(found_needs)
+    needs: list[NeedItem | NeedPartItem] = [
+        need for need in found_needs if isinstance(need, NeedItem)
+    ]
+    window, _ = apply_max_items(needs, max_items, config)
+    needs_by_id = _needs_by_id(window)
     return sum(
         1
         for need in needs_by_id.values()
