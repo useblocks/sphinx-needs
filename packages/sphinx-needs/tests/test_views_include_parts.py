@@ -330,6 +330,14 @@ Views
 .. container:: count-ratio-parts
 
    :need_count:`is_need ? is_part`
+
+.. container:: nt-show-parts-mixed
+
+   .. needtable::
+      :filter: id == "REQ_A" or id_complete in ["REQ_A.p1", "SPEC_N.n1"]
+      :columns: id;title;status
+      :show_parts:
+      :style: table
 """
 
 
@@ -514,6 +522,9 @@ WITH_PARTS: dict[str, Any] = {
     "count-ratio": "76.9",
     "count-id": "1",
     "count-ratio-parts": "160.0",
+    # REQ_A.p1 under its need, as is REQ_A.p2, which the filter does not select;
+    # SPEC_N.n1 on a row of its own, its need not being one
+    "nt-show-parts-mixed": ["REQ_A", "REQ_A.p1", "REQ_A.p2", "SPEC_N.n1"],
 }
 NEEDS_ONLY: dict[str, Any] = {
     "nt-all": ALL_NEEDS,
@@ -537,6 +548,7 @@ NEEDS_ONLY: dict[str, Any] = {
     "count-ratio": "62.5",
     "count-id": "0",
     "count-ratio-parts": "inf",
+    "nt-show-parts-mixed": ["REQ_A", "REQ_A.p1", "REQ_A.p2"],
 }
 EXPECTED = {"true": WITH_PARTS, "unset": WITH_PARTS, "false": NEEDS_ONLY}
 
@@ -548,7 +560,7 @@ def consumers(app: SphinxTestApp, diagrams: dict[str, str]) -> dict[str, Any]:
         for name in ("nt-all", "nt-open", "nt-status", "nt-is-part", "nt-content")
     }
     # the show_parts table and the code and function tables in their own order
-    for name in ("nt-open-show-parts", "nt-code", "nt-func"):
+    for name in ("nt-open-show-parts", "nt-code", "nt-func", "nt-show-parts-mixed"):
         found[name] = rows(app, name)
     found["nl-open"] = len(lines(app, "nl-open"))
     found.update(charts(app))
@@ -779,10 +791,17 @@ def test_a_link_to_a_part_the_need_lacks_draws_nothing(test_app: SphinxTestApp) 
 
 
 def _report(
-    line: int, what: str, count: int, *, links: int = 0, page: str = "views.rst"
+    line: int,
+    what: str,
+    count: int,
+    *,
+    links: int = 0,
+    page: str = "views.rst",
+    show_parts: bool = False,
 ) -> str:
     """The report of the place *what* at *line*: its filter selects *count* need parts
-    and, for a needflow, its needs hold *links* links to parts of its needs."""
+    (for a needtable with ``:show_parts:``, parts whose need it does not list) and, for
+    a needflow, the needs it draws hold *links* links to parts of its needs."""
 
     def parts(n: int) -> str:
         return f"{n} need part{'' if n == 1 else 's'}"
@@ -826,6 +845,7 @@ def _report(
             f"This {what} counts {parts(count)}"
             if counts
             else f"This {what}'s filter selects {parts(count)}"
+            + (" whose need it does not list" if show_parts else "")
         )
         text = (
             f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
@@ -869,6 +889,8 @@ UNSET_REPORTS = [
     _report(137, "need_count 'id == \"p1\"'", 1),
     _report(148, "needflow", 0, links=2),
     _report(154, "need_count 'is_need ? is_part'", 5),
+    # of the two parts its filter selects, the one on a row of its own
+    _report(158, "needtable", 1, show_parts=True),
 ]
 
 
@@ -966,8 +988,9 @@ def test_each_build_of_one_application_reports_again(
     assert sorted(first) == sorted(second) == sorted(UNSET_REPORTS)
 
 
-#: A need linking two parts of ``REQ_A`` and a part ``REQ_A`` lacks, by a link type that
-#: allows dead links, and a needflow over the two needs alone.
+#: A need linking two parts of ``REQ_A``, a part ``REQ_A`` lacks and a part of ``SPEC_N``,
+#: by a link type that allows dead links; a need linking its own part; and a needflow
+#: over those three needs alone, which does not show ``SPEC_N``.
 LINKED_PARTS_VIEWS = """\
 Views
 =====
@@ -975,12 +998,19 @@ Views
 .. test:: Loose
    :id: TEST_L
    :status: done
-   :loose: REQ_A.p1, REQ_A.p2, REQ_A.nope
+   :loose: REQ_A.p1, REQ_A.p2, REQ_A.nope, SPEC_N.n1
+
+.. req:: Self
+   :id: REQ_S
+   :status: done
+   :loose: REQ_S.s1
+
+   :np:`(s1) self part`
 
 .. container:: linked-parts
 
    .. needflow::
-      :filter: id in ["TEST_L", "REQ_A"]
+      :filter: id in ["TEST_L", "REQ_A", "REQ_S"]
       :link_types: loose
 """
 
@@ -1004,17 +1034,80 @@ Views
 def test_a_needflow_reports_each_link_it_will_draw_to_a_parts_need(
     test_app: SphinxTestApp, request: pytest.FixtureRequest
 ) -> None:
-    """One need linking two parts of a need the needflow shows, and a part that need
-    lacks: unset reports two links, each an edge the needflow gains under ``False``,
-    and the dead part address none, as it draws none."""
+    """One need linking two parts of a need the needflow shows, a part that need lacks
+    and a part of a need it does not show, and a need linking its own part: unset
+    reports three links, each an edge the needflow gains under ``False`` (the last a
+    need's edge to itself), and the dead part address and the part of the need it does
+    not show none, as it draws none for them."""
     value = request.node.callspec.id
     diagrams = capture_diagrams(test_app)
     test_app.build()
     assert others(test_app) == []
-    gained = [("TEST_L", "REQ_A", True), ("TEST_L", "REQ_A", True)]
+    gained = [
+        ("REQ_S", "REQ_S", True),
+        ("TEST_L", "REQ_A", True),
+        ("TEST_L", "REQ_A", True),
+    ]
     assert edges(diagrams["linked-parts"]) == (gained if value == "false" else [])
     assert reports(test_app) == (
-        [_report(11, "needflow", 0, links=len(gained))] if value == "unset" else []
+        [_report(18, "needflow", 0, links=len(gained))] if value == "unset" else []
+    )
+
+
+#: Two capped needflows over needs alone: the first keeps ``REQ_A`` and ``REQ_B``, so
+#: ``TEST_1``, linking a part of ``REQ_A``, falls beyond its cap; the second keeps
+#: ``REQ_A`` and ``TEST_1``, so of the two needs linking a part of ``REQ_A`` (``TEST_1``
+#: and ``TEST_2``), one is drawn.
+CAPPED_LINKS_VIEWS = """\
+Views
+=====
+
+.. container:: capped-beyond
+
+   .. needflow::
+      :filter: id in ["REQ_A", "REQ_B", "TEST_1"]
+      :max_items: 2
+      :link_types: links
+
+.. container:: capped-one-of-two
+
+   .. needflow::
+      :filter: id in ["REQ_A", "TEST_1", "TEST_2"]
+      :max_items: 2
+      :link_types: links
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {"buildername": "html", "files": files(value, views=CAPPED_LINKS_VIEWS)}
+        for value in VALUES
+    ],
+    indirect=True,
+    ids=list(VALUES),
+)
+def test_a_capped_needflow_reports_the_links_its_window_draws(
+    test_app: SphinxTestApp, request: pytest.FixtureRequest
+) -> None:
+    """The links counted are those of the needs the cap keeps: a needflow whose linking
+    need falls beyond its cap draws the same under ``True`` and ``False`` and is not
+    reported; one whose cap keeps one of two linking needs reports one link, the one
+    edge it gains under ``False``."""
+    value = request.node.callspec.id
+    diagrams = capture_diagrams(test_app)
+    test_app.build()
+    assert drawn(diagrams["capped-beyond"]) == ["REQ_A", "REQ_B"]
+    assert edges(diagrams["capped-beyond"]) == []
+    assert drawn(diagrams["capped-one-of-two"]) == ["REQ_A", "TEST_1"]
+    assert edges(diagrams["capped-one-of-two"]) == (
+        [("TEST_1", "REQ_A", True)] if value == "false" else []
+    )
+    assert [
+        warning for warning in others(test_app) if "needs.max_items" not in warning
+    ] == []
+    assert reports(test_app) == (
+        [_report(13, "needflow", 0, links=1)] if value == "unset" else []
     )
 
 
