@@ -52,11 +52,12 @@ Improvements
   does not list, and is not reported where its matched parts are each listed under their need; :ref:`needextract`
   is not reported.
   The report is decided from each place's result: it cannot see a view whose filter string, filter code or filter
-  function reads ``needs`` itself, nor a chart's ``:filter-func:``, and it can name a place whose output stays the
-  same (filter code that builds parts itself, with unsafe filters allowed; a ``:need_count:`` ratio whose two
-  halves both hold parts; a needflow drawn by graphviz whose filter selects parts of a need it does not show, which
-  graphviz does not draw). Functions and rules that take ``include_parts``, needextend, warning checks,
-  constraints, the builder's filter and ``needs.json`` do not read the value; changing it re-reads no document.
+  function reads ``needs`` itself (a needflow among them can be reported with a number of links it does not then
+  draw), nor a chart's ``:filter-func:``, and it can name a place whose output stays the same (filter code that
+  builds parts itself, with unsafe filters allowed; a ``:need_count:`` ratio whose two halves both hold parts; a
+  needflow drawn by graphviz whose filter selects parts of a need it does not show, which graphviz does not draw).
+  Functions and rules that take ``include_parts``, needextend, warning checks, constraints, the builder's filter
+  and ``needs.json`` do not read the value; changing it re-reads no document.
   From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
   keep a project's views through that release.
 
