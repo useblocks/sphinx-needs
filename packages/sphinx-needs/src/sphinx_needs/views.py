@@ -197,6 +197,15 @@ class NeedsView(Mapping[str, "NeedItem"]):
             _indexes=self._indexes, _selected_ids=_selected_ids
         )
 
+    def _to_list_of_needs(self) -> NeedsAndPartsListView:
+        """Create a new view of the needs alone, in the shape of
+        :meth:`to_list_with_parts`: what a view's filter is tested on when
+        ``needs_views_include_parts`` is false."""
+        return NeedsAndPartsListView(
+            _indexes=self._indexes,
+            _selected_ids={(id, None): None for id in self},
+        )
+
     def _copy_filtered(self, ids: Iterable[tuple[str, str | None]]) -> NeedsView:
         """Create a new view with only the needs with the given ids.
 

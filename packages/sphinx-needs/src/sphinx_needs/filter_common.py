@@ -150,6 +150,39 @@ def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
     return (3, text.lower() if ignore_case else text)
 
 
+#: What an unset ``needs_views_include_parts`` means: ``True`` through the 9.x series,
+#: each view whose result holds a part reporting it (:func:`_report_parts_in_view`).
+#: From 10.0 unset means ``False``: this constant changes, and the report goes.
+_VIEWS_INCLUDE_PARTS_UNSET = True
+
+
+def _views_include_parts(config: NeedsSphinxConfig) -> bool:
+    """Whether a view's filter is tested on the need parts beside the needs, as
+    ``needs_views_include_parts`` says, and :data:`_VIEWS_INCLUDE_PARTS_UNSET` where it
+    is unset. A value of another type is read by its truth, as Sphinx reads the other
+    boolean settings once it has reported the type.
+    """
+    value = config.views_include_parts
+    return _VIEWS_INCLUDE_PARTS_UNSET if value is None else bool(value)
+
+
+def _view_candidates(
+    needs_view: NeedsView, config: NeedsSphinxConfig, /
+) -> NeedsAndPartsListView:
+    """What a view's filter is tested on: the needs of *needs_view* and their parts, or
+    the needs alone (``needs_views_include_parts``).
+
+    Every place that feeds a view, a chart or ``:need_count:`` takes its candidates
+    here, and nothing else reads the value: a function or a rule that asks for parts
+    (``include_parts``) reads them itself, and :meth:`NeedsView.to_list_with_parts`
+    keeps its meaning. Under the needs alone, filter code and a ``:filter-func:`` are
+    handed needs only.
+    """
+    if _views_include_parts(config):
+        return needs_view.to_list_with_parts()
+    return needs_view._to_list_of_needs()
+
+
 def process_filters(
     app: Sphinx,
     needs_view: NeedsView,
@@ -224,7 +257,7 @@ def process_filters(
 
         # Get need by filter string
         found_needs = filter_needs_parts(
-            filtered_needs.to_list_with_parts(),
+            _view_candidates(filtered_needs, needs_config),
             needs_config,
             filter_data["filter"],
             location=location,
@@ -238,13 +271,15 @@ def process_filters(
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
         found_dirty_needs: list[NeedItem | NeedPartItem] = []
+        # what the code is handed, and what its result is mapped back over
+        candidates = _view_candidates(needs_view, needs_config)
 
         if filter_code:  # code from content
             full_filter.append(filter_code)
             # the namespace the filter code runs in: it is the user's code that
             # leaves the matches under `results`, so its values are not ours to type
             context: dict[str, Any] = {
-                "needs": needs_view.to_list_with_parts(),
+                "needs": candidates,
                 "results": [],
             }
             exec(filter_code, context)
@@ -262,7 +297,7 @@ def process_filters(
                 ff_result.func, category="filter_func", source="user"
             )
             filter_func(
-                needs=needs_view.to_list_with_parts(),
+                needs=candidates,
                 results=found_dirty_needs,
                 **args_context,
             )
@@ -277,9 +312,11 @@ def process_filters(
         if needs_config.allow_unsafe_filters:
             found_needs = found_dirty_needs
         else:
-            # Just take the ids from search result and use the related, but original need
+            # Just take the ids from search result and use the related, but original need:
+            # one of the candidates, so a part the code built itself is dropped where the
+            # candidates are needs alone
             found_need_ids = [x["id_complete"] for x in found_dirty_needs]
-            for need in needs_view.to_list_with_parts():
+            for need in candidates:
                 if need["id_complete"] in found_need_ids:
                     found_needs.append(need)
 
@@ -477,9 +514,10 @@ def filter_scope_ids(
     need-listing directive such as ``needlist``: each option narrows the view in
     turn, exactly as ``process_filters`` narrows it there, each one matching
     any-of its own values; ``:types:`` matches the directive name or the
-    human-readable type title; and ``:filter:`` is evaluated last, over needs
-    *and* parts. Parts follow their need for ``:status:``, ``:tags:`` and
-    ``:types:``, exactly as they do there -- including that the ``id`` fast path
+    human-readable type title; and ``:filter:`` is evaluated last, over what a
+    view's filter is tested on (needs and parts, or needs alone, as
+    ``needs_views_include_parts`` says). Parts follow their need for ``:status:``,
+    ``:tags:`` and ``:types:``, exactly as they do there -- including that the ``id`` fast path
     admits sibling parts once the view has been narrowed, which is inherited
     behaviour rather than a property of the scope.
 
@@ -514,17 +552,17 @@ def filter_scope_ids(
     if types:
         filtered_needs = filtered_needs.filter_types(types, or_type_names=True)
 
-    parts = filtered_needs.to_list_with_parts()
+    candidates = _view_candidates(filtered_needs, config)
     members: Iterable[NeedItem | NeedPartItem] = (
         filter_needs_parts(
-            parts,
+            candidates,
             config,
             filter,
             location=location,
             origin_docname=origin_docname,
         )
         if filter
-        else parts
+        else candidates
     )
 
     return frozenset(need["id_complete"] for need in members)

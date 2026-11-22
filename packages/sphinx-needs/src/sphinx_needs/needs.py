@@ -444,6 +444,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
+    app.connect("config-inited", read_bool_override, priority=9)  # Sphinx 7 only
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     # runs directly after the toml config is loaded, which can set the variant data,
     # and before anything that may want to read the merged map,
@@ -598,6 +599,26 @@ def process_creator(
                 check_func(app, doctree, fromdocname, current_nodes[check_node])
 
     return process_caller
+
+
+# --- Sphinx 7 only; remove with the Sphinx 8 floor -----------------------------------
+def read_bool_override(_app: Sphinx, config: Config) -> None:
+    """Read ``-D needs_views_include_parts=0`` (and ``=1``) as the boolean it means.
+
+    From Sphinx 8, ``Config.convert_overrides`` turns ``0`` and ``1`` into ``False`` and
+    ``True`` for a value that may be a boolean. Sphinx 7.4 does that only for a value
+    whose default is a boolean, and passes the text through for this one, whose default
+    is ``None``: read as it came, ``"0"`` would be true, and its type reported.
+    """
+    name = "needs_views_include_parts"
+    overrides = getattr(config, "overrides", None)
+    if not isinstance(overrides, dict) or overrides.get(name) not in ("0", "1"):
+        return
+    if (value := config[name]) in ("0", "1"):
+        config[name] = value == "1"
+
+
+# ------------------------------------------------------------------------------------
 
 
 def load_config_from_toml(app: Sphinx, config: Config) -> None:

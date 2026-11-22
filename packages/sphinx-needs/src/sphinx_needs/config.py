@@ -1536,6 +1536,15 @@ class NeedsSphinxConfig:
         default=0, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum number of items shown by a view directive (0, the default, means no limit)."""
+    views_include_parts: bool | None = field(
+        default=None, metadata={"rebuild": "html", "types": (bool, type(None))}
+    )
+    """Whether a view's filter is tested on the need parts beside the needs: the filter of
+    a needtable, needlist, needflow, needgantt, needpie or needbar (a chart's lines or
+    cells, and its scope) and of ``:need_count:``. ``True`` tests every need and every
+    need part, ``False`` the needs alone, a needtable listing parts where it asks
+    (``:show_parts:``). Unset is ``True`` in the 9.x series, reporting each view whose
+    result holds a part (``needs.views_include_parts``), and ``False`` from 10.0."""
     uml_process_max_time: int | float | None = field(
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
