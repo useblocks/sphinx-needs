@@ -20,6 +20,7 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from docutils import nodes
@@ -29,9 +30,10 @@ from sphinxcontrib.plantuml import plantuml
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.needflow import _model as needflow_model
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.needflow._model import collect_edges
-from sphinx_needs.filter_common import filter_scope_ids
+from sphinx_needs.filter_common import _report_parts_in_view, filter_scope_ids
 from sphinx_needs_testkit import build_warnings
 from tests.util import (
     bar_sum_labels,
@@ -1060,6 +1062,8 @@ def test_a_needflow_reports_each_link_it_will_draw_to_a_parts_need(
 #: and ``TEST_2``), one is drawn. The third holds parts and links: its cap keeps ``REQ_A``
 #: and ``REQ_A.p1``, and over needs alone ``REQ_A`` and ``TEST_1``. The fourth gives no
 #: ``:max_items:``, and the project's ``needs_views_max_items`` caps it as the second.
+#: The fifth keeps ``TEST_2`` alone (``done`` sorts before ``open``), whose link to a part
+#: of ``REQ_A`` names a need beyond its cap.
 CAPPED_LINKS_VIEWS = """\
 Views
 =====
@@ -1090,6 +1094,14 @@ Views
    .. needflow::
       :filter: id in ["REQ_A", "TEST_1", "TEST_2"]
       :link_types: links
+
+.. container:: capped-target-beyond
+
+   .. needflow::
+      :filter: id in ["REQ_A", "TEST_2"]
+      :sort_by: status
+      :max_items: 1
+      :link_types: links
 """
 
 
@@ -1114,7 +1126,9 @@ def test_a_capped_needflow_reports_the_links_its_window_draws(
     need falls beyond its cap draws the same under ``True`` and ``False`` and is not
     reported; one whose cap keeps one of two linking needs reports one link, the one
     edge it gains under ``False``. The window is the one over needs alone, whatever
-    the result holds, and the project's cap makes one as the option does."""
+    the result holds, and the project's cap makes one as the option does. A link of a
+    need of the window to a part of a need beyond it is not counted, as it is not
+    drawn."""
     value = request.node.callspec.id
     diagrams = capture_diagrams(test_app)
     test_app.build()
@@ -1134,6 +1148,8 @@ def test_a_capped_needflow_reports_the_links_its_window_draws(
     assert edges(diagrams["capped-by-project"]) == (
         [("TEST_1", "REQ_A", True)] if value == "false" else []
     )
+    assert drawn(diagrams["capped-target-beyond"]) == ["TEST_2"]
+    assert edges(diagrams["capped-target-beyond"]) == []
     assert [
         warning for warning in others(test_app) if "needs.max_items" not in warning
     ] == []
@@ -1146,6 +1162,132 @@ def test_a_capped_needflow_reports_the_links_its_window_draws(
         if value == "unset"
         else []
     )
+
+
+#: Views whose filter names ids in an order that is not the document's: a needlist with
+#: no part in its result; a capped needflow whose window, in the list's order, holds two
+#: needs linking a part of ``REQ_A``; and one whose window leaves ``REQ_A`` out, so it
+#: links no part of a need it shows.
+ORDERED_VIEWS = """\
+Views
+=====
+
+.. container:: listed-in-order
+
+   .. needlist::
+      :filter: id in ["TEST_1", "REQ_A"]
+
+.. container:: capped-in-order
+
+   .. needflow::
+      :filter: id in ["REQ_A", "TEST_1", "TEST_2", "REQ_B"]
+      :max_items: 3
+      :link_types: links
+
+.. container:: capped-in-order-no-part
+
+   .. needflow::
+      :filter: id in ["TEST_2", "TEST_1", "REQ_B", "REQ_A"]
+      :max_items: 3
+      :link_types: links
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {"buildername": "html", "files": files(value, views=ORDERED_VIEWS)}
+        for value in VALUES
+    ],
+    indirect=True,
+    ids=list(VALUES),
+)
+def test_needs_alone_come_in_the_order_they_come_with_parts(
+    test_app: SphinxTestApp, request: pytest.FixtureRequest
+) -> None:
+    """Under ``False`` a view's result is the result under ``True`` with its parts left
+    out, in the same order: a needlist with no part lists the same lines in the order
+    of its filter under every value, unreported; a capped needflow keeps the same
+    window, so under ``False`` it gains the edges to the parts' needs its report counts,
+    and one that is not reported gains none."""
+    value = request.node.callspec.id
+    diagrams = capture_diagrams(test_app)
+    test_app.build()
+    assert [
+        warning for warning in others(test_app) if "needs.max_items" not in warning
+    ] == []
+    assert lines(test_app, "listed-in-order") == ["TEST_1: Test one", "REQ_A: Alpha"]
+    assert drawn(diagrams["capped-in-order"]) == ["REQ_A", "TEST_1", "TEST_2"]
+    assert edges(diagrams["capped-in-order"]) == (
+        [("TEST_1", "REQ_A", True), ("TEST_2", "REQ_A", True)]
+        if value == "false"
+        else []
+    )
+    assert drawn(diagrams["capped-in-order-no-part"]) == ["REQ_B", "TEST_1", "TEST_2"]
+    assert edges(diagrams["capped-in-order-no-part"]) == [("TEST_1", "REQ_B", False)]
+    assert reports(test_app) == (
+        [_report(11, "needflow", 0, links=2)] if value == "unset" else []
+    )
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_the_link_count_is_asked_only_while_the_value_is_unset(value: bool) -> None:
+    """A needflow's link count is a callable the report calls only while the value is
+    unset: with the value set either way it is never asked."""
+
+    def part_links() -> int:
+        pytest.fail("the link count was asked with the value set")
+
+    _report_parts_in_view(
+        Mock(views_include_parts=value),
+        [],
+        "needflow",
+        nodes.Element(),
+        part_links=part_links,
+    )
+    asked: list[bool] = []
+
+    def asking() -> int:
+        asked.append(True)
+        return 0
+
+    _report_parts_in_view(
+        Mock(views_include_parts=None),
+        [],
+        "needflow",
+        nodes.Element(),
+        part_links=asking,
+    )
+    assert asked == [True], "the premise: while unset it is asked"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {"buildername": "html", "files": files(value, views=ORDERED_VIEWS)}
+        for value in VALUES
+    ],
+    indirect=True,
+    ids=list(VALUES),
+)
+def test_a_needflow_counts_its_links_only_while_the_value_is_unset(
+    test_app: SphinxTestApp,
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Where a needflow hands the report its link count: nothing of it is computed with
+    the value set either way, and once per needflow while it is unset."""
+    value = request.node.callspec.id
+    counted: list[str] = []
+    count = needflow_model.count_part_links_to_needs
+
+    def counting(*args: Any) -> int:
+        counted.append(value)
+        return count(*args)
+
+    monkeypatch.setattr(needflow_model, "count_part_links_to_needs", counting)
+    test_app.build()
+    assert len(counted) == (2 if value == "unset" else 0)
 
 
 #: A needflow whose ``max_items`` hides every part its filter selects.
