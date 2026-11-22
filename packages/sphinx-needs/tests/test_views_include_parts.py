@@ -3,8 +3,9 @@
 ``True`` tests a view's filter on every need and every need part, as 9.x always did;
 ``False`` on the needs alone, a part being listed only where the view asks for it
 (``:show_parts:`` on a needtable). Unset is ``True`` in 9.x, and each view, chart line
-or cell and ``:need_count:`` whose result holds a part reports
-``needs.views_include_parts`` once, where it is written.
+or cell and ``:need_count:`` whose result holds a part, and each needflow that will draw
+a link to a part to the part's need, reports ``needs.views_include_parts`` once, where
+it is written.
 
 One project, built with the value ``True``, ``False`` and unset: eight needs, five of them
 ``open``, and five parts (two of ``REQ_A``, one of the nested ``SPEC_N``, one imported,
@@ -778,48 +779,96 @@ def test_a_link_to_a_part_the_need_lacks_draws_nothing(test_app: SphinxTestApp) 
 
 
 def _report(
-    line: int, what: str, verb: str, count: int, *, page: str = "views.rst"
+    line: int, what: str, count: int, *, links: int = 0, page: str = "views.rst"
 ) -> str:
-    noun = "need part" if count == 1 else "need parts"
-    keep, now = ("listing", "list") if verb == "lists" else ("counting", "count")
+    """The report of the place *what* at *line*: its filter selects *count* need parts
+    and, for a needflow, its needs hold *links* links to parts of its needs."""
+
+    def parts(n: int) -> str:
+        return f"{n} need part{'' if n == 1 else 's'}"
+
+    set_ = "Set needs_views_include_parts = True to keep"
+    if what == "needflow" and links:
+        drawn = f"{links} link{'' if links == 1 else 's'} to " + (
+            "a need part as an edge to the part's need"
+            if links == 1
+            else "need parts as edges to the parts' needs"
+        )
+        head = (
+            f"This needflow's filter selects {parts(count)}, and from Sphinx-Needs "
+            f"10.0 it draws {drawn}"
+            if count
+            else f"From Sphinx-Needs 10.0 this needflow draws {drawn}, which it draws "
+            "no edge for now"
+        )
+        text = (
+            f"{head}: a view's filter then selects needs only, and a needflow draws a "
+            "link to a part of a need it shows as an edge to that need. "
+            f"{set_} the needflow as it is, or False to draw "
+            + ("needs only" if count else "those edges")
+            + " now"
+        )
+    else:
+        counts = what.startswith(("needpie", "needbar", "need_count"))
+        verb = (
+            ("counting", "count")
+            if counts
+            else ("drawing", "draw")
+            if what in ("needflow", "needgantt")
+            else ("listing", "list")
+        )
+        asks = (
+            ", and a needtable lists a need's parts under it only with :show_parts:"
+            if what == "needtable"
+            else ""
+        )
+        head = (
+            f"This {what} counts {parts(count)}"
+            if counts
+            else f"This {what}'s filter selects {parts(count)}"
+        )
+        text = (
+            f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
+            f"{set_} {verb[0]} them, or False to {verb[1]} needs only now"
+        )
     return (
-        f"<srcdir>/{page}:{line}: WARNING: This {what} {verb} {count} {noun} its "
-        f"filter selects, as well as needs: from Sphinx-Needs 10.0 a view's filter "
-        f"selects needs only, unless the view asks for parts. Set "
-        f"needs_views_include_parts = True to keep {keep} them, or False to {now} "
-        f"needs only now; or suppress needs.views_include_parts. "
-        f"[needs.views_include_parts]"
+        f"<srcdir>/{page}:{line}: WARNING: {text}; or suppress "
+        "needs.views_include_parts. [needs.views_include_parts]"
     )
 
 
-#: Each place of the project whose result holds a part, in the order the page is
-#: written, and what it reports: never the table whose matched parts are each listed
-#: under their need, never needextract, never a count without a part.
+#: Each place of the project whose result holds a part, and each needflow whose needs
+#: link to parts of its needs (the edges it gains under ``False``: one for ``nf-open``,
+#: two for ``nf-all`` and ``nf-is-need``, as :func:`test_needflow_draws_by_the_value`
+#: draws them), in the order the page is written, and what it reports: never the table
+#: whose matched parts are each listed under their need, never needextract, never a
+#: count without a part.
 UNSET_REPORTS = [
-    _report(6, "needtable", "lists", 5),
-    _report(12, "needtable", "lists", 5),
-    _report(27, "needtable", "lists", 5),
-    _report(34, "needtable", "lists", 5),
-    _report(41, "needtable", "lists", 1),
-    _report(48, "needtable", "lists", 5),
-    _report(56, "needtable", "lists", 5),
-    _report(63, "needlist", "lists", 5),
-    _report(68, "needflow", "lists", 5),
-    _report(74, "needflow", "lists", 5),
-    _report(79, "needpie line \"status == 'open'\"", "counts", 5),
-    _report(79, "needpie line 'is_part'", "counts", 5),
-    _report(79, "needpie line 'True'", "counts", 5),
-    _report(88, "needbar cell \"status == 'open'\"", "counts", 5),
-    _report(88, "needbar cell 'is_part'", "counts", 5),
-    _report(97, "needbar cell 'True'", "counts", 2),
-    _report(97, "needbar cell 'is_part'", "counts", 2),
-    _report(107, "needgantt", "lists", 5),
-    _report(117, "need_count \"status == 'open'\"", "counts", 5),
-    _report(121, "need_count 'is_part'", "counts", 5),
-    _report(129, "need_count 'True'", "counts", 5),
-    _report(133, "need_count \"status == 'open' ? True\"", "counts", 5),
-    _report(137, "need_count 'id == \"p1\"'", "counts", 1),
-    _report(154, "need_count 'is_need ? is_part'", "counts", 5),
+    _report(6, "needtable", 5),
+    _report(12, "needtable", 5),
+    _report(27, "needtable", 5),
+    _report(34, "needtable", 5),
+    _report(41, "needtable", 1),
+    _report(48, "needtable", 5),
+    _report(56, "needtable", 5),
+    _report(63, "needlist", 5),
+    _report(68, "needflow", 5, links=1),
+    _report(74, "needflow", 5, links=2),
+    _report(79, "needpie line \"status == 'open'\"", 5),
+    _report(79, "needpie line 'is_part'", 5),
+    _report(79, "needpie line 'True'", 5),
+    _report(88, "needbar cell \"status == 'open'\"", 5),
+    _report(88, "needbar cell 'is_part'", 5),
+    _report(97, "needbar cell 'True'", 2),
+    _report(97, "needbar cell 'is_part'", 2),
+    _report(107, "needgantt", 5),
+    _report(117, "need_count \"status == 'open'\"", 5),
+    _report(121, "need_count 'is_part'", 5),
+    _report(129, "need_count 'True'", 5),
+    _report(133, "need_count \"status == 'open' ? True\"", 5),
+    _report(137, "need_count 'id == \"p1\"'", 1),
+    _report(148, "needflow", 0, links=2),
+    _report(154, "need_count 'is_need ? is_part'", 5),
 ]
 
 
@@ -827,7 +876,8 @@ UNSET_REPORTS = [
 def test_unset_reports_each_place_whose_result_holds_a_part(
     test_app: SphinxTestApp,
 ) -> None:
-    """One report per place, located there, naming the value and what to set."""
+    """One report per place, located there, naming the value and what to set; a
+    needflow whose result holds parts and gains edges reports once, saying both."""
     test_app.build()
     assert sorted(reports(test_app)) == sorted(UNSET_REPORTS)
 
@@ -894,9 +944,9 @@ def test_a_place_is_reported_once_whatever_pages_show_it(
     assert rows(test_app, "body", "first") == rows(test_app, "body", "second") == PARTS
     assert rows(test_app, "body", "third") == rows(test_app, "body", "fourth") == PARTS
     assert sorted(reports(test_app)) == [
-        _report(4, "needtable", "lists", 5, page="fourth.rst"),
-        _report(1, "needtable", "lists", 5, page="table.rst.inc"),
-        _report(4, "needtable", "lists", 5, page="third.rst"),
+        _report(4, "needtable", 5, page="fourth.rst"),
+        _report(1, "needtable", 5, page="table.rst.inc"),
+        _report(4, "needtable", 5, page="third.rst"),
     ]
 
 
@@ -943,7 +993,7 @@ def test_a_needflow_reports_what_its_filter_selects_before_its_cap(
     diagrams = capture_diagrams(test_app)
     test_app.build()
     assert drawn(diagrams["capped"]) == ["REQ_A"]
-    assert reports(test_app) == [_report(6, "needflow", "lists", 2)]
+    assert reports(test_app) == [_report(6, "needflow", 2)]
 
 
 @pytest.mark.parametrize(
