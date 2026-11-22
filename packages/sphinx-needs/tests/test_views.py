@@ -291,3 +291,28 @@ def test_the_needs_alone_answer_as_needs_and_parts_do_without_the_parts(
     assert [item["id_complete"] for item in needs_alone] == [
         item["id_complete"] for item in with_parts if not item["is_part"]
     ]
+
+
+@pytest.mark.parametrize("view", _VIEWS)
+def test_the_needs_alone_get_each_need_as_needs_and_parts_do_and_no_part(
+    view: str,
+) -> None:
+    """``get_need`` on the candidates under ``False`` answers each need as it does under
+    ``True`` (the need where the view holds it, ``None`` where it does not) and answers
+    no part, where under ``True`` it answers the part."""
+    needs_view = _VIEWS[view]()
+    candidates = {
+        value: _view_candidates(needs_view, Mock(views_include_parts=value))
+        for value in (True, False)
+    }
+    needs_answered = parts_answered = 0
+    for need in _project().values():
+        with_parts = candidates[True].get_need(need["id"])
+        assert candidates[False].get_need(need["id"]) is with_parts
+        needs_answered += with_parts is not None
+        for part in need.parts:
+            parts_answered += candidates[True].get_need(need["id"], part.id) is not None
+            assert candidates[False].get_need(need["id"], part.id) is None
+    # the premise: under True the view answers needs and parts
+    assert needs_answered
+    assert parts_answered
