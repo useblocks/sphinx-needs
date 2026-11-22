@@ -371,6 +371,10 @@ needs_from_toml = "ubproject.toml"
 
 needs_debug_measurement = "READTHEDOCS" in os.environ  # run on CI
 needs_debug_filters = True
+# the examples of these pages list and count need parts as their filters select them,
+# the 9.x meaning; set here rather than in ubproject.toml, which describes the project
+# to every tool that reads it
+needs_views_include_parts = True
 
 # the GitHub issues service, which the needservice example (directives/needservice.rst)
 # runs and whose fields the filter example (services/github.rst) names: a built-in

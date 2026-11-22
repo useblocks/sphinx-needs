@@ -64,3 +64,4 @@ needs_string_links = {
         "options": ["github"],
     },
 }
+needs_views_include_parts = True

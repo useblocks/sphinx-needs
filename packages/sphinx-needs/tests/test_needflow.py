@@ -25,6 +25,7 @@ needs_types = [
         "style": "node",
     },
 ]
+needs_views_include_parts = True
 """
 
 
@@ -845,6 +846,7 @@ needs_types = [
     {"directive": "req", "title": "", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
     {"directive": "tsk", "title": "\\t", "prefix": "T_", "color": "#DF744A", "style": "node"},
 ]
+needs_views_include_parts = True
 """
 
 EMPTY_TYPE_TITLE = """\

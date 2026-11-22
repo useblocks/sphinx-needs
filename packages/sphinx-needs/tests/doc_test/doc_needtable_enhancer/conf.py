@@ -37,3 +37,4 @@ needs_fields = {
     # a date field the producer does NOT type, so the script has to detect it
     "due": {"nullable": True},
 }
+needs_views_include_parts = True

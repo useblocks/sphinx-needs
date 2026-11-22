@@ -46,6 +46,7 @@ needs_fields = {
 needs_show_link_title = True
 needs_duration_option = "hours"
 needs_links = {"mentions": {"derive": {"kind": "content_links"}}}
+needs_views_include_parts = True
 
 
 def _diagram_source(app, doctree, docname):

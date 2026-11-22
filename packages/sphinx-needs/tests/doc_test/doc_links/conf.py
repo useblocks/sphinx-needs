@@ -64,3 +64,4 @@ needs_extra_links = [
 ]
 
 needs_flow_link_types = ["links", "tests"]
+needs_views_include_parts = True

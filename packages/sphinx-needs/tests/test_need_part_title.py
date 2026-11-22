@@ -38,6 +38,7 @@ needs_links = {
         }
     },
 }
+needs_views_include_parts = True
 """
 
 INDEX = """\

@@ -38,3 +38,4 @@ needs_types = [
         "style": "node",
     },
 ]
+needs_views_include_parts = True
