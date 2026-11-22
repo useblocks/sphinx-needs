@@ -139,29 +139,27 @@ The filter string must be a valid Python expression:
 
    :need_count:`type=='spec' and status != 'open'`
 
-A filter string gets evaluated on needs and need_parts!
-A need_part inherits all options from its parent need, if the need_part has no own content for this option.
-E.g. the need_part *content* is kept, but the *status* attribute is taken from its parent need.
+The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or
+:ref:`needbar`, and of :ref:`need_count`, is evaluated on every need and on every :ref:`need part <need_part>`, so a
+part the filter matches is listed, drawn or counted as an item of its own (a needtable with
+:ref:`show_parts <needtable_show_parts>` lists it once, under its need). :ref:`links_from_filter`,
+:ref:`links_from_match` and a :ref:`derived <needs_derive>` ``links`` rule test the parts too where they are given
+``include_parts``.
 
-.. note::
+A need part answers its own ``id`` (the part's id), ``id_complete`` (``NEED.part``), ``id_parent`` (its need's id),
+``is_part`` (true) and ``is_need`` (false), its text as both ``content`` and ``title``, no outgoing links (every link
+type is empty), its own back links (``<link type>_back``, the links that name the part), and no ``parent_need`` and
+no ``parts``. Every other name is its need's: its type, status, tags and fields. So a filter can select parts by
+their need's values; one meant for the parts of particular needs names them by ``id_parent``, such as
+``is_part and id_parent == "REQ_1"``.
 
-   The following attributes are kept inside a need_part: id, title, links_back
-
-This allows to perform searches for need_parts, where search options are based on parent attributes.
-
-The following filter will find all need_parts, which are part of a need, which has a tag called *important*.
+The following filter counts the need parts of the needs tagged *car*:
 
 .. syntax-example::
 
    :need_count:`is_part and 'car' in tags`
 
-Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used, including.
-
-Additional variables for :ref:`need_part`:
-
-* **id_parent** as Python string, which contains the id of the parent need. (compare like ``id_parent == "ABC_01"``)
-* **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
-  (compare like ``id_complete != 'ABC_01.03'``)
+Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used.
 
 .. note:: If extra fields were specified using :ref:`needs_fields` then
           those will be available for use in filter expressions as well.

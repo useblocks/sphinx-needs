@@ -49,8 +49,9 @@ It also splits a need's ``target_option`` on ``,``, and fails the call on a numb
 **include_parts** (optional, ``False`` by default, and given by name: a third positional argument is ignored, as it
 always was): with ``include_parts=True``, the
 `need parts <https://sphinx-needs.readthedocs.io/en/latest/roles.html#need-part>`_ of every need are compared too.
-A part's ``target_option`` is read as the part answers a filter: its own ``id`` (the part's id), ``id_complete``
-(``<need id>.<part id>``) and ``content`` (its text), no ``parent_need``, and its need's value of every other option.
+A part's ``target_option`` is read as the part answers a filter: its own ``id`` (the part's id) and ``id_complete``
+(``<need id>.<part id>``), its text as ``content`` and ``title``, no ``parent_need``, and its need's value of every
+other option.
 A part that matches is linked by its address, ``<need id>.<part id>``, after its need, in part-id order.
 So ``[[tr_link('case_name', 'id_complete', include_parts=True)]]`` links the part a test's ``case_name`` names by its
 address. Without it, only needs are compared.

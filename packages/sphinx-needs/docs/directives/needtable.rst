@@ -172,6 +172,8 @@ show_parts
 Adds an extra table row for each :ref:`need_part` found inside a filtered need.
 
 It adds the part rows directly under the related need’s row, and their id and title get a prefix.
+Each part is listed once: a part the filter matches is listed under its need when its need is a row,
+and has a row of its own only when its need is not one.
 
 To change the prefix please read :ref:`needs_part_prefix`.
 
@@ -428,9 +430,10 @@ so that a build does not have to be read page by page to find it;
 a project that caps deliberately can silence the warning with
 ``suppress_warnings = ["needs.max_items"]``.
 
-The limit counts the entries the filter returned, which are needs and need parts alike.
-A table that also sets :ref:`show_parts <needtable_show_parts>` can therefore render more rows than the limit,
-since the part rows of a kept entry are all still expanded.
+The limit counts the entries the filter returned, which are needs and need parts alike;
+with :ref:`show_parts <needtable_show_parts>`, a part listed under its need is not an entry of its own.
+A table that sets ``show_parts`` can therefore render more rows than the limit,
+since the part rows of a kept need are all still expanded.
 
 ``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
 Without the option, the table shows as many needs as that configuration allows.
