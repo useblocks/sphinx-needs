@@ -1808,6 +1808,9 @@ class NeedPartItem:
             "parent_need": None,
             "parts": {},  # parts cannot have parts
             "content": part.content,
+            # a part has no title of its own: its text is its title, as a needtable
+            # row, `:show_parts:` and `:need:` show it
+            "title": part.content,
             # parts cannot link to anything
             **{name: [] for name in need.iter_links_keys()},
             # backlinks should be what links to the part and not what links to the parent need
@@ -1860,7 +1863,6 @@ class NeedPartItem:
         # but we don't want to start exposing mutability on the part just for this
         new_part = self.copy()
         new_part._overrides["id"] = new_part["id_complete"]
-        new_part._overrides["title"] = new_part["content"]
         return new_part
 
     def __eq__(self, other: object) -> bool:
