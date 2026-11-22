@@ -1057,7 +1057,9 @@ def test_a_needflow_reports_each_link_it_will_draw_to_a_parts_need(
 #: Two capped needflows over needs alone: the first keeps ``REQ_A`` and ``REQ_B``, so
 #: ``TEST_1``, linking a part of ``REQ_A``, falls beyond its cap; the second keeps
 #: ``REQ_A`` and ``TEST_1``, so of the two needs linking a part of ``REQ_A`` (``TEST_1``
-#: and ``TEST_2``), one is drawn.
+#: and ``TEST_2``), one is drawn. The third holds parts and links: its cap keeps ``REQ_A``
+#: and ``REQ_A.p1``, and over needs alone ``REQ_A`` and ``TEST_1``. The fourth gives no
+#: ``:max_items:``, and the project's ``needs_views_max_items`` caps it as the second.
 CAPPED_LINKS_VIEWS = """\
 Views
 =====
@@ -1075,13 +1077,31 @@ Views
       :filter: id in ["REQ_A", "TEST_1", "TEST_2"]
       :max_items: 2
       :link_types: links
+
+.. container:: capped-parts-and-links
+
+   .. needflow::
+      :filter: id_parent == "REQ_A" or id in ["TEST_1", "TEST_2"]
+      :max_items: 2
+      :link_types: links
+
+.. container:: capped-by-project
+
+   .. needflow::
+      :filter: id in ["REQ_A", "TEST_1", "TEST_2"]
+      :link_types: links
 """
 
 
 @pytest.mark.parametrize(
     "test_app",
     [
-        {"buildername": "html", "files": files(value, views=CAPPED_LINKS_VIEWS)}
+        {
+            "buildername": "html",
+            "files": files(
+                value, views=CAPPED_LINKS_VIEWS, conf="needs_views_max_items = 2\n"
+            ),
+        }
         for value in VALUES
     ],
     indirect=True,
@@ -1093,7 +1113,8 @@ def test_a_capped_needflow_reports_the_links_its_window_draws(
     """The links counted are those of the needs the cap keeps: a needflow whose linking
     need falls beyond its cap draws the same under ``True`` and ``False`` and is not
     reported; one whose cap keeps one of two linking needs reports one link, the one
-    edge it gains under ``False``."""
+    edge it gains under ``False``. The window is the one over needs alone, whatever
+    the result holds, and the project's cap makes one as the option does."""
     value = request.node.callspec.id
     diagrams = capture_diagrams(test_app)
     test_app.build()
@@ -1103,11 +1124,27 @@ def test_a_capped_needflow_reports_the_links_its_window_draws(
     assert edges(diagrams["capped-one-of-two"]) == (
         [("TEST_1", "REQ_A", True)] if value == "false" else []
     )
+    assert drawn(diagrams["capped-parts-and-links"]) == (
+        ["REQ_A", "TEST_1"] if value == "false" else ["REQ_A", "REQ_A.p1"]
+    )
+    assert edges(diagrams["capped-parts-and-links"]) == (
+        [("TEST_1", "REQ_A", True)] if value == "false" else []
+    )
+    assert drawn(diagrams["capped-by-project"]) == ["REQ_A", "TEST_1"]
+    assert edges(diagrams["capped-by-project"]) == (
+        [("TEST_1", "REQ_A", True)] if value == "false" else []
+    )
     assert [
         warning for warning in others(test_app) if "needs.max_items" not in warning
     ] == []
     assert reports(test_app) == (
-        [_report(13, "needflow", 0, links=1)] if value == "unset" else []
+        [
+            _report(13, "needflow", 0, links=1),
+            _report(20, "needflow", 2, links=1),
+            _report(27, "needflow", 0, links=1),
+        ]
+        if value == "unset"
+        else []
     )
 
 
