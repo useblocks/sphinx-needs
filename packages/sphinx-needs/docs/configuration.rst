@@ -1773,7 +1773,8 @@ a content line of :ref:`needpie` and a cell of :ref:`needbar` (with the scope of
   of its own: a row, a line, a node inside its need, a gantt element, a count of one.
 * ``False``: the filter is tested on the needs alone, so ``is_part`` selects nothing, and a view shows a need's parts
   only where it asks: a needtable with :ref:`show_parts <needtable_show_parts>` lists the parts of each need it
-  lists, under it. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
+  lists, under it. A filter that tests each need on its own selects the needs it selects under ``True``, in the same
+  order. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
   type's ``style_part`` (dotted by default). Filter code and a filter function are handed needs alone, and their
   result is matched to them, so a part the code builds itself is dropped (kept with
   :ref:`needs_allow_unsafe_filters`).
@@ -1813,8 +1814,10 @@ reported.
 The report sees what a place's result holds, and no more. It cannot see a view whose filter string, filter code or
 filter function reads ``needs`` itself (how many needs there are, say, or which parts some need has), nor a chart's
 ``:filter-func:``: such a place can change at 10.0 without a report. And it can report a place whose output does
-not change: filter code or a filter function that builds parts itself, with :ref:`needs_allow_unsafe_filters`, or a
-``:need_count:`` ratio whose two halves both hold parts and give the same percentage without them.
+not change: filter code or a filter function that builds parts itself, with :ref:`needs_allow_unsafe_filters`; a
+``:need_count:`` ratio whose two halves both hold parts and give the same percentage without them; or a needflow
+drawn by the graphviz engine whose filter selects parts of a need it does not show, as graphviz draws no part
+without its need, nor a link to one (the plantuml engine draws those links, so there it changes).
 
 It does not reach a filter that is not a view's: :ref:`links_from_filter`, :ref:`links_from_match` and a derived
 ``links`` rule (:ref:`needs_derive`), which test parts where they are given ``include_parts``, and every other

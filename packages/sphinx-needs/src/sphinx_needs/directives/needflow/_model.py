@@ -432,8 +432,9 @@ def build_graph(
         location=location,
     )
     # before the cap, as what its filter selects: the parts it lists; and the links it
-    # draws to the parts' needs where its result holds needs alone, those of the needs
-    # its cap keeps of them (counted only while the value is unset)
+    # draws to the parts' needs where its result holds needs alone (this result's
+    # needs in the same order, where its filter tests each need on its own), those of
+    # the needs its cap keeps of them (counted only while the value is unset)
     _report_parts_in_view(
         needs_config,
         found_needs,
@@ -645,7 +646,9 @@ def count_part_links_to_needs(
     :func:`collect_edges` re-points with (:func:`_part_link_need`).
 
     So it is the number of edges the needflow draws to the parts' needs under
-    ``False`` from the same needs, whether this result holds parts or not. Only the
+    ``False`` from the same needs, whether this result holds parts or not: its result
+    there is this result's needs, in the same order, where its filter tests each need
+    on its own (:meth:`~sphinx_needs.views.NeedsView._to_list_of_needs`). Only the
     report of the 9.x series asks (``needs.views_include_parts``, while the value is
     unset); it goes with the report at 10.0.
     """

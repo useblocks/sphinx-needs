@@ -38,7 +38,8 @@ Improvements
   :ref:`needpie` line or a :ref:`needbar` cell (and of either chart's scope) and of :ref:`need_count` is tested on
   the :ref:`need parts <need_part>` beside the needs. ``True`` tests every need and every part, as every release so
   far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's
-  ``:show_parts:``), ``is_part`` selects nothing, a needflow draws a link to a part of a need it shows as an edge to
+  ``:show_parts:``), a filter that tests each need on its own selects the needs it selects under ``True`` in the
+  same order, ``is_part`` selects nothing, a needflow draws a link to a part of a need it shows as an edge to
   that need, in the link type's ``style_part`` (dotted by default), and filter code and a filter function are
   handed needs alone (a part they build themselves is dropped, unless :ref:`needs_allow_unsafe_filters`). Unset, it
   is ``True`` in 9.x and ``False`` from 10.0. While it is unset, each view, chart line or cell and ``:need_count:``
@@ -53,7 +54,8 @@ Improvements
   The report is decided from each place's result: it cannot see a view whose filter string, filter code or filter
   function reads ``needs`` itself, nor a chart's ``:filter-func:``, and it can name a place whose output stays the
   same (filter code that builds parts itself, with unsafe filters allowed; a ``:need_count:`` ratio whose two
-  halves both hold parts). Functions and rules that take ``include_parts``, needextend, warning checks,
+  halves both hold parts; a needflow drawn by graphviz whose filter selects parts of a need it does not show, which
+  graphviz does not draw). Functions and rules that take ``include_parts``, needextend, warning checks,
   constraints, the builder's filter and ``needs.json`` do not read the value; changing it re-reads no document.
   From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
   keep a project's views through that release.

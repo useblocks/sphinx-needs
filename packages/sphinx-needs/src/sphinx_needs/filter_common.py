@@ -151,9 +151,10 @@ def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
 
 
 #: What an unset ``needs_views_include_parts`` means: ``True`` through the 9.x series,
-#: each place whose result holds a need part, and each needflow that will draw links
-#: to parts of its needs as edges to the parts' needs, reporting it
-#: (:func:`_report_parts_in_view`).
+#: each place whose result holds a need part (but needextract, and a needtable with
+#: ``:show_parts:`` whose matched parts are each listed under their need), and each
+#: needflow that will draw links to parts of its needs as edges to the parts' needs,
+#: reporting it (:func:`_report_parts_in_view`).
 #: From 10.0 unset means ``False``: this constant changes, and the report goes.
 _VIEWS_INCLUDE_PARTS_UNSET = True
 
@@ -179,7 +180,9 @@ def _view_candidates(
     besides, through :func:`_views_include_parts`, to re-point a link to a part): a
     function or a rule that asks for parts (``include_parts``) reads them itself, and
     :meth:`NeedsView.to_list_with_parts` keeps its meaning. Under the needs alone,
-    filter code and a ``:filter-func:`` are handed needs only.
+    every filter method answers as it does over the needs and parts, with the parts
+    left out and in the same order (:meth:`NeedsView._to_list_of_needs`), and filter
+    code and a ``:filter-func:`` are handed needs only.
     """
     if _views_include_parts(config):
         return needs_view.to_list_with_parts()
@@ -208,7 +211,8 @@ def _report_parts_in_view(
     output may change all the same; and it can report a place whose output does not
     change (filter code that builds parts itself keeps them with unsafe filters allowed;
     a ``:need_count:`` ratio whose two halves both hold parts can give the same
-    percentage without them). Once
+    percentage without them; the graphviz engine draws no part of a need a needflow
+    does not show, nor a link to one). Once
     per build for a place, keyed by what it is (*view*: the directive, or a chart's line
     or cell, or ``:need_count:``, with its filter) and where it is written; never with
     the value set either way. needextract, which drops the parts it matches, does not
