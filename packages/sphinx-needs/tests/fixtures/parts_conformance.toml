@@ -1527,6 +1527,7 @@ include_parts = true
 name = "answers-its-text-as-title"
 section = "answers"
 why = "a part answers its text as title, not its need's title"
+divergent = { ubcode = "a part answers its need's title, so title == 'one' selects nothing and title == 'Parts' selects REQ_1 and REQ_1.p1" }
 config = '''
 [needs]
 '''
