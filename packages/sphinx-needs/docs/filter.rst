@@ -142,8 +142,9 @@ The filter string must be a valid Python expression:
 The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or
 :ref:`needbar`, and of :ref:`need_count`, is evaluated on every need and, where :ref:`needs_views_include_parts` is
 true, on every :ref:`need part <need_part>`, so a part the filter matches is listed, drawn or counted as an item of
-its own (a needtable with :ref:`show_parts <needtable_show_parts>` lists it once, under its need). Unset, the value
-is true in 9.x and false from 10.0: from 10.0 a view's filter selects needs alone, unless the view asks for parts.
+its own (a needflow draws a part only with its need). A needtable with :ref:`show_parts <needtable_show_parts>` lists
+it once: under its need when its need is a row, and on a row of its own when its need is not. Unset, the value is true
+in 9.x and false from 10.0: from 10.0 a view's filter selects needs alone, unless the view asks for parts.
 :ref:`links_from_filter`, :ref:`links_from_match` and a :ref:`derived <needs_derive>` ``links`` rule test the parts
 too where they are given ``include_parts``, whatever the value says.
 

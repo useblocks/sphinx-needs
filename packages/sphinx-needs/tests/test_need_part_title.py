@@ -88,6 +88,24 @@ Views
 
 .. needgantt:: Gantt
    :filter: id_parent == "REQ_A"
+
+.. container:: by-the-need-title
+
+   .. needtable::
+      :filter: title == 'Alpha'
+      :columns: id;title
+      :style: table
+
+.. container:: by-a-part-text
+
+   .. needtable::
+      :filter: "brake" in title
+      :columns: id;title
+      :style: table
+
+.. container:: counts
+
+   :need_count:`title == 'Alpha'` and :need_count:`"brake" in title`
 """
 
 
@@ -168,6 +186,23 @@ def test_a_needgantt_part_element_is_labelled_by_its_text(
         "p1": "steer well",
         "p2": "brake fast",
     }
+
+
+@pytest.mark.parametrize("test_app", project(), indirect=True)
+def test_a_view_filter_on_title_matches_a_part_by_its_text(
+    built: tuple[Sphinx, list[str]],
+) -> None:
+    """A view's filter tests parts too, and reads a part's ``title`` as its text: the
+    need's title matches the need alone (it matched ``REQ_A`` and both its parts, 3 rows
+    and a count of 3), and a part's text matches the part (it matched nothing)."""
+    app = built[0]
+    for name, ids in {
+        "by-the-need-title": ["REQ_A"],
+        "by-a-part-text": ["REQ_A.p2"],
+    }.items():
+        rows = _container(app, name).xpath(".//tr[@data-need-id]")
+        assert [row.get("data-need-id") for row in rows] == ids, name
+    assert " ".join(_container(app, "counts").text_content().split()) == "1 and 1"
 
 
 #: The three routes a join or a filter on ``title`` reads a part with ``include_parts``:
