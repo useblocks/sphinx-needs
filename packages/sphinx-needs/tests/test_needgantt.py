@@ -258,71 +258,71 @@ Gantt titles
 ============
 
 .. story:: Hard parts
-   :id: US_H
+   :id: US_HARD
    :duration: 3
 
    :np:`(ml) first line
    second line` and :np:`(em)` and :np:`(br) close ] and [open`.
 
 .. story:: close ] and [open
-   :id: US_BR
+   :id: US_BRACKETS
    :duration: 1
 
 .. story:: first line
    second line
-   :id: US_ML
+   :id: US_LINES
    :duration: 1
 
 .. story::
-   :id: US_EM
+   :id: US_EMPTY
    :duration: 1
 
    Body only.
 
 .. story:: Find and report bug
-   :id: US_OK
+   :id: US_ORDINARY
    :duration: 2
 
 .. container:: part-lines
 
    .. needgantt:: Part lines
-      :filter: id_complete == "US_H.ml"
+      :filter: id_complete == "US_HARD.ml"
 
 .. container:: part-empty
 
    .. needgantt:: Part empty
-      :filter: id_complete == "US_H.em"
+      :filter: id_complete == "US_HARD.em"
 
 .. container:: part-brackets
 
    .. needgantt:: Part brackets
-      :filter: id_complete == "US_H.br"
+      :filter: id_complete == "US_HARD.br"
 
 .. container:: part-milestone
 
    .. needgantt:: Part milestone
-      :filter: id_complete == "US_H.br"
+      :filter: id_complete == "US_HARD.br"
       :milestone_filter: is_part
 
 .. container:: need-brackets
 
    .. needgantt:: Need brackets
-      :filter: id == "US_BR"
+      :filter: id == "US_BRACKETS"
 
 .. container:: need-lines
 
    .. needgantt:: Need lines
-      :filter: id == "US_ML"
+      :filter: id == "US_LINES"
 
 .. container:: need-empty
 
    .. needgantt:: Need empty
-      :filter: id == "US_EM"
+      :filter: id == "US_EMPTY"
 
 .. container:: need-ordinary
 
    .. needgantt:: Need ordinary
-      :filter: id == "US_OK"
+      :filter: id == "US_ORDINARY"
 """
 
 
@@ -384,10 +384,10 @@ def test_an_element_label_draws_whatever_its_title_holds(test_app):
         "[em] as [em] lasts 3 days",
         "[close &#93; and &#91;open] as [br] lasts 3 days",
         "[close &#93; and &#91;open] as [br] lasts 0 days",
-        "[close &#93; and &#91;open] as [US_BR] lasts 1 days",
-        "[first line second line] as [US_ML] lasts 1 days",
-        "[US_EM] as [US_EM] lasts 1 days",
-        "[Find and report bug] as [US_OK] lasts 2 days",
+        "[close &#93; and &#91;open] as [US_BRACKETS] lasts 1 days",
+        "[first line second line] as [US_LINES] lasts 1 days",
+        "[US_EMPTY] as [US_EMPTY] lasts 1 days",
+        "[Find and report bug] as [US_ORDINARY] lasts 2 days",
     ]
 
     drawn = {
@@ -397,7 +397,7 @@ def test_an_element_label_draws_whatever_its_title_holds(test_app):
         "part-milestone": "close ] and [open",
         "need-brackets": "close ] and [open",
         "need-lines": "first line second line",
-        "need-empty": "US_EM",
+        "need-empty": "US_EMPTY",
         "need-ordinary": "Find and report bug",
     }
     for container, label in drawn.items():
