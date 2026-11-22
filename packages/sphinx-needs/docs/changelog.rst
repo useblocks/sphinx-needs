@@ -33,6 +33,23 @@ Improvements
   five. A sphinx-needs older than this one ignores the ``namespace`` key of a source without a word (the needs
   arrive with the file's own ids), and reports the ``needimport`` option as unknown. (:pr:`2568`)
 
+- ✨ **What a view's filter selects**: :ref:`needs_views_include_parts` (``[needs] views_include_parts``) says
+  whether the filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow` or :ref:`needgantt`, of a
+  :ref:`needpie` line or a :ref:`needbar` cell (and of either chart's scope) and of :ref:`need_count` is tested on
+  the :ref:`need parts <need_part>` beside the needs. ``True`` tests every need and every part, as every release so
+  far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's
+  ``:show_parts:``), ``is_part`` selects nothing, a needflow draws a link to a part as a dotted edge to the part's
+  need, and filter code and a filter function are handed needs alone (a part they build themselves is dropped,
+  unless :ref:`needs_allow_unsafe_filters`). Unset, it is ``True`` in 9.x and ``False`` from 10.0. While it is
+  unset, each view, chart line or cell and ``:need_count:`` whose result holds a need part reports
+  ``needs.views_include_parts``, once, where it is written, naming how many parts it lists or counts: set the value
+  either way (``True`` keeps the parts, ``False`` lists needs only now) or suppress the warning type to silence it,
+  until which a ``-W`` build of such a project fails on this release. A needtable whose matched parts are each
+  listed under their need with ``:show_parts:`` is not reported, nor is :ref:`needextract`. Functions and rules
+  that take ``include_parts``, needextend, warning checks, constraints, the builder's filter and ``needs.json`` do
+  not read the value; changing it re-reads no document. From 10.0 a view lists needs, not need parts, unless it
+  asks: set ``needs_views_include_parts`` either way to keep a project's views through that release.
+
 Bug fixes
 .........
 
