@@ -79,6 +79,12 @@
 #     sorted by code point, a part as `<need>.<part>`, and the filter reports nothing. An
 #     entry pins only what a part ANSWERS; which of needs and parts a filter selects when
 #     it does not ask for parts is not settled, and no entry pins it
+#   - an entry saying `view = true`, in place of `include_parts` (never both), is
+#     evaluated as the `:filter:` of a view written in `index.rst` (a needtable, a
+#     needlist) is, under the `views_include_parts` of the case's `[needs]` table, which
+#     every case with such an entry writes: `true` tests the filter on the needs and their
+#     parts, `false` on the needs alone. These entries, of the section `selection`, pin
+#     which of needs and parts a view's filter selects when the view does not ask for parts
 #   - `expected` -- every key of `[case.expect]` and every filter's `expected` -- is what the
 #     CONTRACT says. A case carrying `divergent` is one a tool answers otherwise: each key
 #     names a tool (`sphinx-needs`, `ubcode`), its value what that tool answers instead. A
@@ -97,6 +103,7 @@
 #
 # Sections, in this order: grammar, placement, duplicates, stated, addressing, links,
 # answers, derived.
+# `selection`, what a view's filter selects, sits between `answers` and `derived`.
 #
 # Each `[[case]]` has:
 #   name         - unique, kebab-case
@@ -117,6 +124,7 @@
 #     filter         - the filter string
 #     expected       - the ids it selects, sorted by code point
 #     include_parts  - true
+#     view           - true, in place of `include_parts` (the section `selection`)
 #     why            - optional; one line saying what the entry pins
 
 # --- grammar ---------------------------------------------------------------------------
@@ -1549,6 +1557,108 @@ filter = 'title == "Parts"'
 expected = ["REQ_1"]
 include_parts = true
 why = "a part does not answer its need's title"
+
+# --- selection -------------------------------------------------------------------------
+
+[[case]]
+name = "selection-a-view-selects-needs"
+section = "selection"
+why = "with views_include_parts false a view's filter is tested on the needs alone: a part matching it is not selected, and is_part selects nothing"
+config = '''
+[needs]
+views_include_parts = false
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+   :status: open
+
+   :np:`(p1) one`
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'status == "open"'
+expected = ["REQ_1"]
+view = true
+
+[[case.filters]]
+filter = 'is_part'
+expected = []
+view = true
+
+[[case.filters]]
+filter = 'is_need'
+expected = ["REQ_1"]
+view = true
+
+[[case.filters]]
+filter = 'id == "p1"'
+expected = []
+view = true
+why = "no part is a candidate, so a part's own id selects nothing"
+
+[[case.filters]]
+filter = 'content == "one"'
+expected = []
+view = true
+why = "a part's text selects nothing, its need's content not being the text"
+
+[[case.filters]]
+filter = 'id_parent == "REQ_1"'
+expected = ["REQ_1"]
+view = true
+why = "a need answers its own id as id_parent, and its parts are no candidates"
+
+[[case]]
+name = "selection-a-view-selects-needs-and-parts"
+section = "selection"
+why = "with views_include_parts true a view's filter is tested on every need and every part: a part matching it is selected beside its need"
+divergent = { ubcode = "a view selects needs only whatever the key says" }
+config = '''
+[needs]
+views_include_parts = true
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+   :status: open
+
+   :np:`(p1) one`
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'status == "open"'
+expected = ["REQ_1", "REQ_1.p1"]
+view = true
+
+[[case.filters]]
+filter = 'is_part'
+expected = ["REQ_1.p1"]
+view = true
+
+[[case.filters]]
+filter = 'is_need'
+expected = ["REQ_1"]
+view = true
+
+[[case.filters]]
+filter = 'id == "p1"'
+expected = ["REQ_1.p1"]
+view = true
+
+[[case.filters]]
+filter = 'content == "one"'
+expected = ["REQ_1.p1"]
+view = true
+
+[[case.filters]]
+filter = 'id_parent == "REQ_1"'
+expected = ["REQ_1", "REQ_1.p1"]
+view = true
 
 # --- derived ---------------------------------------------------------------------------
 
