@@ -148,6 +148,11 @@ class _BuildData:
     )
     """The filters reported for reading a namespace value while ``needs_namespaced_ids``
     is off, keyed as :attr:`is_a_reported` is: once per build, emptied with it."""
+    views_include_parts_reported: set[tuple[str, object]] = field(default_factory=set)
+    """The places reported for a result holding a need part while
+    ``needs_views_include_parts`` is unset, each as what it is (the view, or the chart
+    line or ``:need_count:`` with its filter) and where it is written: once per build,
+    emptied with :attr:`is_a_reported`. Goes at 10.0, with the report."""
 
 
 class _Config:

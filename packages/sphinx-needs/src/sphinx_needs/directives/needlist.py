@@ -14,7 +14,12 @@ from sphinx_needs.directives.utils import (
     report_max_items,
     used_filter_paragraph,
 )
-from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filters
+from sphinx_needs.filter_common import (
+    FilterBase,
+    _report_parts_in_view,
+    apply_max_items,
+    process_filters,
+)
 from sphinx_needs.utils import (
     add_doc,
     check_and_calc_base_url_rel_path,
@@ -113,6 +118,7 @@ def process_needlist(
             origin="needlist",
             location=node,
         )
+        _report_parts_in_view(needs_config, found_needs, "needlist", node)
         found_needs, total_needs = apply_max_items(
             found_needs, current_needfilter.get("max_items"), needs_config
         )

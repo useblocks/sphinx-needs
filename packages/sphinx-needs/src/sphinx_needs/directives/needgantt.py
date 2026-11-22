@@ -26,6 +26,7 @@ from sphinx_needs.filter_common import (
     FilterBase,
     _need_by_need,
     _report_filter_text,
+    _report_parts_in_view,
     process_filters,
 )
 from sphinx_needs.logging import get_logger, log_warning
@@ -237,6 +238,7 @@ def process_needgantt(
             origin="needgantt",
             location=node,
         )
+        _report_parts_in_view(needs_config, found_needs, "needgantt", node)
 
         is_milestone_of = None
         if milestone_filter := current_needgantt["milestone_filter"]:

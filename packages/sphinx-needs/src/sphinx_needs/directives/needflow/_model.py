@@ -40,6 +40,7 @@ from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
     _need_by_need,
     _report_filter_text,
+    _report_parts_in_view,
     apply_max_items,
     process_filters,
 )
@@ -428,6 +429,7 @@ def build_graph(
         origin="needflow",
         location=location,
     )
+    _report_parts_in_view(needs_config, found_needs, "needflow", location)
     # the cap is applied before any of the drawing data is derived,
     # so that dropped needs cannot be referenced by what is drawn
     found_needs, total_needs = apply_max_items(

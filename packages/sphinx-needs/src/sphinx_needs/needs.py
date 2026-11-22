@@ -2330,6 +2330,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     _NEEDS_CONFIG.build.is_a_reported.clear()
     # and one reading a namespace value while namespaced ids are off
     _NEEDS_CONFIG.build.namespaced_ids_off_reported.clear()
+    # and a view whose result holds a part while needs_views_include_parts is unset
+    _NEEDS_CONFIG.build.views_include_parts_reported.clear()
     #: one rule for the name of a link type's back links, wherever the field or link
     #: type of that name comes from (every field is registered by now, a service's
     #: too): what it refuses does not exist, and is not read from the configuration

@@ -183,6 +183,55 @@ def _view_candidates(
     return needs_view._to_list_of_needs()
 
 
+def _report_parts_in_view(
+    config: NeedsSphinxConfig,
+    found: Iterable[NeedItem | NeedPartItem],
+    view: str,
+    location: nodes.Node,
+    /,
+    *,
+    counts: bool = False,
+) -> None:
+    """Report a place whose result holds a need part while ``needs_views_include_parts``
+    is unset: from 10.0 its filter is tested on the needs alone, so what it lists or
+    counts then changes by exactly those parts.
+
+    Decided from the result, never by testing the filter again; once per build for a
+    place, keyed by what it is (*view*: the directive, or a chart's line or cell, or
+    ``:need_count:``, with its filter) and where it is written; never with the value set
+    either way. needextract, which drops the parts it matches, does not call it. This is
+    the whole report of the 9.x series: at 10.0 it goes, with its calls and its warning
+    type.
+
+    :param found: The place's result, as it lists or counts it.
+    :param view: What the place is, as the message names it.
+    :param location: Where the place is written.
+    :param counts: Whether the place counts (a chart, ``:need_count:``) or lists.
+    """
+    if config.views_include_parts is not None:
+        return
+    parts = {item["id_complete"] for item in found if item["is_part"]}
+    if not parts:
+        return
+    reported = _NEEDS_CONFIG.build.views_include_parts_reported
+    if (key := (view, get_source_line(location))) in reported:
+        return
+    reported.add(key)
+    verb, keep, now = (
+        ("counts", "counting", "count") if counts else ("lists", "listing", "list")
+    )
+    log_warning(
+        log,
+        f"This {view} {verb} {len(parts)} need part{'' if len(parts) == 1 else 's'} "
+        "its filter selects, as well as needs: from Sphinx-Needs 10.0 a view's filter "
+        "selects needs only, unless the view asks for parts. Set "
+        f"needs_views_include_parts = True to keep {keep} them, or False to {now} needs "
+        "only now; or suppress needs.views_include_parts.",
+        "views_include_parts",
+        location=location,
+    )
+
+
 def process_filters(
     app: Sphinx,
     needs_view: NeedsView,

@@ -22,6 +22,7 @@ from sphinx_needs.directives.utils import (
 from sphinx_needs.exceptions import NeedsInvalidException
 from sphinx_needs.filter_common import (
     FilterBase,
+    _report_parts_in_view,
     apply_max_items,
     process_filters,
     sort_key,
@@ -460,6 +461,7 @@ def process_needtables(
                 for need in filtered_needs
                 if isinstance(need, NeedItem) or need["id_parent"] not in need_rows
             ]
+        _report_parts_in_view(needs_config, filtered_needs, "needtable", node)
 
         sort_by = current_needtable["sort"]
         try:
