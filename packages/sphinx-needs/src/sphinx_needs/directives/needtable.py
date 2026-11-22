@@ -448,6 +448,19 @@ def process_needtables(
             location=node,
         )
 
+        if current_needtable["show_parts"]:
+            # a part is listed under its need, so a part the filter matched gets no row
+            # of its own when its need has one; decided before the sort and the cap, so
+            # that the cap counts the entries as they are shown
+            need_rows = {
+                need["id"] for need in filtered_needs if isinstance(need, NeedItem)
+            }
+            filtered_needs = [
+                need
+                for need in filtered_needs
+                if isinstance(need, NeedItem) or need["id_parent"] not in need_rows
+            ]
+
         sort_by = current_needtable["sort"]
         try:
             # the keys are all computed before anything moves, so a need without

@@ -787,11 +787,12 @@ def links_from_match(
     once, however many values it shares, in need-id order, comparing ids as strings
     (so ``REQ_10`` comes before ``REQ_9``); the link list is sorted for the output
     anyway. Only whole needs are candidates: set ``include_parts=True`` to match the
-    parts of every need as well, each read as the part answers a filter (its own ``id``,
-    ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other
-    field), after its need in part-id order, each once; a part that matches is linked as
-    ``<need id>.<part id>``. The need that contains the call is not linked, even if it
-    matches, and neither are its own parts, unless ``include_self=True``.
+    parts of every need as well, each read as the part answers a filter (its own ``id``
+    and ``id_complete``, its text as ``content`` and ``title``, no ``parent_need``, its
+    need's value of every other field), after its need in part-id order, each once; a
+    part that matches is linked as ``<need id>.<part id>``. The need that contains the
+    call is not linked, even if it matches, and neither are its own parts, unless
+    ``include_self=True``.
 
     ``filter`` keeps only the matches that pass it, a part tested as a part, and is read
     as :func:`links_from_filter` reads its filter (``current_need`` is the need that
@@ -1207,9 +1208,9 @@ def _join_part_index(
     needs: NeedsMutable | NeedsView, field: str
 ) -> dict[str, list[tuple[str, str]]]:
     """Every need's parts by the values of ``field`` (:func:`join_values`), each part's
-    read as the part answers a filter: its own ``id``, ``id_complete`` and ``content``,
-    its need's value of every other field. Each value gives the ``(need id, part id)`` of
-    the parts holding it."""
+    read as the part answers a filter: its own ``id`` and ``id_complete``, its text as
+    ``content`` and ``title``, its need's value of every other field. Each value gives
+    the ``(need id, part id)`` of the parts holding it."""
     ids: dict[str, list[tuple[str, str]]] = {}
     for need_id, candidate in needs.items():
         for part in candidate.iter_part_items():

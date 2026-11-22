@@ -283,7 +283,7 @@
       "test2"
     ],
     "template": null,
-    "title": "Command line interface",
+    "title": "exit()",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",
@@ -346,7 +346,7 @@
       "test2"
     ],
     "template": null,
-    "title": "Command line interface",
+    "title": "start()",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",
@@ -409,7 +409,7 @@
       "test2"
     ],
     "template": null,
-    "title": "Command line interface",
+    "title": "unknown_id_1",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",
@@ -472,7 +472,7 @@
       "test2"
     ],
     "template": null,
-    "title": "Command line interface",
+    "title": "unknown_id_2",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",
@@ -535,7 +535,7 @@
       "test2"
     ],
     "template": null,
-    "title": "Command line interface",
+    "title": "blub()",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",
@@ -598,7 +598,7 @@
       "test2"
     ],
     "template": null,
-    "title": "Command line interface",
+    "title": "has multi-lines",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",
@@ -725,7 +725,7 @@
     "style": null,
     "tags": [],
     "template": null,
-    "title": "TEST_2",
+    "title": "something",
     "type": "spec",
     "type_color": "#FEDCD2",
     "type_name": "Specification",

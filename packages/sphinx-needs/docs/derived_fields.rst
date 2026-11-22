@@ -559,8 +559,8 @@ The rules:
   in :ref:`need-id order <needs_id_order>`.
   This need is left out unless ``include_self = true``.
   A need part is a candidate only with ``include_parts = true``, on ``links``: then each need's parts are candidates
-  too, each read as a part answers a :ref:`filter <filter_string>` (its own ``id``, ``id_complete`` and ``content``,
-  no ``parent_need``, its need's value of every other field), and a part that matches is linked as ``<need>.<part>``, after its need,
+  too, each read as a part answers a :ref:`filter <filter_string>` (its own ``id`` and ``id_complete``, its text as
+  ``content`` and ``title``, no ``parent_need``, its need's value of every other field), and a part that matches is linked as ``<need>.<part>``, after its need,
   in part-id order, once; this need's own parts are left out with it unless ``include_self = true``.
   Without it, a need with parts matches as itself.
 - **links and copy.** A ``where`` beside ``join`` narrows the candidates: it is tested on each,

@@ -36,6 +36,10 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+#: A bracket closes or opens a gantt element's ``[<label>]``; written as a decimal
+#: character reference, PlantUML draws the bracket itself.
+_LABEL_BRACKETS = str.maketrans({"[": "&#91;", "]": "&#93;"})
+
 
 class Needgantt(nodes.General, nodes.Element):
     if TYPE_CHECKING:
@@ -283,10 +287,15 @@ def process_needgantt(
 
             is_milestone = is_milestone_of is not None and bool(is_milestone_of(need))
 
+            # PlantUML refuses the whole chart for a label that spans lines, is empty or
+            # holds a bracket, and a part's title (its text) may do each: the label is
+            # the title on one line, the id when that is empty, and a bracket as the
+            # character reference the chart draws as the bracket itself
+            label = (" ".join(need["title"].split()) or need["id"]).translate(
+                _LABEL_BRACKETS
+            )
             if current_needgantt["milestone_filter"] and is_milestone:
-                gantt_element = "[{}] as [{}] lasts 0 days\n".format(
-                    need["title"], need["id"]
-                )
+                gantt_element = "[{}] as [{}] lasts 0 days\n".format(label, need["id"])
             else:  # Normal gantt element handling
                 duration_option = current_needgantt["duration_option"]
                 duration = need[duration_option]
@@ -311,11 +320,11 @@ def process_needgantt(
                         # float durations not supported by plantuml
                         duration = round(duration)
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(
-                    need["title"], need["id"], duration
+                    label, need["id"], duration
                 )
 
-            # tasks are declared as "[<title>] as [<id>]", which binds every later
-            # "[...]" reference to the id; a reference to the title would not raise,
+            # tasks are declared as "[<label>] as [<id>]", which binds every later
+            # "[...]" reference to the id; a reference to the label would not raise,
             # it would silently declare a second, zero length task of that name
             if complete:
                 if isinstance(complete, float):

@@ -240,7 +240,7 @@
       'tag1',
     ]),
     'template': None,
-    'title': 'title',
+    'title': 'Part 1',
     'type': 'type',
     'type_color': '#000000',
     'type_name': 'type title',
@@ -444,7 +444,7 @@
     ),
     tuple(
       'title',
-      'title',
+      'Part 1',
     ),
     tuple(
       'type',

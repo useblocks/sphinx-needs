@@ -9,9 +9,9 @@ New and Improved
 
 - ✨ ``tr_link`` takes ``include_parts``: with
   ``[[tr_link('case_name', 'id_complete', include_parts=True)]]``, the need parts of every
-  need are compared too, a part's option read as the part answers a filter (its own ``id``,
-  ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other
-  option), and a part that
+  need are compared too, a part's option read as the part answers a filter (its own ``id`` and
+  ``id_complete``, its text as ``content`` and ``title``, no ``parent_need``, its need's
+  value of every other option), and a part that
   matches is linked by its address, ``<need id>.<part id>``
   (`#1955 <https://github.com/useblocks/sphinx-needs/issues/1955>`__). It is given by name: a
   third positional argument is ignored, as it always was. Without it, nothing changes. The

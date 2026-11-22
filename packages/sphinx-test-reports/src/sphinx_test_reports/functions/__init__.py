@@ -40,7 +40,8 @@ def tr_link(
     for need_target in needs.values():
         # with `include_parts`, each need's parts are targets too, after it, in part-id
         # order; a part's target option is read as the part answers a filter (its own
-        # `id`, `id_complete` and `content`, its need's value of every other option)
+        # `id` and `id_complete`, its text as `content` and `title`, its need's value of
+        # every other option)
         targets: list[NeedItem | NeedPartItem] = [need_target]
         if include_parts:
             targets.extend(

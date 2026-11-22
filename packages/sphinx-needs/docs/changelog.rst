@@ -12,9 +12,9 @@ Improvements
 
 - ✨ A join can link :ref:`need parts <need_part>`: :ref:`links_from_match` takes ``include_parts``, and so does a
   derived ``links`` rule with :ref:`join <needs_derive_join>`, where it was refused (``needs.derive_invalid``). With
-  it, the parts of every need are candidates too, each read as a part answers a filter: its own ``id``,
-  ``id_complete`` and ``content``, no ``parent_need``, its need's value of every other field. So
-  ``[[links_from_match("id_complete", "case", include_parts=True)]]`` links the parts whose address the need's
+  it, the parts of every need are candidates too, each read as a part answers a filter: its own ``id`` and
+  ``id_complete``, its text as ``content`` and ``title``, no ``parent_need``, its need's value of every other field.
+  So ``[[links_from_match("id_complete", "case", include_parts=True)]]`` links the parts whose address the need's
   ``case`` names. A part that matches is linked as ``<need>.<part>``, after its need, in part-id order, and the
   need's own parts are left out with it unless ``include_self``. Without it, nothing changes. (:pr:`2567`)
 
@@ -157,6 +157,50 @@ Bug fixes
   full build: the need named has a ``.`` in its id and changed, and a need whose id is a part's address ``ID.part``
   was added or removed in another document, so the copy reads that need, or the part's need again. The page of the
   need a :ref:`needextend` names by an id holding a ``.`` is re-written when the extend changes, likewise. (:pr:`2567`)
+
+- 🐛 A :ref:`need part <need_part>`'s ``title`` is its text, wherever a part is read, as a :ref:`needtable` row and
+  ``:need:`` already showed it; :ref:`filter_string` said a part keeps its own, and the code read the title of the
+  part's need (:issue:`2356`). A need's own ``title`` does not change, and a :ref:`needflow` with its default labels
+  shows a part's text as before.
+
+  **Changed output**: a filter that meets a part reads its ``title`` as its text, whether or not it asks for parts.
+  The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or
+  :ref:`needbar`, or of :ref:`need_count`, that tests ``title``, a needflow's :ref:`highlight <needflow_highlight>`
+  or :ref:`border_color <needflow_border_color>`, a needgantt's :ref:`milestone_filter <needgantt_milestone_filter>`
+  and a :ref:`sort_by <option_sort_by>` ``title`` now match or order a need part by its text, so such a view lists,
+  counts or marks a need's parts only where their text matches, where it matched them by their need's title:
+  ``:filter: title == 'Alpha'`` listed the need titled *Alpha* and each of its parts, and now lists the need alone.
+  A needlist line of a part shows the part's text (``p1: brake fast``), where it showed its need's title
+  (``p1: Alpha``); a needgantt element of a part is labelled by its text; a needtable sorted by ``title`` sorts the
+  rows of parts by their text. A filter or join that asks for parts (``include_parts``) and tests ``title`` --
+  :ref:`links_from_filter`, a derived ``links`` rule's ``where``, and the joins of :ref:`links_from_match` and of a
+  ``links`` rule with ``join`` -- matches a part by its text, and no longer matches the parts of a need by the need's
+  title, so the links it derives can change. In Python, ``NeedPartItem["title"]``
+  (:py:class:`~sphinx_needs.need_item.NeedPartItem`, what an extension, filter code, a
+  :ref:`filter-func <filter_func>` or a dynamic function reads of a part) is the part's text, and a custom
+  :ref:`needs_diagram_template` that reads ``{{title}}`` gets the part's text. The need's title is the title of the
+  need a part's ``id_parent`` names: a filter meant for the parts of a need names that need, such as
+  ``is_part and id_parent == "REQ_1"``. needs.json does not change, except through such a derived link and the back
+  links it gives.
+
+- 🐛 A :ref:`needtable` with :ref:`show_parts <needtable_show_parts>` lists a :ref:`need part <need_part>` once,
+  under its need, where a filter matching the need and the part listed the part twice: as a row of its own, and
+  again under its need (:issue:`336`). A part the filter matches whose need is not a row keeps its row of its own.
+  This is decided before the sort and the ``:max_items:`` cap.
+
+  **Changed output**: such a table has fewer rows, and its ``:max_items:`` cap counts a need with its parts as one
+  entry, so it can keep more needs than before, and its notice and ``needs.max_items`` warning give the smaller
+  total. A part the filter matched is listed once, under its need, without the row style its own row had:
+  ``:style_row:`` is not applied to a ``:show_parts:`` row. This fix changes no table without ``:show_parts:``; such
+  a table whose filter or sort reads ``title`` changes through the fix above.
+
+- 🐛 A :ref:`needgantt` draws an element whose title holds a line break or brackets, or is empty, where PlantUML
+  refused the whole chart. A need part's title is its text, where each of these is ordinary, and a need's title could
+  hold them too. The element's label is now its title on one line, each run of white space one space, the
+  element's id when the title is empty, and each bracket written so that the chart draws it as a bracket.
+
+  **Changed output**: a double space, a tab or a no-break space inside a title is drawn as one space. A title
+  with single spaces and no bracket is drawn as before.
 
 Internal changes
 ................
