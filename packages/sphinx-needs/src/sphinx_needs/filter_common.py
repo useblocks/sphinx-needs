@@ -191,45 +191,102 @@ def _report_parts_in_view(
     /,
     *,
     counts: bool = False,
+    part_links: Callable[[], int] | None = None,
 ) -> None:
-    """Report a place whose result holds a need part while ``needs_views_include_parts``
-    is unset: from 10.0 its filter is tested on the needs alone, so what it lists or
-    counts then changes by exactly those parts.
+    """Report a place whose output changes at 10.0 while ``needs_views_include_parts``
+    is unset: one whose result holds a need part, which from 10.0 its filter does not
+    select, and a needflow that will then draw links to parts to the parts' needs.
 
-    Decided from the result, never by testing the filter again; once per build for a
-    place, keyed by what it is (*view*: the directive, or a chart's line or cell, or
-    ``:need_count:``, with its filter) and where it is written; never with the value set
-    either way. needextract, which drops the parts it matches, does not call it. This is
-    the whole report of the 9.x series: at 10.0 it goes, with its calls and its warning
-    type.
+    Decided from the result, never by testing the filter again, so it sees what the
+    result holds and no more: not a place whose filter string, filter code or
+    ``:filter-func:`` reads ``needs`` itself, nor a chart's ``:filter-func:``, whose
+    output may change all the same; and it reports a place whose output does not change
+    where a part in the result stays (filter code that builds parts itself, with unsafe
+    filters allowed; a ``:need_count:`` ratio whose two halves both hold parts). Once
+    per build for a place, keyed by what it is (*view*: the directive, or a chart's line
+    or cell, or ``:need_count:``, with its filter) and where it is written; never with
+    the value set either way. needextract, which drops the parts it matches, does not
+    call it. This is the whole report of the 9.x series: at 10.0 it goes, with its calls
+    and its warning type.
 
-    :param found: The place's result, as it lists or counts it.
+    :param found: The place's result, before any ``max_items`` cap: what its filter
+        selects (a capped view whose parts fall beyond the cap still changes, the needs
+        moving up into its window).
     :param view: What the place is, as the message names it.
     :param location: Where the place is written.
     :param counts: Whether the place counts (a chart, ``:need_count:``) or lists.
+    :param part_links: For a needflow, how many links of its result's needs it draws
+        to the parts' needs where its result holds needs alone; called only while the
+        value is unset.
     """
     if config.views_include_parts is not None:
         return
     parts = {item["id_complete"] for item in found if item["is_part"]}
-    if not parts:
+    links = part_links() if part_links is not None else 0
+    if not parts and not links:
         return
     reported = _NEEDS_CONFIG.build.views_include_parts_reported
     if (key := (view, get_source_line(location))) in reported:
         return
     reported.add(key)
-    verb, keep, now = (
-        ("counts", "counting", "count") if counts else ("lists", "listing", "list")
-    )
     log_warning(
         log,
-        f"This {view} {verb} {len(parts)} need part{'' if len(parts) == 1 else 's'} "
-        "its filter selects, as well as needs: from Sphinx-Needs 10.0 a view's filter "
-        "selects needs only, unless the view asks for parts. Set "
-        f"needs_views_include_parts = True to keep {keep} them, or False to {now} needs "
-        "only now; or suppress needs.views_include_parts.",
+        _views_include_parts_text(view, len(parts), links, counts=counts),
         "views_include_parts",
         location=location,
     )
+
+
+def _views_include_parts_text(
+    view: str, parts: int, links: int, /, *, counts: bool
+) -> str:
+    """The text of :func:`_report_parts_in_view`: what the place's filter selects, what
+    changes at 10.0 for its kind of view, and what to set."""
+    selects = f"{parts} need part{'' if parts == 1 else 's'}"
+    keep = "Set needs_views_include_parts = True to keep"
+    if links:
+        drawn = (
+            "1 link to a need part as an edge to the part's need"
+            if links == 1
+            else f"{links} links to need parts as edges to the parts' needs"
+        )
+        head = (
+            f"This {view}'s filter selects {selects}, and from Sphinx-Needs 10.0 it "
+            f"draws {drawn}"
+            if parts
+            else f"From Sphinx-Needs 10.0 this {view} draws {drawn}, which it draws no "
+            "edge for now"
+        )
+        text = (
+            f"{head}: a view's filter then selects needs only, and a needflow draws a "
+            "link to a part of a need it shows as an edge to that need. "
+            f"{keep} the needflow as it is, or False to draw "
+            f"{'needs only' if parts else 'those edges'} now"
+        )
+    else:
+        keeping, now = (
+            ("counting", "count")
+            if counts
+            else ("drawing", "draw")
+            if view in ("needflow", "needgantt")
+            else ("listing", "list")
+        )
+        # only a needtable can ask for parts
+        asks = (
+            ", and a needtable lists a need's parts under it only with :show_parts:"
+            if view == "needtable"
+            else ""
+        )
+        head = (
+            f"This {view} counts {selects}"
+            if counts
+            else f"This {view}'s filter selects {selects}"
+        )
+        text = (
+            f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
+            f"{keep} {keeping} them, or False to {now} needs only now"
+        )
+    return f"{text}; or suppress needs.views_include_parts."
 
 
 def process_filters(
