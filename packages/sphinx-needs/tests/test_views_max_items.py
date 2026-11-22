@@ -882,23 +882,30 @@ def test_empty_result_with_a_cap(test_app: SphinxTestApp):
 def test_cap_counts_needs_not_rows(test_app: SphinxTestApp):
     """A capped table still expands every part of the needs it kept.
 
-    The filtered list holds needs and need parts alike, and the cap counts those
-    entries. Here it keeps REQ_1 and its first part out of six entries, and the rows
-    that ``:show_parts:`` adds for a kept need are not counted, so the table renders
-    four rows against a limit of two.
+    The filter matches the three needs and their three parts; with ``:show_parts:`` a
+    part whose need is a row is listed under it, not as an entry of its own, so the
+    cap counts three entries. It keeps REQ_1 and REQ_2, and the rows ``:show_parts:``
+    adds for a kept need are not counted, so the table renders five rows against a
+    limit of two.
     """
     app = test_app
     app.build()
     html = index_html(app)
     assert "REQ_1" in html
-    assert "REQ_2" not in html
+    assert "REQ_2" in html
     assert "REQ_3" not in html
-    # part_b is not one of the two kept entries, it is expanded from the kept REQ_1
+    # the parts are expanded from the kept REQ_1 and REQ_2, each once
     assert "part_a" in html
     assert "part_b" in html
-    assert "part_c" not in html
+    assert "part_c" in html
 
     rows = html_parser.fromstring(html).xpath("//table//tbody/tr")
-    assert len(rows) == 4
+    assert [row.get("data-need-id") for row in rows] == [
+        "REQ_1",
+        "REQ_1.part_a",
+        "REQ_1.part_b",
+        "REQ_2",
+        "REQ_2.part_c",
+    ]
 
-    assert notice_text(2, 6) in html
+    assert notice_text(2, 3) in html
