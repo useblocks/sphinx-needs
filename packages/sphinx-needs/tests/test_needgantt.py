@@ -6,9 +6,11 @@ import re
 from pathlib import Path
 
 import pytest
+from lxml import etree
+from lxml import html as html_parser
 from sphinxcontrib.plantuml import plantuml
 
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 #: A ``conf.py`` for the inline source projects below.
 #: ``needgantt`` requires both of its value options to be numeric fields.
@@ -243,3 +245,160 @@ def test_a_float_completion_is_an_integer_percentage(test_app):
     uml = sources[0]
     assert "[TASK_A] is 90% completed" in uml
     assert "90.0" not in uml
+
+
+#: Titles a gantt element's label must still draw: a need part's text (its ``title``) may
+#: span lines, be empty or hold brackets, and so may a need's title.
+CONF_PY_TITLES = (
+    CONF_PY + "needs_title_optional = True\nplantuml_output_format = 'svg'\n"
+)
+
+TITLES_CHART = """\
+Gantt titles
+============
+
+.. story:: Hard parts
+   :id: US_H
+   :duration: 3
+
+   :np:`(ml) first line
+   second line` and :np:`(em)` and :np:`(br) close ] and [open`.
+
+.. story:: close ] and [open
+   :id: US_BR
+   :duration: 1
+
+.. story:: first line
+   second line
+   :id: US_ML
+   :duration: 1
+
+.. story::
+   :id: US_EM
+   :duration: 1
+
+   Body only.
+
+.. story:: Find and report bug
+   :id: US_OK
+   :duration: 2
+
+.. container:: part-lines
+
+   .. needgantt:: Part lines
+      :filter: id_complete == "US_H.ml"
+
+.. container:: part-empty
+
+   .. needgantt:: Part empty
+      :filter: id_complete == "US_H.em"
+
+.. container:: part-brackets
+
+   .. needgantt:: Part brackets
+      :filter: id_complete == "US_H.br"
+
+.. container:: part-milestone
+
+   .. needgantt:: Part milestone
+      :filter: id_complete == "US_H.br"
+      :milestone_filter: is_part
+
+.. container:: need-brackets
+
+   .. needgantt:: Need brackets
+      :filter: id == "US_BR"
+
+.. container:: need-lines
+
+   .. needgantt:: Need lines
+      :filter: id == "US_ML"
+
+.. container:: need-empty
+
+   .. needgantt:: Need empty
+      :filter: id == "US_EM"
+
+.. container:: need-ordinary
+
+   .. needgantt:: Need ordinary
+      :filter: id == "US_OK"
+"""
+
+
+def _drawn_texts(app, container: str) -> list[str]:
+    """The texts of the chart drawn in the ``.. container::`` of class *container*."""
+    page = html_parser.fromstring(
+        Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    )
+    (div,) = page.xpath(
+        f'//div[contains(concat(" ", normalize-space(@class), " "), " {container} ")]'
+    )
+    (svg_path,) = div.xpath(".//object/@data")
+    svg = etree.fromstring(Path(app.outdir, svg_path).read_bytes())
+    return [
+        " ".join("".join(text.itertext()).split())
+        for text in svg.iter("{http://www.w3.org/2000/svg}text")
+    ]
+
+
+def _elements(uml: str) -> str:
+    """The element definitions of a generated chart, as written."""
+    return (
+        uml.split("' Elements definition", 1)[1].split("' Element links", 1)[0].strip()
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY_TITLES),
+                (Path("index.rst"), TITLES_CHART),
+            ],
+            "plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_an_element_label_draws_whatever_its_title_holds(test_app):
+    """A gantt element is declared ``[<label>] as [<id>]``, and PlantUML refuses the
+    whole chart when the label spans lines, is empty or holds a bracket. The label is the
+    title on one line, the element's id when that is empty, and each bracket written as
+    a character reference, which the chart draws as the bracket itself.
+
+    A need part's ``title`` is its text, where a line break or an empty text is ordinary,
+    so a part reaches each case; a need's title reaches them too. An ordinary title is
+    written as it always was.
+    """
+    app = test_app
+    sources = _capture_diagrams(app)
+    app.build()
+
+    assert build_warnings(app) == []
+
+    assert [_elements(uml) for uml in sources] == [
+        "[first line second line] as [ml] lasts 3 days",
+        "[em] as [em] lasts 3 days",
+        "[close &#93; and &#91;open] as [br] lasts 3 days",
+        "[close &#93; and &#91;open] as [br] lasts 0 days",
+        "[close &#93; and &#91;open] as [US_BR] lasts 1 days",
+        "[first line second line] as [US_ML] lasts 1 days",
+        "[US_EM] as [US_EM] lasts 1 days",
+        "[Find and report bug] as [US_OK] lasts 2 days",
+    ]
+
+    drawn = {
+        "part-lines": "first line second line",
+        "part-empty": "em",
+        "part-brackets": "close ] and [open",
+        "part-milestone": "close ] and [open",
+        "need-brackets": "close ] and [open",
+        "need-lines": "first line second line",
+        "need-empty": "US_EM",
+        "need-ordinary": "Find and report bug",
+    }
+    for container, label in drawn.items():
+        assert label in _drawn_texts(app, container), container

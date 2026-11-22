@@ -104,6 +104,12 @@ Parts
    :status: done
    :links: REQ_A.p1, SPEC_N
 
+.. req:: Written
+   :id: REQ_W
+   :status: draft
+
+   :np:`(p2) written first` and :np:`(p1) written second`.
+
 .. needimport:: imported.json
 """
 
@@ -141,6 +147,15 @@ Tables
       :columns: id;title
       :show_parts:
       :max_items: 3
+      :style: table
+
+.. container:: written-and-styled
+
+   .. needtable::
+      :filter: id == 'REQ_W' or id_parent == 'REQ_W' or content == 'closed part'
+      :columns: id;title
+      :show_parts:
+      :style_row: marked
       :style: table
 """
 
@@ -245,6 +260,43 @@ def test_the_cap_counts_the_entries_as_shown(test_app: Sphinx) -> None:
     ]
     page = Path(test_app.outdir, "tables.html").read_text(encoding="utf-8")
     assert "Showing the first 3 of 5 needs" in " ".join(page.split())
+
+
+@pytest.mark.parametrize("test_app", project(), indirect=True)
+def test_the_parts_under_a_need_come_in_the_order_written(test_app: Sphinx) -> None:
+    """``REQ_W`` writes ``p2`` before ``p1``: they are listed under it in that order,
+    not by id."""
+    test_app.build()
+    assert _ids(test_app, "written-and-styled") == [
+        "REQ_B.b1",
+        "REQ_W",
+        "REQ_W.p2",
+        "REQ_W.p1",
+    ]
+
+
+@pytest.mark.parametrize("test_app", project(), indirect=True)
+def test_style_row_styles_the_entries_not_a_part_under_its_need(
+    test_app: Sphinx,
+) -> None:
+    """``:style_row:`` styles the row of each entry: a need's, and the own row of a part
+    whose need is not a row (``REQ_B.b1``). A part listed under its need is not an entry,
+    and its row is not styled."""
+    test_app.build()
+    page = Path(test_app.outdir, "tables.html").read_text(encoding="utf-8")
+    (container,) = html_parser.fromstring(page).xpath(
+        '//div[contains(concat(" ", normalize-space(@class), " "),'
+        ' " written-and-styled ")]'
+    )
+    assert [
+        (row.get("data-need-id"), "marked" in row.get("class").split())
+        for row in container.xpath(".//tr[@data-need-id]")
+    ] == [
+        ("REQ_B.b1", True),
+        ("REQ_W", True),
+        ("REQ_W.p2", False),
+        ("REQ_W.p1", False),
+    ]
 
 
 @pytest.mark.parametrize("test_app", project(), indirect=True)
