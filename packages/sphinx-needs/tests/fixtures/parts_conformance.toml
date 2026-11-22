@@ -1228,7 +1228,6 @@ TEST_1 = ["REQ_1.nope"]
 name = "links-a-missing-need"
 section = "links"
 why = "a link to a part of a need that does not exist is dead, one finding, named by its address with its condition taken off"
-divergent = { ubcode = "the dead link is named without its part: NOPE_1" }
 config = '''
 [needs.links.tests]
 '''
@@ -1241,6 +1240,26 @@ source = '''
 findings = [{ class = "dead link" }]
 [case.expect.dead]
 TEST_1 = ["NOPE_1.p1"]
+
+[[case]]
+name = "links-a-missing-namespaced-need"
+section = "links"
+why = "with namespaced ids on, a link to a part of a need that does not exist is dead, one finding, named by its address as written: SUP01::NOPE_1.p1"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.links.tests]
+'''
+source = '''
+.. test:: Links
+   :id: TEST_1
+   :tests: SUP01::NOPE_1.p1
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.dead]
+TEST_1 = ["SUP01::NOPE_1.p1"]
 
 [[case]]
 name = "links-a-condition-is-read-on-the-need"
@@ -1319,9 +1338,8 @@ section = "links"
 why = "a schema's network rule validates the need a link to a part names: a part of a spec satisfies a rule asking for a link to a spec, and nothing is reported"
 clean = true
 config = '''
-[[needs.schema_definitions.schemas]]
-select = { properties = { type = { const = "impl" } } }
-validate = { network = { links = { contains = { local = { properties = { type = { const = "spec" } } } }, minContains = 1 } } }
+[needs]
+schema_definitions_from_json = "schemas.json"
 '''
 source = '''
 .. spec:: A specification
@@ -1333,6 +1351,7 @@ source = '''
    :id: IMPL_1
    :links: SPEC_1.s1
 '''
+files = { "schemas.json" = '''{"schemas": [{"select": {"properties": {"type": {"const": "impl"}}}, "validate": {"network": {"links": {"contains": {"local": {"properties": {"type": {"const": "spec"}}}}, "minContains": 1}}}}]}''' }
 [case.expect]
 findings = []
 [case.expect.dead]
@@ -1738,7 +1757,6 @@ include_parts = true
 name = "derived-copy-given-a-part-address"
 section = "derived"
 why = "copy given a part address as its need_id reads the need: SPEC_1, copying owner from REQ_1.p1, copies REQ_1's owner, as SPEC_2 copying from REQ_1 does"
-divergent = { ubcode = "copy given a part address reports a dynamic function error and copies nothing: SPEC_1 gets no owner_copy" }
 clean = true
 config = '''
 [needs.fields.owner]
@@ -1802,4 +1820,73 @@ findings = []
 [[case.filters]]
 filter = 'owner_copy == "alice"'
 expected = []
+include_parts = true
+
+[[case]]
+name = "derived-copy-with-a-filter-falls-back-to-a-part-address"
+section = "derived"
+why = "copy whose filter matches nothing falls back to its need_id, and a part address given there reads the part's need: SPEC_1, filtering for no need and given REQ_1.p1, copies REQ_1's owner"
+clean = true
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.owner_copy]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+
+   :np:`(p1) the part`
+
+.. spec:: Copies through the part when its filter matches nothing
+   :id: SPEC_1
+   :owner_copy: [[copy("owner", need_id="REQ_1.p1", filter="id == 'ZZZZZ'")]]
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'owner_copy == "alice"'
+expected = ["SPEC_1"]
+include_parts = true
+
+[[case]]
+name = "derived-copy-of-a-back-link-field-through-a-part"
+section = "derived"
+why = "copy of a <link type>_back field given a part address copies the need's back links, not the part's: SPEC_1, copying tests_back from REQ_1.p1, gets TEST_8, which links the need, as well as TEST_9, which links the part"
+clean = true
+config = '''
+[needs.links.tests]
+
+[needs.fields.back_copy]
+schema = { type = "array", items = { type = "string" } }
+default = []
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+.. test:: Links the need
+   :id: TEST_8
+   :tests: REQ_1
+
+.. test:: Links the part
+   :id: TEST_9
+   :tests: REQ_1.p1
+
+.. spec:: Copies the back links through the part
+   :id: SPEC_1
+   :back_copy: [[copy("tests_back", need_id="REQ_1.p1")]]
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = '"TEST_8" in back_copy and "TEST_9" in back_copy'
+expected = ["SPEC_1"]
 include_parts = true
