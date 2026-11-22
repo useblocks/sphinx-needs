@@ -77,8 +77,8 @@
 #     only that `c.this_doc()` compares with `index`: it says nothing about which
 #     candidates a directive on that page would have. `expected` lists the ids it selects,
 #     sorted by code point, a part as `<need>.<part>`, and the filter reports nothing. An
-#     entry pins only what a part ANSWERS; which of needs and parts a filter selects when
-#     it does not ask for parts is not settled, and no entry pins it
+#     entry pins only what a part ANSWERS; which of needs and parts a view's filter
+#     selects is pinned by the `view = true` entries below
 #   - an entry saying `view = true`, in place of `include_parts` (never both), is
 #     evaluated as the `:filter:` of a view written in `index.rst` (a needtable, a
 #     needlist) is, under the `views_include_parts` of the case's `[needs]` table, which

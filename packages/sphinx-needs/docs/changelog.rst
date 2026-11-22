@@ -38,17 +38,23 @@ Improvements
   :ref:`needpie` line or a :ref:`needbar` cell (and of either chart's scope) and of :ref:`need_count` is tested on
   the :ref:`need parts <need_part>` beside the needs. ``True`` tests every need and every part, as every release so
   far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's
-  ``:show_parts:``), ``is_part`` selects nothing, a needflow draws a link to a part as a dotted edge to the part's
-  need, and filter code and a filter function are handed needs alone (a part they build themselves is dropped,
-  unless :ref:`needs_allow_unsafe_filters`). Unset, it is ``True`` in 9.x and ``False`` from 10.0. While it is
-  unset, each view, chart line or cell and ``:need_count:`` whose result holds a need part reports
-  ``needs.views_include_parts``, once, where it is written, naming how many parts it lists or counts: set the value
-  either way (``True`` keeps the parts, ``False`` lists needs only now) or suppress the warning type to silence it,
-  until which a ``-W`` build of such a project fails on this release. A needtable whose matched parts are each
-  listed under their need with ``:show_parts:`` is not reported, nor is :ref:`needextract`. Functions and rules
-  that take ``include_parts``, needextend, warning checks, constraints, the builder's filter and ``needs.json`` do
-  not read the value; changing it re-reads no document. From 10.0 a view lists needs, not need parts, unless it
-  asks: set ``needs_views_include_parts`` either way to keep a project's views through that release.
+  ``:show_parts:``), ``is_part`` selects nothing, a needflow draws a link to a part of a need it shows as an edge to
+  that need, in the link type's ``style_part`` (dotted by default), and filter code and a filter function are
+  handed needs alone (a part they build themselves is dropped, unless :ref:`needs_allow_unsafe_filters`). Unset, it
+  is ``True`` in 9.x and ``False`` from 10.0. While it is unset, each view, chart line or cell and ``:need_count:``
+  whose result holds a need part reports ``needs.views_include_parts``, once, where it is written, saying how many
+  need parts its filter selects (a count: how many it counts), before any ``:max_items:`` cap; so does a needflow
+  whose needs link to parts of its needs, saying how many such links it draws to the parts' needs from 10.0. Set
+  the value either way (``True`` keeps the views as they are, ``False`` selects needs alone now) or suppress the
+  warning type to silence it, until which a ``-W`` build of such a project fails on this release. A needtable whose
+  matched parts are each listed under their need with ``:show_parts:`` is not reported, nor is :ref:`needextract`.
+  The report is decided from each place's result: it cannot see a view whose filter string, filter code or filter
+  function reads ``needs`` itself, nor a chart's ``:filter-func:``, and it can name a place whose output stays the
+  same (filter code that builds parts itself, with unsafe filters allowed; a ``:need_count:`` ratio whose two
+  halves both hold parts). Functions and rules that take ``include_parts``, needextend, warning checks,
+  constraints, the builder's filter and ``needs.json`` do not read the value; changing it re-reads no document.
+  From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
+  keep a project's views through that release.
 
 Bug fixes
 .........
@@ -184,8 +190,9 @@ Bug fixes
   The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or
   :ref:`needbar`, or of :ref:`need_count`, that tests ``title``, a needflow's :ref:`highlight <needflow_highlight>`
   or :ref:`border_color <needflow_border_color>`, a needgantt's :ref:`milestone_filter <needgantt_milestone_filter>`
-  and a :ref:`sort_by <option_sort_by>` ``title`` now match or order a need part by its text, so such a view lists,
-  counts or marks a need's parts only where their text matches, where it matched them by their need's title:
+  and a :ref:`sort_by <option_sort_by>` ``title`` now match or order a need part by its text, where the view's
+  filter tests need parts (:ref:`needs_views_include_parts`), so such a view lists, counts or marks a need's parts
+  only where their text matches, where it matched them by their need's title:
   ``:filter: title == 'Alpha'`` listed the need titled *Alpha* and each of its parts, and now lists the need alone.
   A needlist line of a part shows the part's text (``p1: brake fast``), where it showed its need's title
   (``p1: Alpha``); a needgantt element of a part is labelled by its text; a needtable sorted by ``title`` sorts the

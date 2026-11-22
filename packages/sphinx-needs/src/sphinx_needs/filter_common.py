@@ -151,7 +151,8 @@ def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
 
 
 #: What an unset ``needs_views_include_parts`` means: ``True`` through the 9.x series,
-#: each view whose result holds a part reporting it (:func:`_report_parts_in_view`).
+#: each place whose output changes at 10.0, as its result shows, reporting it
+#: (:func:`_report_parts_in_view`).
 #: From 10.0 unset means ``False``: this constant changes, and the report goes.
 _VIEWS_INCLUDE_PARTS_UNSET = True
 
@@ -173,10 +174,11 @@ def _view_candidates(
     the needs alone (``needs_views_include_parts``).
 
     Every place that feeds a view, a chart or ``:need_count:`` takes its candidates
-    here, and nothing else reads the value: a function or a rule that asks for parts
-    (``include_parts``) reads them itself, and :meth:`NeedsView.to_list_with_parts`
-    keeps its meaning. Under the needs alone, filter code and a ``:filter-func:`` are
-    handed needs only.
+    here, and nothing else gives a view its candidates (needflow reads the value
+    besides, through :func:`_views_include_parts`, to re-point a link to a part): a
+    function or a rule that asks for parts (``include_parts``) reads them itself, and
+    :meth:`NeedsView.to_list_with_parts` keeps its meaning. Under the needs alone,
+    filter code and a ``:filter-func:`` are handed needs only.
     """
     if _views_include_parts(config):
         return needs_view.to_list_with_parts()

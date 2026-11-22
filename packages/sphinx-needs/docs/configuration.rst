@@ -1773,12 +1773,14 @@ a content line of :ref:`needpie` and a cell of :ref:`needbar` (with the scope of
   of its own: a row, a line, a node inside its need, a gantt element, a count of one.
 * ``False``: the filter is tested on the needs alone, so ``is_part`` selects nothing, and a view shows a need's parts
   only where it asks: a needtable with :ref:`show_parts <needtable_show_parts>` lists the parts of each need it
-  lists, under it. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, dotted as a
-  part link is. Filter code and a filter function are handed needs alone, and their result is matched to them, so a
-  part the code builds itself is dropped (kept with :ref:`needs_allow_unsafe_filters`).
+  lists, under it. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
+  type's ``style_part`` (dotted by default). Filter code and a filter function are handed needs alone, and their
+  result is matched to them, so a part the code builds itself is dropped (kept with
+  :ref:`needs_allow_unsafe_filters`).
 
 **Unset (the default), it is** ``True`` **in 9.x, and** ``False`` **from 10.0**: from 10.0 a view lists needs, not
-need parts, unless it asks. Set it either way to keep a project's views through that release:
+need parts, unless it asks (only a needtable can, with ``:show_parts:``). Set it either way to keep a project's views
+through that release:
 
 .. code-block:: python
 
@@ -1791,11 +1793,28 @@ or in ``ubproject.toml``:
    [needs]
    views_include_parts = true
 
-While it is unset, each view, chart line or cell and :ref:`need_count` whose result holds a need part reports
-``needs.views_include_parts``, once per place, where it is written, saying how many parts it lists or counts.
-Setting the value either way silences it (``True`` keeps the parts, ``False`` lists needs only now), as does
-``suppress_warnings = ["needs.views_include_parts"]``. :ref:`needextract`, which never shows a part, is not
-reported, nor is a needtable whose matched parts are each listed under their need with ``:show_parts:``.
+While it is unset, a place reports ``needs.views_include_parts``, once, where it is written, as its result
+decides:
+
+* each view, chart line or cell and :ref:`need_count` whose result holds a need part, saying how many need parts its
+  filter selects (a chart line, a cell or a count: how many it counts). The number is taken before any ``max_items``
+  cap, as the filter selects it: a capped view whose parts fall beyond the cap changes too, as its needs move up
+  into the window or the total its notice gives shrinks. A needtable with ``:show_parts:`` counts the parts it lists
+  on rows of their own, those whose need is not a row; one whose matched parts are each listed under their need is
+  not reported.
+* each :ref:`needflow` whose needs link to parts of its needs, saying how many such links it draws to the parts'
+  needs from 10.0, where today it draws no edge for them or an edge to the part (with the parts its filter selects,
+  in one report, where it selects any).
+
+Setting the value either way silences it (``True`` keeps the views as they are, ``False`` selects needs alone now),
+as does ``suppress_warnings = ["needs.views_include_parts"]``. :ref:`needextract`, which never shows a part, is not
+reported.
+
+The report sees what a place's result holds, and no more. It cannot see a view whose filter string, filter code or
+filter function reads ``needs`` itself (how many needs there are, say, or which parts some need has), nor a chart's
+``:filter-func:``: such a place can change at 10.0 without a report. And it can report a place whose output does
+not change: filter code or a filter function that builds parts itself, with :ref:`needs_allow_unsafe_filters`, or a
+``:need_count:`` ratio whose two halves both hold parts and give the same percentage without them.
 
 It does not reach a filter that is not a view's: :ref:`links_from_filter`, :ref:`links_from_match` and a derived
 ``links`` rule (:ref:`needs_derive`), which test parts where they are given ``include_parts``, and every other

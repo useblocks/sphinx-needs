@@ -606,9 +606,11 @@ def read_bool_override(_app: Sphinx, config: Config) -> None:
     """Read ``-D needs_views_include_parts=0`` (and ``=1``) as the boolean it means.
 
     From Sphinx 8, ``Config.convert_overrides`` turns ``0`` and ``1`` into ``False`` and
-    ``True`` for a value that may be a boolean. Sphinx 7.4 does that only for a value
-    whose default is a boolean, and passes the text through for this one, whose default
-    is ``None``: read as it came, ``"0"`` would be true, and its type reported.
+    ``True`` for a value that may be a boolean. Sphinx 7.4 turns a text into a boolean
+    only for a value whose default is a boolean or whose one valid type is ``bool``,
+    and declares no other type, reading every text but ``0`` and the empty one as
+    true; this value's default is ``None`` and it may be ``None``, so 7.4 passes the
+    text through: read as it came, ``"0"`` would be true, and its type reported.
     """
     name = "needs_views_include_parts"
     overrides = getattr(config, "overrides", None)
