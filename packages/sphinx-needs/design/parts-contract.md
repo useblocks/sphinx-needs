@@ -101,10 +101,10 @@ split off, and a namespace segment holds no `.`: the grammar of a need id, secti
 
 A filter that asks for parts tests the parts beside the needs. A part answers its own `id`
 (the part id), `id_complete` (`ID.part`), `id_parent` (its need's id), `is_part` (true) and
-`is_need` (false), its text as `content`, no links out (every link type is empty), and its
-own back links (`<link type>_back`). Every other name it answers is its need's: the need's
-type, status and fields, and the id facets (`c.id.ns`, `c.id.local`, `c.in_namespace()`)
-included. A part's `title` is not on this page yet (section 9).
+`is_need` (false), its text as `content` and as `title`, no links out (every link type is
+empty), and its own back links (`<link type>_back`). Every other name it answers is its
+need's: the need's type, status and fields, and the id facets (`c.id.ns`, `c.id.local`,
+`c.in_namespace()`) included.
 
 ## 8. Through a part to its need (corpus: `derived`)
 
@@ -135,7 +135,6 @@ warned on or refused, and parts in a graph query schema.
 - Which parts an imported need gets when its record and its content give different parts.
 - Whether a filter, a view or a count that does not ask for parts selects them.
 - How a view draws a part.
-- What a part's `title` is in a filter.
 - A need id that holds a `.`.
 - How a part is written in `needs.json` format 2.
 - Parts in a graph query schema.
