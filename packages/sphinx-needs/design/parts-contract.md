@@ -124,7 +124,29 @@ answers for the part's need, also where it reads a back-link field by name: `cop
 `<link type>_back` field copies the need's. No warning is given, and a write still
 refuses.
 
-## 9. Not on this page yet
+## 9. What a view selects (corpus: `selection`)
+
+A view's filter is tested on the needs of the project, and on their parts where the
+project says so: `views_include_parts` in the `[needs]` table of `ubproject.toml`
+(`needs_views_include_parts` in `conf.py`). A view is a needtable, a needlist, a needflow
+or a needgantt; a needpie's lines and a needbar's cells, and the scope of either; and
+`:need_count:`. Its filter is its `:filter:` and its `:status:`, `:tags:` and `:types:`,
+filter code and a filter function.
+
+- **True**: every need and every part is a candidate, and a part that passes is an item of
+  the view of its own: a row, a line, a node, an element, a count of one.
+- **False**: only needs are candidates. A part is not selected, `is_part` selects
+  nothing, and `id_parent == "X"` selects the need `X` alone, a need answering its own id
+  as `id_parent`. A part is shown only where the view asks for it: a needtable's
+  `:show_parts:` lists the parts of each need it lists, each once, under it.
+
+Every other filter is no view, and the value does not reach it: a filter that asks for
+parts (section 7), a derived field's rule, a function, a `needextend`, a warning check.
+A project that does not write the value gets its tool's default: Sphinx-Needs reads it
+as true through its 9.x series and as false from 10.0. A tool may select needs alone
+whatever the value says; the corpus marks where one does.
+
+## 10. Not on this page yet
 
 These are decided but not yet built in both tools; each joins this page and the corpus
 with the change that builds it. Two are open: whether a need id that holds a `.` is
@@ -133,7 +155,6 @@ warned on or refused, and parts in a graph query schema.
 - The order of a need's parts.
 - Parts a need states that its content does not mark.
 - Which parts an imported need gets when its record and its content give different parts.
-- Whether a filter, a view or a count that does not ask for parts selects them.
 - How a view draws a part.
 - A need id that holds a `.`.
 - How a part is written in `needs.json` format 2.
