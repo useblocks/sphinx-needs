@@ -33,11 +33,10 @@ from sphinx_needs.directives.needflow._model import collect_edges
 from sphinx_needs.filter_common import filter_scope_ids
 from sphinx_needs_testkit import build_warnings
 from tests.util import (
-    PADDING,
     bar_sum_labels,
     chart_images,
-    parallel_available,
     pie_slice_counts,
+    serial_and_parallel,
 )
 
 CONF = """\
@@ -320,6 +319,16 @@ Views
       :filter: is_need
 
       True
+
+.. container:: nf-is-need
+
+   .. needflow::
+      :filter: is_need
+      :link_types: links
+
+.. container:: count-ratio-parts
+
+   :need_count:`is_need ? is_part`
 """
 
 
@@ -503,6 +512,7 @@ WITH_PARTS: dict[str, Any] = {
     "count-true": "13",
     "count-ratio": "76.9",
     "count-id": "1",
+    "count-ratio-parts": "160.0",
 }
 NEEDS_ONLY: dict[str, Any] = {
     "nt-all": ALL_NEEDS,
@@ -525,6 +535,7 @@ NEEDS_ONLY: dict[str, Any] = {
     "count-true": "8",
     "count-ratio": "62.5",
     "count-id": "0",
+    "count-ratio-parts": "inf",
 }
 EXPECTED = {"true": WITH_PARTS, "unset": WITH_PARTS, "false": NEEDS_ONLY}
 
@@ -548,6 +559,7 @@ def consumers(app: SphinxTestApp, diagrams: dict[str, str]) -> dict[str, Any]:
         "count-true",
         "count-ratio",
         "count-id",
+        "count-ratio-parts",
     ):
         found[name] = text(app, name)
     return found
@@ -589,11 +601,18 @@ def test_needflow_draws_by_the_value(
 ) -> None:
     """With parts as candidates a part is a node inside its need, and a link to it an
     edge to that node; with the needs alone, a link naming a part of a drawn need ends
-    on that need, styled as a part edge."""
+    on that need, styled as a part edge. A needflow whose filter selects needs alone
+    draws no edge for a link to a part with parts as candidates, as every release so
+    far: the link ends on the part's need under ``False`` only."""
     value = request.node.callspec.id
     diagrams = capture_diagrams(test_app)
     test_app.build()
-    opened, every = diagrams["nf-open"], diagrams["nf-all"]
+    opened, every, needs_only = (
+        diagrams["nf-open"],
+        diagrams["nf-all"],
+        diagrams["nf-is-need"],
+    )
+    assert drawn(needs_only) == ALL_NEEDS
     if value == "false":
         assert drawn(opened) == ["EXT_1", "IMP_1", "REQ_A", "SPEC_N", "TEST_1"]
         assert edges(opened) == [("TEST_1", "REQ_A", True)]
@@ -604,6 +623,7 @@ def test_needflow_draws_by_the_value(
             ("TEST_2", "REQ_A", True),
             ("TEST_2", "SPEC_N", False),
         ]
+        assert edges(needs_only) == edges(every)
     else:
         assert drawn(opened) == sorted(OPEN_WITH_PARTS)
         assert edges(opened) == [("TEST_1", "REQ_A.p1", True)]
@@ -612,6 +632,10 @@ def test_needflow_draws_by_the_value(
             ("TEST_1", "REQ_A.p1", True),
             ("TEST_1", "REQ_B", False),
             ("TEST_2", "REQ_A.p1", True),
+            ("TEST_2", "SPEC_N", False),
+        ]
+        assert edges(needs_only) == [
+            ("TEST_1", "REQ_B", False),
             ("TEST_2", "SPEC_N", False),
         ]
 
@@ -661,10 +685,7 @@ def test_a_scoped_chart_counts_over_needs_alone(test_app: SphinxTestApp) -> None
     assert sorted(item["id_complete"] for item in every) == sorted(ALL_NEEDS + PARTS)
 
 
-FUNC_VIEWS = """\
-Views
-=====
-
+BUILT_BY_THE_FUNC = """
 .. container:: built-by-the-func
 
    .. needtable::
@@ -672,6 +693,8 @@ Views
       :columns: id;title
       :style: table
 """
+
+FUNC_VIEWS = "Views\n=====\n" + BUILT_BY_THE_FUNC
 
 
 @pytest.mark.parametrize(
@@ -754,11 +777,13 @@ def test_a_link_to_a_part_the_need_lacks_draws_nothing(test_app: SphinxTestApp) 
 # --- the report, while the value is unset ---------------------------------------------
 
 
-def _report(line: int, what: str, verb: str, count: int) -> str:
+def _report(
+    line: int, what: str, verb: str, count: int, *, page: str = "views.rst"
+) -> str:
     noun = "need part" if count == 1 else "need parts"
     keep, now = ("listing", "list") if verb == "lists" else ("counting", "count")
     return (
-        f"<srcdir>/views.rst:{line}: WARNING: This {what} {verb} {count} {noun} its "
+        f"<srcdir>/{page}:{line}: WARNING: This {what} {verb} {count} {noun} its "
         f"filter selects, as well as needs: from Sphinx-Needs 10.0 a view's filter "
         f"selects needs only, unless the view asks for parts. Set "
         f"needs_views_include_parts = True to keep {keep} them, or False to {now} "
@@ -794,27 +819,11 @@ UNSET_REPORTS = [
     _report(129, "need_count 'True'", "counts", 5),
     _report(133, "need_count \"status == 'open' ? True\"", "counts", 5),
     _report(137, "need_count 'id == \"p1\"'", "counts", 1),
+    _report(154, "need_count 'is_need ? is_part'", "counts", 5),
 ]
 
 
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        pytest.param(project("unset"), id="serial"),
-        pytest.param(
-            {
-                "buildername": "html",
-                "files": [*files("unset"), *PADDING],
-                "parallel": 2,
-            },
-            id="j2",
-            marks=pytest.mark.skipif(
-                not parallel_available, reason="Parallel execution not supported"
-            ),
-        ),
-    ],
-    indirect=True,
-)
+@pytest.mark.parametrize("test_app", serial_and_parallel(files("unset")), indirect=True)
 def test_unset_reports_each_place_whose_result_holds_a_part(
     test_app: SphinxTestApp,
 ) -> None:
@@ -825,13 +834,27 @@ def test_unset_reports_each_place_whose_result_holds_a_part(
 
 @pytest.mark.parametrize(
     "test_app",
-    [project("true"), project("false")],
+    [
+        {
+            "buildername": "html",
+            "files": files(
+                value,
+                views=VIEWS + BUILT_BY_THE_FUNC,
+                conf="needs_allow_unsafe_filters = True\n",
+            ),
+        }
+        for value in ("true", "false")
+    ],
     indirect=True,
     ids=["true", "false"],
 )
 def test_a_value_set_either_way_reports_nothing(test_app: SphinxTestApp) -> None:
+    """Set either way, nothing is reported, though a result holds parts: under
+    ``False`` too, as a filter function that builds parts itself, with unsafe filters
+    allowed, has them taken as it gives them."""
     test_app.build()
     assert build_warnings(test_app) == []
+    assert rows(test_app, "built-by-the-func") == ["REQ_A", "REQ_A.p1", "REQ_A.p2"]
 
 
 INCLUDED = """\
@@ -843,10 +866,16 @@ INCLUDED = """\
 
 TWICE = [
     (Path("conf.py"), CONF),
-    (Path("index.rst"), INDEX.replace("   views\n", "   first\n   second\n")),
+    (
+        Path("index.rst"),
+        INDEX.replace("   views\n", "   first\n   second\n   third\n   fourth\n"),
+    ),
     (Path("first.rst"), "First\n=====\n\n.. include:: table.rst.inc\n"),
     (Path("second.rst"), "Second\n======\n\n.. include:: table.rst.inc\n"),
     (Path("table.rst.inc"), INCLUDED),
+    # a table of each page's own, at the same line of both
+    (Path("third.rst"), "Third\n=====\n\n" + INCLUDED),
+    (Path("fourth.rst"), "Fourth\n======\n\n" + INCLUDED),
     (Path("viewfuncs.py"), FILTER_FUNC),
     (Path("imported.json"), json.dumps(IMPORTED)),
     (Path("external.json"), json.dumps(EXTERNAL)),
@@ -856,20 +885,65 @@ TWICE = [
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "files": TWICE}], indirect=True
 )
-def test_a_place_written_on_two_pages_is_reported_once(
+def test_a_place_is_reported_once_whatever_pages_show_it(
     test_app: SphinxTestApp,
 ) -> None:
-    """One table, included by two documents: one place, one report."""
+    """One table, included by two documents: one place, one report. Two tables, each
+    written on a page of its own at the same line: two places, two reports."""
     test_app.build()
     assert rows(test_app, "body", "first") == rows(test_app, "body", "second") == PARTS
-    assert reports(test_app) == [
-        "<srcdir>/table.rst.inc:1: WARNING: This needtable lists 5 need parts its "
-        "filter selects, as well as needs: from Sphinx-Needs 10.0 a view's filter "
-        "selects needs only, unless the view asks for parts. Set "
-        "needs_views_include_parts = True to keep listing them, or False to list "
-        "needs only now; or suppress needs.views_include_parts. "
-        "[needs.views_include_parts]"
+    assert rows(test_app, "body", "third") == rows(test_app, "body", "fourth") == PARTS
+    assert sorted(reports(test_app)) == [
+        _report(4, "needtable", "lists", 5, page="fourth.rst"),
+        _report(1, "needtable", "lists", 5, page="table.rst.inc"),
+        _report(4, "needtable", "lists", 5, page="third.rst"),
     ]
+
+
+def test_each_build_of_one_application_reports_again(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """What was reported is forgotten at each build: one application built twice, its
+    views page changed in between, reports every place of it both times."""
+    for path, content in files("unset"):
+        (tmp_path / path).write_text(content, encoding="utf-8")
+    app = make_app("html", srcdir=tmp_path)
+    app.build()
+    first = reports(app)
+    (tmp_path / "views.rst").write_text(VIEWS + "\nA changed line.\n", encoding="utf-8")
+    app.build()
+    second = reports(app)[len(first) :]
+    assert sorted(first) == sorted(second) == sorted(UNSET_REPORTS)
+
+
+#: A needflow whose ``max_items`` hides every part its filter selects.
+CAPPED_VIEWS = """\
+Views
+=====
+
+.. container:: capped
+
+   .. needflow::
+      :filter: id_parent == 'REQ_A'
+      :max_items: 1
+      :link_types: links
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "files": files("unset", views=CAPPED_VIEWS)}],
+    indirect=True,
+)
+def test_a_needflow_reports_what_its_filter_selects_before_its_cap(
+    test_app: SphinxTestApp,
+) -> None:
+    """The cap keeps the first item alone, the need, but the parts it hides are what
+    the filter selects, and from 10.0 the cap's window holds needs alone: reported."""
+    diagrams = capture_diagrams(test_app)
+    test_app.build()
+    assert drawn(diagrams["capped"]) == ["REQ_A"]
+    assert reports(test_app) == [_report(6, "needflow", "lists", 2)]
 
 
 @pytest.mark.parametrize(
