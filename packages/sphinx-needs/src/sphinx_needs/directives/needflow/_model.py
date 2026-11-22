@@ -41,6 +41,7 @@ from sphinx_needs.filter_common import (
     _need_by_need,
     _report_filter_text,
     _report_parts_in_view,
+    _views_include_parts,
     apply_max_items,
     process_filters,
 )
@@ -459,7 +460,12 @@ def build_graph(
         ),
     )
 
-    edges = collect_edges(found_needs, allowed_link_types, drawn)
+    edges = collect_edges(
+        found_needs,
+        allowed_link_types,
+        drawn,
+        part_links_to_needs=not _views_include_parts(needs_config),
+    )
 
     # what the legend describes is what was drawn, so it is derived from the graph and
     # not from the configuration -- a legend listing things the reader cannot find in
@@ -591,6 +597,8 @@ def collect_edges(
     allowed_link_types: list[LinkShape],
     drawn: Container[str],
     /,
+    *,
+    part_links_to_needs: bool = False,
 ) -> list[GraphEdge]:
     """Collect every link between the needs of a result.
 
@@ -601,22 +609,36 @@ def collect_edges(
     :param found_needs: The needs and need parts that passed the filter.
     :param allowed_link_types: The link fields to draw.
     :param drawn: The complete ids of the drawn nodes, from :func:`build_node_tree`.
+    :param part_links_to_needs: Whether the result holds needs alone, a view's filter
+        not being tested on parts (``needs_views_include_parts`` false): a link naming a
+        part of a need of the result then ends on that need, styled as a part edge.
     :return: The edges, in the order the engines emit them.
     """
     # a need and a need part are both identified by their complete id
     found_ids = {need["id_complete"] for need in found_needs}
+    found_by_id = (
+        {need["id"]: need for need in found_needs if isinstance(need, NeedItem)}
+        if part_links_to_needs
+        else {}
+    )
     edges: list[GraphEdge] = []
     for need in found_needs:
         source_id = need["id_complete"]
         for link_type in allowed_link_types:
             for link in need[link_type.name]:
+                target_id = link
                 if link not in found_ids:
-                    # the link target was filtered out, so there is nothing to point at
-                    continue
+                    # the link target was filtered out, so there is nothing to point
+                    # at; with no part in the result, a part of a need of it ends on
+                    # that need
+                    owner = need_and_part_at(found_by_id, link)
+                    if owner is None or owner.part is None:
+                        continue
+                    target_id = owner.need["id"]
                 edges.append(
                     GraphEdge(
                         source_id=source_id,
-                        target_id=link,
+                        target_id=target_id,
                         link_type=link_type,
                         # a part edge is one whose link names a part, its address read
                         # as a link's is; the id of the need it starts at plays no part
@@ -625,7 +647,7 @@ def collect_edges(
                         # settled, and its edge is styled as it was
                         is_part=NeedLink.parse_address(link).part is not None,
                         source_drawn=source_id in drawn,
-                        target_drawn=link in drawn,
+                        target_drawn=target_id in drawn,
                     )
                 )
     return edges
