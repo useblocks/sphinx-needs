@@ -279,7 +279,11 @@ Gantt titles
 
    Body only.
 
-.. story:: Find and report bug
+.. story:: Find and  report
+   :id: US_RUN
+   :duration: 1
+
+.. story:: Find & report "bug" <#1>; it's Größe 🚀
    :id: US_ORDINARY
    :duration: 2
 
@@ -318,6 +322,11 @@ Gantt titles
 
    .. needgantt:: Need empty
       :filter: id == "US_EMPTY"
+
+.. container:: need-run
+
+   .. needgantt:: Need run
+      :filter: id == "US_RUN"
 
 .. container:: need-ordinary
 
@@ -366,11 +375,13 @@ def _elements(uml: str) -> str:
 def test_an_element_label_draws_whatever_its_title_holds(test_app):
     """A gantt element is declared ``[<label>] as [<id>]``, and PlantUML refuses the
     whole chart when the label spans lines, is empty or holds a bracket. The label is the
-    title on one line, the element's id when that is empty, and each bracket written as
-    a character reference, which the chart draws as the bracket itself.
+    title on one line, each run of white space one space, the element's id when that is
+    empty, and each bracket written as a character reference, which the chart draws as
+    the bracket itself.
 
     A need part's ``title`` is its text, where a line break or an empty text is ordinary,
-    so a part reaches each case; a need's title reaches them too. An ordinary title is
+    so a part reaches each case; a need's title reaches them too. A title with single
+    spaces and no bracket, punctuation, a non-ASCII letter and an emoji included, is
     written as it always was.
     """
     app = test_app
@@ -387,7 +398,8 @@ def test_an_element_label_draws_whatever_its_title_holds(test_app):
         "[close &#93; and &#91;open] as [US_BRACKETS] lasts 1 days",
         "[first line second line] as [US_LINES] lasts 1 days",
         "[US_EMPTY] as [US_EMPTY] lasts 1 days",
-        "[Find and report bug] as [US_ORDINARY] lasts 2 days",
+        "[Find and report] as [US_RUN] lasts 1 days",
+        '[Find & report "bug" <#1>; it\'s Größe 🚀] as [US_ORDINARY] lasts 2 days',
     ]
 
     drawn = {
@@ -398,7 +410,8 @@ def test_an_element_label_draws_whatever_its_title_holds(test_app):
         "need-brackets": "close ] and [open",
         "need-lines": "first line second line",
         "need-empty": "US_EMPTY",
-        "need-ordinary": "Find and report bug",
+        "need-run": "Find and report",
+        "need-ordinary": 'Find & report "bug" <#1>; it\'s Größe 🚀',
     }
     for container, label in drawn.items():
         assert label in _drawn_texts(app, container), container
