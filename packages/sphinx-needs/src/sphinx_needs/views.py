@@ -200,7 +200,18 @@ class NeedsView(Mapping[str, "NeedItem"]):
     def _to_list_of_needs(self) -> NeedsAndPartsListView:
         """Create a new view of the needs alone, in the shape of
         :meth:`to_list_with_parts`: what a view's filter is tested on when
-        ``needs_views_include_parts`` is false."""
+        ``needs_views_include_parts`` is false.
+
+        Whatever it answers (its items, each filter method's view, a filter tested need
+        by need) is what :meth:`to_list_with_parts`'s view answers with the parts left
+        out, in the same order: of a view of every need it is unrestricted as that one
+        is (``filter_ids`` answering in the order of its values), and of a narrowed view
+        it holds the needs in the view's own order, as that one does.
+        """
+        if self._selected_ids is None:
+            return NeedsAndPartsListView(
+                _indexes=self._indexes, _selected_ids=None, _needs_only=True
+            )
         return NeedsAndPartsListView(
             _indexes=self._indexes,
             _selected_ids={(id, None): None for id in self},
@@ -269,13 +280,14 @@ class NeedsAndPartsListView:
     and then overwriting a subset of fields with the values from the part.
     """
 
-    __slots__ = ("_indexes", "_maybe_len", "_selected_ids")
+    __slots__ = ("_indexes", "_maybe_len", "_needs_only", "_selected_ids")
 
     def __init__(
         self,
         *,
         _indexes: _LazyIndexes,
         _selected_ids: dict[tuple[str, str | None], None] | None,
+        _needs_only: bool = False,
     ):
         """Initialize a new view of needs.
 
@@ -288,6 +300,9 @@ class NeedsAndPartsListView:
         self._selected_ids = (
             _selected_ids  # note we use a dict here like an ordered set
         )
+        # with no selected ids: every need without its parts, rather than every need
+        # and part (NeedsView._to_list_of_needs)
+        self._needs_only = _needs_only
         # Cache the length of the needs when first requested
         self._maybe_len: int | None = None
 
@@ -300,7 +315,8 @@ class NeedsAndPartsListView:
         if self._selected_ids is None:
             for need in self._all_needs.values():
                 yield need
-                yield from need.iter_part_items()
+                if not self._needs_only:
+                    yield from need.iter_part_items()
         else:
             for id, part_id in self._selected_ids:
                 if id not in self._all_needs:
@@ -336,7 +352,8 @@ class NeedsAndPartsListView:
                 return self._all_needs.get(id)
         else:
             if (
-                (self._selected_ids is None or (id, part_id) in self._selected_ids)
+                not self._needs_only
+                and (self._selected_ids is None or (id, part_id) in self._selected_ids)
                 and (need := self._all_needs.get(id)) is not None
                 and (part := need.get_part_item(part_id)) is not None
             ):
@@ -349,7 +366,9 @@ class NeedsAndPartsListView:
     ) -> NeedsAndPartsListView:
         """Create a new view with only the needs/parts with the given ids."""
         if self._selected_ids is None:
-            selected_ids = dict.fromkeys(ids)
+            selected_ids = dict.fromkeys(
+                (n for n in ids if n[1] is None) if self._needs_only else ids
+            )
         else:
             selected_ids = {n: None for n in ids if n in self._selected_ids}
         return NeedsAndPartsListView(_indexes=self._indexes, _selected_ids=selected_ids)
@@ -362,11 +381,14 @@ class NeedsAndPartsListView:
             need_and_part_ids: list[tuple[str, str | None]] = [
                 (need_id, None) for need_id in values if need_id in self._all_needs
             ]
-            for part_id in values:
-                need_and_part_ids.extend(
-                    (need_id, part_id)
-                    for need_id in self._indexes.indexes.parts_to_needs.get(part_id, [])
-                )
+            if not self._needs_only:
+                for part_id in values:
+                    need_and_part_ids.extend(
+                        (need_id, part_id)
+                        for need_id in self._indexes.indexes.parts_to_needs.get(
+                            part_id, []
+                        )
+                    )
             selected_ids = need_and_part_ids
         else:
             val_set = set(values)
