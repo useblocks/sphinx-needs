@@ -196,8 +196,10 @@ Bug fixes
 
 - 🐛 A :ref:`needgantt` draws an element whose title holds a line break or brackets, or is empty, where PlantUML
   refused the whole chart. A need part's title is its text, where each of these is ordinary, and a need's title could
-  hold them too. The element's label is now its title on one line, its id when that is empty, and each bracket is
-  written so that the chart draws it. An ordinary title is drawn as before.
+  hold them too. The element's label is now its title on one line, each run of white space one space (so a double
+  space, a tab or a no-break space inside a title is drawn as one space), the element's id when the title is empty,
+  and each bracket written so that the chart draws it as a bracket. A title with single spaces and no bracket is
+  drawn as before.
 
 Internal changes
 ................

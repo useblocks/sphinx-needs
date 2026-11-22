@@ -141,10 +141,10 @@ The filter string must be a valid Python expression:
 
 The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or
 :ref:`needbar`, and of :ref:`need_count`, is evaluated on every need and on every :ref:`need part <need_part>`, so a
-part the filter matches is listed, drawn or counted as an item of its own. A needtable with
-:ref:`show_parts <needtable_show_parts>` lists it once: under its need when its need is a row, and on a row of its
-own when its need is not. :ref:`links_from_filter`, :ref:`links_from_match` and a :ref:`derived <needs_derive>`
-``links`` rule test the parts too where they are given ``include_parts``.
+part the filter matches is listed, drawn or counted as an item of its own (a needflow draws a part only with its
+need). A needtable with :ref:`show_parts <needtable_show_parts>` lists it once: under its need when its need is a
+row, and on a row of its own when its need is not. :ref:`links_from_filter`, :ref:`links_from_match` and a
+:ref:`derived <needs_derive>` ``links`` rule test the parts too where they are given ``include_parts``.
 
 A need part answers its own ``id`` (the part's id), ``id_complete`` (``NEED.part``), ``id_parent`` (its need's id),
 ``is_part`` (true) and ``is_need`` (false), its text as both ``content`` and ``title``, no outgoing links (every link
