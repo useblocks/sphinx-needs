@@ -75,8 +75,8 @@ def test_duplicate_part_id_is_reported_once(test_app: Sphinx):
     app.build()
 
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:8: WARNING: part_need id p1 in need REQ_001 is already taken. need_part may get overridden. [needs.duplicate_part_id]",
-        "<srcdir>/index.rst:13: WARNING: part_need id p1 in need REQ_002 is already taken. need_part may get overridden. [needs.duplicate_part_id]",
+        "<srcdir>/index.rst:8: WARNING: Need 'REQ_001' already has a part 'p1': the first role of an id marks the part, this one is shown as plain text. [needs.duplicate_part_id]",
+        "<srcdir>/index.rst:13: WARNING: Need 'REQ_002' already has a part 'p1': the first role of an id marks the part, this one is shown as plain text. [needs.duplicate_part_id]",
         "<srcdir>/index.rst:15: WARNING: Need part not associated with a need. [needs.part]",
     ]
 
@@ -705,7 +705,7 @@ def test_a_part_in_the_html_family(test_app: Sphinx, page: str) -> None:
         part_id: dict(part) for part_id, part in needs["REQ_1"]["parts"].items()
     } == {
         "p1": {"id": "p1", "content": "a local part", "links_back": ["TEST_1"]},
-        "d1": {"id": "d1", "content": "the first", "links_back": []},
+        "d1": {"id": "d1", "content": "the first"},
     }
 
 

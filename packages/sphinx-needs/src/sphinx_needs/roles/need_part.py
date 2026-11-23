@@ -97,22 +97,57 @@ def process_need_part(
             )
 
 
+#: The builder formats whose writer anchors a ``target`` node and no ``inline``'s ids:
+#: LaTeX writes no ``\label`` for an inline, and texinfo writes its ``@anchor`` at the
+#: end of the section.
+_FORMATS_ANCHORING_TARGETS: Final = frozenset({"latex", "texinfo"})
+
+
 def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> None:
-    """Replace every ``NeedPart`` in a resolved doctree by the nodes it holds.
+    """Replace every ``NeedPart`` in a resolved doctree by what a reader sees of it.
 
     The node only marks where a part is while needs are collected and resolved; what a
-    reader sees is its ``inline`` (the part's text, with its id and its link). Removing
-    the wrapper before a writer runs means a writer, of Sphinx or of another extension,
-    need not know the node for a part in a page's body.
+    reader sees of a part is its ``inline`` (the part's text, with its id and its link).
+    A role that made no part -- one repeating a part id of its need, or one outside
+    every need -- is its text, with no id. Removing the wrapper before a writer runs
+    means a writer, of Sphinx or of another extension, need not know the node for a
+    part in a page's body.
+
+    The html family keeps the part's id on its ``inline``, as it was written there; for
+    LaTeX and texinfo the id moves to a ``target`` at the start of the inline, which is
+    what those writers anchor in place.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
     and for every document: a part on a page holding no need is in the tree too. A part
     written in a section title is not reached here: Sphinx copies a title into its
     tables of contents when the page is read, and the html writer still meets the node
-    there, which its ``html`` visitor is kept for.
+    there, which its ``html`` visitor is kept for. So a role in a section title shows
+    no text in the page's heading either, which then reads as its entries do.
     """
+    anchor_with_target = app.builder.format in _FORMATS_ANCHORING_TARGETS
     for node in list(doctree.findall(NeedPart)):
-        node.replace_self(list(node.children))
+        if node.children:
+            shown = list(node.children)
+            if anchor_with_target:
+                for child in shown:
+                    if isinstance(child, nodes.Element) and child["ids"]:
+                        child.insert(0, nodes.target(ids=child["ids"]))
+                        child["ids"] = []
+        elif _in_section_title(node):
+            shown = []
+        else:
+            shown = [nodes.Text(node.title)]
+        node.replace_self(shown)
+
+
+def _in_section_title(node: nodes.Element) -> bool:
+    """Whether the node is in the title of a section."""
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, nodes.title):
+            return isinstance(parent.parent, nodes.section)
+        parent = parent.parent
+    return False
 
 
 def update_need_with_parts(
@@ -126,14 +161,14 @@ def update_need_with_parts(
         if part_id in parts:
             log_warning(
                 LOGGER,
-                "part_need id {} in need {} is already taken. need_part may get overridden.".format(
-                    part_id, need["id"]
-                ),
+                f"Need '{need['id']}' already has a part '{part_id}': the first role "
+                "of an id marks the part, this one is shown as plain text.",
                 "duplicate_part_id",
                 part_node,
             )
-            # the first part of an id is kept and this one is dropped, but it is in
-            # the need: recorded so, it is not also reported as outside every need
+            # the first part of an id is kept and this one makes no part: it holds no
+            # node, and is shown as its text alone (`unwrap_need_parts`). It is in the
+            # need: recorded so, it is not also reported as outside every need
             part_node.need_id = need["id"]
             continue
 
