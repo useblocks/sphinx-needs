@@ -733,8 +733,9 @@ def test_a_repeated_part_shows_its_text_in_text_and_man(
 )
 def test_a_part_has_a_label_in_latex(test_app: Sphinx) -> None:
     """LaTeX writes a ``\\label`` for a part's address, once, where the part is, so the
-    ``\\hyperref`` of every link and reference to it resolves; the LaTeX writer labels
-    no ``inline``'s ids, and wrote none. A repetition of the id writes no label."""
+    ``\\hyperref`` of each link and reference to it on this page resolves: the part's
+    own id link, the link of ``TEST_1`` and ``:need:``. The LaTeX writer labels no
+    ``inline``'s ids, and wrote none. A repetition of the id writes no label."""
     tex = _built_part_page(test_app, "parts.tex")
     label = r"\phantomsection\label{\detokenize{index:REQ_1.p1}}"
     assert rf"Marks \DUrole{{need-part}}{{{label}a local part{{\hyperref" in tex

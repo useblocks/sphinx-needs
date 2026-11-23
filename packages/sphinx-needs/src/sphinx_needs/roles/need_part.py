@@ -122,11 +122,12 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
     and carries no target and no id.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
-    and for every document: a part on a page holding no need is in the tree too. A part
-    written in a section title is not reached here: Sphinx copies a title into its
-    tables of contents when the page is read, and the html writer still meets the node
-    there, which its ``html`` visitor is kept for. So a role in a section title shows
-    no text in the page's heading either, which then reads as its entries do.
+    and for every document: a part on a page holding no need is in the tree too. A role
+    in a section title is reached here in the page's heading, but not in the copies of
+    the title Sphinx made for its tables of contents when the page was read: the html
+    writer still meets the node there, which its ``html`` visitor is kept for. The
+    heading's own node is left without text on purpose (``_in_section_title``), so that
+    the heading reads as those entries do.
     """
     anchor_with_target = app.builder.format in _FORMATS_ANCHORING_TARGETS
     anchored: set[str] = set()

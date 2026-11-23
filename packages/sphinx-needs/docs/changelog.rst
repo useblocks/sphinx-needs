@@ -237,13 +237,14 @@ Bug fixes
   p1 and  here.``. Such a role is now its text, as plain text: no id, no anchor, no link and no ``need-part``
   class. The first role of an id is still the part, and the ``needs.duplicate_part_id`` warning, still one per
   repetition, now says so (``Need 'REQ_1' already has a part 'p1': the first role of an id marks the part, this
-  one is shown as plain text.``), where it said the part "may get overridden", which it never was. A role in a
-  section title still shows no text, as the page's tables of contents show none.
+  one is shown as plain text.``), where it said the part "may get overridden", which has not been so since 6.0.0.
+  A role in a section title is not changed and still shows no text.
 
   A part's address ``ID.part`` is now an anchor in ``latex`` and ``texinfo`` output. LaTeX wrote no label for it,
   so every link and :ref:`need <role_need>` reference to a part was an undefined reference in the PDF, and texinfo
   wrote the anchor at the end of the section, so a link to a part landed there. Both now anchor it at the start of
-  the part's text.
+  the part's text, once: where a document shows the part twice, as a ``needextract`` of a need on the need's own
+  page does, at the first, as a browser does with an id a page holds twice.
 
   **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a
   ``\phantomsection\label`` at the start of each part; in ``texinfo``, its ``@anchor`` there instead of at the
