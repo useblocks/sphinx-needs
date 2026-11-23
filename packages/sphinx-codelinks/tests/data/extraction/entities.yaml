@@ -3034,8 +3034,8 @@ rule_swift_names:
     - {id: IMPL_N_SWIFT_GENERIC, outcome: exact, entity_kind: "property", qualified_name: "Dictionary.keyCount", start: 27, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_swift_conditional_other_lines:
-  # Rule 7 reads ``#if`` lines alone: a marker directly above ``#else`` or ``#endif``
-  # among declarations falls to rule 8, the entity around it, with no warning.
+  # Rule 7 reads ``#if`` lines alone: a marker directly above ``#elseif``, ``#else`` or
+  # ``#endif`` among declarations falls to rule 8, the entity around it, with no warning.
   lang: swift
   config: default
   extract: [oneline, need_refs]
@@ -3043,6 +3043,9 @@ rule_swift_conditional_other_lines:
     final class Screen {
         #if DEBUG
         func a() {}
+        // @Above elseif, IMPL_R_SWIFT_ABOVE_ELSEIF, impl
+        #elseif os(iOS)
+        func c() {}
         // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl
         #else
         func b() {}
@@ -3050,6 +3053,7 @@ rule_swift_conditional_other_lines:
         #endif
     }
   truth:
+    - {id: IMPL_R_SWIFT_ABOVE_ELSEIF, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
     - {id: IMPL_R_SWIFT_ABOVE_ELSE, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
     - {id: IMPL_R_SWIFT_ABOVE_ENDIF, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
 

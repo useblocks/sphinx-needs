@@ -9,14 +9,52 @@
       },
       "end": {
         "row": 3,
-        "column": 49
+        "column": 53
       }
     },
-    "tagged_scope": "final class Screen {\n    #if DEBUG\n    func a() {}\n    // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl\n    #else\n    func b() {}\n    // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl\n    #endif\n}",
+    "tagged_scope": "final class Screen {\n    #if DEBUG\n    func a() {}\n    // @Above elseif, IMPL_R_SWIFT_ABOVE_ELSEIF, impl\n    #elseif os(iOS)\n    func c() {}\n    // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl\n    #else\n    func b() {}\n    // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl\n    #endif\n}",
     "scope": {
       "kind": "class_declaration",
       "start": 1,
-      "end": 9,
+      "end": 12,
+      "language": "swift",
+      "entity_kind": "class",
+      "qualified_name": "Screen",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Screen"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Above elseif",
+      "id": "IMPL_R_SWIFT_ABOVE_ELSEIF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 8
+      },
+      "end": {
+        "row": 6,
+        "column": 49
+      }
+    },
+    "tagged_scope": "final class Screen {\n    #if DEBUG\n    func a() {}\n    // @Above elseif, IMPL_R_SWIFT_ABOVE_ELSEIF, impl\n    #elseif os(iOS)\n    func c() {}\n    // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl\n    #else\n    func b() {}\n    // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl\n    #endif\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 1,
+      "end": 12,
       "language": "swift",
       "entity_kind": "class",
       "qualified_name": "Screen",
@@ -42,19 +80,19 @@
     "remote_url": null,
     "source_map": {
       "start": {
-        "row": 6,
+        "row": 9,
         "column": 8
       },
       "end": {
-        "row": 6,
+        "row": 9,
         "column": 51
       }
     },
-    "tagged_scope": "final class Screen {\n    #if DEBUG\n    func a() {}\n    // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl\n    #else\n    func b() {}\n    // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl\n    #endif\n}",
+    "tagged_scope": "final class Screen {\n    #if DEBUG\n    func a() {}\n    // @Above elseif, IMPL_R_SWIFT_ABOVE_ELSEIF, impl\n    #elseif os(iOS)\n    func c() {}\n    // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl\n    #else\n    func b() {}\n    // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl\n    #endif\n}",
     "scope": {
       "kind": "class_declaration",
       "start": 1,
-      "end": 9,
+      "end": 12,
       "language": "swift",
       "entity_kind": "class",
       "qualified_name": "Screen",
