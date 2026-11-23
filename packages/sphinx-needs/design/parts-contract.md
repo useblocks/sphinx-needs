@@ -104,7 +104,9 @@ A filter that asks for parts tests the parts beside the needs. A part answers it
 `is_need` (false), its text as `content` and as `title`, no links out (every link type is
 empty), and its own back links (`<link type>_back`). Every other name it answers is its
 need's: the need's type, status and fields, and the id facets (`c.id.ns`, `c.id.local`,
-`c.in_namespace()`) included.
+`c.in_namespace()`) included. A part answers the same where a `links` rule's `where` or
+`join`, `links_from_filter` or `links_from_match` asks for parts (the corpus pins its
+`title` there, in `derived`).
 
 ## 8. Through a part to its need (corpus: `derived`)
 
