@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from docutils import nodes
 from sphinx.application import Sphinx
 from syrupy.extensions.json import JSONSnapshotExtension
 
@@ -747,6 +748,13 @@ def test_a_part_has_a_label_in_latex(test_app: Sphinx) -> None:
     assert "Outside: outside text here." in tex
     _assert_part_page_findings(test_app)
 
+    # the address is the target's alone: the part's inline gave its id up
+    doctree = test_app.env.get_and_resolve_doctree("index", test_app.builder)
+    holders = [
+        node for node in doctree.findall(nodes.Element) if "REQ_1.p1" in node["ids"]
+    ]
+    assert [type(node) for node in holders] == [nodes.target]
+
 
 @pytest.mark.parametrize(
     "test_app", [_part_page("texinfo")], ids=["texinfo"], indirect=True
@@ -767,3 +775,43 @@ def test_a_part_has_its_anchor_in_place_in_texinfo(test_app: Sphinx) -> None:
     assert texi.count("@anchor{index REQ_1 d1}") == 1
     assert "Outside: outside text here." in texi
     _assert_part_page_findings(test_app)
+
+
+PART_IN_A_TITLE_INDEX = """\
+Index
+=====
+
+Section :np:`(t1) in a title`
+-----------------------------
+
+Body.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_PAGE_CONF),
+                (Path("index.rst"), PART_IN_A_TITLE_INDEX),
+            ],
+        }
+    ],
+    ids=["html"],
+    indirect=True,
+)
+def test_a_part_in_a_section_title_is_left_as_it_was(test_app: Sphinx) -> None:
+    """A role in a section title shows no text in the heading, as in the entries of the
+    tables of contents, which Sphinx copied from the title when the page was read: a
+    role outside every need shows its text everywhere else, but here the heading would
+    then read otherwise than its entries."""
+    html = _built_part_page(test_app, "index.html")
+    assert '<h2>Section <a class="headerlink" href="#section"' in html
+    assert "in a title" not in html
+    assert "in a title" not in test_app.env.tocs["index"].astext()
+    assert build_warnings(test_app) == [
+        "<srcdir>/index.rst:4: WARNING: Need part not associated with a need. "
+        "[needs.part]"
+    ]
