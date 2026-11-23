@@ -1577,6 +1577,53 @@ expected = ["REQ_1"]
 include_parts = true
 why = "a part does not answer its need's title"
 
+[[case]]
+name = "answers-its-text-as-title-empty-or-with-no-id"
+section = "answers"
+why = "a part's title is its text as stored, whatever that text: (id) alone answers the empty text, and a part with no (id) its whole text, the white space at its ends kept"
+extensions = ["myst_parser"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(e1)`
+'''
+files = { "page.md" = """# Page
+
+```{req} Untrimmed
+:id: REQ_MD
+
+A part {np}`  no id kept `.
+```
+""" }
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'title == ""'
+expected = ["REQ_1.e1"]
+include_parts = true
+why = "a part with the empty text answers the empty title, not its need's"
+
+[[case.filters]]
+filter = "title == \"  no id kept \""
+expected = ["REQ_MD.8CF"]
+include_parts = true
+why = "a part with no (id) answers its whole text, both ends kept"
+
+[[case.filters]]
+filter = 'title == "no id kept"'
+expected = []
+include_parts = true
+why = "the trimmed spelling is no part's title"
+
 # --- selection -------------------------------------------------------------------------
 
 [[case]]

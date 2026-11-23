@@ -52,7 +52,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 63
+EXPECTED_CASE_COUNT = 64
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
