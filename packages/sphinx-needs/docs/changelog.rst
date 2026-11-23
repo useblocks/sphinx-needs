@@ -231,6 +231,26 @@ Bug fixes
   **Changed output**: a double space, a tab or a no-break space inside a title is drawn as one space. A title
   with single spaces and no bracket is drawn as before.
 
+- 🐛 The text of a :ref:`need part <need_part>` role is on the page where the role makes no part. A second role
+  with a part id its need already has, such as ``(p1) the second`` after ``(p1) the first``, and a role outside
+  every need rendered nothing, in every builder: ``Marks the first p1 and the second here.`` read ``Marks the first
+  p1 and  here.``. Such a role is now its text, as plain text: no id, no anchor, no link and no ``need-part``
+  class. The first role of an id is still the part, and the ``needs.duplicate_part_id`` warning, still one per
+  repetition, now says so (``Need 'REQ_1' already has a part 'p1': the first role of an id marks the part, this
+  one is shown as plain text.``), where it said the part "may get overridden", which it never was. A role in a
+  section title still shows no text, as the page's tables of contents show none.
+
+  A part's address ``ID.part`` is now an anchor in ``latex`` and ``texinfo`` output. LaTeX wrote no label for it,
+  so every link and :ref:`need <role_need>` reference to a part was an undefined reference in the PDF, and texinfo
+  wrote the anchor at the end of the section, so a link to a part landed there. Both now anchor it at the start of
+  the part's text.
+
+  **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a
+  ``\phantomsection\label`` at the start of each part; in ``texinfo``, its ``@anchor`` there instead of at the
+  section's end. A part in ``html``, ``dirhtml``, ``singlehtml`` and ``epub`` is written byte for byte as before,
+  its id on the ``need-part`` span, and so is a part in ``xml`` and ``pseudoxml``. Stored parts, ``needs.json``,
+  filters and links do not change. (:pr:`NNNN`)
+
 Internal changes
 ................
 
