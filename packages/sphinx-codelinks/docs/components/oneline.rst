@@ -302,6 +302,23 @@ reported as one of these kinds, the kind leading the message:
   ``'@param' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen
   comments do not contain``. A ``--`` comment is no Doxygen comment, and neither is a
   ``--!!`` comment (commented-out code, as ``////`` is beside ``///``).
+- ``swift_attribute`` -- a line of any Swift comment (``//``, ``///``, ``/* */``, ``/** */``,
+  under ``comment_type = "swift"``) is a ``swift_attribute`` warning, and never a need, when
+  all hold: the one-line start sequence is ``@`` (the sigil of Swift's attributes); nothing
+  alphanumeric precedes the ``@`` on the line; an identifier (an ASCII letter or ``_``, then
+  ASCII letters, digits and ``_``) directly follows it, and ``(`` directly follows that, with
+  no space between; and the one-line parser would otherwise have read the line as a marker
+  or warned about it. That is the shape of a commented-out attribute
+  (``// @available(iOS 15, macOS 12, *)``), of a DocC directive
+  (``/// @Available(Swift, introduced: 6.3)``) and of an attribute-shaped example in
+  documentation (``/// @Flag(name: [.short, .long])``), which the default style would
+  otherwise split at their commas into needs: ``'@available' is a Swift attribute, not a
+  one-line need; use a start sequence that Swift attributes do not contain``. A line the
+  one-line parser would have ignored (``// @objc(handle:)``, which holds no comma) stays
+  silent, and ``// @MainActor`` has no parenthesis. The rule reads the shape alone, so
+  under ``@`` a Swift marker whose title opens with a name and ``(`` is withheld too
+  (``// @Title(draft), IMPL_1, impl``); write a space before the parenthesis, or choose
+  another start sequence, under which the check never runs.
 
 A line with nothing between the start and end sequences is not a marker. Under
 ``comment_type = "powershell"``, neither is a line whose first start sequence is directly

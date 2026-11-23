@@ -12,7 +12,8 @@ sphinx-codelinks is a Sphinx extension that provides fast source code traceabili
 sphinx-needs. It:
 
 - **analyses source code** — scans C, C++, C#, Python, Rust, Go, TypeScript/JavaScript,
-  YAML, JSON, Bash, PowerShell and VHDL files for special comment markers, with tree-sitter;
+  YAML, JSON, Bash, PowerShell, VHDL and Swift files for special comment markers, with
+  tree-sitter;
 - **creates needs from them** — turns discovered markers into sphinx-needs items;
 - **traces sources** — links documentation to exact source lines, and generates a
   syntax-highlighted HTML page per traced file with line anchors;
@@ -465,22 +466,62 @@ SUB-COMMANDS rather than a positional argument:
 
 ### Adding Support for a New Language
 
-A language is a `CommentType` member and four table entries — there is no analyzer class
-and no registry object to subclass.
+A language is a `CommentType` member and a set of table entries — there is no analyzer
+class and no registry object to subclass. The PowerShell (#2506), VHDL (#2508) and Swift
+commits are worked examples. Every new source site carries an `@… IMPL_<LANG>_n, impl,
+[FE_<LANG>]` marker: these docs trace this package's own source under `-nW`, so the
+feature must exist in `docs/components/features.rst` from the first commit that adds one.
 
-1. Add the tree-sitter grammar to `[project] dependencies` in `pyproject.toml`
-   (e.g. `tree-sitter-java>=0.23`), and re-lock at the workspace root
-2. Add the member to `CommentType` in `source_discover/config.py`, and its file extensions
-   to `COMMENT_FILETYPE` in the same file
-3. In `analyse/utils.py`: a `<LANG>_QUERY` tree-sitter query naming the comment nodes, a
-   branch in the `comment_type ==` chain that builds `Language(tree_sitter_<lang>.language())`,
-   and — if attachment to code entities is wanted — entries in `analyse/entity.py`:
-   `ENTITY_NODE_TYPES` (and `TRIVIA_TYPES` / `WRAPPER_TYPES` where they apply) and a namer in
-   `describe_entity`'s table; `tests/data/extraction/entities.yaml` and its truth test pin
-   both
-4. Add test files under `tests/data/`
-5. Add tests in `tests/test_analyse.py`, and a fixture row in
-   `tests/test_extraction_fixtures.py` if the language should be covered declaratively
+1. **The grammar**: add it to `[project] dependencies` in `pyproject.toml`, its floor the
+   version tested, and re-lock at the workspace root with the `uv` the lock was written
+   with (`.venv/bin/uv lock`: an older `uv` on `PATH` rewrites the lock's `revision` and
+   hundreds of lines). The diff is the new package and two lines.
+2. **Discovery**: the member in `CommentType` and its extensions in `COMMENT_FILETYPE`
+   (`source_discover/config.py`); `default_exclude_for_comment_type` if it needs one.
+3. **Comments** (`analyse/utils.py`): a query naming the grammar's comment node kinds, as
+   ONE pattern where there are several (`[(a) (b)] @comment`), and a branch in
+   `init_tree_sitter`; add the feature to the `IMPL_LANG_1` marker. Measure whether the
+   grammar puts comment nodes inside string literals (PowerShell's and Swift's do): if so,
+   capture the strings as `@string` and their interpolations as `@string_code`, and
+   `captured_comments` leaves the string content out. Query captures come back in no set
+   order; compare them sorted in a test.
+4. **Entities** (`analyse/entity.py`): `ENTITY_NODE_TYPES` — required, even with no
+   namer yet: `test_every_comment_type_is_wired` checks every member is there — and, where
+   they apply, `ENTITY_PREDICATES`, `TRIVIA_TYPES`, `WRAPPER_TYPES`,
+   `FIRST_ENTITY_WRAPPER_TYPES` and `FIRST_ITEM_WRAPPER_TYPES`; the doc-comment openings
+   (`_DOC_LINE_OPENINGS`, `_DOC_BLOCK_OPENINGS`); a describer in `_DESCRIBERS` (and a
+   branch in `render_semantic` unless the language joins with `.`). `COMMENT_TYPES` and
+   `ENTITY_HEAD_TYPES` are language-GLOBAL: a node kind added there changes every grammar
+   that has it, so check the name against every installed grammar
+   (`Language.id_for_node_kind(name, True)`) and add only kinds no other grammar has.
+5. **Attachment** (`analyse/utils.py`, `associate` and its helpers): what the generic
+   rules miss for the grammar's shapes — a shebang that is no comment node
+   (`_is_file_header`), comments placed beside a body (`find_next_scope`,
+   `_entity_on_row`), rule 7 for a conditional-compilation directive.
+6. **Tag rules**, if the language's documentation syntax shares the default `@` start
+   sequence (`jsdoc_tag`, `doxygen_tag`, `swift_attribute`): a function in
+   `analyse/oneline_parser.py`, a branch in `SourceAnalyse.extract_oneline_need`, an entry
+   in `_TAG_NAMES`, and a `WarningSubTypeEnum` member — its value is in the shared
+   snapshots, so ubCode mirrors it.
+7. **Multi-line needs**: the comment-kind table in `analyse/multiline_parser.py`, and
+   `LINE_DELIMITERS` for a new line-comment delimiter.
+8. **Tests**: `LANG_MAP` (`test_extraction_fixtures.py`) and `_LANGUAGES`
+   (`test_entity_truth.py`); the two sorted schema-error strings (`test_source_discover.py`,
+   `test_src_trace.py`) and `test_comment_filetype`; a case in
+   `tests/data/discover_fixtures.json`; the `lang` enum and the `scope.language` list in
+   `tests/data/extraction/README.md`; cases in the EXISTING shared YAML files of
+   `tests/data/extraction/` (a new file fails ubCode's sync until it lists it), with
+   `truth` in `entities.yaml`, then `--snapshot-update` and a review of every new snapshot;
+   unit tests beside the precedents' in `test_analyse_utils.py`, `test_entity.py`,
+   `test_oneline_parser.py` and `test_analyse.py`. A shared case should parse without a
+   syntax error (ubCode's Rust tree-sitter recovers differently): Swift's are fenced by
+   `test_a_swift_case_parses_without_an_error`.
+9. **Docs**: the feature and its faults (`components/features.rst`); `comment_type`'s
+   supported values, the language table and the `exclude` note
+   (`components/configuration.rst`); the language list, the `language` table, the kinds,
+   the names, the rules and the entity list (`components/analyse.rst`); a tag rule in
+   `components/oneline.rst`; an `Unreleased` entry in `docs/changelog.rst`; the language
+   list at the top of this file.
 
 ### Adding a New Marker Type
 

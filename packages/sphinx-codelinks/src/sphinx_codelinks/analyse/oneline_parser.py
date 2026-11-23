@@ -503,8 +503,8 @@ def doxygen_tag(line: str, start_sequence: str) -> str | None:
 
 
 #: What a Swift attribute's shape is after the start sequence: an identifier (an ASCII
-#: letter or ``_``, then ASCII letters, digits and ``_``) directly followed by ``(``, as in
-#: ``@available(iOS 15, *)``. Locale-free: ubCode spells the same.
+#: letter or ``_``, then ASCII letters, digits and ``_``) directly followed by ``(``, as
+#: the ``available`` attribute is. Locale-free: ubCode spells the same.
 _SWIFT_ATTRIBUTE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\(")
 
 
@@ -514,12 +514,11 @@ def swift_attribute(line: str, start_sequence: str) -> str | None:
 
     The line starts with one when, after comment decoration and whitespace (no
     alphanumeric character), it holds ``start_sequence`` directly followed by an
-    identifier and ``(``, with no whitespace between: a Swift attribute
-    (``@available(iOS 15, *)``, ``@objc(name:)``), a DocC directive
-    (``@Available(Swift, introduced: 6.3)``) or an attribute-shaped example
-    (``@Flag(name: [.short, .long])``). Such a line is commented-out code or
-    documentation, which the default style would otherwise split at its commas into a
-    need.
+    identifier and ``(``, with no whitespace between: a Swift attribute such as
+    ``available`` or ``objc``, a DocC directive such as ``Available``, or an
+    attribute-shaped example such as argument-parser's ``Flag``. Such a line is
+    commented-out code or documentation, which the default style would otherwise split
+    at its commas into a need (the analysis docs show the lines).
     """
     if not start_sequence:
         return None
