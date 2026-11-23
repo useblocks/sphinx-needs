@@ -116,11 +116,13 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
 
     The html family keeps the part's id on its ``inline``, as it was written there; for
     LaTeX and texinfo the id moves to a ``target`` at the start of the inline, which is
-    what those writers anchor in place. Those builders resolve a whole document in one
-    tree, so an address is anchored once in it, at its first occurrence, as a browser
-    takes the first of an id a page holds twice: a later one, such as a
-    ``needextract`` copy of the need on the same page, keeps its text and its id link
-    and carries no target and no id.
+    what those writers anchor in place. Those builders resolve every page of an output
+    file in one tree, and name a label or an anchor by the page (the source document) a
+    node is on, so an address is anchored once per page, at its first occurrence there,
+    as a browser takes the first of an id a page holds twice: a later one on the same
+    page, such as a ``needextract`` copy of the need there, keeps its text and its id
+    link and carries no target and no id. A copy on another page is anchored on that
+    page, under its name.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
     and for every document: a part on a page holding no need is in the tree too. A role

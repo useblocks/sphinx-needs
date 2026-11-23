@@ -243,8 +243,8 @@ Bug fixes
   A part's address ``ID.part`` is now an anchor in ``latex`` and ``texinfo`` output. LaTeX wrote no label for it,
   so every link and :ref:`need <role_need>` reference to a part was an undefined reference in the PDF, and texinfo
   wrote the anchor at the end of the section, so a link to a part landed there. Both now anchor it at the start of
-  the part's text, once: where a document shows the part twice, as a ``needextract`` of a need on the need's own
-  page does, at the first, as a browser does with an id a page holds twice.
+  the part's text, once per page: where a page shows the part twice, as a ``needextract`` of a need on the need's
+  own page does, at the first, as a browser does with an id a page holds twice.
 
   **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a
   ``\phantomsection\label`` at the start of each part; in ``texinfo``, its ``@anchor`` there instead of at the
