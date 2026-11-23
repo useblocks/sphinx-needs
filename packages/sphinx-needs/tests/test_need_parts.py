@@ -850,6 +850,89 @@ def test_a_part_shown_twice_has_one_anchor_in_texinfo(test_app: Sphinx) -> None:
     assert _holders(test_app, "REQ_1.p1") == [nodes.target]
 
 
+#: A need with a part, a link to the part and a reference to it
+PART_NEED = """\
+.. req:: A need
+   :id: REQ_A
+
+   Marks :np:`(p1) a local part` here.
+
+.. test:: A test
+   :id: TEST_A
+   :links: REQ_A.p1
+
+   See :need:`REQ_A.p1`.
+"""
+
+PART_EXTRACT = """\
+.. needextract::
+   :filter: id == "REQ_A"
+"""
+
+#: The need on one page and a ``needextract`` of it on another, the root page first
+#: and the other page in its toctree: the extract on the earlier page, or on the later
+PART_ON_TWO_PAGES = {
+    "extract-first": [
+        (Path("index.rst"), f"Root\n====\n\n{PART_EXTRACT}\n.. toctree::\n\n   a\n"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_NEED}"),
+    ],
+    "need-first": [
+        (Path("index.rst"), f"Root\n====\n\n{PART_NEED}\n.. toctree::\n\n   a\n"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
+    ],
+}
+
+
+def _part_on_two_pages(buildername: str, order: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [(Path("conf.py"), PART_PAGE_CONF), *PART_ON_TWO_PAGES[order]],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_part_on_two_pages("latex", order) for order in PART_ON_TWO_PAGES],
+    ids=list(PART_ON_TWO_PAGES),
+    indirect=True,
+)
+def test_a_part_on_two_pages_has_a_label_on_each_in_latex(test_app: Sphinx) -> None:
+    """A part shown on two pages, in its need and in a ``needextract`` of it, has a
+    ``\\label`` on each page, at its text: LaTeX names a label by the page it is on
+    (``index:REQ_A.p1``, ``a:REQ_A.p1``), so the two are not one label written twice,
+    and each reference to the part, written with the name of a page, has its label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    page_a = tex.index(r"\label{\detokenize{a::doc}}")
+    for page, written in (("index", tex[:page_a]), ("a", tex[page_a:])):
+        label = rf"\label{{\detokenize{{{page}:REQ_A.p1}}}}"
+        assert tex.count(label) == 1, page
+        assert rf"\phantomsection{label}a local part" in written, page
+    references = re.findall(r"\\hyperref\[\\detokenize\{([^}]*REQ_A\.p1)\}\]", tex)
+    assert set(references) == {"index:REQ_A.p1", "a:REQ_A.p1"}
+    assert build_warnings(test_app) == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_part_on_two_pages("texinfo", order) for order in PART_ON_TWO_PAGES],
+    ids=list(PART_ON_TWO_PAGES),
+    indirect=True,
+)
+def test_a_part_on_two_pages_has_an_anchor_on_each_in_texinfo(
+    test_app: Sphinx,
+) -> None:
+    """A part shown on two pages has an ``@anchor`` on each, before its text there:
+    texinfo names an anchor by the page it is on, as LaTeX names a label."""
+    texi = _built_part_page(test_app, "parts.texi")
+    for page in ("index", "a"):
+        anchor = f"@anchor{{{page} REQ_A p1}}"
+        assert texi.count(anchor) == 1, page
+        assert re.search(
+            re.escape(anchor) + r"(@anchor\{\d+\})?a local part@ref\{", texi
+        ), page
+    assert build_warnings(test_app) == []
+
+
 #: A role in a section title, and a repeated role in an admonition's title and in a
 #: table's caption, inside a need: titles that are no section's
 PART_IN_A_TITLE_INDEX = """\
