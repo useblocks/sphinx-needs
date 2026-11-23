@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795424541215,
+  "lastUpdate": 1795443427598,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -31164,6 +31164,48 @@ window.BENCHMARK_DATA = {
             "value": 188.008309,
             "unit": "MB",
             "extra": "Commit: 647364f6076827bf163bd867f8c18c60b5a4d5b2\nBranch: master\nTime: 2026-11-23T10:00:35+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3dd8884e528cde36f4fd850105fd54c12b31545e",
+          "message": "🧪 Need parts corpus: a part's title is its text on every route, and for every text (#2572)",
+          "timestamp": "2026-11-23T15:15:37+01:00",
+          "tree_id": "809ecdf2d1f67939aa6d2356c54725e40c7b01ce",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3dd8884e528cde36f4fd850105fd54c12b31545e"
+        },
+        "date": 1795443426515,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05520279600000322,
+            "unit": "s",
+            "extra": "Commit: 3dd8884e528cde36f4fd850105fd54c12b31545e\nBranch: master\nTime: 2026-11-23T15:15:37+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.402419002999991,
+            "unit": "s",
+            "extra": "Commit: 3dd8884e528cde36f4fd850105fd54c12b31545e\nBranch: master\nTime: 2026-11-23T15:15:37+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.864941,
+            "unit": "MB",
+            "extra": "Commit: 3dd8884e528cde36f4fd850105fd54c12b31545e\nBranch: master\nTime: 2026-11-23T15:15:37+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
