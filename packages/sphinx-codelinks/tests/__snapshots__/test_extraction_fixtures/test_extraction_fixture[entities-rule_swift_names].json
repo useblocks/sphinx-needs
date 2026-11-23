@@ -1,0 +1,459 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 39
+      }
+    },
+    "tagged_scope": "init(x: Int) {}",
+    "scope": {
+      "kind": "init_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "constructor",
+      "qualified_name": "Point.init(x:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "constructor",
+          "name": "init(x:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "By x",
+      "id": "IMPL_N_SWIFT_INIT_X",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "init_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 39
+      }
+    },
+    "tagged_scope": "init?(y: Int) {}",
+    "scope": {
+      "kind": "init_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "swift",
+      "entity_kind": "constructor",
+      "qualified_name": "Point.init(y:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "constructor",
+          "name": "init(y:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "By y",
+      "id": "IMPL_N_SWIFT_INIT_Y",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "init_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 8
+      },
+      "end": {
+        "row": 5,
+        "column": 43
+      }
+    },
+    "tagged_scope": "func move(by delta: Int) {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 7,
+      "end": 7,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Point.move(by:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "move(by:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Move by",
+      "id": "IMPL_N_SWIFT_MOVE_BY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 8
+      },
+      "end": {
+        "row": 7,
+        "column": 43
+      }
+    },
+    "tagged_scope": "func move(to target: Int, _ animated: Bool = false) {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 9,
+      "end": 9,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Point.move(to:_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "move(to:_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Move to",
+      "id": "IMPL_N_SWIFT_MOVE_TO",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 58
+      }
+    },
+    "tagged_scope": "subscript(index: Int) -> Int { 0 }",
+    "scope": {
+      "kind": "subscript_declaration",
+      "start": 11,
+      "end": 11,
+      "language": "swift",
+      "entity_kind": "indexer",
+      "qualified_name": "Point.subscript(_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "indexer",
+          "name": "subscript(_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Unlabelled subscript",
+      "id": "IMPL_N_SWIFT_SUBSCRIPT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subscript_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 8
+      },
+      "end": {
+        "row": 11,
+        "column": 60
+      }
+    },
+    "tagged_scope": "subscript(row r: Int, column c: Int) -> Int { 0 }",
+    "scope": {
+      "kind": "subscript_declaration",
+      "start": 13,
+      "end": 13,
+      "language": "swift",
+      "entity_kind": "indexer",
+      "qualified_name": "Point.subscript(row:column:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "indexer",
+          "name": "subscript(row:column:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Labelled subscript",
+      "id": "IMPL_N_SWIFT_SUBSCRIPT_ROW",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subscript_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 13,
+        "column": 8
+      },
+      "end": {
+        "row": 13,
+        "column": 53
+      }
+    },
+    "tagged_scope": "static prefix func - (p: Point) -> Point { p }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 15,
+      "end": 15,
+      "language": "swift",
+      "entity_kind": "operator",
+      "qualified_name": "Point.-(_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "operator",
+          "name": "-(_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Prefix operator",
+      "id": "IMPL_N_SWIFT_PREFIX_OP",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 15,
+        "column": 8
+      },
+      "end": {
+        "row": 15,
+        "column": 47
+      }
+    },
+    "tagged_scope": "var a = 0, b = 0",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 17,
+      "end": 17,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Two names",
+      "id": "IMPL_N_SWIFT_TWO_NAMES",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 17,
+        "column": 8
+      },
+      "end": {
+        "row": 17,
+        "column": 45
+      }
+    },
+    "tagged_scope": "mutating func add(_ values: Int..., into total: inout Int) {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 19,
+      "end": 19,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Point.add(_:into:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "add(_:into:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Variadic",
+      "id": "IMPL_N_SWIFT_VARIADIC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 21,
+        "column": 8
+      },
+      "end": {
+        "row": 21,
+        "column": 56
+      }
+    },
+    "tagged_scope": "func run() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 23,
+      "end": 23,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Outer.Inner.run()",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "Outer"
+        },
+        {
+          "kind": "impl",
+          "name": "Inner"
+        },
+        {
+          "kind": "method",
+          "name": "run()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In a dotted extension",
+      "id": "IMPL_N_SWIFT_DOTTED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 25,
+        "column": 8
+      },
+      "end": {
+        "row": 25,
+        "column": 58
+      }
+    },
+    "tagged_scope": "var keyCount: Int { count }",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 27,
+      "end": 27,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Dictionary.keyCount",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Dictionary"
+        },
+        {
+          "kind": "property",
+          "name": "keyCount"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In a generic extension",
+      "id": "IMPL_N_SWIFT_GENERIC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  }
+]

@@ -193,3 +193,23 @@ vhdl_no_newline_at_eof:
   lang: vhdl
   config: default
   source: "entity top is\nend entity top;\n-- @Last line, IMPL_VHDL_EOF, impl"
+
+swift_line_comment_after_code:
+  # A Swift ``//`` comment's node ends at the end of its line; a marker after code
+  # starts after the code.
+  lang: swift
+  config: default
+  source: |
+    // @Own line, IMPL_SWIFT_OWN, impl
+    func f() {} // @After code, IMPL_SWIFT_AFTER, impl
+        // @Indented, IMPL_SWIFT_INDENTED, impl
+    let größe = 1 // @After non-ASCII, IMPL_SWIFT_NON_ASCII, impl
+
+swift_block_comment_end:
+  # A one-row Swift block comment: the closing ``*/`` is not marker text, and a nested
+  # comment's end is the outer one's.
+  lang: swift
+  config: default
+  source: |
+    func f() {} /* @Block after code, IMPL_SWIFT_BLOCK_END, impl */
+    /* /**/ @Nested end, IMPL_SWIFT_NESTED_END, impl */

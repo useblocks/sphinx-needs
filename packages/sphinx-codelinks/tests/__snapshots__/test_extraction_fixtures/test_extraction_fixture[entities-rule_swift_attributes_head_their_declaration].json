@@ -1,0 +1,124 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 15
+      },
+      "end": {
+        "row": 0,
+        "column": 64
+      }
+    },
+    "tagged_scope": "@MainActor // @On the attribute row, IMPL_R_SWIFT_ATTR_ROW, impl\npublic final class Model {\n    @Published\n    // @Between attribute and property, IMPL_R_SWIFT_ATTR_NEXT, impl\n    var count = 0\n    @available(iOS 15, *)\n    /// @Doc after an attribute, IMPL_R_SWIFT_ATTR_DOC, impl\n    func refresh() {}\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 1,
+      "end": 9,
+      "language": "swift",
+      "entity_kind": "class",
+      "qualified_name": "Model",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Model"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "On the attribute row",
+      "id": "IMPL_R_SWIFT_ATTR_ROW",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 68
+      }
+    },
+    "tagged_scope": "@Published\n    // @Between attribute and property, IMPL_R_SWIFT_ATTR_NEXT, impl\n    var count = 0",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 3,
+      "end": 5,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Model.count",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Model"
+        },
+        {
+          "kind": "property",
+          "name": "count"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Between attribute and property",
+      "id": "IMPL_R_SWIFT_ATTR_NEXT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 9
+      },
+      "end": {
+        "row": 6,
+        "column": 60
+      }
+    },
+    "tagged_scope": "@available(iOS 15, *)\n    /// @Doc after an attribute, IMPL_R_SWIFT_ATTR_DOC, impl\n    func refresh() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 8,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Model.refresh()",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Model"
+        },
+        {
+          "kind": "method",
+          "name": "refresh()"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Doc after an attribute",
+      "id": "IMPL_R_SWIFT_ATTR_DOC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

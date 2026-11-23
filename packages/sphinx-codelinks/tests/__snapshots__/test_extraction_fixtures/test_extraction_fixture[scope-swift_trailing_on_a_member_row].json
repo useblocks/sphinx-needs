@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 22
+      },
+      "end": {
+        "row": 1,
+        "column": 54
+      }
+    },
+    "tagged_scope": "var width = 0",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Widget.width",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "property",
+          "name": "width"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Width",
+      "id": "IMPL_SWIFT_TRAILING",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  }
+]

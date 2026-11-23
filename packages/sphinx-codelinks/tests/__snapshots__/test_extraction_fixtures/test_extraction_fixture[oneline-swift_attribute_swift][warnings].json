@@ -1,0 +1,37 @@
+[
+  {
+    "file_path": "case.swift",
+    "lineno": 1,
+    "msg": "'@available' is a Swift attribute, not a one-line need; use a start sequence that Swift attributes do not contain",
+    "type": "need",
+    "sub_type": "swift_attribute"
+  },
+  {
+    "file_path": "case.swift",
+    "lineno": 2,
+    "msg": "'@Available' is a Swift attribute, not a one-line need; use a start sequence that Swift attributes do not contain",
+    "type": "need",
+    "sub_type": "swift_attribute"
+  },
+  {
+    "file_path": "case.swift",
+    "lineno": 3,
+    "msg": "'@Flag' is a Swift attribute, not a one-line need; use a start sequence that Swift attributes do not contain",
+    "type": "need",
+    "sub_type": "swift_attribute"
+  },
+  {
+    "file_path": "case.swift",
+    "lineno": 4,
+    "msg": "'@available' is a Swift attribute, not a one-line need; use a start sequence that Swift attributes do not contain",
+    "type": "need",
+    "sub_type": "swift_attribute"
+  },
+  {
+    "file_path": "case.swift",
+    "lineno": 5,
+    "msg": "'@available' is a Swift attribute, not a one-line need; use a start sequence that Swift attributes do not contain",
+    "type": "need",
+    "sub_type": "swift_attribute"
+  }
+]
