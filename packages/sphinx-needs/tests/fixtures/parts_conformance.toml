@@ -1554,7 +1554,6 @@ include_parts = true
 name = "answers-its-text-as-title"
 section = "answers"
 why = "a part answers its text as title, not its need's title"
-divergent = { ubcode = "a part answers its need's title, so title == 'one' selects nothing and title == 'Parts' selects REQ_1 and REQ_1.p1" }
 config = '''
 [needs]
 '''
@@ -1577,6 +1576,53 @@ filter = 'title == "Parts"'
 expected = ["REQ_1"]
 include_parts = true
 why = "a part does not answer its need's title"
+
+[[case]]
+name = "answers-its-text-as-title-empty-or-with-no-id"
+section = "answers"
+why = "a part's title is its text as stored, whatever that text: (id) alone answers the empty text, and a part with no (id) its whole text, the white space at its ends kept"
+extensions = ["myst_parser"]
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   page
+
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(e1)`
+'''
+files = { "page.md" = """# Page
+
+```{req} Untrimmed
+:id: REQ_MD
+
+A part {np}`  no id kept\u00A0`.
+```
+""" }
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = 'title == ""'
+expected = ["REQ_1.e1"]
+include_parts = true
+why = "a part with the empty text answers the empty title, not its need's"
+
+[[case.filters]]
+filter = "title == \"  no id kept\u00A0\""
+expected = ["REQ_MD.8CF"]
+include_parts = true
+why = "a part with no (id) answers its whole text, both ends kept"
+
+[[case.filters]]
+filter = 'title == "no id kept"'
+expected = []
+include_parts = true
+why = "the trimmed spelling is no part's title"
 
 # --- selection -------------------------------------------------------------------------
 
@@ -1890,3 +1936,53 @@ findings = []
 filter = '"TEST_8" in back_copy and "TEST_9" in back_copy'
 expected = ["SPEC_1"]
 include_parts = true
+
+[[case]]
+name = "derived-a-part-is-matched-by-its-text-as-title"
+section = "derived"
+why = "a part answers its text as title wherever it is a candidate, not in a filter alone: SPEC_1, whose ref is one, links REQ_1.p1 through a links rule's where and its join, links_from_filter and links_from_match, each asking for parts; SPEC_2, whose ref is Parts, its need's title, links REQ_1 and not its part"
+config = '''
+[needs.fields.ref]
+schema = { type = "string" }
+
+[needs.links.l_where]
+derive = { kind = "links", where = "title == 'one'", include_parts = true }
+
+[needs.links.l_join]
+derive = { kind = "links", join = { field = "title", equals = "ref" }, include_parts = true }
+
+[needs.links.lf_link]
+
+[needs.links.lm_link]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) one`
+
+.. spec:: Spec one
+   :id: SPEC_1
+   :ref: one
+   :lf_link: [[links_from_filter("title == 'one'", include_parts=True)]]
+   :lm_link: [[links_from_match("title", "ref", include_parts=True)]]
+
+.. spec:: Spec two
+   :id: SPEC_2
+   :ref: Parts
+   :lm_link: [[links_from_match("title", "ref", include_parts=True)]]
+'''
+[case.expect]
+findings = []
+
+[[case.filters]]
+filter = '"REQ_1.p1" in l_where and "REQ_1.p1" in l_join and "REQ_1.p1" in lf_link and "REQ_1.p1" in lm_link'
+expected = ["SPEC_1"]
+include_parts = true
+why = "the part is found by its text on each of the four routes"
+
+[[case.filters]]
+filter = '"REQ_1" in l_join and "REQ_1.p1" not in l_join and "REQ_1" in lm_link and "REQ_1.p1" not in lm_link'
+expected = ["SPEC_2"]
+include_parts = true
+why = "the need's title finds the need and not its part"
