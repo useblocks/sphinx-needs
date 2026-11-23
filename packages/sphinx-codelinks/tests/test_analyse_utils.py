@@ -225,6 +225,12 @@ def test_a_comment_inside_a_swift_literal_is_no_comment(code, init_swift_tree_si
         b'let s = "\\(f(/* in code */ 1)) /* text */"\n',
         b'let s = #"\\#(f(/* in code */ 1)) /* text */"#\n',
         b'let s = """\n\\(f(/* in code */ 1))\n/* text */\n"""\n',
+        # at the interpolation's own level, beside its expression: still code
+        b'let s = "\\(x /* in code */) /* text */"\n',
+        b'let s = "/* text */ \\(/* in code */ x)"\n',
+        b'let s = "\\(a) \\(x /* in code */)"\n',
+        b'let s = """\n\\(\n/* in code */\nx\n)\n/* text */\n"""\n',
+        b'let s = #"\\#(x /* in code */) /* text */"#\n',
     ],
 )
 def test_a_comment_in_a_swift_interpolation_is_a_comment(code, init_swift_tree_sitter):

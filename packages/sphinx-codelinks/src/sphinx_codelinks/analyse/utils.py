@@ -99,14 +99,18 @@ POWERSHELL_QUERY = """
 # reads a ``/*`` that opens a string literal's text, or follows whitespace or an
 # interpolation in it (``"/* x */"``, ``"\(a) /* x */"``, a ``"""`` line), as a
 # ``multiline_comment`` inside the string: it is string content. The string literals
-# are captured as ``string`` and the interpolations ``\( … )`` as ``string_code``, so
-# that :func:`captured_comments` leaves out a comment inside a string unless it is in
-# an interpolation, which is code. No comment node is ever placed inside a regex
+# are captured as ``string`` and the interpolations as ``string_code``, so that
+# :func:`captured_comments` leaves out a comment inside a string unless it is in an
+# interpolation, which is code: inside its expression (``interpolated_expression``),
+# inside a raw string's ``\#( … )`` (``raw_str_interpolation``), or at the level of a
+# line or multi-line string's ``\( … )``, which has no node of its own -- the grammar
+# places a comment there in the string, after the interpolation's ``\(`` token
+# (:func:`_in_open_interpolation`). No comment node is ever placed inside a regex
 # literal.
 SWIFT_QUERY = """
     [(comment) (multiline_comment)] @comment
     [(line_string_literal) (multi_line_string_literal) (raw_string_literal)] @string
-    (interpolated_expression) @string_code
+    [(interpolated_expression) (raw_str_interpolation)] @string_code
 """
 
 # JSON value node types that can be associated with a comment.
@@ -308,15 +312,42 @@ def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
 # @PowerShell comments inside strings are string content, IMPL_PS_7, impl, [FE_POWERSHELL]
 def _in_string(node: TreeSitterNode, strings: set[int], code: set[int]) -> bool:
     """Whether the nearest of ``strings`` and ``code`` (node ids) around ``node`` is a
-    string."""
+    string -- and, when that string is ``node``'s parent, whether ``node`` stands
+    outside every interpolation the string opened before it (Swift's, see
+    :func:`_in_open_interpolation`)."""
     ancestor = node.parent
+    direct = True
     while ancestor is not None:
         if ancestor.id in code:
             return False
         if ancestor.id in strings:
-            return True
+            return not (direct and _in_open_interpolation(node))
         ancestor = ancestor.parent
+        direct = False
     return False
+
+
+# @A comment at a Swift interpolation's own level is code, IMPL_SWIFT_13, impl, [FE_SWIFT]
+def _in_open_interpolation(node: TreeSitterNode) -> bool:
+    """Whether the comment ``node``, a child of a string literal, stands inside an
+    interpolation the string opened before it: more ``\\(`` tokens than ``)`` tokens
+    among its previous siblings.
+
+    Swift's grammar gives a line or multi-line string's interpolation no node of its
+    own: its ``\\(`` and ``)`` are tokens of the string, beside the
+    ``interpolated_expression``, so a comment before or after the expression
+    (``"\\(x /* c */)"``), or on a line of its own in a multi-line string, is the
+    string's child. It is code all the same.
+    """
+    depth = 0
+    sibling = node.prev_sibling
+    while sibling is not None:
+        if sibling.type == "\\(":
+            depth += 1
+        elif sibling.type == ")":
+            depth -= 1
+        sibling = sibling.prev_sibling
+    return depth > 0
 
 
 # @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]

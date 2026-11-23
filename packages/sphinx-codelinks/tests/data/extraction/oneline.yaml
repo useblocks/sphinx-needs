@@ -361,3 +361,24 @@ swift_attribute_other_start_sequence_swift:
     // @available(iOS 15, *)
     // [[available(iOS 15, IMPL_SWIFT_BRACKETS]]
     func f() {}
+
+# a comment at an interpolation's own level (beside its expression, before or after it,
+# or on a line of its own in a multi-line string) is code, as a comment nested in the
+# expression is: the grammar places it in the string, after the interpolation's ``\(``;
+# a comment in the string's text before or after an interpolation is still text
+interpolation_level_comments_swift:
+  lang: swift
+  config: default
+  source: |
+    let x = 1
+    let a = "\(x /* @After the value, IMPL_SWIFT_INTERP_AFTER, impl */)"
+    let b = "\(/* @Before the value, IMPL_SWIFT_INTERP_BEFORE, impl */ x)"
+    let c = """
+    \(
+    // @Line in an interpolation, IMPL_SWIFT_INTERP_LINE, impl
+    x
+    )
+    """
+    let d = #"\#(x /* @Raw interpolation, IMPL_SWIFT_INTERP_RAW, impl */)"#
+    let e = "/* @Still text, IMPL_SWIFT_TEXT_BEFORE, impl */ \(x)"
+    let f = "\(x) /* @Still text, IMPL_SWIFT_TEXT_AFTER, impl */"
