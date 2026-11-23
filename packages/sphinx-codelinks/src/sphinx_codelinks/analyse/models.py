@@ -31,6 +31,8 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
     """A line of a TypeScript or JavaScript JSDoc comment starting with a JSDoc tag."""
     doxygen_tag = "doxygen_tag"
     """A line of a VHDL ``--!`` Doxygen comment starting with a Doxygen command."""
+    swift_attribute = "swift_attribute"
+    """A line of a Swift comment starting with an attribute's shape, ``@name(``."""
     multiline_need_header = "multiline_need_header"
     """The open word starts a line that does not match the open-line grammar."""
     multiline_need_unterminated = "multiline_need_unterminated"

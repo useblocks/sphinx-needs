@@ -502,6 +502,34 @@ def doxygen_tag(line: str, start_sequence: str) -> str | None:
     return tag
 
 
+#: What a Swift attribute's shape is after the start sequence: an identifier (an ASCII
+#: letter or ``_``, then ASCII letters, digits and ``_``) directly followed by ``(``, as in
+#: ``@available(iOS 15, *)``. Locale-free: ubCode spells the same.
+_SWIFT_ATTRIBUTE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\(")
+
+
+# @A Swift attribute in a comment is no marker, IMPL_SWIFT_12, impl, [FE_SWIFT]
+def swift_attribute(line: str, start_sequence: str) -> str | None:
+    """The Swift attribute a line of a Swift comment starts with, if any: its name.
+
+    The line starts with one when, after comment decoration and whitespace (no
+    alphanumeric character), it holds ``start_sequence`` directly followed by an
+    identifier and ``(``, with no whitespace between: a Swift attribute
+    (``@available(iOS 15, *)``, ``@objc(name:)``), a DocC directive
+    (``@Available(Swift, introduced: 6.3)``) or an attribute-shaped example
+    (``@Flag(name: [.short, .long])``). Such a line is commented-out code or
+    documentation, which the default style would otherwise split at its commas into a
+    need.
+    """
+    if not start_sequence:
+        return None
+    idx = line.find(start_sequence)
+    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+        return None
+    match = _SWIFT_ATTRIBUTE.match(line, idx + len(start_sequence))
+    return match.group(1) if match is not None else None
+
+
 @dataclass
 class OnelineParserInvalidWarning:
     """Invalid oneline comments."""
