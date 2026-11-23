@@ -313,6 +313,24 @@ def test_a_swift_case_parses_without_an_error(case: dict) -> None:
     assert not tree.root_node.has_error
 
 
-def test_there_are_swift_cases() -> None:
-    """The guard above runs over something."""
-    assert len(_swift_cases()) >= 20
+#: How many Swift cases each shared file holds: the guard above runs over every one of
+#: them, and a case added or moved updates this table.
+SWIFT_CASES_PER_FILE = {
+    "entities": 11,
+    "extra_languages": 1,
+    "line_endings": 1,
+    "multiline_needs": 2,
+    "need_refs": 1,
+    "oneline": 11,
+    "positions": 2,
+    "scope": 7,
+}
+
+
+def test_the_swift_cases_are_the_ones_listed() -> None:
+    """The guard above runs over exactly the Swift cases of each file."""
+    counts: dict[str, int] = {}
+    for param in _swift_cases():
+        stem = str(param.id).split("-", 1)[0]
+        counts[stem] = counts.get(stem, 0) + 1
+    assert counts == SWIFT_CASES_PER_FILE

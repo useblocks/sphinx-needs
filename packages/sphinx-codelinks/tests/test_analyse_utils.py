@@ -419,6 +419,24 @@ def test_a_swift_block_comment_before_code_on_its_row_is_a_grammar_error(
     assert [c.type for c in comments or []] == ["multiline_comment"]
 
 
+def test_a_swift_string_opening_a_block_comment_hides_code_to_a_later_close(
+    init_swift_tree_sitter,
+):
+    """A known tree-sitter-swift limitation (documented in ``analyse.rst``): a string
+    whose text opens ``/*`` with a later ``*/`` elsewhere (another string, a ``//``
+    comment) is parsed as one comment inside the string up to that ``*/``, with no
+    syntax error: the code between, and its markers, are silently hidden. When the
+    grammar fixes this, this test fails: update the documentation."""
+    parser, query = init_swift_tree_sitter
+    code = b'let s = "/*"\n// @Hidden, ID_H, impl\nfunc f() {}\nlet t = "*/"\n'
+    tree = parser.parse(code)
+    assert not tree.root_node.has_error
+    assert [child.type for child in tree.root_node.named_children] == [
+        "property_declaration"
+    ]
+    assert utils.captured_comments(tree, query) == []
+
+
 def test_a_swift_block_comment_in_a_type_body_is_no_grammar_error(
     init_swift_tree_sitter,
 ):

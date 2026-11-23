@@ -838,6 +838,8 @@ def test_doxygen_tag(line: str, expected: str | None) -> None:
         pytest.param("// @available (iOS 15, *)", "@", None, id="space_before_paren"),
         pytest.param("// @MainActor", "@", None, id="no_paren"),
         pytest.param("// @2x(a, b)", "@", None, id="digit_first"),
+        pytest.param("// @größe(a, b)", "@", None, id="non_ascii_inside"),
+        pytest.param("// @éclair(a, b)", "@", None, id="non_ascii_first"),
         pytest.param("// @(Draft), ID_1, impl", "@", None, id="no_identifier"),
         pytest.param("// see @available(iOS 15, *)", "@", None, id="text_before_start"),
         pytest.param("// @Real Need, IMPL_1, impl", "@", None, id="a_marker"),

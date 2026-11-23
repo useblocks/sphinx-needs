@@ -382,3 +382,32 @@ interpolation_level_comments_swift:
     let d = #"\#(x /* @Raw interpolation, IMPL_SWIFT_INTERP_RAW, impl */)"#
     let e = "/* @Still text, IMPL_SWIFT_TEXT_BEFORE, impl */ \(x)"
     let f = "\(x) /* @Still text, IMPL_SWIFT_TEXT_AFTER, impl */"
+
+# the attribute shape's identifier is ASCII: a name with a letter outside ASCII, first
+# or later, is no attribute's shape, and the line is read as any other line is
+swift_attribute_ascii_identifier_swift:
+  lang: swift
+  config: default
+  source: |
+    // @Größe(x), IMPL_SWIFT_NON_ASCII_INSIDE, impl
+    // @éclair(x), IMPL_SWIFT_NON_ASCII_FIRST, impl
+    func f() {}
+
+# the attribute shape counts only where nothing alphanumeric precedes the start sequence
+# on the line: with an end sequence other than the newline, the one-line parser reads a
+# marker after prose too, and the prose keeps it from being withheld
+swift_attribute_after_text_swift:
+  lang: swift
+  config:
+    start_sequence: "@"
+    end_sequence: ";"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    // see @available(iOS 15, IMPL_SWIFT_AFTER_PROSE);
+    // @available(iOS 15, IMPL_SWIFT_WITHHELD_SEMICOLON);
+    func f() {}

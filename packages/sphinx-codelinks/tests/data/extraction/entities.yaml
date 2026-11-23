@@ -2725,6 +2725,10 @@ rule_vhdl_double_bang_is_no_doc_comment:
 
 corpus_swift:
   # A Swift file with markers in the positions that matter for attachment: 26 markers.
+  # Unlike the other ``corpus_*`` cases it is constructed, not a sample file unchanged,
+  # and syntax-only: it parses without an error, but would not type-check (``Widget``
+  # does not witness ``Shape`` in full, and ``Widget.Style`` is declared nowhere), which
+  # no name here depends on.
   # An accessor (SW_12) and an enum case (SW_20) are no entities: their markers fall
   # back to the property and the enum.
   lang: swift
@@ -3028,3 +3032,40 @@ rule_swift_names:
     - {id: IMPL_N_SWIFT_VARIADIC, outcome: exact, entity_kind: "method", qualified_name: "Point.add(_:into:)", start: 19, mechanism: leading, compiler: "syntax-only: rule case"}
     - {id: IMPL_N_SWIFT_DOTTED, outcome: exact, entity_kind: "method", qualified_name: "Outer.Inner.run()", start: 23, mechanism: leading, compiler: "syntax-only: rule case"}
     - {id: IMPL_N_SWIFT_GENERIC, outcome: exact, entity_kind: "property", qualified_name: "Dictionary.keyCount", start: 27, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_swift_conditional_other_lines:
+  # Rule 7 reads ``#if`` lines alone: a marker directly above ``#else`` or ``#endif``
+  # among declarations falls to rule 8, the entity around it, with no warning.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    final class Screen {
+        #if DEBUG
+        func a() {}
+        // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl
+        #else
+        func b() {}
+        // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl
+        #endif
+    }
+  truth:
+    - {id: IMPL_R_SWIFT_ABOVE_ELSE, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ABOVE_ENDIF, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_swift_names_inside_an_unnamed_property:
+  # A property declaring several names has no name, and neither has anything inside it:
+  # a local function in the closure that initialises one of them.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    final class Counter {
+        var a = 1, b: Int = {
+            // @In an unnamed property, IMPL_N_SWIFT_NAMELESS, impl
+            func f() -> Int { 1 }
+            return f()
+        }()
+    }
+  truth:
+    - {id: IMPL_N_SWIFT_NAMELESS, outcome: exact, entity_kind: "function", qualified_name: null, start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
