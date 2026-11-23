@@ -27,8 +27,9 @@ either of them draws -- and are called out at the point where they happen:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Container
+from collections.abc import Callable, Container, Iterable, Mapping
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Literal
 
 from docutils import nodes
@@ -40,6 +41,8 @@ from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
     _need_by_need,
     _report_filter_text,
+    _report_parts_in_view,
+    _views_include_parts,
     apply_max_items,
     process_filters,
 )
@@ -428,6 +431,23 @@ def build_graph(
         origin="needflow",
         location=location,
     )
+    # before the cap, as what its filter selects: the parts it lists; and the links it
+    # draws to the parts' needs where its result holds needs alone (this result's
+    # needs in the same order, where its filter tests each need on its own), those of
+    # the needs its cap keeps of them (counted only while the value is unset)
+    _report_parts_in_view(
+        needs_config,
+        found_needs,
+        "needflow",
+        location,
+        part_links=partial(
+            count_part_links_to_needs,
+            found_needs,
+            allowed_link_types,
+            attributes.get("max_items"),
+            needs_config,
+        ),
+    )
     # the cap is applied before any of the drawing data is derived,
     # so that dropped needs cannot be referenced by what is drawn
     found_needs, total_needs = apply_max_items(
@@ -457,7 +477,12 @@ def build_graph(
         ),
     )
 
-    edges = collect_edges(found_needs, allowed_link_types, drawn)
+    edges = collect_edges(
+        found_needs,
+        allowed_link_types,
+        drawn,
+        part_links_to_needs=not _views_include_parts(needs_config),
+    )
 
     # what the legend describes is what was drawn, so it is derived from the graph and
     # not from the configuration -- a legend listing things the reader cannot find in
@@ -584,11 +609,70 @@ def build_node_tree(
     return [_build(root) for root in get_root_needs(found_needs)], drawn
 
 
+def _needs_by_id(
+    found_needs: Iterable[NeedItem | NeedPartItem], /
+) -> dict[str, NeedItem]:
+    """The needs of a result, by id, its parts left out."""
+    return {need["id"]: need for need in found_needs if isinstance(need, NeedItem)}
+
+
+def _part_link_need(needs_by_id: Mapping[str, NeedItem], link: str, /) -> str | None:
+    """The id of the need a link to one of its parts ends on, where a needflow's result
+    holds needs alone (``needs_views_include_parts`` false), or ``None``.
+
+    *needs_by_id* are the needs of the result (:func:`_needs_by_id`); the link ends on
+    one of them only when it names a part that need has. A link naming a need whole, a
+    part the need lacks, or a part of a need outside the result ends on none. The one
+    test of the re-point: :func:`collect_edges` draws by it, and
+    :func:`count_part_links_to_needs` counts by it.
+    """
+    owner = need_and_part_at(needs_by_id, link)
+    if owner is None or owner.part is None:
+        return None
+    return owner.need["id"]
+
+
+def count_part_links_to_needs(
+    found_needs: Iterable[NeedItem | NeedPartItem],
+    allowed_link_types: Iterable[LinkShape],
+    max_items: int | None,
+    config: NeedsSphinxConfig,
+    /,
+) -> int:
+    """How many links a needflow draws to the parts' needs where its result holds needs
+    alone: the result's needs, its parts left out, cut by the needflow's ``max_items``
+    cap as :func:`~sphinx_needs.filter_common.apply_max_items` cuts them; then each link
+    of a need of that window naming a part of a need of the window, by the test
+    :func:`collect_edges` re-points with (:func:`_part_link_need`).
+
+    So it is the number of edges the needflow draws to the parts' needs under
+    ``False`` from the same needs, whether this result holds parts or not: its result
+    there is this result's needs, in the same order, where its filter tests each need
+    on its own (:meth:`~sphinx_needs.views.NeedsView._to_list_of_needs`). Only the
+    report of the 9.x series asks (``needs.views_include_parts``, while the value is
+    unset); it goes with the report at 10.0.
+    """
+    needs: list[NeedItem | NeedPartItem] = [
+        need for need in found_needs if isinstance(need, NeedItem)
+    ]
+    window, _ = apply_max_items(needs, max_items, config)
+    needs_by_id = _needs_by_id(window)
+    return sum(
+        1
+        for need in needs_by_id.values()
+        for link_type in allowed_link_types
+        for link in need[link_type.name]
+        if _part_link_need(needs_by_id, link) is not None
+    )
+
+
 def collect_edges(
     found_needs: list[NeedItem | NeedPartItem],
     allowed_link_types: list[LinkShape],
     drawn: Container[str],
     /,
+    *,
+    part_links_to_needs: bool = False,
 ) -> list[GraphEdge]:
     """Collect every link between the needs of a result.
 
@@ -599,22 +683,32 @@ def collect_edges(
     :param found_needs: The needs and need parts that passed the filter.
     :param allowed_link_types: The link fields to draw.
     :param drawn: The complete ids of the drawn nodes, from :func:`build_node_tree`.
+    :param part_links_to_needs: Whether the result holds needs alone, a view's filter
+        not being tested on parts (``needs_views_include_parts`` false): a link naming a
+        part of a need of the result then ends on that need, styled as a part edge
+        (:func:`_part_link_need`).
     :return: The edges, in the order the engines emit them.
     """
     # a need and a need part are both identified by their complete id
     found_ids = {need["id_complete"] for need in found_needs}
+    found_by_id = _needs_by_id(found_needs) if part_links_to_needs else {}
     edges: list[GraphEdge] = []
     for need in found_needs:
         source_id = need["id_complete"]
         for link_type in allowed_link_types:
             for link in need[link_type.name]:
+                target_id = link
                 if link not in found_ids:
-                    # the link target was filtered out, so there is nothing to point at
-                    continue
+                    # the link target was filtered out, so there is nothing to point
+                    # at; with no part in the result, a part of a need of it ends on
+                    # that need
+                    if (need_id := _part_link_need(found_by_id, link)) is None:
+                        continue
+                    target_id = need_id
                 edges.append(
                     GraphEdge(
                         source_id=source_id,
-                        target_id=link,
+                        target_id=target_id,
                         link_type=link_type,
                         # a part edge is one whose link names a part, its address read
                         # as a link's is; the id of the need it starts at plays no part
@@ -623,7 +717,7 @@ def collect_edges(
                         # settled, and its edge is styled as it was
                         is_part=NeedLink.parse_address(link).part is not None,
                         source_drawn=source_id in drawn,
-                        target_drawn=link in drawn,
+                        target_drawn=target_id in drawn,
                     )
                 )
     return edges

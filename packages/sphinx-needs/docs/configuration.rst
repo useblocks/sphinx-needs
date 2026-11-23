@@ -1737,7 +1737,8 @@ needs_views_max_items
 
 The maximum number of items a view directive shows, when it does not set its own ``max_items`` option.
 
-It applies to :ref:`needlist`, :ref:`needtable` and :ref:`needflow`, which count needs (and need parts),
+It applies to :ref:`needlist`, :ref:`needtable` and :ref:`needflow`, which count needs (and the need parts their
+filter selects, :ref:`needs_views_include_parts`),
 and to :ref:`needsequence`, which counts messages.
 The limit is applied after filtering and sorting, so a view keeps the first items it would otherwise have shown,
 and reports how many it is hiding.
@@ -1754,6 +1755,76 @@ A single view can opt out of a project-wide limit again with ``:max_items: 0``.
    needs_views_max_items = 50
 
 Default: :need_config_default:`views_max_items`
+
+.. _`needs_views_include_parts`:
+
+needs_views_include_parts
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.4.0
+
+Whether a view's filter is tested on the :ref:`need parts <need_part>` beside the needs.
+The views are :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`,
+a content line of :ref:`needpie` and a cell of :ref:`needbar` (with the scope of either chart,
+:ref:`needpie_scope`), and :ref:`need_count`; their filter is the ``:filter:`` option, ``:status:``, ``:tags:`` and
+``:types:``, :ref:`filter_code` and a :ref:`filter function <filter_func>`.
+
+* ``True``: the filter is tested on every need and every need part, and a part that passes is an item of the view
+  of its own: a row, a line, a node inside its need, a gantt element, a count of one.
+* ``False``: the filter is tested on the needs alone, so ``is_part`` selects nothing, and a view shows a need's parts
+  only where it asks: a needtable with :ref:`show_parts <needtable_show_parts>` lists the parts of each need it
+  lists, under it. A filter that tests each need on its own selects the needs it selects under ``True``, in the same
+  order. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
+  type's ``style_part`` (dotted by default). Filter code and a filter function are handed needs alone, and their
+  result is matched to them, so a part the code builds itself is dropped (kept with
+  :ref:`needs_allow_unsafe_filters`).
+
+**Unset (the default), it is** ``True`` **in 9.x, and** ``False`` **from 10.0**: from 10.0 a view lists needs, not
+need parts, unless it asks (only a needtable can, with ``:show_parts:``). Set it either way to keep a project's views
+through that release:
+
+.. code-block:: python
+
+   needs_views_include_parts = True
+
+or in ``ubproject.toml``:
+
+.. code-block:: toml
+
+   [needs]
+   views_include_parts = true
+
+While it is unset, a place reports ``needs.views_include_parts``, once, where it is written, as its result
+decides:
+
+* each view, chart line or cell and :ref:`need_count` whose result holds a need part, saying how many need parts its
+  filter selects (a chart line, a cell or a count: how many it counts). The number is taken before any ``max_items``
+  cap, as the filter selects it: a capped view whose parts fall beyond the cap changes too, as its needs move up
+  into the window or the total its notice gives shrinks. A needtable with ``:show_parts:`` counts the parts it lists
+  on rows of their own, those whose need is not a row; one whose matched parts are each listed under their need is
+  not reported.
+* each :ref:`needflow` that from 10.0 draws links to parts of its needs as edges to the parts' needs, where today it
+  draws no edge for them or an edge to the part, saying how many: the links of the needs its ``max_items`` window
+  keeps once it holds needs alone (with the parts its filter selects, in one report, where it selects any).
+
+Setting the value either way silences it (``True`` keeps the views as they are, ``False`` selects needs alone now),
+as does ``suppress_warnings = ["needs.views_include_parts"]``. :ref:`needextract`, which never shows a part, is not
+reported.
+
+The report sees what a place's result holds, and no more. It cannot see a view whose filter string, filter code or
+filter function reads ``needs`` itself (how many needs there are, say, or which parts some need has), nor a chart's
+``:filter-func:``: such a place can change at 10.0 without a report, and a needflow among them can be reported with
+a number of links it does not then draw. And it can report a place whose output does not change: filter code or a
+filter function that builds parts itself, with :ref:`needs_allow_unsafe_filters`; a ``:need_count:`` ratio whose
+two halves both hold parts and give the same percentage without them; or a needflow drawn by the graphviz engine
+whose filter selects parts of a need it does not show, as graphviz draws no part without its need, nor a link to
+one (the plantuml engine draws those links, so there it changes).
+
+It does not reach a filter that is not a view's: :ref:`links_from_filter`, :ref:`links_from_match` and a derived
+``links`` rule (:ref:`needs_derive`), which test parts where they are given ``include_parts``, and every other
+dynamic function, :ref:`needextend`, :ref:`needs_warnings`, :ref:`needs_constraints`, :ref:`needs_builder_filter`,
+the ``filter()`` of :ref:`needuml <needuml_jinja_filter>`, predicates and variants, which test needs alone. So the
+``needs.json`` a build writes is the same whatever the value says. Changing it re-reads no document.
 
 .. _`needs_uml_process_max_time`:
 

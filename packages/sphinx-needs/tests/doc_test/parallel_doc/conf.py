@@ -46,3 +46,4 @@ needs_fields = {
     },
     "comment": {"nullable": True},
 }
+needs_views_include_parts = True

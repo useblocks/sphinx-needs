@@ -523,7 +523,8 @@ and no text to put in place of the chart, unlike :ref:`needpie <needpie_scope>`.
 
 Parts follow their need: ``:status:``, ``:tags:`` and ``:types:`` select needs,
 and the parts of a selected need are in the scope with it, while ``:filter:``
-is evaluated over needs and parts alike.
+is evaluated over needs and parts alike. Where :ref:`needs_views_include_parts`
+is false, the scope and every filter cell hold needs alone, and no part is counted.
 This is what the same four options do on :ref:`needlist`, so a scope and a
 ``needlist`` written with the same options select the same needs.
 

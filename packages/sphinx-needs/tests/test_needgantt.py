@@ -250,7 +250,9 @@ def test_a_float_completion_is_an_integer_percentage(test_app):
 #: Titles a gantt element's label must still draw: a need part's text (its ``title``) may
 #: span lines, be empty or hold brackets, and so may a need's title.
 CONF_PY_TITLES = (
-    CONF_PY + "needs_title_optional = True\nplantuml_output_format = 'svg'\n"
+    CONF_PY
+    + "needs_title_optional = True\nplantuml_output_format = 'svg'\n"
+    + "needs_views_include_parts = True\n"
 )
 
 TITLES_CHART = """\

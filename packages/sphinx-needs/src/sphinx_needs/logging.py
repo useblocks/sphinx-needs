@@ -102,6 +102,7 @@ WarningSubTypes = Literal[
     "variant",
     "variant_data_location",
     "variants_unknown_key",
+    "views_include_parts",
     "warnings",
 ]
 
@@ -175,6 +176,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "variant": "Error processing variant in need field",
     "variant_data_location": "Variant data set in both ``[variants]`` and ``[needs]``; the ``[needs]`` keys are ignored",
     "variants_unknown_key": "Unknown key in the ``[variants]`` table",
+    "views_include_parts": "While needs_views_include_parts is unset, a view, chart line or cell, or need_count whose filter selects need parts, or a needflow that will draw links to parts to the parts' needs: from 10.0 a view's filter selects needs only",
     "warnings": "Need warning check failed for one or more needs",
 }
 

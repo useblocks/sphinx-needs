@@ -150,6 +150,165 @@ def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
     return (3, text.lower() if ignore_case else text)
 
 
+#: What an unset ``needs_views_include_parts`` means: ``True`` through the 9.x series,
+#: each place whose result holds a need part (but needextract, and a needtable with
+#: ``:show_parts:`` whose matched parts are each listed under their need), and each
+#: needflow that will draw links to parts of its needs as edges to the parts' needs,
+#: reporting it (:func:`_report_parts_in_view`).
+#: From 10.0 unset means ``False``: this constant changes, and the report goes.
+_VIEWS_INCLUDE_PARTS_UNSET = True
+
+
+def _views_include_parts(config: NeedsSphinxConfig) -> bool:
+    """Whether a view's filter is tested on the need parts beside the needs, as
+    ``needs_views_include_parts`` says, and :data:`_VIEWS_INCLUDE_PARTS_UNSET` where it
+    is unset. A value of another type is read by its truth, as Sphinx reads the other
+    boolean settings once it has reported the type.
+    """
+    value = config.views_include_parts
+    return _VIEWS_INCLUDE_PARTS_UNSET if value is None else bool(value)
+
+
+def _view_candidates(
+    needs_view: NeedsView, config: NeedsSphinxConfig, /
+) -> NeedsAndPartsListView:
+    """What a view's filter is tested on: the needs of *needs_view* and their parts, or
+    the needs alone (``needs_views_include_parts``).
+
+    Every place that feeds a view, a chart or ``:need_count:`` takes its candidates
+    here, and nothing else gives a view its candidates (needflow reads the value
+    besides, through :func:`_views_include_parts`, to re-point a link to a part): a
+    function or a rule that asks for parts (``include_parts``) reads them itself, and
+    :meth:`NeedsView.to_list_with_parts` keeps its meaning. Under the needs alone,
+    every filter method answers as it does over the needs and parts, with the parts
+    left out and in the same order (:meth:`NeedsView._to_list_of_needs`), and filter
+    code and a ``:filter-func:`` are handed needs only.
+    """
+    if _views_include_parts(config):
+        return needs_view.to_list_with_parts()
+    return needs_view._to_list_of_needs()
+
+
+def _report_parts_in_view(
+    config: NeedsSphinxConfig,
+    found: Iterable[NeedItem | NeedPartItem],
+    view: str,
+    location: nodes.Node,
+    /,
+    *,
+    counts: bool = False,
+    part_links: Callable[[], int] | None = None,
+    show_parts: bool = False,
+) -> None:
+    """Report, while ``needs_views_include_parts`` is unset, a place whose result holds
+    a need part (from 10.0 its filter selects needs alone), and a needflow that from
+    10.0 draws links to parts of its needs as edges to the parts' needs (those of the
+    needs its ``max_items`` window keeps once it holds needs alone).
+
+    Decided from the result, never by testing the filter again, so it sees what the
+    result holds and no more: not a place whose filter string, filter code or
+    ``:filter-func:`` reads ``needs`` itself, nor a chart's ``:filter-func:``, whose
+    output may change all the same; and it can report a place whose output does not
+    change (filter code that builds parts itself keeps them with unsafe filters allowed;
+    a ``:need_count:`` ratio whose two halves both hold parts can give the same
+    percentage without them; the graphviz engine draws no part of a need a needflow
+    does not show, nor a link to one). Once
+    per build for a place, keyed by what it is (*view*: the directive, or a chart's line
+    or cell, or ``:need_count:``, with its filter) and where it is written; never with
+    the value set either way. needextract, which drops the parts it matches, does not
+    call it. This is the whole report of the 9.x series: at 10.0 it goes, with its calls,
+    its warning type and needflow's
+    :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`.
+
+    :param found: The place's result, before any ``max_items`` cap: what its filter
+        selects, whose parts are counted (a capped view whose parts fall beyond the cap
+        still changes, its needs moving up into its window or its total shrinking).
+    :param view: What the place is, as the message names it.
+    :param location: Where the place is written.
+    :param counts: Whether the place counts (a chart, ``:need_count:``) or lists.
+    :param part_links: For a needflow, how many links it draws to the parts' needs
+        where its result holds needs alone: those of the needs its ``max_items`` window
+        keeps of the result's needs, as
+        :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`
+        counts them; called only while the value is unset.
+    :param show_parts: Whether the place is a needtable with ``:show_parts:``, whose
+        *found* keeps only the parts whose need it does not list, as its message says.
+    """
+    if config.views_include_parts is not None:
+        return
+    parts = {item["id_complete"] for item in found if item["is_part"]}
+    links = part_links() if part_links is not None else 0
+    if not parts and not links:
+        return
+    reported = _NEEDS_CONFIG.build.views_include_parts_reported
+    if (key := (view, get_source_line(location))) in reported:
+        return
+    reported.add(key)
+    log_warning(
+        log,
+        _views_include_parts_text(
+            view, len(parts), links, counts=counts, show_parts=show_parts
+        ),
+        "views_include_parts",
+        location=location,
+    )
+
+
+def _views_include_parts_text(
+    view: str, parts: int, links: int, /, *, counts: bool, show_parts: bool = False
+) -> str:
+    """The text of :func:`_report_parts_in_view`: what the place's filter selects, what
+    changes at 10.0 for its kind of view, and what to set."""
+    selects = f"{parts} need part{'' if parts == 1 else 's'}"
+    keep = "Set needs_views_include_parts = True to keep"
+    if links:
+        drawn = (
+            "1 link to a need part as an edge to the part's need"
+            if links == 1
+            else f"{links} links to need parts as edges to the parts' needs"
+        )
+        head = (
+            f"This {view}'s filter selects {selects}, and from Sphinx-Needs 10.0 it "
+            f"draws {drawn}"
+            if parts
+            else f"From Sphinx-Needs 10.0 this {view} draws {drawn}, which it draws no "
+            "edge for now"
+        )
+        text = (
+            f"{head}: a view's filter then selects needs only, and a needflow draws a "
+            "link to a part of a need it shows as an edge to that need. "
+            f"{keep} the needflow as it is, or False to draw "
+            f"{'needs only' if parts else 'those edges'} now"
+        )
+    else:
+        keeping, now = (
+            ("counting", "count")
+            if counts
+            else ("drawing", "draw")
+            if view in ("needflow", "needgantt")
+            else ("listing", "list")
+        )
+        # only a needtable can ask for parts
+        asks = (
+            ", and a needtable lists a need's parts under it only with :show_parts:"
+            if view == "needtable"
+            else ""
+        )
+        head = (
+            f"This {view} counts {selects}"
+            if counts
+            else f"This {view}'s filter selects {selects}"
+            # a needtable with :show_parts: lists a part under its need when its need
+            # is a row: what it reports are the others
+            + (" whose need it does not list" if show_parts else "")
+        )
+        text = (
+            f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
+            f"{keep} {keeping} them, or False to {now} needs only now"
+        )
+    return f"{text}; or suppress needs.views_include_parts."
+
+
 def process_filters(
     app: Sphinx,
     needs_view: NeedsView,
@@ -224,7 +383,7 @@ def process_filters(
 
         # Get need by filter string
         found_needs = filter_needs_parts(
-            filtered_needs.to_list_with_parts(),
+            _view_candidates(filtered_needs, needs_config),
             needs_config,
             filter_data["filter"],
             location=location,
@@ -238,13 +397,15 @@ def process_filters(
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
         found_dirty_needs: list[NeedItem | NeedPartItem] = []
+        # what the code is handed, and what its result is mapped back over
+        candidates = _view_candidates(needs_view, needs_config)
 
         if filter_code:  # code from content
             full_filter.append(filter_code)
             # the namespace the filter code runs in: it is the user's code that
             # leaves the matches under `results`, so its values are not ours to type
             context: dict[str, Any] = {
-                "needs": needs_view.to_list_with_parts(),
+                "needs": candidates,
                 "results": [],
             }
             exec(filter_code, context)
@@ -262,7 +423,7 @@ def process_filters(
                 ff_result.func, category="filter_func", source="user"
             )
             filter_func(
-                needs=needs_view.to_list_with_parts(),
+                needs=candidates,
                 results=found_dirty_needs,
                 **args_context,
             )
@@ -277,9 +438,11 @@ def process_filters(
         if needs_config.allow_unsafe_filters:
             found_needs = found_dirty_needs
         else:
-            # Just take the ids from search result and use the related, but original need
+            # Just take the ids from search result and use the related, but original need:
+            # one of the candidates, so a part the code built itself is dropped where the
+            # candidates are needs alone
             found_need_ids = [x["id_complete"] for x in found_dirty_needs]
-            for need in needs_view.to_list_with_parts():
+            for need in candidates:
                 if need["id_complete"] in found_need_ids:
                     found_needs.append(need)
 
@@ -477,9 +640,10 @@ def filter_scope_ids(
     need-listing directive such as ``needlist``: each option narrows the view in
     turn, exactly as ``process_filters`` narrows it there, each one matching
     any-of its own values; ``:types:`` matches the directive name or the
-    human-readable type title; and ``:filter:`` is evaluated last, over needs
-    *and* parts. Parts follow their need for ``:status:``, ``:tags:`` and
-    ``:types:``, exactly as they do there -- including that the ``id`` fast path
+    human-readable type title; and ``:filter:`` is evaluated last, over what a
+    view's filter is tested on (needs and parts, or needs alone, as
+    ``needs_views_include_parts`` says). Parts follow their need for ``:status:``,
+    ``:tags:`` and ``:types:``, exactly as they do there -- including that the ``id`` fast path
     admits sibling parts once the view has been narrowed, which is inherited
     behaviour rather than a property of the scope.
 
@@ -514,17 +678,17 @@ def filter_scope_ids(
     if types:
         filtered_needs = filtered_needs.filter_types(types, or_type_names=True)
 
-    parts = filtered_needs.to_list_with_parts()
+    candidates = _view_candidates(filtered_needs, config)
     members: Iterable[NeedItem | NeedPartItem] = (
         filter_needs_parts(
-            parts,
+            candidates,
             config,
             filter,
             location=location,
             origin_docname=origin_docname,
         )
         if filter
-        else parts
+        else candidates
     )
 
     return frozenset(need["id_complete"] for need in members)

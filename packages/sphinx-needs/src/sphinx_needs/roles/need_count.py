@@ -12,7 +12,11 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsInvalidFilter
-from sphinx_needs.filter_common import filter_needs_parts
+from sphinx_needs.filter_common import (
+    _report_parts_in_view,
+    _view_candidates,
+    filter_needs_parts,
+)
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
@@ -39,44 +43,46 @@ def process_need_count(
         if filter:
             filters = filter.split(" ? ")
             if len(filters) == 1:
-                need_list = needs_view.to_list_with_parts()
-                amount = str(
-                    len(
-                        filter_needs_parts(
-                            need_list,
-                            needs_config,
-                            filters[0],
-                            location=node_need_count,
-                            origin_docname=origin_docname,
-                        )
-                    )
+                need_list = _view_candidates(needs_view, needs_config)
+                found = filter_needs_parts(
+                    need_list,
+                    needs_config,
+                    filters[0],
+                    location=node_need_count,
+                    origin_docname=origin_docname,
                 )
+                amount = str(len(found))
             elif len(filters) == 2:
-                need_list = needs_view.to_list_with_parts()
-                amount_1 = len(
-                    filter_needs_parts(
-                        need_list,
-                        needs_config,
-                        filters[0],
-                        location=node_need_count,
-                        origin_docname=origin_docname,
-                    )
+                need_list = _view_candidates(needs_view, needs_config)
+                found_1 = filter_needs_parts(
+                    need_list,
+                    needs_config,
+                    filters[0],
+                    location=node_need_count,
+                    origin_docname=origin_docname,
                 )
-                amount_2 = len(
-                    filter_needs_parts(
-                        need_list,
-                        needs_config,
-                        filters[1],
-                        location=node_need_count,
-                        origin_docname=origin_docname,
-                    )
+                found_2 = filter_needs_parts(
+                    need_list,
+                    needs_config,
+                    filters[1],
+                    location=node_need_count,
+                    origin_docname=origin_docname,
                 )
+                found = [*found_1, *found_2]
+                amount_1, amount_2 = len(found_1), len(found_2)
                 amount = "inf" if amount_2 == 0 else f"{amount_1 / amount_2 * 100:2.1f}"
             else:
                 raise NeedsInvalidFilter(
                     "Filter not valid. Got too many filter elements. Allowed are 1 or 2. "
                     'Use " ? " only once to separate filters.'
                 )
+            _report_parts_in_view(
+                needs_config,
+                found,
+                f"need_count {filter!r}",
+                node_need_count,
+                counts=True,
+            )
         else:
             amount = str(len(needs_view))
 

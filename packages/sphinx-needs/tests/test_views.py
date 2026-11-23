@@ -7,6 +7,13 @@ methods are exercised here directly, without a Sphinx build.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
+from typing import Any
+from unittest.mock import Mock
+
+import pytest
+
+from sphinx_needs.filter_common import _view_candidates, filter_needs_parts, sort_key
 from sphinx_needs.need_item import NeedItem, NeedPartData, NeedsContent
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
@@ -160,3 +167,152 @@ def test_filter_id_complete_keeps_the_order_of_the_view():
     assert [item["id_complete"] for item in selected] == [
         item["id_complete"] for item in view if item["id_complete"] != "TEST_1.P1"
     ]
+
+
+# --- the needs alone: the needs-and-parts answer with its parts left out ---------------
+
+
+def _need(
+    id: str, type: str, type_name: str, status: str | None, tags: list[str], *parts: str
+) -> NeedItem:
+    return NeedItem(
+        core=CORE_BASE
+        | {
+            "id": id,
+            "type": type,
+            "type_name": type_name,
+            "status": status,
+            "tags": tags,
+        },
+        extras={},
+        links={},
+        source=None,
+        content=NeedsContent(content="", doctype=".rst"),
+        parts=tuple(NeedPartData(id=part, content=part) for part in parts),
+    )
+
+
+def _project() -> NeedsView:
+    """Five needs in document order, three of them with parts."""
+    needs = [
+        _need("REQ_A", "req", "Requirement", "open", ["a"], "p1", "p2"),
+        _need("SPEC_N", "spec", "Specification", "closed", ["b"], "n1"),
+        _need("REQ_B", "req", "Requirement", "open", ["b", "a"]),
+        _need("TEST_1", "test", "Test Case", "done", ["a"], "t1"),
+        _need("TEST_2", "test", "Test Case", None, []),
+    ]
+    return NeedsView._from_needs({n["id"]: n for n in needs})
+
+
+#: A view's candidates come from the whole project, or from a view already narrowed
+#: (a ``:root_id:`` walk's, in the order of the walk; one leaving external needs out).
+_VIEWS: dict[str, Callable[[], NeedsView]] = {
+    "unrestricted": _project,
+    "restricted": lambda: _project().filter_ids(
+        ["TEST_1", "REQ_B", "SPEC_N", "REQ_A", "TEST_2"]
+    ),
+    "restricted-external": lambda: _project().filter_is_external(False),
+}
+
+
+def _filter(filter_string: str) -> Callable[[NeedsAndPartsListView], list[Any]]:
+    def run(candidates: NeedsAndPartsListView) -> list[Any]:
+        config = Mock()
+        config.filter_data = {}
+        return filter_needs_parts(candidates, config, filter_string)
+
+    return run
+
+
+def _sorted_by_status(items: Iterable[Any]) -> list[Any]:
+    """As ``:sort_by: status`` orders a result."""
+    return sorted(
+        items,
+        key=lambda item: (
+            sort_key(item["status"], ignore_case=False),
+            item["id_complete"],
+        ),
+    )
+
+
+#: Each path a view's candidates take, with values in an order that is not the
+#: document's: every fast path, chains of them, filter strings (a fast path, a chain,
+#: one tested need by need) and a sort.
+_PATHS: dict[str, Callable[[NeedsAndPartsListView], Iterable[Any]]] = {
+    "filter_ids": lambda v: v.filter_ids(["TEST_1", "p1", "REQ_A", "SPEC_N"]),
+    "filter_ids-needs": lambda v: v.filter_ids(["TEST_1", "REQ_B", "REQ_A"]),
+    "filter_id_complete": lambda v: v.filter_id_complete(
+        ["TEST_1", "REQ_A.p1", "REQ_A", "SPEC_N"]
+    ),
+    "filter_types": lambda v: v.filter_types(["test", "req"]),
+    "filter_types-or_type_names": lambda v: v.filter_types(
+        ["Test Case", "spec", "req"], or_type_names=True
+    ),
+    "filter_statuses": lambda v: v.filter_statuses(["done", None, "open"]),
+    "filter_has_tag": lambda v: v.filter_has_tag(["b", "a"]),
+    "filter_is_external": lambda v: v.filter_is_external(False),
+    "filter_types-filter_ids": lambda v: v.filter_types(["test", "req"]).filter_ids(
+        ["REQ_B", "TEST_1", "REQ_A"]
+    ),
+    "filter_ids-filter_statuses": lambda v: v.filter_ids(
+        ["TEST_1", "REQ_B", "REQ_A", "TEST_2"]
+    ).filter_statuses(["open", "done"]),
+    "filter_ids-filter_id_complete": lambda v: v.filter_ids(
+        ["TEST_1", "REQ_B", "REQ_A"]
+    ).filter_id_complete(["REQ_A", "TEST_1", "REQ_A.p1"]),
+    "string-id-in": _filter('id in ["TEST_1", "REQ_A"]'),
+    "string-id-in-and-tag": _filter(
+        'id in ["TEST_1", "REQ_B", "REQ_A"] and "a" in tags'
+    ),
+    "string-need-by-need": _filter('type != "spec"'),
+    "sort_by": lambda v: _sorted_by_status(
+        v.filter_ids(["TEST_1", "REQ_A", "SPEC_N", "REQ_B"])
+    ),
+}
+
+
+@pytest.mark.parametrize("path", _PATHS)
+@pytest.mark.parametrize("view", _VIEWS)
+def test_the_needs_alone_answer_as_needs_and_parts_do_without_the_parts(
+    view: str, path: str
+) -> None:
+    """Under ``needs_views_include_parts = False`` a view's result is the result under
+    ``True`` with its parts left out, in the same order, whatever path the candidates
+    take and wherever they come from."""
+    candidates = {
+        value: _view_candidates(_VIEWS[view](), Mock(views_include_parts=value))
+        for value in (True, False)
+    }
+    # the premise: parts are candidates under True, and none under False
+    assert any(item["is_part"] for item in candidates[True])
+    assert not any(item["is_part"] for item in candidates[False])
+    with_parts = list(_PATHS[path](candidates[True]))
+    needs_alone = list(_PATHS[path](candidates[False]))
+    assert [item["id_complete"] for item in needs_alone] == [
+        item["id_complete"] for item in with_parts if not item["is_part"]
+    ]
+
+
+@pytest.mark.parametrize("view", _VIEWS)
+def test_the_needs_alone_get_each_need_as_needs_and_parts_do_and_no_part(
+    view: str,
+) -> None:
+    """``get_need`` on the candidates under ``False`` answers each need as it does under
+    ``True`` (the need where the view holds it, ``None`` where it does not) and answers
+    no part, where under ``True`` it answers the part."""
+    needs_view = _VIEWS[view]()
+    candidates = {
+        value: _view_candidates(needs_view, Mock(views_include_parts=value))
+        for value in (True, False)
+    }
+    needs_answered = parts_answered = 0
+    for need in _project().values():
+        with_parts = candidates[True].get_need(need["id"])
+        assert candidates[False].get_need(need["id"]) is with_parts
+        needs_answered += with_parts is not None
+        for part in need.parts:
+            parts_answered += candidates[True].get_need(need["id"], part.id) is not None
+            assert candidates[False].get_need(need["id"], part.id) is None
+    # the premise: under True the view answers needs and parts
+    assert needs_answered
+    assert parts_answered

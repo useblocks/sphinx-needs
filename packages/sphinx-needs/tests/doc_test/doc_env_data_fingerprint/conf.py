@@ -53,3 +53,4 @@ needs_types = [
     },
     {"directive": "spec", "title": "Specification", "prefix": "S_"},
 ]
+needs_views_include_parts = True

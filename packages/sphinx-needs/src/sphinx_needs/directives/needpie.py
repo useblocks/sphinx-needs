@@ -15,6 +15,8 @@ from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     FilterBase,
+    _report_parts_in_view,
+    _view_candidates,
     filter_needs_parts,
     filter_scope_ids,
 )
@@ -202,8 +204,8 @@ def process_needpie(
         )
 
         sizes = []
-        # adds parts to need_list
-        need_list = needs_data.get_needs_view().to_list_with_parts()
+        # what each line is tested on: needs and their parts, or needs alone
+        need_list = _view_candidates(needs_data.get_needs_view(), needs_config)
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():
@@ -220,6 +222,9 @@ def process_needpie(
                         found = [
                             need for need in found if need["id_complete"] in scope_ids
                         ]
+                    _report_parts_in_view(
+                        needs_config, found, f"needpie line {line!r}", node, counts=True
+                    )
                     sizes.append(len(found))
         elif current_needpie["filter_func"] and not content:
             # check and get filter_func

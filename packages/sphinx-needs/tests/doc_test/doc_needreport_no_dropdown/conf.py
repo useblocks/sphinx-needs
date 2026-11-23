@@ -37,3 +37,4 @@ needs_external_needs = [
         "id_prefix": "EXT_",
     },
 ]
+needs_views_include_parts = True

@@ -9,7 +9,10 @@ page is written), and four things are asserted:
 * every case's outcome: each named need's parts as a set of id and text, each named
   need's dead links, the back links of each named need and part per link type, the
   findings of the contract as a multiset of classes (and nothing else where the case says
-  ``clean``), and what each filter selects over needs and parts;
+  ``clean``), and what each filter selects over needs and parts, or, for an entry
+  saying ``view = true``, over what a view's filter is tested on under the case's
+  ``views_include_parts`` (read through the function every view takes its candidates
+  from);
 * a case marked ``divergent`` for sphinx-needs FAILS with exactly the problems recorded
   for it, fails as a second deviation with any others, and fails when it passes, so a fix
   cannot leave its marker behind;
@@ -49,7 +52,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 60
+EXPECTED_CASE_COUNT = 62
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -60,7 +63,16 @@ SECTIONS = (
     "addressing",
     "links",
     "answers",
+    "selection",
     "derived",
+)
+
+#: The list of sections the header gives in its "Sections, in this order" sentence,
+#: which was written before ``selection`` was; the header places ``selection`` in a
+#: sentence of its own, as the file's existing lines are not changed.
+LISTED_SECTIONS = tuple(section for section in SECTIONS if section != "selection")
+SELECTION_PLACED = (
+    "`selection`, what a view's filter selects, sits between `answers` and `derived`."
 )
 
 #: Each class of finding of the contract, by sphinx-needs' code (the bare subcode of
@@ -135,7 +147,7 @@ _CASE_KEYS = {
     "filters",
 }
 _EXPECT_KEYS = {"findings", "parts", "dead", "back"}
-_ENTRY_KEYS = {"filter", "expected", "include_parts", "why"}
+_ENTRY_KEYS = {"filter", "expected", "include_parts", "view", "why"}
 
 #: A record's code: the ``[needs.<code>]`` that ends it.
 _CODE = re.compile(r"\[needs\.([a-z_]+)\]$")
@@ -209,12 +221,22 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert set(by_type) <= link_types, (name, address, sorted(by_type))
             for ids in by_type.values():
                 assert ids == sorted(set(ids)), (name, address)
+        views = 0
         for entry in case.get("filters", []):
             where = f"{name}: {entry.get('filter')!r}"
             assert set(entry) <= _ENTRY_KEYS, where
-            assert entry["include_parts"] is True, where
+            # an entry asks for parts, or is read as a view's filter: never both
+            ask = {key: entry[key] for key in ("include_parts", "view") if key in entry}
+            assert list(ask.values()) == [True], where
+            views += "view" in ask
             assert isinstance(entry["filter"], str) and entry["filter"], where
             assert entry["expected"] == sorted(set(entry["expected"])), where
+        # a view's entries are the section `selection`'s, and its case writes the key
+        # they are read under, never leaving it to a default that changes
+        assert (case["section"] == "selection") == bool(views), name
+        if views:
+            needs = tomllib.loads(case["config"])["needs"]
+            assert isinstance(needs.get("views_include_parts"), bool), name
 
 
 def test_every_marker_names_a_known_tool() -> None:
@@ -259,7 +281,11 @@ def test_the_header_lists_every_class_and_section() -> None:
     assert {code: cls for cls, code in rows} == CLASSES
     assert len(rows) == len(CLASSES)
     prose = " ".join(line.removeprefix("#").strip() for line in header.splitlines())
-    assert f"Sections, in this order: {', '.join(SECTIONS)}." in prose
+    assert f"Sections, in this order: {', '.join(LISTED_SECTIONS)}." in prose
+    assert SELECTION_PLACED in prose
+    placed = list(LISTED_SECTIONS)
+    placed.insert(placed.index("answers") + 1, "selection")
+    assert tuple(placed) == SECTIONS
     for tool in TOOLS:
         assert f"`{tool}`" in prose
 
@@ -493,8 +519,8 @@ def test_a_clean_case_sees_any_other_report() -> None:
 
 
 def _check_filters(app: Any, case: Mapping[str, Any]) -> list[str]:
-    """The problems with a case's filters: what each selects over needs and parts, and
-    that it reports nothing."""
+    """The problems with a case's filters: what each selects over needs and parts (over
+    a view's candidates, for a ``view`` entry), and that it reports nothing."""
     problems: list[str] = []
     if not case.get("filters"):
         return problems
@@ -503,8 +529,15 @@ def _check_filters(app: Any, case: Mapping[str, Any]) -> list[str]:
     stream = app._warning
     for entry in case["filters"]:
         start = len(stream.getvalue())
+        # a view's entry is read through the one function every view takes its
+        # candidates from, so the corpus tests the views' own path
+        candidates = (
+            filter_common._view_candidates(view, config)
+            if entry.get("view")
+            else view.to_list_with_parts()
+        )
         found = filter_needs_parts(
-            view.to_list_with_parts(), config, entry["filter"], origin_docname=ORIGIN
+            candidates, config, entry["filter"], origin_docname=ORIGIN
         )
         selected = sorted(item["id_complete"] for item in found)
         if selected != entry["expected"]:

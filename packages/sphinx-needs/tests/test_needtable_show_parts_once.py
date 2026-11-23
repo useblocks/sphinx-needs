@@ -27,6 +27,7 @@ extensions = ["sphinx_needs"]
 needs_external_needs = [
     {"base_url": "http://example.org/", "json_path": "external.json"},
 ]
+needs_views_include_parts = True
 """
 
 IMPORTED = {

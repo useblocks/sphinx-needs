@@ -139,12 +139,14 @@ The filter string must be a valid Python expression:
 
    :need_count:`type=='spec' and status != 'open'`
 
-The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or
-:ref:`needbar`, and of :ref:`need_count`, is evaluated on every need and on every :ref:`need part <need_part>`, so a
-part the filter matches is listed, drawn or counted as an item of its own (a needflow draws a part only with its
-need). A needtable with :ref:`show_parts <needtable_show_parts>` lists it once: under its need when its need is a
-row, and on a row of its own when its need is not. :ref:`links_from_filter`, :ref:`links_from_match` and a
-:ref:`derived <needs_derive>` ``links`` rule test the parts too where they are given ``include_parts``.
+The filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow`, :ref:`needgantt`, :ref:`needpie` or :ref:`needbar`,
+and of :ref:`need_count`, is evaluated on every need and, where :ref:`needs_views_include_parts` is true, on every
+:ref:`need part <need_part>`, so a part the filter matches is listed, drawn or counted as an item of its own (a needflow
+draws a part only with its need). A needtable with :ref:`show_parts <needtable_show_parts>` lists it once: under its
+need when its need is a row, and on a row of its own when its need is not. Unset, the value is true in 9.x and false
+from 10.0: from 10.0 a view's filter selects needs alone, and only a needtable shows parts, those of the needs it lists,
+with ``:show_parts:``. :ref:`links_from_filter`, :ref:`links_from_match` and a :ref:`derived <needs_derive>` ``links``
+rule test the parts too where they are given ``include_parts``, whatever the value says.
 
 A need part answers its own ``id`` (the part's id), ``id_complete`` (``NEED.part``), ``id_parent`` (its need's id),
 ``is_part`` (true) and ``is_need`` (false), its text as both ``content`` and ``title``, no outgoing links (every link
@@ -153,7 +155,8 @@ no ``parts``. Every other name is its need's: its type, status, tags and fields.
 their need's values; one meant for the parts of particular needs names them by ``id_parent``, such as
 ``is_part and id_parent == "REQ_1"``.
 
-The following filter counts the need parts of the needs tagged *car*:
+The following filter counts the need parts of the needs tagged *car*, where :ref:`needs_views_include_parts` is
+true, as in this documentation:
 
 .. syntax-example::
 
@@ -167,7 +170,8 @@ Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used.
 Finally, the following are available:
 
 * :ref:`re_search`, as Python function for performing searches with a regular expression
-* **needs** as :class:`.NeedsAndPartsListView` object, which contains all needs and need_parts.
+* **needs** as :class:`.NeedsAndPartsListView` object, which contains what the filter is tested on: all needs, and
+  their need parts where the filter tests them.
 
 A filter is read for its truth: if your expression is valid and its value is true by Python's rules, whatever its type,
 the related need is added to the filter result list -- an empty string, an empty list, ``0`` and ``None`` are false,
@@ -745,7 +749,10 @@ with the help of Python.
 
 The used code must define a variable ``results``, which must be a list and contains the filtered needs.
 
-The code also has access to a variable called ``needs``, which is a :class:`.NeedsAndPartsListView` instance.
+The code also has access to a variable called ``needs``, which is a :class:`.NeedsAndPartsListView` instance: every
+need, and every need part where :ref:`needs_views_include_parts` is true. Its ``results`` are matched to what it was
+handed, so with the value false a part the code builds itself (``need.iter_part_items()``) is dropped, unless
+:ref:`needs_allow_unsafe_filters` is set.
 
 .. syntax-example::
 

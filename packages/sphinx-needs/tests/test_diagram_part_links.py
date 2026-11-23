@@ -27,6 +27,7 @@ from sphinx_needs_testkit import build_warnings
 CONF = """\
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 needs_fields = {"duration": {"schema": {"type": "integer"}, "nullable": True}}
+needs_views_include_parts = True
 """
 
 NAMESPACED_CONF = CONF + "needs_namespaced_ids = True\n"

@@ -181,9 +181,10 @@ See :ref:`filter_string` for more information.
 
 .. note::
 
-   ``need_count`` executes the given filter on needs and need_parts!
-   So if you use :ref:`need_part` , the result may contain the amount of found needs *and* found need_parts.
-   To avoid this, add ``is_need`` or ``is_part`` to your filter.
+   ``need_count`` tests the given filter on needs and, where :ref:`needs_views_include_parts` is true (as in this
+   documentation, and unset in 9.x), on need parts too: then the result may count found needs *and* found need
+   parts. To count needs alone, add ``is_need`` to your filter. With the value false (the meaning of unset from
+   10.0) it counts needs alone, and ``is_part`` counts nothing.
 
 
 .. _need_count_ratio:

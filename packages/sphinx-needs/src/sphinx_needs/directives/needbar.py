@@ -13,6 +13,8 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsBarType, SphinxNeedsData
 from sphinx_needs.filter_common import (
     FilterBase,
+    _report_parts_in_view,
+    _view_candidates,
     filter_needs_parts,
     filter_scope_ids,
 )
@@ -322,8 +324,8 @@ def process_needbar(
 
         # 5. process content
         local_data_number = []
-        # adds parts to need_list
-        need_list = needs_data.get_needs_view().to_list_with_parts()
+        # what each cell is tested on: needs and their parts, or needs alone
+        need_list = _view_candidates(needs_data.get_needs_view(), needs_config)
 
         # the selection options are the scope: the needs each content cell is
         # counted over, resolved once for the whole chart (None if unscoped)
@@ -356,6 +358,13 @@ def process_needbar(
                         found = [
                             need for need in found if need["id_complete"] in scope_ids
                         ]
+                    _report_parts_in_view(
+                        needs_config,
+                        found,
+                        f"needbar cell {element!r}",
+                        node,
+                        counts=True,
+                    )
                     line_number.append(float(len(found)))
             local_data_number.append(line_number)
 
