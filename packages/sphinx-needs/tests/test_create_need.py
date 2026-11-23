@@ -467,7 +467,7 @@ def test_an_argument_of_create_need_in_fields_or_links_is_refused_naming_it(
 
 def test_only_the_need_s_own_values_are_named_as_arguments(make_app, tmp_path):
     """The names refused as arguments are the need's own values -- ``title``, ``id``,
-    ``content``, ``doctype``, ``jinja_content``, ``full_title`` --, never the caller's
+    ``content``, ``doctype``, ``jinja_content``, ``full_title``, ``parts`` --, never the caller's
     plumbing (``state``, ``source``, ...), which a field author reading a sibling's
     warning cannot give; two of them are named together."""
     (tmp_path / "conf.py").write_text(

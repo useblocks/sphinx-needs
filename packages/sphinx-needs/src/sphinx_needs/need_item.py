@@ -588,6 +588,15 @@ class NeedPartData:
     id: str
     content: str
     backlinks: dict[str, list[NeedLink]] = field(default_factory=dict)
+    origin: Literal["content", "stated"] = "stated"
+    """Where the part comes from: ``"content"``, a part its need's content marks (a
+    :ref:`need_part` role), or ``"stated"``, a part its need is given that the content
+    does not mark (by a record, or by the caller creating the need). A part built
+    without one is stated by the code that builds it. It is not written to needs.json,
+    and a filter does not read it.
+
+    .. versionadded:: 9.4.0
+    """
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -1645,6 +1654,11 @@ class NeedItem:
             raise ValueError(f"Part must have a non-empty string ID: {part.id!r}")
         if not isinstance(part.content, str):
             raise ValueError(f"Part {part.id!r} must have content of string type")
+        if part.origin not in ("content", "stated"):
+            raise ValueError(
+                f"Part {part.id!r} must have the origin 'content' or 'stated', "
+                f"not {part.origin!r}"
+            )
         if not isinstance(part.backlinks, dict) or any(
             not isinstance(k, str)
             or not isinstance(v, list)

@@ -152,9 +152,20 @@ def _in_section_title(node: nodes.Element) -> bool:
 
 def update_need_with_parts(
     env: BuildEnvironment, need: NeedItem, part_nodes: list[NeedPart]
-) -> None:
+) -> nodes.container | None:
+    """Set the parts of a need whose content is read, and render its stated parts.
+
+    The need's parts are those its content marks (``part_nodes``, the first role of
+    each id), in the order written, then the parts it was given (by its record or its
+    caller, ``need.parts`` until now) whose id its content does not mark, in the order
+    given: a given part whose id the content marks is the content's part, with no
+    finding.
+
+    :return: The block that shows the need's stated parts after its content, one line
+        per part, or ``None`` when the need has none.
+    """
     app = env.app
-    parts = {}
+    parts: dict[str, NeedPartData] = {}
     for part_node in part_nodes:
         part_id = part_node.part_id
 
@@ -176,26 +187,53 @@ def update_need_with_parts(
             id=part_id,
             content=part_node.title,
             backlinks={name: [] for name in need.iter_links_keys()},
+            origin="content",
         )
+        _mark_part(app, need, part_node, part_id, part_node.title)
 
-        part_node.need_id = need["id"]
-        part_id_ref = "{}.{}".format(need["id"], part_id)
-        part_node["reftarget"] = part_id_ref
+    stated = [part for part in need.parts if part.id not in parts]
+    need.set_parts([*parts.values(), *stated])
+    if not stated:
+        return None
 
-        node_need_part_line = nodes.inline(ids=[part_id_ref], classes=["need-part"])
-        node_need_part_line.append(nodes.Text(part_node.title))
+    block = nodes.container(classes=["needs-stated-parts"])
+    for part in stated:
+        part_node = NeedPart(title=part.content, part_id=part.id, need_id=None)
+        _mark_part(app, need, part_node, part.id, part.content, stated=True)
+        block.append(nodes.paragraph("", "", part_node))
+    return block
 
-        if docname := need["docname"]:
-            part_ref_node = make_refnode(
-                app.builder, docname, docname, part_id_ref, nodes.Text(f" {part_id}")
-            )
-            part_ref_node["classes"] += ["needs-id"]
-            node_need_part_line.append(part_ref_node)
 
-        part_node.children = []
-        part_node.append(node_need_part_line)
+def _mark_part(
+    app: Sphinx,
+    need: NeedItem,
+    part_node: NeedPart,
+    part_id: str,
+    text: str,
+    *,
+    stated: bool = False,
+) -> None:
+    """Make ``part_node`` show a part of ``need``: its text, then a link with its id,
+    in an inline holding its address ``NEED.part``, which ``unwrap_need_parts``
+    anchors as each builder anchors it. A stated part's inline has the class
+    ``need-part-stated`` beside ``need-part``."""
+    part_node.need_id = need["id"]
+    part_id_ref = "{}.{}".format(need["id"], part_id)
+    part_node["reftarget"] = part_id_ref
 
-    need.set_parts(list(parts.values()))
+    classes = ["need-part", "need-part-stated"] if stated else ["need-part"]
+    node_need_part_line = nodes.inline(ids=[part_id_ref], classes=classes)
+    node_need_part_line.append(nodes.Text(text))
+
+    if docname := need["docname"]:
+        part_ref_node = make_refnode(
+            app.builder, docname, docname, part_id_ref, nodes.Text(f" {part_id}")
+        )
+        part_ref_node["classes"] += ["needs-id"]
+        node_need_part_line.append(part_ref_node)
+
+    part_node.children = []
+    part_node.append(node_need_part_line)
 
 
 def find_parts(node: nodes.Node) -> list[NeedPart]:

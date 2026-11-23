@@ -439,6 +439,7 @@ def test_restricted_import_content_keeps_the_stated_parts(test_app: Sphinx) -> N
 
 VIEWS_CONF = """\
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+needs_views_include_parts = True
 """
 
 VIEWS_INDEX = """\
@@ -457,7 +458,7 @@ Views
    :columns: id, title
 
 .. needflow::
-   :filter: id == "IMP_1"
+   :filter: id_parent == "IMP_1"
 """
 
 VIEWS_EXTRACT = """\
@@ -524,7 +525,7 @@ def test_the_views_show_stated_parts_in_stored_order(test_app: Sphinx) -> None:
     assert rows == order
 
     (uml,) = sources
-    assert re.findall(r'"IMP_1\.([a-z0-9]+)"', uml) == order
+    assert re.findall(r" as IMP_1\.([a-z0-9]+) \[\[", uml) == order
 
     extract = Path(app.outdir, "extract.html").read_text(encoding="utf-8")
     assert 'class="needs-stated-parts docutils container"' in extract

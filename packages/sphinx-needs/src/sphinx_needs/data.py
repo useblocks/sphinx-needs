@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 32
+ENV_DATA_VERSION: Final = 33
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -242,6 +242,14 @@ the field empty; and ``include_parts`` beside a derived ``links`` rule's ``join`
 (``needs.derive_invalid``) and so empty, now links the needs and parts that match. The
 configuration does not change, so without the bump an upgraded build would keep the empty
 values on the pages whose sources did not change.
+
+Version 33 adds a field to every stored need part,
+:class:`~sphinx_needs.need_item.NeedPartData` ``origin`` (``"content"`` or ``"stated"``),
+and changes what the stored parts mean: an imported need, and one created with ``parts``
+on a page, keeps the parts it is given that its content does not mark, after its
+content's, where version 32 kept its content's alone, and shows them in a block after its
+content. A part pickled by version 32 has no ``origin``, and the documents whose sources
+did not change would keep their needs without the parts their records state.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

@@ -644,7 +644,9 @@ def _generate_need(
                 location,
             )
         parts_objects.append(
-            NeedPartData(id=part_id, content=str(part_data.get("content", "")))
+            NeedPartData(
+                id=part_id, content=str(part_data.get("content", "")), origin="stated"
+            )
         )
 
     extras_pre: dict[str, AllowedTypes | None] = {}
@@ -966,11 +968,15 @@ def add_need(
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
-    :param parts: The need's parts, keyed by part id. Kept as given only for an external
-        or a hidden need: a need on a page takes its parts from its content (its
-        :ref:`need_part` roles), a given part whose id the content marks takes the
-        content's text, and the given part ids the content does not mark are dropped,
-        with one ``needs.part`` warning per need naming them.
+    :param parts: The need's parts, keyed by part id, each ``{"id": ..., "content":
+        <its text>}`` (the key is the part's id). They are merged as ``create_need``'s
+        ``parts`` are: a need on a page has the parts its content marks (its
+        :ref:`need_part` roles), then the given parts whose id its content does not
+        mark, in the order given, shown after its content; an external or a hidden
+        need has the given parts.
+
+        .. versionchanged:: 9.4.0 A need on a page keeps the given parts its content
+           does not mark, where they were dropped with one ``needs.part`` warning.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param hide: If True then the need is not rendered.
         ``None`` means that the value can be overriden by global defaults, else it is set to False.
@@ -1001,7 +1007,7 @@ def add_need(
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
-    need, need_nodes = _create_need(
+    _, need_nodes = _create_need(
         app,
         state,
         _legacy_source(
@@ -1040,16 +1046,6 @@ def add_need(
         sections=sections,
         external_css=external_css,
     )
-    # a need on a page takes its parts from its content, which replaces the given ones;
-    # an external or a hidden need keeps them, so it drops none
-    if parts and (dropped := sorted(parts.keys() - need["parts"].keys())):
-        log_warning(
-            logger,
-            f"Need {need['id']!r}: the parts {dropped} given to add_need are dropped: "
-            "a need on a page takes its parts from its content",
-            "part",
-            location=(need["docname"], need["lineno"]) if need["docname"] else None,
-        )
     return need_nodes
 
 
@@ -1068,6 +1064,7 @@ def create_need(
     jinja_content: bool | None = None,
     full_title: str | None = None,
     allow_type_coercion: bool = True,
+    parts: Mapping[str, str] | None = None,
 ) -> tuple[NeedItem, list[nodes.Node]]:
     """Create a need, record it in the project, and return it with its nodes.
 
@@ -1138,6 +1135,15 @@ def create_need(
         derived from it. A string; any other value is refused.
     :param allow_type_coercion: If true, values are coerced to the type of their field
         where possible.
+    :param parts: Parts the need is given, a mapping of part id to text, besides the
+        parts its content marks (:ref:`need_part`). A need whose content is read has
+        the parts its content marks, in the order written, then the given parts whose
+        id its content does not mark, in the order given, each with its text as given;
+        where both give an id, the content's part is the part. The given parts a need
+        on a page has are shown after its content, each with its anchor ``NEED.part``.
+        A hidden or an external need has the given parts.
+
+        .. versionadded:: 9.4.0
     :return: The need, as it is recorded in the project (the object, not a copy), and
         the nodes to insert into the document (none for an external need). The need is
         the one created in this read of the document: in a parallel build (``-j``) the
@@ -1153,7 +1159,8 @@ def create_need(
         ``invalid_kwargs``) for a name in ``fields`` or ``links`` the project does not
         declare, or one given in the wrong place: a link type in ``fields``, a field in
         ``links``, or one of this function's own arguments (``title``, ``content``, ...)
-        in either.
+        in either; (type ``parts``) for ``parts`` that are not a mapping, a part id that
+        is not a non-empty string, or a text that is not a string.
     :raises TypeError: If ``source`` is not a ``NeedItemSource``, before anything is
         recorded.
     :raises ValueError: If ``state`` is ``None`` for a source that is not external.
@@ -1215,7 +1222,34 @@ def create_need(
         jinja_content=jinja_content,
         full_title=full_title,
         allow_type_coercion=allow_type_coercion,
+        parts=None if parts is None else _given_parts(parts),
     )
+
+
+def _given_parts(parts: Mapping[str, str]) -> dict[str, NeedsPartType]:
+    """``create_need``'s ``parts``, id to text, as the parts a record gives.
+
+    :raises InvalidNeedException: (type ``parts``) If ``parts`` is not a mapping, a part
+        id not a non-empty string, or a text not a string.
+    """
+    if not isinstance(parts, Mapping):
+        raise InvalidNeedException(
+            "parts", f"parts must be a mapping, not {type(parts).__name__}"
+        )
+    given: dict[str, NeedsPartType] = {}
+    for part_id, text in parts.items():
+        if not isinstance(part_id, str) or not part_id:
+            raise InvalidNeedException(
+                "parts", f"a part id must be a non-empty string, not {part_id!r}"
+            )
+        if not isinstance(text, str):
+            raise InvalidNeedException(
+                "parts",
+                f"the text of part {part_id!r} must be a string, not "
+                f"{type(text).__name__}",
+            )
+        given[part_id] = {"id": part_id, "content": text}
+    return given
 
 
 def _split_values(
@@ -1235,7 +1269,7 @@ def _split_values(
 
 
 _NEED_VALUE_ARGUMENTS = frozenset(
-    ("title", "id", "content", "doctype", "jinja_content", "full_title")
+    ("title", "id", "content", "doctype", "jinja_content", "full_title", "parts")
 )
 """The arguments of :func:`create_need` that are values of the need, which a name in its
 ``fields`` or ``links`` is refused as, naming the argument, unless the project declares
@@ -1993,7 +2027,9 @@ def _create_need_node(
     data["arch"] = arch
 
     need_parts = find_parts(node_need)
-    update_need_with_parts(env, data, need_parts)
+    # the parts the need is given that its content does not mark are shown after it
+    if (stated_parts := update_need_with_parts(env, data, need_parts)) is not None:
+        node_need.append(stated_parts)
 
     SphinxNeedsData(env).set_need_node(data["id"], node_need)
 
