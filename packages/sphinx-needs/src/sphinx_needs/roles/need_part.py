@@ -12,6 +12,7 @@ import re
 from typing import Final
 
 from docutils import nodes
+from sphinx import addnodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxRole
@@ -130,23 +131,52 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
     the heading reads as those entries do.
     """
     anchor_with_target = app.builder.format in _FORMATS_ANCHORING_TARGETS
-    anchored: set[str] = set()
-    for node in list(doctree.findall(NeedPart)):
+    anchored: set[tuple[str, str]] = set()
+    for node, source in _parts_by_source_document(doctree, docname):
         if node.children:
             shown = list(node.children)
             if anchor_with_target:
                 for child in shown:
                     if isinstance(child, nodes.Element) and child["ids"]:
-                        ids = [id_ for id_ in child["ids"] if id_ not in anchored]
+                        ids = [i for i in child["ids"] if (source, i) not in anchored]
                         if ids:
                             child.insert(0, nodes.target(ids=ids))
-                            anchored.update(ids)
+                            anchored.update((source, i) for i in ids)
                         child["ids"] = []
         elif _in_section_title(node):
             shown = []
         else:
             shown = [nodes.Text(node.title)]
         node.replace_self(shown)
+
+
+def _parts_by_source_document(
+    doctree: nodes.document, docname: str
+) -> list[tuple[NeedPart, str]]:
+    """Every ``NeedPart`` of a resolved tree, in document order, with the name of the
+    source document it is from: the name the LaTeX and texinfo writers put before an id
+    in its label or anchor.
+
+    A tree those builders assemble from several documents marks each included one with
+    a ``start_of_file`` (and an appendix as a ``document``) holding its name, and the
+    writers take the nearest one around a node. The tree is walked from its root, as
+    the writers walk it: the assembly gives a ``start_of_file`` the children of the
+    included document without making it their ``parent``.
+    """
+    found: list[tuple[NeedPart, str]] = []
+    stack: list[tuple[nodes.Node, str]] = [(doctree, docname)]
+    while stack:
+        node, source = stack.pop()
+        if isinstance(node, NeedPart):
+            found.append((node, source))
+            continue
+        if isinstance(node, addnodes.start_of_file) or (
+            isinstance(node, nodes.document) and node is not doctree
+        ):
+            source = node.get("docname", "")
+        if isinstance(node, nodes.Element):
+            stack.extend((child, source) for child in reversed(node.children))
+    return found
 
 
 def _in_section_title(node: nodes.Element) -> bool:
