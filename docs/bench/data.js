@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795443427598,
+  "lastUpdate": 1795467332742,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -31206,6 +31206,48 @@ window.BENCHMARK_DATA = {
             "value": 187.864941,
             "unit": "MB",
             "extra": "Commit: 3dd8884e528cde36f4fd850105fd54c12b31545e\nBranch: master\nTime: 2026-11-23T15:15:37+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "371f9fa005c7162a04cd7dddba9baf1ff6f3b8f8",
+          "message": "✨ sphinx-codelinks: Swift support (#2573)\n\n## What\n\nAdds Swift as a codelinks language in `packages/sphinx-codelinks`:\n`comment_type = \"swift\"` discovers `.swift` files\nand reads markers from `//`, `///`, `/* */` (a nested block comment is\none comment) and `/** */` comments, parsed\nwith `tree-sitter-swift`, a new dependency (`>=0.7.4`).\n\n- **Comments**: one query for `comment` and `multiline_comment`. The\ngrammar parses a `/*` that opens a string\nliteral's text (or follows whitespace or an interpolation in it) as a\ncomment node inside the string; those are\nfiltered as string content, through the mechanism PowerShell already\nuses. A comment in an interpolation is code\nand counts: inside its expression, in a raw string's `\\#( … )`, or at\nthe interpolation's own level, which the\n  grammar gives no node of its own (read from its `\\(` / `)` tokens).\n- **Entities, with the existing kinds**: class, struct, enum; actor →\n`class`; extension → `impl` named after the\nextended type (generic arguments dropped, `extension Outer.Inner` →\n`scope Outer`, `impl Inner`); protocol →\n`interface`; functions (`method` in a type, extension or protocol body,\nelse `function`, locals qualified by their\ncontainers); operator functions → `operator`; `init` → `constructor`;\n`deinit` → `destructor`; subscript →\n`indexer`; member and protocol properties → `property` (a declaration\nnaming several is unnamed, and so is\nanything inside it); `typealias` / `associatedtype` → `type`; macros →\n`macro`. Not entities: variables, enum\ncases, imports, operator and precedencegroup declarations, closures,\naccessors (a marker in a member property's\n  accessor goes to that property), `#Preview`.\n- **Names**: Swift full names for callables, the base name plus argument\nlabels as Swift spells them:\n`Widget.greet(name:_:)`, `init(x:)`, `subscript(_:)`, `==(_:_:)`, `f()`.\nOverloads that differ only by label are\n  different entities.\n- **Attachment**: `multiline_comment` joins `COMMENT_TYPES` and\n`modifiers` joins `ENTITY_HEAD_TYPES` (neither node\nkind exists in any other installed grammar, so no other language\nchanges); a comment before a body's first\nstatement leads a local function; a shebang line is no item before a\nfile header; rule 7 extends to a marker\ndirectly above an `#if` line (not `#elseif`, `#else`, `#endif`) among\ndeclarations, with the existing\n`marker_above_conditional` warning, as swiftc attaches a doc comment\nthere to the conditional block.\n  Doc comments: `///`, `/**`.\n- **`swift_attribute` warning**: under the start sequence `@`, a Swift\ncomment line with an attribute's shape (an\nASCII name directly followed by `(`, nothing alphanumeric before the\n`@`: `// @available(iOS 15, macOS 12, *)`,\n`/// @Available(Swift, introduced: 6.3)`) is a warning, never a need.\nMeasured during design over 2,413 files of\nfive public Swift repositories, the default style otherwise made 343\nfalse needs from such lines.\n- Docs: `features.rst` (`FE_SWIFT` and its faults), `configuration.rst`,\n`analyse.rst`, `oneline.rst`; the changelog's\n*Unreleased* section; the package `AGENTS.md` language list, and its\n\"Adding Support for a New Language\" recipe\n  rewritten with every touch point a language needs.\n\nLimitations, documented rather than worked around (each grammar one\npinned by a package-local test, so a grammar\nfix shows up as a red test):\n\n- At statement level, `/* … */` followed by code on its row parses as an\n`ERROR` that swallows earlier statements:\nmarkers are still extracted, but it and its neighbours may lose their\nentity.\n- A string whose text opens `/*` hides the code up to the next `*/`:\nsilently when that `*/` is in another string,\nand as a syntax error that loses the code after it too when it is\nanywhere else.\n- A bare regex with an escaped slash at a line end swallows the\nfollowing lines; experimental syntax produces\n  `ERROR` nodes (attachment degrades).\n- A module-qualified extension keeps the module in the name\n(`Foundation.Date.f()`); under `@`, a title opening with\n  `name(` is withheld with the warning.\n\nThis is the reference the ubCode port is held to by its parity suite\n(useblocks/ubcode#5104).\n\n## Why\n\nSwift is not yet a codelinks language, so Swift sources cannot be traced\nto their needs. This adds it the way\nPowerShell and VHDL were added: a comment type, the entity tables and\nnamer, and cases in the shared extraction\nfixtures.\n\n## Tests\n\n- 36 Swift cases in eight of the existing shared extraction YAMLs (72\nnew snapshots; no existing snapshot changed):\na constructed, syntax-only 26-marker corpus with `truth`, plus rule\ncases for every attachment rule above, the\nnaming rules, string and interpolation filtering, the attribute warning,\nCRLF and positions.\n- A fence asserting every Swift case parses without an `ERROR` node (the\nshared cases must not depend on how a\ntree-sitter runtime recovers from errors), with the set of cases pinned\nper file.\n- Unit tests in `test_analyse_utils.py`, `test_entity.py`,\n`test_oneline_parser.py`, `test_analyse.py`.\n- Mutation proofs: dropping each table entry or rule (block comments,\nmodifiers, the shebang skip, Swift rule 7 and\nits `#if`-only reading, labels, the attribute rule with its ASCII name\nand anchoring, the body first item, the\nextension split, nameless containers, the string filter and the\ninterpolation rule), and adding an `ERROR` case,\n  each turn named shared cases red.\n- `uv run poe test-codelinks -n 4`: 3341 passed, 3 skipped (the same\nthree as on `master` in a root sandbox);\n  the Swift tests in the sphinx-7 cell on Python 3.11.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-11-23T21:54:00+01:00",
+          "tree_id": "f1cddcd277384be486c79ace94ef321d9c42fa42",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/371f9fa005c7162a04cd7dddba9baf1ff6f3b8f8"
+        },
+        "date": 1795467331591,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05641391799998985,
+            "unit": "s",
+            "extra": "Commit: 371f9fa005c7162a04cd7dddba9baf1ff6f3b8f8\nBranch: master\nTime: 2026-11-23T21:54:00+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.225074172999982,
+            "unit": "s",
+            "extra": "Commit: 371f9fa005c7162a04cd7dddba9baf1ff6f3b8f8\nBranch: master\nTime: 2026-11-23T21:54:00+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.864941,
+            "unit": "MB",
+            "extra": "Commit: 371f9fa005c7162a04cd7dddba9baf1ff6f3b8f8\nBranch: master\nTime: 2026-11-23T21:54:00+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
