@@ -480,11 +480,13 @@ Features
       none. Put a block comment on a line of its own, and write such a regular
       expression as ``#/a/b/#``.
 
-      A fourth shape is no syntax error, and so it is silent: a string whose text opens
-      ``/*`` (``let open = "/*"``) with a later ``*/`` elsewhere -- in another string, in a
-      ``//`` comment -- is read as one comment inside the string up to that ``*/``, and
-      the code between, its markers included, is lost. Write such a string as
-      ``"/" + "*"``, or close the ``/*`` in the same string.
+      A fourth shape can be silent: a string whose text opens ``/*``
+      (``let open = "/*"``) is read as one comment inside the string up to the next
+      ``*/``. When that ``*/`` is in another string, there is no syntax error and the code
+      between, its markers included, is lost. When it is anywhere else (a ``//``
+      comment, say), the string is left open, a syntax error, and the code after the
+      ``*/`` is lost too. Write such a string as ``"/" + "*"``, or close the ``/*`` in
+      the same string.
 
    .. fault:: Traceability objects are not detected in Swift
       :id: FAULT_SWIFT_1

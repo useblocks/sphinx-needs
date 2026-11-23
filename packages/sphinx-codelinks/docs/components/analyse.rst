@@ -480,10 +480,11 @@ What counts as an entity
   - Experimental or very new syntax (``@_lifetime(...)``, ``unsafe`` expressions, ``@_extern``) can parse as a
     syntax error: markers in such a file are still extracted (in a sample of public code, 8 comment lines in
     81,000 were lost, all in one file), but their attachment around the error degrades.
-  - A string whose text opens ``/*`` (``let open = "/*"``) with a later ``*/`` elsewhere -- in another string, in a
-    ``//`` comment -- is read as one comment inside the string up to that ``*/``, with no syntax error: the code
-    between, its markers included, is silently lost. Write such a string as ``"/" + "*"``, or close the ``/*`` in the
-    same string.
+  - A string whose text opens ``/*`` (``let open = "/*"``) is read as one comment inside the string up to the next
+    ``*/``. When that ``*/`` is in another string (``"/*"`` … ``"*/"``), there is no syntax error: the code between,
+    its markers included, is silently lost. When it is anywhere else (a ``//`` comment, say), the string is left open,
+    which is a syntax error, and the code after the ``*/`` is lost too, up to the next ``"`` or the end of the file.
+    Write such a string as ``"/" + "*"``, or close the ``/*`` in the same string.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

@@ -31,9 +31,10 @@ New and Improved
   new ``swift_attribute`` warning rather than a need. The grammar reads a block comment
   followed by code on its line at statement level (``/* @T, ID_1, impl */ func f() {}``)
   as a syntax error, which can cost it and the markers around it their entity: put the
-  comment on a line of its own. A string whose text opens ``/*`` with a later ``*/``
-  elsewhere (``"/*"`` … ``"*/"``) hides the code between, silently: close the ``/*`` in
-  the same string (:need:`FE_SWIFT`).
+  comment on a line of its own. A string whose text opens ``/*`` hides the code up to
+  the next ``*/``: silently when that ``*/`` is in another string (``"/*"`` … ``"*/"``),
+  and as a syntax error losing the code after it too when it is anywhere else. Close the
+  ``/*`` in the same string (:need:`FE_SWIFT`).
 
 .. _`release:2.2.0`:
 

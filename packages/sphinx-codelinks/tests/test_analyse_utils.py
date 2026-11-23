@@ -423,10 +423,11 @@ def test_a_swift_string_opening_a_block_comment_hides_code_to_a_later_close(
     init_swift_tree_sitter,
 ):
     """A known tree-sitter-swift limitation (documented in ``analyse.rst``): a string
-    whose text opens ``/*`` with a later ``*/`` elsewhere (another string, a ``//``
-    comment) is parsed as one comment inside the string up to that ``*/``, with no
-    syntax error: the code between, and its markers, are silently hidden. When the
-    grammar fixes this, this test fails: update the documentation."""
+    whose text opens ``/*`` with a later ``*/`` in another string is parsed as one
+    comment inside the string up to that ``*/``, with no syntax error: the code
+    between, and its markers, are silently hidden. (A ``*/`` anywhere else leaves the
+    string open, a syntax error that loses the code after it too.) When the grammar
+    fixes this, this test fails: update the documentation."""
     parser, query = init_swift_tree_sitter
     code = b'let s = "/*"\n// @Hidden, ID_H, impl\nfunc f() {}\nlet t = "*/"\n'
     tree = parser.parse(code)
