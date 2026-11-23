@@ -94,30 +94,27 @@ def test_duplicate_part_id_is_reported_once(test_app: Sphinx):
     [{"buildername": "html", "srcdir": "doc_test/doc_add_need_parts"}],
     indirect=True,
 )
-def test_add_need_warns_of_the_parts_it_drops(test_app: Sphinx):
-    """``add_need`` warns once per need of the given ``parts`` a need on a page drops.
+def test_add_need_keeps_the_parts_it_is_given(test_app: Sphinx):
+    """``add_need`` keeps the ``parts`` it is given, by the rule of ``create_need``.
 
-    A need on a page takes its parts from its content, which replaces the parts given
-    to ``add_need``: that loss was silent. The result stays as it was; what changes is
-    one ``needs.part`` warning per need, naming the ids it drops. A given id the
-    content marks too is not dropped (the content's text wins), and a hidden or an
-    external need keeps the given parts, so none of those warns.
+    A need on a page has the parts its content marks, in the order written, then the
+    given parts its content does not mark, in the order given; a given id the content
+    marks too has the content's text. A hidden or an external need keeps the given
+    parts. Nothing is reported: the given parts a need on a page dropped were one
+    ``needs.part`` warning per need.
     """
     app = test_app
     with pytest.warns(DeprecationWarning, match="add_need is deprecated"):
         app.build()
 
-    assert build_warnings(app) == [
-        "<srcdir>/index.rst:4: WARNING: Need 'ADD_PLAIN': the parts ['ap', 'bp'] given to add_need are dropped: a need on a page takes its parts from its content [needs.part]",
-        "<srcdir>/index.rst:6: WARNING: Need 'ADD_MARKS_OTHER': the parts ['ap'] given to add_need are dropped: a need on a page takes its parts from its content [needs.part]",
-    ]
+    assert build_warnings(app) == []
 
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert {
-        need_id: {
-            part_id: part["content"]
+        need_id: [
+            (part_id, part["content"])
             for part_id, part in needs[need_id]["parts"].items()
-        }
+        ]
         for need_id in (
             "ADD_PLAIN",
             "ADD_MARKS_OTHER",
@@ -127,13 +124,19 @@ def test_add_need_warns_of_the_parts_it_drops(test_app: Sphinx):
             "ADD_EMPTY",
         )
     } == {
-        "ADD_PLAIN": {},
-        "ADD_MARKS_OTHER": {"cp": "content cp"},
-        "ADD_MARKS_SAME": {"ap": "content ap"},
-        "ADD_HIDDEN": {"ap": "given ap"},
-        "ADD_EXTERNAL": {"ap": "given ap"},
-        "ADD_EMPTY": {},
+        "ADD_PLAIN": [("bp", "given bp"), ("ap", "given ap")],
+        "ADD_MARKS_OTHER": [("cp", "content cp"), ("ap", "given ap")],
+        "ADD_MARKS_SAME": [("ap", "content ap")],
+        "ADD_HIDDEN": [("ap", "given ap")],
+        "ADD_EXTERNAL": [("ap", "given ap")],
+        "ADD_EMPTY": [],
     }
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    # the parts a need on a page is given and its content does not mark are shown in
+    # the block after its content, each with its anchor
+    assert html.count('class="needs-stated-parts docutils container"') == 2
+    for address in ("ADD_PLAIN.bp", "ADD_PLAIN.ap", "ADD_MARKS_OTHER.ap"):
+        assert f'<span class="need-part need-part-stated" id="{address}">' in html
 
 
 EMPTY_PART_INDEX = """\

@@ -46,6 +46,10 @@
 #     exactly as the tool stores it (an `(id)` part's text has no white space at its
 #     ends, a text a record states is as given); `{}` says the need has none. A need the
 #     case does not name there is not compared
+#   - `order.<ID>` is the LIST of the need's part ids in the order the tool stores the
+#     need's parts, read from the stored need: a needs.json lists a need's parts sorted
+#     by id, so it cannot show the order. `[]` says the need has none. A need the case
+#     does not name there is not compared
 #   - `dead.<ID>` is the set of the need's links the tool reports as dead, each the address
 #     as written with its condition taken off
 #     (`REQ_1.nope` for `REQ_1.nope[status == "x"]`); `[]` says it reports none. No case
@@ -63,6 +67,7 @@
 #         dead link              needs.link_outgoing
 #         link target type       needs.link_target_type
 #         link condition         needs.link_condition_failed
+#         unresolved reference   needs.link_ref
 #     -- every other finding is each tool's own and not compared, unless the case says
 #     `clean = true`: then the project reports nothing at all but its `findings`
 #   - a report, for `clean = true` and for a filter that "reports nothing", is any warning
@@ -118,6 +123,7 @@
 #   [case.expect]
 #     findings         - `[]` for none, or one `{ class = "..." }` per finding
 #     parts.<ID>       - optional; { <part id> = "<text>" }, `{}` for none
+#     order.<ID>       - optional; [the need's part ids, in stored order], `[]` for none
 #     dead.<ID>        - optional; [the addresses of its dead links]
 #     back.<ADDRESS>   - optional; { <link type> = [the ids of its back links] }
 #   [[case.filters]]
@@ -986,6 +992,201 @@ TEST_1 = ["EXT_1.a"]
 [case.expect.back]
 "EXT_1.a.b" = { tests = ["TEST_1"] }
 
+[[case]]
+name = "stated-an-import-keeps-its-record-parts"
+section = "stated"
+why = "an imported need has the parts its record states that its content does not mark, each with its key as its id and its text as given, and a link to one is live"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+
+.. test:: Links
+   :id: TEST_1
+   :tests: IMP_1.rp
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"rp": {"id": "rp", "content": " a record part"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { rp = " a record part" }
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"IMP_1.rp" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "stated-an-import-merges-its-record-and-content-parts"
+section = "stated"
+why = "an imported need whose record and content give different part ids has both: the parts its content marks and the parts its record states"
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(c1) content one`.", "parts": {"r1": {"id": "r1", "content": "record one"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { c1 = "content one", r1 = "record one" }
+
+[[case]]
+name = "stated-the-content-wins-a-clash"
+section = "stated"
+why = "where an imported need's record and content give one part id, the content's part is the part, with the content's text and no finding, and a part the record states alone is kept"
+clean = true
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(p1) content text`.", "parts": {"p1": {"id": "p1", "content": " record text"}, "r2": {"id": "r2", "content": "record two"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { p1 = "content text", r2 = "record two" }
+
+[[case]]
+name = "stated-a-record-part-s-back-links-are-not-read"
+section = "stated"
+why = "a stated part's back links are this project's, computed from its links: the back links a record gives its part are not read"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+
+.. test:: Links
+   :id: TEST_1
+   :tests: IMP_1.rp
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"rp": {"id": "rp", "content": "a record part", "tests_back": ["ELSEWHERE_1"]}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { rp = "a record part" }
+[case.expect.back]
+"IMP_1.rp" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "stated-a-prefixed-import-keeps-its-record-parts"
+section = "stated"
+why = "a prefix given to imported ids prefixes the need's id and never a part's: the need keeps its stated parts, and X_IMP_1.rp is live"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+   :id_prefix: X_
+
+.. test:: Links
+   :id: TEST_1
+   :tests: X_IMP_1.rp
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(c1) content one`.", "parts": {"rp": {"id": "rp", "content": "a record part"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+X_IMP_1 = { c1 = "content one", rp = "a record part" }
+[case.expect.dead]
+TEST_1 = []
+
+[[case]]
+name = "stated-a-namespaced-import-keeps-its-record-parts"
+section = "stated"
+why = "a namespace given to imported ids namespaces the need's id and never a part's: the need keeps its stated parts, and SUP01::IMP_1.rp is live"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+   :namespace: SUP01
+
+.. test:: Links
+   :id: TEST_1
+   :tests: SUP01::IMP_1.rp
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(c1) content one`.", "parts": {"rp": {"id": "rp", "content": "a record part"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+"SUP01::IMP_1" = { c1 = "content one", rp = "a record part" }
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"SUP01::IMP_1.rp" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "stated-an-import-with-no-content-keeps-its-record-parts"
+section = "stated"
+why = "an imported need whose content is the empty text has the parts its record states"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+
+.. test:: Links
+   :id: TEST_1
+   :tests: IMP_1.rp
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "", "parts": {"rp": {"id": "rp", "content": "a record part"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { rp = "a record part" }
+[case.expect.dead]
+TEST_1 = []
+
+[[case]]
+name = "stated-the-key-is-the-part-s-id"
+section = "stated"
+why = "a stated part's id is its key in the record's parts: the key k1 is the part's id whatever id the part gives, so IMP_1.k1 is live and IMP_1.other dead"
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+
+.. test:: Links
+   :id: TEST_1
+   :tests: IMP_1.k1, IMP_1.other
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"k1": {"id": "other", "content": "keyed k1"}}}}}}}''' }
+[case.expect]
+findings = [{ class = "dead link" }]
+[case.expect.parts]
+IMP_1 = { k1 = "keyed k1" }
+[case.expect.dead]
+TEST_1 = ["IMP_1.other"]
+[case.expect.back]
+"IMP_1.k1" = { tests = ["TEST_1"] }
+
+[[case]]
+name = "stated-parts-follow-the-content-s-in-order"
+section = "stated"
+why = "a need's parts are in order: the parts its content marks as written, then the parts stated that its content does not mark, in the order given"
+divergent = { ubcode = "lists a need's parts in the order of their ids" }
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(c2) content two` and :np:`(c1) content one`.", "parts": {"r2": {"id": "r2", "content": "record two"}, "r1": {"id": "r1", "content": "record one"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { c2 = "content two", c1 = "content one", r2 = "record two", r1 = "record one" }
+[case.expect.order]
+IMP_1 = ["c2", "c1", "r2", "r1"]
+
 # --- addressing ------------------------------------------------------------------------
 
 [[case]]
@@ -1153,6 +1354,46 @@ TEST_1 = ["REQ_1."]
 [case.expect.back]
 "REQ_1" = { tests = ["TEST_1"] }
 "REQ_1.p1" = { tests = [] }
+
+[[case]]
+name = "addressing-a-reference-to-a-stated-part"
+section = "addressing"
+why = "a reference names a stated part as it names any other: :need: to a part an imported need's record states resolves, with no finding"
+clean = true
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: imported.json
+
+See :need:`IMP_1.rp`.
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"rp": {"id": "rp", "content": "a record part"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { rp = "a record part" }
+
+[[case]]
+name = "addressing-a-reference-to-a-part-its-need-does-not-have"
+section = "addressing"
+why = "a reference to a part its need does not have names nothing: it is one finding, unresolved reference"
+clean = true
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+See :need:`REQ_1.nope`.
+'''
+[case.expect]
+findings = [{ class = "unresolved reference" }]
+[case.expect.parts]
+REQ_1 = { p1 = "the part" }
 
 # --- links -----------------------------------------------------------------------------
 

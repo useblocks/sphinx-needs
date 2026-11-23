@@ -186,9 +186,15 @@ def test_an_extra_option_doctype_sets_it(make_app, tmp_path, clean_docutils_regi
     assert needs["TF_001"]["doctype"] == ".md"
 
 
+#: the arguments of ``create_need`` that are core fields no test report gives a value
+#: of: ``parts``, a need's parts as a mapping of id to text, which an option's text
+#: cannot be
+NO_REPORT_VALUE = {"parts"}
+
 #: the core fields no option can set, from the sources the configuration check reads: a
 #: Sphinx-Needs core field that is neither a field of the field schema nor an argument of
-#: ``create_need`` (those the directives set are refused as theirs)
+#: ``create_need`` it takes a report's value as (those the directives set are refused as
+#: theirs)
 CORE_ONLY = sorted(
     set(NeedsCoreFields)
     - {
@@ -196,7 +202,7 @@ CORE_ONLY = sorted(
         for name, spec in NeedsCoreFields.items()
         if spec.get("add_to_field_schema")
     }
-    - set(inspect.signature(create_need).parameters)
+    - (set(inspect.signature(create_need).parameters) - NO_REPORT_VALUE)
     - set().union(*DIRECTIVE_FIELDS.values())
 )
 
@@ -217,6 +223,12 @@ BUILT_ON_MASTER = (
 
 def test_the_core_fields_no_option_sets_include_those_that_built_on_master():
     assert set(BUILT_ON_MASTER) <= set(CORE_ONLY)
+
+
+def test_the_core_fields_no_option_sets_include_parts():
+    """``parts`` is an argument of ``create_need`` and still no option: its value is a
+    mapping, which an option's text is not."""
+    assert "parts" in CORE_ONLY
 
 
 @pytest.mark.parametrize("name", CORE_ONLY)

@@ -6,7 +6,7 @@ directive on ``index.rst``, once loaded as an external source (a ``needs_externa
 config override). Both read the file through ``ub_needs_exchange`` and create each
 need through one record path, so most rows assert the SAME outcome for both readers;
 the rows where the two are different by design (the ten-field table, where a need is
-recorded, its ``parts``) assert the difference as the rule.
+recorded) assert the difference as the rule.
 
 The outcomes are the warnings of the build (``-W`` off, the list asserted whole) and the
 needs read back from the build's own ``needs.json``.
@@ -753,8 +753,9 @@ KEPT = envelope(
 
 @pytest.mark.parametrize(("test_app", "reader"), both(KEPT), indirect=["test_app"])
 def test_the_readers_differ_by_design(test_app: SphinxTestApp, reader: str):
-    """The ten-field table, where the need is recorded, and its ``parts`` (read from the
-    environment: ``collapse`` is not written to needs.json)."""
+    """The ten-field table and where the need is recorded (read from the environment:
+    ``collapse`` is not written to needs.json); the ``parts`` its record states, which
+    its content does not mark, both readers keep."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
@@ -768,9 +769,9 @@ def test_the_readers_differ_by_design(test_app: SphinxTestApp, reader: str):
         "docname",
         "lineno",
         "doctype",
-        "parts",
     )
     got = {k: list(need[k]) if k == "sections" else need[k] for k in fields}
+    assert need["parts"] == {"p1": {"id": "p1", "content": "part one"}}
     if reader == "import":
         assert got == {
             "layout": "clean",
@@ -781,7 +782,6 @@ def test_the_readers_differ_by_design(test_app: SphinxTestApp, reader: str):
             "docname": "index",
             "lineno": IMPORT_LINE,
             "doctype": ".rst",
-            "parts": {},
         }
     else:
         assert got == {
@@ -793,7 +793,6 @@ def test_the_readers_differ_by_design(test_app: SphinxTestApp, reader: str):
             "docname": None,
             "lineno": None,
             "doctype": "",
-            "parts": {"p1": {"content": "part one", "id": "p1"}},
         }
 
 

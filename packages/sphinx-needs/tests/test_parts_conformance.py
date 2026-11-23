@@ -6,8 +6,9 @@ to vendor it, so every case is a statement both tools are held to. Each case is 
 project, built with the ``html`` builder (a role outside every need is reported where a
 page is written), and four things are asserted:
 
-* every case's outcome: each named need's parts as a set of id and text, each named
-  need's dead links, the back links of each named need and part per link type, the
+* every case's outcome: each named need's parts as a set of id and text, and as the
+  list of their ids in stored order where the case names it, each named need's dead
+  links, the back links of each named need and part per link type, the
   findings of the contract as a multiset of classes (and nothing else where the case says
   ``clean``), and what each filter selects over needs and parts, or, for an entry
   saying ``view = true``, over what a view's filter is tested on under the case's
@@ -52,7 +53,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 64
+EXPECTED_CASE_COUNT = 75
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -84,6 +85,7 @@ CLASSES = {
     "link_outgoing": "dead link",
     "link_target_type": "link target type",
     "link_condition_failed": "link condition",
+    "link_ref": "unresolved reference",
 }
 
 #: The tools a ``divergent`` marker may name; this runner is the first's.
@@ -146,7 +148,7 @@ _CASE_KEYS = {
     "expect",
     "filters",
 }
-_EXPECT_KEYS = {"findings", "parts", "dead", "back"}
+_EXPECT_KEYS = {"findings", "parts", "order", "dead", "back"}
 _ENTRY_KEYS = {"filter", "expected", "include_parts", "view", "why"}
 
 #: A record's code: the ``[needs.<code>]`` that ends it.
@@ -206,12 +208,16 @@ def test_every_case_has_a_complete_expectation() -> None:
         for finding in expect["findings"]:
             assert set(finding) == {"class"}, name
             assert finding["class"] in CLASSES.values(), name
-        assert any(expect.get(key) for key in ("parts", "dead", "back")) or case.get(
-            "filters"
-        ), name
+        assert any(
+            expect.get(key) for key in ("parts", "order", "dead", "back")
+        ) or case.get("filters"), name
         for need_id, parts in expect.get("parts", {}).items():
             assert isinstance(parts, dict), (name, need_id)
             assert all(isinstance(text, str) for text in parts.values()), name
+        for need_id, order in expect.get("order", {}).items():
+            assert isinstance(order, list), (name, need_id)
+            assert all(isinstance(part_id, str) for part_id in order), name
+            assert len(order) == len(set(order)), (name, need_id)
         for need_id, dead in expect.get("dead", {}).items():
             assert dead == sorted(set(dead)), (name, need_id)
         # a back-link pin names a link type the case has: `links`, or one its
@@ -380,6 +386,16 @@ def _check(
         if stored != parts:
             problems.append(f"{need_id}: parts {stored!r}, expected {parts!r}")
 
+    # the order of the parts, as the need stores them
+    for need_id, order in expect.get("order", {}).items():
+        if need_id not in needs:
+            problems.append(f"{need_id}: no such need")
+            continue
+        if (stored_order := list(needs[need_id]["parts"])) != order:
+            problems.append(
+                f"{need_id}: parts in the order {stored_order}, expected {order}"
+            )
+
     # the findings, a multiset of classes; and, in a clean case, nothing else
     codes = [m[1] if (m := _CODE.search(w)) else None for w in warnings]
     found = Counter(CLASSES[code] for code in codes if code in CLASSES)
@@ -464,6 +480,7 @@ _FAITHFUL = {
     "expect": {
         "findings": [{"class": "duplicate part id"}, {"class": "dead link"}],
         "parts": {"REQ_1": {"p1": " one", "p2": " two"}, "REQ_2": {}},
+        "order": {"REQ_1": ["p1", "p2"], "REQ_2": []},
         "dead": {"TEST_C": ["REQ_1."], "REQ_1": []},
         "back": {
             "REQ_1": {"tests": ["TEST_A", "TEST_B", "TEST_C"]},
@@ -484,6 +501,9 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
         ("parts", {"REQ_1": {"p1": " one ", "p2": " two"}, "REQ_2": {}}),
         # one skipping a need the case names with no parts
         ("parts", {"REQ_1": {}, "REQ_2": {}}),
+        # one comparing the order as a set, or skipping a need with no parts
+        ("order", {"REQ_1": ["p2", "p1"], "REQ_2": []}),
+        ("order", {"REQ_1": ["p1", "p2"], "REQ_2": ["p1"]}),
         # one counting the findings as a set
         ("findings", [{"class": "duplicate part id"}] * 2 + [{"class": "dead link"}]),
         ("findings", [{"class": "dead link"}]),
@@ -498,6 +518,8 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
     ids=[
         "texts",
         "a-need-with-no-parts",
+        "the-order-as-a-set",
+        "a-need-with-no-parts-in-order",
         "findings-as-a-set",
         "a-finding-left-out",
         "a-parts-back-links-are-not-its-needs",
