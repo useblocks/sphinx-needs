@@ -1,0 +1,64 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 16
+      },
+      "end": {
+        "row": 0,
+        "column": 61
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 1,
+      "end": 1,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "f()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f()"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Block after code",
+      "id": "IMPL_SWIFT_BLOCK_END",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 9
+      },
+      "end": {
+        "row": 1,
+        "column": 49
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Nested end",
+      "id": "IMPL_SWIFT_NESTED_END",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

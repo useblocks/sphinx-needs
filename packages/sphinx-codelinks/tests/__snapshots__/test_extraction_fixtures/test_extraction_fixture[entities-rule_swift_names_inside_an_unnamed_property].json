@@ -1,0 +1,35 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 12
+      },
+      "end": {
+        "row": 2,
+        "column": 63
+      }
+    },
+    "tagged_scope": "func f() -> Int { 1 }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In an unnamed property",
+      "id": "IMPL_N_SWIFT_NAMELESS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

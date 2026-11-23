@@ -13,6 +13,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     jsdoc_tag,
     oneline_parser,
     opens_powershell_literal,
+    swift_attribute,
 )
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
@@ -820,6 +821,42 @@ def test_doxygen_tag(line: str, expected: str | None) -> None:
     """A Doxygen comment line is a ``doxygen_tag`` only when a listed command right after
     the start sequence ends at a space, a tab, a ``[``, a ``{`` or the end of the line."""
     assert doxygen_tag(line, "@") == expected
+
+
+@pytest.mark.parametrize(
+    ("line", "start_sequence", "expected"),
+    [
+        pytest.param("// @available(iOS 15, *)", "@", "available", id="attribute"),
+        pytest.param(
+            "/// @Available(Swift, introduced: 6.3)", "@", "Available", id="docc"
+        ),
+        pytest.param("/// @Flag(name: [.short, .long])", "@", "Flag", id="example"),
+        pytest.param("//@available(SwiftStdlib 5.0, *)", "@", "available", id="glued"),
+        pytest.param(" * @objc(name:)", "@", "objc", id="block_leader"),
+        pytest.param("// @_spi(Testing)", "@", "_spi", id="underscore"),
+        pytest.param("// @attr2(x, y)", "@", "attr2", id="digit_inside"),
+        pytest.param("// @available (iOS 15, *)", "@", None, id="space_before_paren"),
+        pytest.param("// @MainActor", "@", None, id="no_paren"),
+        pytest.param("// @2x(a, b)", "@", None, id="digit_first"),
+        pytest.param("// @größe(a, b)", "@", None, id="non_ascii_inside"),
+        pytest.param("// @éclair(a, b)", "@", None, id="non_ascii_first"),
+        pytest.param("// @(Draft), ID_1, impl", "@", None, id="no_identifier"),
+        pytest.param("// see @available(iOS 15, *)", "@", None, id="text_before_start"),
+        pytest.param("// @Real Need, IMPL_1, impl", "@", None, id="a_marker"),
+        pytest.param(
+            "// @Title(x), IMPL_1, impl", "@", "Title", id="title_opens_paren"
+        ),
+        pytest.param(
+            "// [[available(iOS 15, *)]]", "[[", "available", id="other_start"
+        ),
+        pytest.param("// @available(iOS 15, *)", "", None, id="empty_start"),
+    ],
+)
+def test_swift_attribute(line: str, start_sequence: str, expected: str | None) -> None:
+    """A Swift comment line starts with an attribute's shape when, past decoration and
+    whitespace, the start sequence is directly followed by an ASCII identifier and
+    ``(``, with no whitespace between."""
+    assert swift_attribute(line, start_sequence) == expected
 
 
 def test_doxygen_commands_are_the_corpus_list() -> None:

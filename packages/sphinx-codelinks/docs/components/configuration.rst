@@ -272,7 +272,8 @@ Defines a list of glob patterns for files and directories to exclude from discov
    When ``exclude`` is not set, its default is derived from this project's own :ref:`comment_type <discover_config>`, not applied globally:
 
    - ``comment_type = "ts"`` (the TypeScript/JavaScript family, which also discovers ``.js``/``.jsx``/``.mjs``/``.cjs`` files) defaults ``exclude`` to ``["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "**/coverage/**"]``. Without this, checked-in bundler/``tsc`` output would be scanned as source alongside the ``.ts`` it was generated from, producing duplicate need ids for the same marker.
-   - Every other ``comment_type`` (``cpp``, ``python``, ``rust``, ``go``, ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``, ``cs``, ...) defaults ``exclude`` to ``[]`` — no default exclusion at all.
+   - Every other ``comment_type`` (``cpp``, ``python``, ``rust``, ``go``, ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``, ``swift``, ``cs``, ...) defaults ``exclude`` to ``[]`` — no default exclusion at all.
+     A Swift project's build output (SwiftPM's ``.build/``, Xcode's ``DerivedData/``) and vendored dependencies (``Pods/``, ``Carthage/``) are usually gitignored, which :ref:`gitignore <discover_config>` honours; where they are not, add them to ``exclude``.
 
    ``**/lib/**`` is deliberately **not** in the ``ts`` default: it is ambiguous even within the JS/TS ecosystem, since many packages use ``lib/`` for hand-written source rather than as a ``tsc`` ``outDir`` — and it is common hand-written C/C++ library source outside that ecosystem entirely. If your ``ts`` project's ``outDir`` is ``lib``, add ``"**/lib/**"`` to your own ``exclude`` explicitly.
 
@@ -317,7 +318,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Type:** ``str``
 **Default:** ``"cpp"``
-**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"ts"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``, ``"powershell"``, ``"vhdl"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"ts"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``, ``"powershell"``, ``"vhdl"``, ``"swift"``
 
 .. code-block:: toml
 
@@ -393,6 +394,12 @@ Specifies the comment syntax style used in the source code files. This determine
      - ``--`` and ``---`` (single-line), ``--!`` (Doxygen; ``--!!`` is a plain comment),
        ``/* */`` (multi-line, VHDL-2008)
      - ``.vhd``, ``.vhdl``
+   * - Swift
+     - ``"swift"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line, nestable),
+       ``///`` and ``/** */`` (doc comments)
+     - ``.swift``
 
 .. note:: Future versions may support additional programming languages.
 

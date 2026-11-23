@@ -13,6 +13,7 @@ import pytest
 from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.analyse.entity import (
+    EntityKind,
     EntityName,
     SemanticElement,
     describe_entity,
@@ -903,6 +904,7 @@ def test_render_semantic(
         (CommentType.jsonc, "a.json", "jsonc"),
         (CommentType.bash, "a.sh", "bash"),
         (CommentType.powershell, "a.psm1", "powershell"),
+        (CommentType.swift, "a.swift", "swift"),
     ],
 )
 def test_scope_language(
@@ -1006,6 +1008,346 @@ def test_a_pester_block_is_named_as_pester_names_it(
         assert render_semantic(name.semantic, "powershell") == expected
 
 
+#: A Swift type the naming cases below put their members in.
+_SWIFT_WIDGET = """struct Widget {
+    init(x: Int) {}
+    init(y: Int) {}
+    init?(_ v: Int, label z: String = "", _ rest: Int...) {}
+    init!() {}
+    func greet(name: String, _ other: Int) {}
+    func greet(_ name: String) {}
+    func f() {}
+    func k(_: Int) {}
+    func g(into v: inout Int) {}
+    func h(_ f: @escaping () -> Void, isolation: isolated (any Actor)? = #isolation) {}
+    func v<each T>(_ values: repeat each T) {}
+    subscript(index: Int) -> Int { 0 }
+    subscript(row r: Int, _ c: Int) -> Int { 0 }
+    subscript() -> Int { 0 }
+    static func == (lhs: Widget, rhs: Widget) -> Bool { true }
+    static prefix func - (w: Widget) -> Widget { w }
+    deinit {}
+    var x = 1
+    var a = 1, b = 2
+    var (p, q) = (1, 2)
+    var computed: Int { 1 }
+    typealias Element = Int
+}
+"""
+
+
+def _w(kind: EntityKind, name: str) -> EntityName:
+    """A member of ``Widget``, named."""
+    return EntityName(kind, f"Widget.{name}", _s(("struct", "Widget"), (kind, name)))
+
+
+@pytest.mark.parametrize(
+    ("source", "kind", "index", "expected"),
+    [
+        # callables: the base name and the argument labels, as Swift spells them
+        pytest.param(
+            _SWIFT_WIDGET,
+            "init_declaration",
+            0,
+            _w("constructor", "init(x:)"),
+            id="init-label-is-its-name",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "init_declaration",
+            1,
+            _w("constructor", "init(y:)"),
+            id="init-overload-by-label",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "init_declaration",
+            2,
+            _w("constructor", "init(_:label:_:)"),
+            id="failable-init-external-default-variadic",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "init_declaration",
+            3,
+            _w("constructor", "init()"),
+            id="implicitly-unwrapped-init-no-parameters",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            0,
+            _w("method", "greet(name:_:)"),
+            id="method-name-and-underscore",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            1,
+            _w("method", "greet(_:)"),
+            id="method-overload-by-label",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            2,
+            _w("method", "f()"),
+            id="method-no-parameters",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            3,
+            _w("method", "k(_:)"),
+            id="method-parameter-named-underscore",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            4,
+            _w("method", "g(into:)"),
+            id="method-inout",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            5,
+            _w("method", "h(_:isolation:)"),
+            id="method-attribute-and-default",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            6,
+            _w("method", "v(_:)"),
+            id="method-parameter-pack",
+        ),
+        # a subscript's and an operator's parameters have no label unless declared
+        pytest.param(
+            _SWIFT_WIDGET,
+            "subscript_declaration",
+            0,
+            _w("indexer", "subscript(_:)"),
+            id="subscript-unlabelled",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "subscript_declaration",
+            1,
+            _w("indexer", "subscript(row:_:)"),
+            id="subscript-declared-label",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "subscript_declaration",
+            2,
+            _w("indexer", "subscript()"),
+            id="subscript-no-parameters",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            7,
+            _w("operator", "==(_:_:)"),
+            id="infix-operator",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "function_declaration",
+            8,
+            _w("operator", "-(_:)"),
+            id="prefix-operator",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "deinit_declaration",
+            0,
+            _w("destructor", "deinit"),
+            id="deinit",
+        ),
+        # properties and types: the plain name
+        pytest.param(
+            _SWIFT_WIDGET,
+            "property_declaration",
+            0,
+            _w("property", "x"),
+            id="stored-property",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "property_declaration",
+            1,
+            EntityName("property", None, None),
+            id="several-names-unnamed",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "property_declaration",
+            2,
+            EntityName("property", None, None),
+            id="tuple-pattern-unnamed",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "property_declaration",
+            3,
+            _w("property", "computed"),
+            id="computed-property",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "typealias_declaration",
+            0,
+            _w("type", "Element"),
+            id="member-typealias",
+        ),
+        pytest.param(
+            _SWIFT_WIDGET,
+            "class_declaration",
+            0,
+            EntityName("struct", "Widget", _s(("struct", "Widget"))),
+            id="struct",
+        ),
+        pytest.param(
+            "actor A {}",
+            "class_declaration",
+            0,
+            EntityName("class", "A", _s(("class", "A"))),
+            id="actor-is-a-class",
+        ),
+        pytest.param(
+            "enum E { case a }",
+            "class_declaration",
+            0,
+            EntityName("enum", "E", _s(("enum", "E"))),
+            id="enum",
+        ),
+        pytest.param(
+            "final class C {}",
+            "class_declaration",
+            0,
+            EntityName("class", "C", _s(("class", "C"))),
+            id="class",
+        ),
+        # extensions: the extended type, its generic arguments stripped, a dotted path split
+        pytest.param(
+            "extension Outer.Inner where T: Equatable { func f() {} }",
+            "function_declaration",
+            0,
+            EntityName(
+                "method",
+                "Outer.Inner.f()",
+                _s(("scope", "Outer"), ("impl", "Inner"), ("method", "f()")),
+            ),
+            id="dotted-extension-split",
+        ),
+        pytest.param(
+            "extension Array<Int>: P { func dedup() {} }",
+            "function_declaration",
+            0,
+            EntityName(
+                "method", "Array.dedup()", _s(("impl", "Array"), ("method", "dedup()"))
+            ),
+            id="generic-extension-stripped",
+        ),
+        pytest.param(
+            "extension Outer<Int>.Inner {}",
+            "class_declaration",
+            0,
+            EntityName(
+                "impl", "Outer.Inner", _s(("scope", "Outer"), ("impl", "Inner"))
+            ),
+            id="generic-arguments-on-a-path-part",
+        ),
+        # protocols
+        pytest.param(
+            "protocol P { func req(for x: Int) }",
+            "protocol_function_declaration",
+            0,
+            EntityName(
+                "method", "P.req(for:)", _s(("interface", "P"), ("method", "req(for:)"))
+            ),
+            id="protocol-requirement",
+        ),
+        pytest.param(
+            "protocol P { var p: Int { get } }",
+            "protocol_property_declaration",
+            0,
+            EntityName("property", "P.p", _s(("interface", "P"), ("property", "p"))),
+            id="protocol-property",
+        ),
+        pytest.param(
+            "protocol P { associatedtype T }",
+            "associatedtype_declaration",
+            0,
+            EntityName("type", "P.T", _s(("interface", "P"), ("type", "T"))),
+            id="associated-type",
+        ),
+        pytest.param(
+            "protocol P { static func + (a: Self, b: Self) -> Self }",
+            "protocol_function_declaration",
+            0,
+            EntityName(
+                "operator", "P.+(_:_:)", _s(("interface", "P"), ("operator", "+(_:_:)"))
+            ),
+            id="protocol-operator",
+        ),
+        # free and local functions
+        pytest.param(
+            "func top<T>(_ v: T, with f: (T) -> Void) async throws -> T { v }",
+            "function_declaration",
+            0,
+            EntityName("function", "top(_:with:)", _s(("function", "top(_:with:)"))),
+            id="free-function",
+        ),
+        pytest.param(
+            "class C { func outer() { func local() {} } }",
+            "function_declaration",
+            1,
+            EntityName(
+                "function",
+                "C.outer().local()",
+                _s(("class", "C"), ("method", "outer()"), ("function", "local()")),
+            ),
+            id="local-function-qualified-by-its-containers",
+        ),
+        pytest.param(
+            "func <=> (l: Int, r: Int) -> Bool { true }",
+            "function_declaration",
+            0,
+            EntityName("operator", "<=>(_:_:)", _s(("operator", "<=>(_:_:)"))),
+            id="custom-operator",
+        ),
+        pytest.param(
+            '@freestanding(expression) macro stringify<T>(_ value: T) -> (T, String) = #externalMacro(module: "M", type: "S")',
+            "macro_declaration",
+            0,
+            EntityName("macro", "stringify", _s(("macro", "stringify"))),
+            id="macro-plain-name",
+        ),
+        pytest.param(
+            "class C { var a = 1, b = { func f() {} } }",
+            "function_declaration",
+            0,
+            EntityName("function", None, None),
+            id="inside-an-unnamed-entity",
+        ),
+        # variables are no entities
+        pytest.param(
+            "let x = 1", "property_declaration", 0, None, id="top-level-variable"
+        ),
+    ],
+)
+def test_describe_swift(
+    source: str, kind: str, index: int, expected: EntityName | None
+) -> None:
+    """A Swift entity's kind, its full name (callables with their argument labels as
+    Swift writes them) and its components, which render to it with ``.``."""
+    assert _describe(source, CommentType.swift, "swift", kind, index) == expected
+    if expected is not None:
+        assert render_semantic(expected.semantic, "swift") == expected.qualified_name
+
+
 def test_describe_entity_refuses_a_node_that_is_no_entity() -> None:
     """A node no table names (a C++ ``return`` statement) is described as nothing."""
     assert (
@@ -1035,6 +1377,14 @@ def test_describe_entity_refuses_a_node_that_is_no_entity() -> None:
         (CommentType.ts, "/** JSDoc */", True),
         (CommentType.ts, "/// <reference path='x' />", False),
         (CommentType.go, "// Package doc", False),
+        (CommentType.swift, "/// doc", True),
+        (CommentType.swift, "/** doc */", True),
+        (CommentType.swift, "//// banner", False),
+        (CommentType.swift, "/**/", False),
+        (CommentType.swift, "/*** banner */", False),
+        (CommentType.swift, "//! not in Swift", False),
+        (CommentType.swift, "/*! not in Swift */", False),
+        (CommentType.swift, "// plain", False),
     ],
 )
 def test_is_doc_comment(
@@ -1047,6 +1397,7 @@ def test_is_doc_comment(
         CommentType.rust: "rs",
         CommentType.ts: "ts",
         CommentType.go: "go",
+        CommentType.swift: "swift",
     }[comment_type]
     source = (
         f"package p\n{comment}\n" if comment_type == CommentType.go else f"{comment}\n"
@@ -1054,6 +1405,6 @@ def test_is_doc_comment(
     nodes = [
         n
         for n in _nodes(source, comment_type, suffix)
-        if n.type in ("comment", "line_comment", "block_comment")
+        if n.type in ("comment", "line_comment", "block_comment", "multiline_comment")
     ]
     assert is_doc_comment(nodes[0], comment_type) is expected

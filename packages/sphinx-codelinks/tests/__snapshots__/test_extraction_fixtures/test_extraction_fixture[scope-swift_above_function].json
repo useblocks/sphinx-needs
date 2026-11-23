@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 61
+      }
+    },
+    "tagged_scope": "func start() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "start()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "start()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_SWIFT_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_SWIFT_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

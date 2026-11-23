@@ -17,13 +17,13 @@ logical line maps to exactly one source row:
 ========================================  ==================================================  ===========================================
 comment kind                              stripped from each line                             languages
 ========================================  ==================================================  ===========================================
-line comment ``//``, ``///``, ``//!``     the delimiter, then ONE space if present            C/C++, C#, Rust, Go, TS/JS, JSONC
+line comment ``//``, ``///``, ``//!``     the delimiter, then ONE space if present            C/C++, C#, Rust, Go, TS/JS, JSONC, Swift
 line comment ``#``                        the delimiter, then ONE space if present            Python, YAML, Bash, PowerShell
 line comment ``--``, ``---``, ``--!``     the delimiter, then ONE space if present            VHDL
 block comment ``<# … #>``                 a first row holding only ``<#`` and a last row      PowerShell
                                           holding only ``#>`` are dropped; the delimiters
                                           are removed (no leader rule)
-block comment ``/* … */``, ``/** … */``,  a first row holding only the opener (``/*`` with  C/C++, C#, Rust, Go, TS/JS, JSONC
+block comment ``/* … */``, ``/** … */``,  a first row holding only the opener (``/*`` with  C/C++, C#, Rust, Go, TS/JS, JSONC, Swift
 ``/*! … */``                              any stars, or ``/*!``) and a last row holding only
                                           the closer (stars then ``*/``) are dropped; the
                                           delimiters are removed; then a ``*`` leader (``*``

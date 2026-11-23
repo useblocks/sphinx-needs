@@ -23,7 +23,7 @@ Each `*.yaml` file in this directory is a map of `case_name → case`:
 
 ```yaml
 default_oneliner_cpp:
-  lang: cpp                 # cpp | c | cpp_header | python | csharp | rust | yaml | go | jsonc | bash | powershell | typescript | tsx | js | vhdl
+  lang: cpp                 # cpp | c | cpp_header | python | csharp | rust | yaml | go | jsonc | bash | powershell | typescript | tsx | js | vhdl | swift
   config: default          # "default", or an inline config block (see below)
   source: |
     // @My Title, IMPL_1, impl, [REQ_1]
@@ -156,7 +156,7 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   file, a `.h` and a `.C` included; `csharp`; `javascript` for `.js`, `.jsx`, `.mjs`
   and `.cjs` in any case, `typescript` for the rest of the `ts` comment type, `.tsx`
   included; else the comment type — `python`, `rust`, `go`, `yaml`, `jsonc`, `bash`,
-  `powershell`;
+  `powershell`, `vhdl`, `swift`;
   so `lang: csharp` records `csharp`, `typescript` and `tsx` record `typescript`, and
   `js` records `javascript`), `entity_kind` (`function`, `method`, `class`,
   `namespace`, …, `key` or `item` in a data file; `null` if it cannot be named),

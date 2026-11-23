@@ -1,0 +1,16 @@
+[
+  {
+    "file_path": "case.swift",
+    "lineno": 1,
+    "msg": "directly above a preprocessor conditional, so attached to no entity: put the marker inside the arm, above the definition",
+    "type": "need",
+    "sub_type": "marker_above_conditional"
+  },
+  {
+    "file_path": "case.swift",
+    "lineno": 7,
+    "msg": "directly above a preprocessor conditional, so attached to no entity: put the marker inside the arm, above the definition",
+    "type": "need",
+    "sub_type": "marker_above_conditional"
+  }
+]

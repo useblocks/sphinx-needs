@@ -61,7 +61,8 @@ Mechanism = Literal["doc_comment", "leading", "trailing", "enclosing"]
 
 ``doc_comment`` is *declared*: a documentation comment (``///``, ``//!``, ``/**``,
 ``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring, PowerShell comment-based
-help first in a function's body, a VHDL ``--!``) attached by its own rule.
+help first in a function's body, a VHDL ``--!``, a Swift ``///`` or ``/**``) attached by
+its own rule.
 The other three are *inferred* from where a plain comment sits: on the lines before the
 entity (``leading``), after code on the entity's own line (``trailing``), or inside its
 body (``enclosing``).
@@ -296,6 +297,27 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
         "concurrent_assertion_statement",
         "concurrent_procedure_call_statement",
     },
+    # @Swift Scope Node Types, IMPL_SWIFT_2, impl, [FE_SWIFT]
+    # A class, a struct, an enum, an actor and an extension are all a
+    # ``class_declaration``, told apart by its ``declaration_kind``. A property is an
+    # entity only as a member of a type: see ENTITY_PREDICATES. Not entities: variables
+    # (top-level or local), enum cases, imports, operator and precedence-group
+    # declarations, closures, accessors (a marker in one documents its property) and
+    # macro expansions such as ``#Preview``.
+    CommentType.swift: {
+        "class_declaration",
+        "protocol_declaration",
+        "function_declaration",
+        "protocol_function_declaration",
+        "init_declaration",
+        "deinit_declaration",
+        "subscript_declaration",
+        "property_declaration",
+        "protocol_property_declaration",
+        "typealias_declaration",
+        "associatedtype_declaration",
+        "macro_declaration",
+    },
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
 """The name this table had before entities were named; kept for importers."""
@@ -446,6 +468,16 @@ def _pester_block(node: TreeSitterNode) -> str | None:
     )
 
 
+# The bodies of a Swift type, an extension and a protocol: what a member is declared in.
+SWIFT_TYPE_BODIES = frozenset({"class_body", "enum_class_body", "protocol_body"})
+
+
+def _swift_member(node: TreeSitterNode) -> bool:
+    """A Swift declaration in the body of a type, an extension or a protocol: a
+    property there is a member, where a top-level or local ``var`` is a variable."""
+    return node.parent is not None and node.parent.type in SWIFT_TYPE_BODIES
+
+
 def _is_pester_block(node: TreeSitterNode) -> bool:
     """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
     bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
@@ -473,12 +505,17 @@ ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]
     },
     # @Pester blocks are PowerShell entities, IMPL_PS_5, impl, [FE_POWERSHELL]
     CommentType.powershell: {"command": _is_pester_block},
+    CommentType.swift: {"property_declaration": _swift_member},
 }
 SCOPE_PREDICATES = ENTITY_PREDICATES
 """The name this table had before entities were named; kept for importers."""
 
-COMMENT_TYPES = frozenset({"comment", "line_comment", "block_comment", "html_comment"})
-"""The node kinds of a comment, in every grammar."""
+# @Swift block comments are comments, IMPL_SWIFT_5, impl, [FE_SWIFT]
+COMMENT_TYPES = frozenset(
+    {"comment", "line_comment", "block_comment", "html_comment", "multiline_comment"}
+)
+"""The node kinds of a comment, in every grammar (``multiline_comment`` is Swift's
+``/* */``, a kind no other grammar has)."""
 
 # What may stand between a leading marker and its entity, besides comments; a blank
 # line has no node, so it is trivia in every language.
@@ -492,6 +529,10 @@ TRIVIA_TYPES: dict[CommentType, frozenset[str]] = {
 # decorator, a template header -- so a comment after one on its row is not trailing
 # code: the item they belong to follows. An inner attribute (``#![...]``) applies to
 # what it is inside, so it heads nothing.
+# @Swift attributes and modifiers head their declaration, IMPL_SWIFT_6, impl, [FE_SWIFT]
+# Swift's grammar holds a declaration's attributes and modifiers (``@MainActor public
+# final``) in one ``modifiers`` node inside the declaration, a kind no other grammar
+# has; its ``attribute`` kind is not listed, as six other grammars have one.
 ENTITY_HEAD_TYPES = frozenset(
     {
         "decorator",
@@ -499,6 +540,7 @@ ENTITY_HEAD_TYPES = frozenset(
         "attribute_list",
         "attribute_declaration",
         "attribute_item",
+        "modifiers",
     }
 )
 
@@ -549,6 +591,11 @@ FIRST_ITEM_WRAPPER_TYPES: dict[CommentType, dict[str, frozenset[str]]] = {
         "generate_block": frozenset(),
         "interface_list": frozenset(),
     },
+    # @Swift a comment before a body's first statement leads it, IMPL_SWIFT_7, impl, [FE_SWIFT]
+    # Swift's grammar places a comment before the first statement of a body (a
+    # function's, a closure's, an accessor's) beside the body's statements, so a
+    # comment before a local function documents that function.
+    CommentType.swift: {"statements": frozenset()},
 }
 
 
@@ -616,12 +663,14 @@ _DOC_LINE_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.rust: ("///", "//!"),
     # Doxygen's VHDL comment
     CommentType.vhdl: ("--!",),
+    CommentType.swift: ("///",),
 }
 _DOC_BLOCK_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.cpp: ("/**", "/*!"),
     CommentType.cs: ("/**",),
     CommentType.rust: ("/**", "/*!"),
     CommentType.ts: ("/**",),
+    CommentType.swift: ("/**",),
 }
 
 
@@ -3378,6 +3427,179 @@ def _vhdl_describe(node: TreeSitterNode) -> EntityName | None:
     return _named(kind, ".".join(element["name"] for element in semantic), semantic)
 
 
+# --- Swift -------------------------------------------------------------------
+
+# @Swift entity kinds, IMPL_SWIFT_8, impl, [FE_SWIFT]
+# The kind of each Swift declaration, in the existing vocabulary: a class, a struct and
+# an enum are themselves, an actor is a ``class``, an extension an ``impl`` (named after
+# the type it extends, as a Rust impl is), a protocol an ``interface``; a function is a
+# ``method`` in the body of a type, an extension or a protocol and a ``function``
+# anywhere else (a local function included), an operator function an ``operator``; an
+# initializer is a ``constructor``, ``deinit`` a ``destructor``, a subscript an
+# ``indexer``; a member property and a protocol's property requirement a ``property``; a
+# type alias and an associated type a ``type``; a macro a ``macro``.
+_SWIFT_DECLARATION_KINDS: dict[str, EntityKind] = {
+    "class": "class",
+    "struct": "struct",
+    "enum": "enum",
+    "actor": "class",
+    "extension": "impl",
+}
+_SWIFT_KINDS: dict[str, EntityKind] = {
+    "protocol_declaration": "interface",
+    "init_declaration": "constructor",
+    "deinit_declaration": "destructor",
+    "subscript_declaration": "indexer",
+    "property_declaration": "property",
+    "protocol_property_declaration": "property",
+    "typealias_declaration": "type",
+    "associatedtype_declaration": "type",
+    "macro_declaration": "macro",
+}
+_SWIFT_FUNCTIONS = frozenset({"function_declaration", "protocol_function_declaration"})
+
+
+def _swift_operator(node: TreeSitterNode) -> bool:
+    """A Swift function named by an operator (``==``, ``<=>``), not an identifier."""
+    name = node.child_by_field_name("name")
+    return name is not None and name.type != "simple_identifier"
+
+
+def _swift_kind(node: TreeSitterNode) -> EntityKind | None:
+    if node.type == "class_declaration":
+        keyword = _text(node.child_by_field_name("declaration_kind"))
+        return _SWIFT_DECLARATION_KINDS.get(keyword)
+    if node.type in _SWIFT_FUNCTIONS:
+        if _swift_operator(node):
+            return "operator"
+        return "method" if _swift_member(node) else "function"
+    return _SWIFT_KINDS.get(node.type)
+
+
+# @Swift full names with argument labels, IMPL_SWIFT_9, impl, [FE_SWIFT]
+def _swift_labels(node: TreeSitterNode, *, labelled: bool) -> str:
+    """The argument labels of the callable ``node`` as Swift writes them in a full
+    name, in parentheses, each followed by ``:`` (``(name:_:)``; ``()`` for none).
+
+    A parameter's label is its external name when it declares one (``for`` in
+    ``for x: Int``, ``_`` in ``_ y: Int``), else, where parameters are ``labelled``
+    (a function's, an initializer's), its name (``x`` in ``x: Int``); a subscript's and
+    an operator's parameter has no label unless it declares one, so it is ``_``.
+    Neither a parameter's type, its default value, ``inout`` nor ``...`` shows.
+    """
+    labels: list[str] = []
+    for child in node.named_children:
+        if child.type != "parameter":
+            continue
+        external = child.child_by_field_name("external_name")
+        if external is not None:
+            label = _text(external)
+        elif labelled:
+            # the first ``name`` is the parameter's; a later one is its type
+            label = _text(child.child_by_field_name("name"))
+        else:
+            label = "_"
+        labels.append(f"{label}:")
+    return f"({''.join(labels)})"
+
+
+def _swift_own_name(node: TreeSitterNode) -> str | None:
+    """A Swift declaration's own name: a callable's full name (``greet(name:_:)``,
+    ``init(x:)``, ``subscript(_:)``, ``==(_:_:)``, ``f()``; ``deinit``), a type's, a
+    property's or a macro's name as written; ``None`` for a property declaring several
+    names (``var a = 1, b = 2``) or a pattern (``var (a, b) = t``)."""
+    if node.type in _SWIFT_FUNCTIONS:
+        name = _text(node.child_by_field_name("name"))
+        if not name:
+            return None
+        return name + _swift_labels(node, labelled=not _swift_operator(node))
+    if node.type == "init_declaration":
+        # a failable ``init?`` or ``init!`` is ``init`` too
+        return "init" + _swift_labels(node, labelled=True)
+    if node.type == "deinit_declaration":
+        return "deinit"
+    if node.type == "subscript_declaration":
+        # its ``name`` field is its result type
+        return "subscript" + _swift_labels(node, labelled=False)
+    if node.type in ("property_declaration", "protocol_property_declaration"):
+        patterns = node.children_by_field_name("name")
+        if len(patterns) != 1:
+            return None
+        return _text(patterns[0].child_by_field_name("bound_identifier")) or None
+    if node.type == "macro_declaration":
+        # the one declaration whose name has no field
+        name = next(
+            (c for c in node.named_children if c.type == "simple_identifier"), None
+        )
+        return _text(name) or None
+    return _text(node.child_by_field_name("name")) or None
+
+
+def _swift_components(node: TreeSitterNode) -> list[SemanticElement] | None:
+    """The components the Swift entity ``node`` stands for; ``None`` without a name.
+
+    An extension is an ``impl`` of the type it extends, without its generic arguments
+    (``extension Array<Int>`` is ``Array``), and a dotted path is split, the types
+    before the last a ``scope`` each (``extension Outer.Inner`` is ``scope Outer``,
+    ``impl Inner``).
+    """
+    kind = _swift_kind(node)
+    if kind is None:
+        return None
+    if kind == "impl":
+        extended = node.child_by_field_name("name")
+        if extended is None:
+            return None
+        if extended.type == "user_type":
+            path = [
+                _text(part)
+                for part in extended.named_children
+                if part.type == "type_identifier"
+            ]
+        else:
+            # a sugared type (``extension [Int]``), whole
+            path = [_squeeze(_text(extended))]
+        if not path or not all(path):
+            return None
+        return [
+            *(_element("scope", part) for part in path[:-1]),
+            _element("impl", path[-1]),
+        ]
+    own = _swift_own_name(node)
+    if own is None:
+        return None
+    return [_element(kind, own)]
+
+
+def _swift_describe(node: TreeSitterNode) -> EntityName | None:
+    """A Swift declaration, named by the declarations around it, joined with ``.``
+    (``Widget.greet(name:_:)``, ``Outer.Inner.f()``, ``C.outer().local()``).
+
+    A callable is named by its full name, its base name and argument labels, so that
+    overloads that differ by label only (``init(x:)``, ``init(y:)``) have different
+    names. A declaration inside one with no name (a property declaring several
+    names) has no name. See :data:`_SWIFT_DECLARATION_KINDS` and :data:`_SWIFT_KINDS`
+    for the kinds.
+    """
+    if not is_entity(node, CommentType.swift):
+        return None
+    kind = _swift_kind(node)
+    own = _swift_components(node)
+    if own is None:
+        return EntityName(kind, None, None)
+    outer: list[SemanticElement] = []
+    ancestor = node.parent
+    while ancestor is not None:
+        if is_entity(ancestor, CommentType.swift):
+            components = _swift_components(ancestor)
+            if components is None:
+                return EntityName(kind, None, None)
+            outer[:0] = components
+        ancestor = ancestor.parent
+    semantic = [*outer, *own]
+    return _named(kind, ".".join(element["name"] for element in semantic), semantic)
+
+
 def _data_describe(node: TreeSitterNode) -> EntityName:
     """A YAML or JSON entry: a key/value pair is a ``key``, anything else an ``item``."""
     is_pair = node.type in ("block_mapping_pair", "flow_pair", "pair")
@@ -3394,6 +3616,7 @@ _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = 
     CommentType.bash: _bash_describe,
     CommentType.powershell: _powershell_describe,
     CommentType.vhdl: _vhdl_describe,
+    CommentType.swift: _swift_describe,
     CommentType.yaml: _data_describe,
     CommentType.jsonc: _data_describe,
 }
@@ -3524,7 +3747,7 @@ def render_semantic(
     no path, and folds the modules before an impl into a self type written bare
     (``m::G``). Python joins them with ``.``, with ``<locals>`` after a function or a
     method another component follows (CPython's ``__qualname__``). C#, Go,
-    TypeScript, JavaScript, Bash, PowerShell and VHDL join them with ``.``.
+    TypeScript, JavaScript, Bash, PowerShell, VHDL and Swift join them with ``.``.
 
     :param semantic: An entity's components, as :func:`describe_entity` gives them.
     :param language: The language of the entity's file, as ``scope.language``
@@ -3609,8 +3832,8 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
     ``csharp``; ``javascript`` for a ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in
     any case, and ``typescript`` for every other file of the ``ts`` comment type,
     ``.tsx`` included; otherwise the comment type (``python``, ``rust``, ``go``,
-    ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``). A ``.c`` file is parsed with the C++ grammar too,
-    and its components render as C++'s.
+    ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``, ``swift``). A ``.c`` file is
+    parsed with the C++ grammar too, and its components render as C++'s.
 
     :param comment_type: The project's comment type.
     :param path: The file's path; only its suffix is read, case included for C (discovery

@@ -1,0 +1,1068 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 32
+      }
+    },
+    "tagged_scope": "public protocol Shape {\n    // @Area requirement, SW_02, impl\n    func area() -> Double\n    /// @Name requirement, SW_03, impl\n    var name: String { get }\n    // @Element type, SW_04, impl\n    associatedtype Element\n}",
+    "scope": {
+      "kind": "protocol_declaration",
+      "start": 4,
+      "end": 11,
+      "language": "swift",
+      "entity_kind": "interface",
+      "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Shape protocol",
+      "id": "SW_01",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "protocol_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 8
+      },
+      "end": {
+        "row": 4,
+        "column": 37
+      }
+    },
+    "tagged_scope": "func area() -> Double",
+    "scope": {
+      "kind": "protocol_function_declaration",
+      "start": 6,
+      "end": 6,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Shape.area()",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area requirement",
+      "id": "SW_02",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "protocol_function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 9
+      },
+      "end": {
+        "row": 6,
+        "column": 38
+      }
+    },
+    "tagged_scope": "var name: String { get }",
+    "scope": {
+      "kind": "protocol_property_declaration",
+      "start": 8,
+      "end": 8,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Shape.name",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        },
+        {
+          "kind": "property",
+          "name": "name"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Name requirement",
+      "id": "SW_03",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "protocol_property_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 8
+      },
+      "end": {
+        "row": 8,
+        "column": 33
+      }
+    },
+    "tagged_scope": "associatedtype Element",
+    "scope": {
+      "kind": "associatedtype_declaration",
+      "start": 10,
+      "end": 10,
+      "language": "swift",
+      "entity_kind": "type",
+      "qualified_name": "Shape.Element",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        },
+        {
+          "kind": "type",
+          "name": "Element"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Element type",
+      "id": "SW_04",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "associatedtype_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 12,
+        "column": 4
+      },
+      "end": {
+        "row": 12,
+        "column": 30
+      }
+    },
+    "tagged_scope": "@MainActor\npublic struct Widget: Shape {\n    // @Width property, SW_06, impl\n    var width: Double\n    var height: Double = 1 // @Height property, SW_07, impl\n\n    // @Init width, SW_08, impl\n    init(width: Double) {\n        self.width = width\n    }\n\n    // @Init side, SW_09, impl\n    init(side: Double) {\n        self.width = side\n        self.height = side\n    }\n\n    /// @Area, SW_10, impl\n    func area() -> Double {\n        // @Area body, SW_11, impl\n        return width * height\n    }\n\n    var name: String {\n        get { \"widget\" } // @Getter, SW_12, impl\n    }\n\n    // @Greet, SW_13, impl\n    func greet(name: String, _ times: Int) -> String {\n        // @Local helper, SW_14, impl\n        func repeated(_ s: String) -> String { s }\n        return repeated(name)\n    }\n\n    // @Index, SW_15, impl\n    subscript(index: Int) -> Double { width }\n\n    // @Equals, SW_16, impl\n    static func == (lhs: Widget, rhs: Widget) -> Bool { lhs.width == rhs.width }\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 14,
+      "end": 53,
+      "language": "swift",
+      "entity_kind": "struct",
+      "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget struct",
+      "id": "SW_05",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 15,
+        "column": 8
+      },
+      "end": {
+        "row": 15,
+        "column": 35
+      }
+    },
+    "tagged_scope": "var width: Double",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 17,
+      "end": 17,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Widget.width",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "property",
+          "name": "width"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Width property",
+      "id": "SW_06",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 17,
+        "column": 31
+      },
+      "end": {
+        "row": 17,
+        "column": 59
+      }
+    },
+    "tagged_scope": "var height: Double = 1",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 18,
+      "end": 18,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Widget.height",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "property",
+          "name": "height"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Height property",
+      "id": "SW_07",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 19,
+        "column": 8
+      },
+      "end": {
+        "row": 19,
+        "column": 31
+      }
+    },
+    "tagged_scope": "init(width: Double) {\n        self.width = width\n    }",
+    "scope": {
+      "kind": "init_declaration",
+      "start": 21,
+      "end": 23,
+      "language": "swift",
+      "entity_kind": "constructor",
+      "qualified_name": "Widget.init(width:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "constructor",
+          "name": "init(width:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Init width",
+      "id": "SW_08",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "init_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 24,
+        "column": 8
+      },
+      "end": {
+        "row": 24,
+        "column": 30
+      }
+    },
+    "tagged_scope": "init(side: Double) {\n        self.width = side\n        self.height = side\n    }",
+    "scope": {
+      "kind": "init_declaration",
+      "start": 26,
+      "end": 29,
+      "language": "swift",
+      "entity_kind": "constructor",
+      "qualified_name": "Widget.init(side:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "constructor",
+          "name": "init(side:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Init side",
+      "id": "SW_09",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "init_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 30,
+        "column": 9
+      },
+      "end": {
+        "row": 30,
+        "column": 26
+      }
+    },
+    "tagged_scope": "func area() -> Double {\n        // @Area body, SW_11, impl\n        return width * height\n    }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 32,
+      "end": 35,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Widget.area()",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "area()"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Area",
+      "id": "SW_10",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 32,
+        "column": 12
+      },
+      "end": {
+        "row": 32,
+        "column": 34
+      }
+    },
+    "tagged_scope": "func area() -> Double {\n        // @Area body, SW_11, impl\n        return width * height\n    }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 32,
+      "end": 35,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Widget.area()",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "area()"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Area body",
+      "id": "SW_11",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 37,
+        "column": 29
+      },
+      "end": {
+        "row": 37,
+        "column": 48
+      }
+    },
+    "tagged_scope": "var name: String {\n        get { \"widget\" } // @Getter, SW_12, impl\n    }",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 37,
+      "end": 39,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Widget.name",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "property",
+          "name": "name"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Getter",
+      "id": "SW_12",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 40,
+        "column": 8
+      },
+      "end": {
+        "row": 40,
+        "column": 26
+      }
+    },
+    "tagged_scope": "func greet(name: String, _ times: Int) -> String {\n        // @Local helper, SW_14, impl\n        func repeated(_ s: String) -> String { s }\n        return repeated(name)\n    }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 42,
+      "end": 46,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Widget.greet(name:_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "greet(name:_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Greet",
+      "id": "SW_13",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 42,
+        "column": 12
+      },
+      "end": {
+        "row": 42,
+        "column": 37
+      }
+    },
+    "tagged_scope": "func repeated(_ s: String) -> String { s }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 44,
+      "end": 44,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "Widget.greet(name:_:).repeated(_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "greet(name:_:)"
+        },
+        {
+          "kind": "function",
+          "name": "repeated(_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Local helper",
+      "id": "SW_14",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 47,
+        "column": 8
+      },
+      "end": {
+        "row": 47,
+        "column": 26
+      }
+    },
+    "tagged_scope": "subscript(index: Int) -> Double { width }",
+    "scope": {
+      "kind": "subscript_declaration",
+      "start": 49,
+      "end": 49,
+      "language": "swift",
+      "entity_kind": "indexer",
+      "qualified_name": "Widget.subscript(_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "indexer",
+          "name": "subscript(_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Index",
+      "id": "SW_15",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subscript_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 50,
+        "column": 8
+      },
+      "end": {
+        "row": 50,
+        "column": 27
+      }
+    },
+    "tagged_scope": "static func == (lhs: Widget, rhs: Widget) -> Bool { lhs.width == rhs.width }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 52,
+      "end": 52,
+      "language": "swift",
+      "entity_kind": "operator",
+      "qualified_name": "Widget.==(_:_:)",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "operator",
+          "name": "==(_:_:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Equals",
+      "id": "SW_16",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 54,
+        "column": 4
+      },
+      "end": {
+        "row": 54,
+        "column": 28
+      }
+    },
+    "tagged_scope": "actor Cache {\n    deinit {} // @Deinit, SW_18, impl\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 56,
+      "end": 58,
+      "language": "swift",
+      "entity_kind": "class",
+      "qualified_name": "Cache",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Cache"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Cache actor",
+      "id": "SW_17",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 56,
+        "column": 18
+      },
+      "end": {
+        "row": 56,
+        "column": 37
+      }
+    },
+    "tagged_scope": "deinit {}",
+    "scope": {
+      "kind": "deinit_declaration",
+      "start": 57,
+      "end": 57,
+      "language": "swift",
+      "entity_kind": "destructor",
+      "qualified_name": "Cache.deinit",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Cache"
+        },
+        {
+          "kind": "destructor",
+          "name": "deinit"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Deinit",
+      "id": "SW_18",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "deinit_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 59,
+        "column": 4
+      },
+      "end": {
+        "row": 59,
+        "column": 26
+      }
+    },
+    "tagged_scope": "enum Kind {\n    case small, large // @Cases, SW_20, impl\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 61,
+      "end": 63,
+      "language": "swift",
+      "entity_kind": "enum",
+      "qualified_name": "Kind",
+      "semantic": [
+        {
+          "kind": "enum",
+          "name": "Kind"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Kind enum",
+      "id": "SW_19",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 61,
+        "column": 26
+      },
+      "end": {
+        "row": 61,
+        "column": 44
+      }
+    },
+    "tagged_scope": "enum Kind {\n    case small, large // @Cases, SW_20, impl\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 61,
+      "end": 63,
+      "language": "swift",
+      "entity_kind": "enum",
+      "qualified_name": "Kind",
+      "semantic": [
+        {
+          "kind": "enum",
+          "name": "Kind"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Cases",
+      "id": "SW_20",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 64,
+        "column": 4
+      },
+      "end": {
+        "row": 64,
+        "column": 32
+      }
+    },
+    "tagged_scope": "extension Array where Element: Shape {\n    // @Total area, SW_22, impl\n    func totalArea() -> Double { 0 }\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 66,
+      "end": 69,
+      "language": "swift",
+      "entity_kind": "impl",
+      "qualified_name": "Array",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Array"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Array extension",
+      "id": "SW_21",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 66,
+        "column": 8
+      },
+      "end": {
+        "row": 66,
+        "column": 31
+      }
+    },
+    "tagged_scope": "func totalArea() -> Double { 0 }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 68,
+      "end": 68,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Array.totalArea()",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Array"
+        },
+        {
+          "kind": "method",
+          "name": "totalArea()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Total area",
+      "id": "SW_22",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 70,
+        "column": 4
+      },
+      "end": {
+        "row": 70,
+        "column": 33
+      }
+    },
+    "tagged_scope": "extension Widget.Style {\n    func apply() {} // @Apply, SW_24, impl\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 72,
+      "end": 74,
+      "language": "swift",
+      "entity_kind": "impl",
+      "qualified_name": "Widget.Style",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "Widget"
+        },
+        {
+          "kind": "impl",
+          "name": "Style"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Nested extension",
+      "id": "SW_23",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 72,
+        "column": 24
+      },
+      "end": {
+        "row": 72,
+        "column": 42
+      }
+    },
+    "tagged_scope": "func apply() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 73,
+      "end": 73,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Widget.Style.apply()",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "Widget"
+        },
+        {
+          "kind": "impl",
+          "name": "Style"
+        },
+        {
+          "kind": "method",
+          "name": "apply()"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Apply",
+      "id": "SW_24",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 75,
+        "column": 4
+      },
+      "end": {
+        "row": 75,
+        "column": 30
+      }
+    },
+    "tagged_scope": "func makeWidget(width w: Double) -> Widget { Widget(width: w) }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 77,
+      "end": 77,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "makeWidget(width:)",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "makeWidget(width:)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Free function",
+      "id": "SW_25",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 78,
+        "column": 14
+      },
+      "end": {
+        "row": 78,
+        "column": 22
+      }
+    },
+    "tagged_scope": "typealias Area = Double",
+    "scope": {
+      "kind": "typealias_declaration",
+      "start": 80,
+      "end": 80,
+      "language": "swift",
+      "entity_kind": "type",
+      "qualified_name": "Area",
+      "semantic": [
+        {
+          "kind": "type",
+          "name": "Area"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need_ids": [
+      "SWREF_26"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "typealias_declaration"
+  }
+]

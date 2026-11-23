@@ -1,0 +1,98 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 17
+      },
+      "end": {
+        "row": 1,
+        "column": 64
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "After the value",
+      "id": "IMPL_SWIFT_INTERP_AFTER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 15
+      },
+      "end": {
+        "row": 2,
+        "column": 64
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Before the value",
+      "id": "IMPL_SWIFT_INTERP_BEFORE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 58
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Line in an interpolation",
+      "id": "IMPL_SWIFT_INTERP_LINE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 19
+      },
+      "end": {
+        "row": 9,
+        "column": 66
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Raw interpolation",
+      "id": "IMPL_SWIFT_INTERP_RAW",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

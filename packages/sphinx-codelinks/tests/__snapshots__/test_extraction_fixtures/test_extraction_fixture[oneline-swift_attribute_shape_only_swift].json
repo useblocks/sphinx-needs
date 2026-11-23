@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 25
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "f()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "available (iOS 15",
+      "id": "*)",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

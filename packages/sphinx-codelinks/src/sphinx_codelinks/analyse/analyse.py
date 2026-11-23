@@ -32,6 +32,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     jsdoc_tag,
     oneline_parser,
     opens_powershell_literal,
+    swift_attribute,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
@@ -177,6 +178,7 @@ _TAG_NAMES = {
     WarningSubTypeEnum.docstring_tag: "docstring tag",
     WarningSubTypeEnum.jsdoc_tag: "JSDoc tag",
     WarningSubTypeEnum.doxygen_tag: "Doxygen tag",
+    WarningSubTypeEnum.swift_attribute: "Swift attribute",
 }
 
 
@@ -1477,6 +1479,8 @@ class SourceAnalyse:
         in_doxygen = self.analyse_config.comment_type == CommentType.vhdl and (
             is_doc_comment(src_comment.node, CommentType.vhdl, text=src_comment.text)
         )
+        # Any Swift comment can hold an attribute's shape (``@available(iOS 15, *)``)
+        in_swift = self.analyse_config.comment_type == CommentType.swift
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
@@ -1502,6 +1506,14 @@ class SourceAnalyse:
                 # as for JSDoc: ``@`` is Doxygen's sigil, and a silent line stays silent
                 tag = doxygen_tag(line, start_sequence)
                 kind, holders = WarningSubTypeEnum.doxygen_tag, "Doxygen comments"
+                if tag is not None and not oneline_parser(line, oneline_comment_style):
+                    row_offset += 1
+                    continue
+            elif in_swift and start_sequence == "@":
+                # as for JSDoc: ``@`` is the sigil of Swift's attributes, and a silent
+                # line stays silent
+                tag = swift_attribute(line, start_sequence)
+                kind, holders = WarningSubTypeEnum.swift_attribute, "Swift attributes"
                 if tag is not None and not oneline_parser(line, oneline_comment_style):
                     row_offset += 1
                     continue

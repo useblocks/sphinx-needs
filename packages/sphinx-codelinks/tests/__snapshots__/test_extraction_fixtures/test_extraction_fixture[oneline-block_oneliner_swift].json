@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 59
+      }
+    },
+    "tagged_scope": "struct Point {}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "swift",
+      "entity_kind": "struct",
+      "qualified_name": "Point",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Swift Block Title",
+      "id": "IMPL_SWIFT_BLOCK",
+      "type": "impl",
+      "links": [
+        "REQ_SWIFT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  }
+]

@@ -1,0 +1,180 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 36
+      }
+    },
+    "tagged_scope": "struct Widget {\n    func draw() {} // @need-ids: REQ_1\n    /*\n     @Crlf block, IMPL_SWIFT_CRLF_BLOCK, impl\n     */\n    func reset() {}\n}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 2,
+      "end": 8,
+      "language": "swift",
+      "entity_kind": "struct",
+      "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Crlf need",
+      "id": "IMPL_SWIFT_CRLF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 33
+      },
+      "end": {
+        "row": 2,
+        "column": 38
+      }
+    },
+    "tagged_scope": "func draw() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Widget.draw()",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw()"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 6
+      },
+      "end": {
+        "row": 4,
+        "column": 45
+      }
+    },
+    "tagged_scope": "func reset() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 7,
+      "end": 7,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Widget.reset()",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "reset()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Crlf block",
+      "id": "IMPL_SWIFT_CRLF_BLOCK",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 4
+      },
+      "end": {
+        "row": 10,
+        "column": 12
+      }
+    },
+    "tagged_scope": "func run() {}",
+    "need": {
+      "type": "impl",
+      "title": "Crlf run",
+      "id": "IMPL_SWIFT_CRLF_RUN",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.swift",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 9,
+        "col": 4
+      },
+      "end": {
+        "line": 11,
+        "col": 12
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 10
+      },
+      "scope": {
+        "kind": "function_declaration",
+        "start": 12,
+        "end": 12,
+        "language": "swift",
+        "entity_kind": "function",
+        "qualified_name": "run()",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "run()"
+          }
+        ],
+        "mechanism": "doc_comment"
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_declaration"
+  }
+]
