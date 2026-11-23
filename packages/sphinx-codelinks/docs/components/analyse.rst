@@ -173,7 +173,9 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   extension after the extended type, without its generic arguments (``Array.dedup()`` in
   ``extension Array where Element: Equatable``). Identifiers are written as the source writes them, backticks
   included.
-  No module, crate or package prefix: the file's path decides that.
+  No module, crate or package prefix: the file's path decides that. A Swift extension of a type qualified by its
+  module (``extension Foundation.Date``) keeps the module as a part of the name (``Foundation.Date.f()``): the syntax
+  cannot tell a module from a type.
   ``null`` in YAML and JSON, and for an entity without a name -- in VHDL an unlabelled process or statement, a
   declaration of several names (``signal a, b : bit``), and anything inside one of them; in Swift a property
   declaring several names (``var a = 0, b = 0``) or a tuple pattern (``var (a, b) = t``), and anything inside one;
@@ -462,14 +464,15 @@ What counts as an entity
   computed, and a protocol's property requirements; ``typealias``, ``associatedtype`` and macro declarations. Not
   entities: a top-level or local ``var`` or ``let``, an enum ``case``, an ``import``, an ``operator`` or
   ``precedencegroup`` declaration, a closure, an accessor (a marker in a ``get``, ``set``, ``willSet`` or ``didSet``
-  is attached to its property) and a macro expansion such as ``#Preview``. A swift-testing ``@Test`` function or an
-  XCTest ``test…`` method is a ``function`` or a ``method``, not a ``test``. Three limits of the
+  of a type's property is attached to that property; a top-level computed ``var`` is a variable, so a marker in its
+  accessor is attached to the file) and a macro expansion such as ``#Preview``. A swift-testing ``@Test`` function or
+  an XCTest ``test…`` method is a ``function`` or a ``method``, not a ``test``. Four limits of the
   ``tree-sitter-swift`` grammar, documented rather than worked around:
 
   - A block comment followed by code on its own line at statement level (at file level or in a body of code, not in
     a type's body) -- ``/* @Title, ID_1, impl */ func f() {}`` -- is parsed as a syntax error that takes the
-    statements before it in: its marker is still extracted, but the markers around it lose their entity, and the
-    comments before the file's first item may no longer be its header. Put the block comment on a line of its own,
+    statements before it in: its marker is still extracted, but it and the markers around it may lose their entity,
+    and the comments before the file's first item may no longer be its header. Put the block comment on a line of its own,
     or use ``//``.
   - A bare regular expression literal with an escaped slash at the end of a line (``let r = /a\/b/``) swallows the
     lines after it: a marker there is still extracted, but attached to the wrong entity. Write it as an extended
@@ -477,6 +480,10 @@ What counts as an entity
   - Experimental or very new syntax (``@_lifetime(...)``, ``unsafe`` expressions, ``@_extern``) can parse as a
     syntax error: markers in such a file are still extracted (in a sample of public code, 8 comment lines in
     81,000 were lost, all in one file), but their attachment around the error degrades.
+  - A string whose text opens ``/*`` (``let open = "/*"``) with a later ``*/`` elsewhere -- in another string, in a
+    ``//`` comment -- is read as one comment inside the string up to that ``*/``, with no syntax error: the code
+    between, its markers included, is silently lost. Write such a string as ``"/" + "*"``, or close the ``/*`` in the
+    same string.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

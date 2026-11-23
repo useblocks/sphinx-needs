@@ -16,8 +16,8 @@ New and Improved
   marker is attached to the declaration next to it, by the rules every language follows
   (:ref:`attachment`): a class, struct, enum, actor, extension or protocol, a function
   (free, local or member), an operator function, an initializer, ``deinit``, a subscript, a
-  property of a type, a ``typealias``, an ``associatedtype`` or a macro; a marker in an
-  accessor documents its property. A declaration's attributes and modifiers are its head,
+  property of a type, a ``typealias``, an ``associatedtype`` or a macro; a marker in the
+  accessor of a type's property documents that property. A declaration's attributes and modifiers are its head,
   a shebang line is no item before a file header, and a marker directly above an ``#if``
   line among declarations is attached to no entity, with the
   ``codelinks.marker_above_conditional`` warning C and C++ give. Each declaration is named
@@ -30,8 +30,10 @@ New and Improved
   (``// @available(iOS 15, macOS 12, *)``, ``/// @Available(Swift, introduced: 6.3)``) is a
   new ``swift_attribute`` warning rather than a need. The grammar reads a block comment
   followed by code on its line at statement level (``/* @T, ID_1, impl */ func f() {}``)
-  as a syntax error, which costs the markers around it their entity: put the comment on a
-  line of its own (:need:`FE_SWIFT`).
+  as a syntax error, which can cost it and the markers around it their entity: put the
+  comment on a line of its own. A string whose text opens ``/*`` with a later ``*/``
+  elsewhere (``"/*"`` … ``"*/"``) hides the code between, silently: close the ``/*`` in
+  the same string (:need:`FE_SWIFT`).
 
 .. _`release:2.2.0`:
 

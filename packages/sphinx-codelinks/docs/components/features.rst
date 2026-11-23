@@ -441,13 +441,15 @@ Features
 
    * Detection of line and block comments, a nested block comment read as one comment, as
      Swift reads it; a ``/*`` inside a string literal is string content, never a marker,
-     where a comment inside a string's interpolation (``\( … )``) is code, and counts
+     where a comment inside a string's interpolation (``\( … )``), in its expression or
+     beside it, is code, and counts
    * Association of a marker with the declaration next to it: a class, struct, enum,
      actor, extension or protocol; a function (free, local or member), an operator
      function, a protocol requirement, an initializer, ``deinit`` or a subscript; a
      property of a type, stored or computed; a ``typealias``, an ``associatedtype`` or a
-     macro. A marker in an accessor documents its property; variables, enum cases and
-     closures are no entities
+     macro. A marker in the accessor of a type's property documents that property;
+     variables (a top-level computed ``var`` included), enum cases and closures are no
+     entities
    * The attachment rules every language follows, with Swift's shapes: a declaration's
      attributes and modifiers (``@MainActor public final``) are its head, a shebang line
      is no item before a file header, a comment before a body's first statement leads a
@@ -474,9 +476,15 @@ Features
       (``/* @Title, ID_1, impl */ func f() {}`` at file level or in a function's body), a
       bare regular expression literal with an escaped slash at the end of a line
       (``/a\/b/``), and experimental syntax. Markers in such a file are still extracted,
-      but the ones around the error may be attached to the wrong entity, or to none.
-      Put a block comment on a line of its own, and write such a regular expression as
-      ``#/a/b/#``.
+      but they and the ones around the error may be attached to the wrong entity, or to
+      none. Put a block comment on a line of its own, and write such a regular
+      expression as ``#/a/b/#``.
+
+      A fourth shape is no syntax error, and so it is silent: a string whose text opens
+      ``/*`` (``let open = "/*"``) with a later ``*/`` elsewhere -- in another string, in a
+      ``//`` comment -- is read as one comment inside the string up to that ``*/``, and
+      the code between, its markers included, is lost. Write such a string as
+      ``"/" + "*"``, or close the ``/*`` in the same string.
 
    .. fault:: Traceability objects are not detected in Swift
       :id: FAULT_SWIFT_1
