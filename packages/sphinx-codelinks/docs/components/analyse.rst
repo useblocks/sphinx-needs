@@ -389,9 +389,9 @@ In this order:
    (``@Published`` on one line, the marker on the next, ``var count`` after it) leads it, and a comment before the
    first statement of a body (a function's, a closure's, an accessor's) belongs to that statement's entity, if it is
    one: a local function.
-7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
-   between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
-   ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
+7. **A marker directly above a preprocessor conditional**, in C and C++ (and in Swift, as below) -- with only other
+   comments, and no blank line, between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``,
+   ``#elifndef``, ``#else`` or ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
    struct, union or enum body, or in an ``extern "C"`` block), where the namespace, class, struct, union or enum around
    it would otherwise hold it, and a namespace or class would then trace every function inside, whichever arm is
    compiled.
