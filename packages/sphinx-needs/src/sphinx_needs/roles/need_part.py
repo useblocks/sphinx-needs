@@ -115,7 +115,11 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
 
     The html family keeps the part's id on its ``inline``, as it was written there; for
     LaTeX and texinfo the id moves to a ``target`` at the start of the inline, which is
-    what those writers anchor in place.
+    what those writers anchor in place. Those builders resolve a whole document in one
+    tree, so an address is anchored once in it, at its first occurrence, as a browser
+    takes the first of an id a page holds twice: a later one, such as a
+    ``needextract`` copy of the need on the same page, keeps its text and its id link
+    and carries no target and no id.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
     and for every document: a part on a page holding no need is in the tree too. A part
@@ -125,13 +129,17 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
     no text in the page's heading either, which then reads as its entries do.
     """
     anchor_with_target = app.builder.format in _FORMATS_ANCHORING_TARGETS
+    anchored: set[str] = set()
     for node in list(doctree.findall(NeedPart)):
         if node.children:
             shown = list(node.children)
             if anchor_with_target:
                 for child in shown:
                     if isinstance(child, nodes.Element) and child["ids"]:
-                        child.insert(0, nodes.target(ids=child["ids"]))
+                        ids = [id_ for id_ in child["ids"] if id_ not in anchored]
+                        if ids:
+                            child.insert(0, nodes.target(ids=ids))
+                            anchored.update(ids)
                         child["ids"] = []
         elif _in_section_title(node):
             shown = []
