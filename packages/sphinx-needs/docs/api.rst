@@ -231,13 +231,17 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
    * - ``is_import``
      - ``NeedItemSource(..., is_import=True)`` (the provisional constructor), or
        :func:`~sphinx_needs.api.need.ingest_need_record` for a needs.json-style record
-   * - ``parts``, ``arch``, ``sections``, ``signature``
+   * - ``parts``, ``{part_id: {"id": part_id, "content": text}}``
+     - ``parts={part_id: text}``, a mapping of part id to text, kept by the same rule:
+       the parts the need's content marks, then the given ones it does not mark
+       (:ref:`stated parts <need_stated_parts>`);
+       :func:`~sphinx_needs.api.need.add_external_need` takes ``add_need``'s shape
+   * - ``arch``, ``sections``, ``signature``
      - none: for a need on the page they are computed from its content and the page (a
-       record's ``parts`` and ``arch`` through
-       :func:`~sphinx_needs.api.need.ingest_need_record`); an external need ``add_need``
-       made kept them as given, which neither ``create_need`` nor ``add_external_need``
-       takes (``add_need`` warns, once per need on a page, of the given ``parts`` its
-       content drops)
+       record's ``arch`` through :func:`~sphinx_needs.api.need.ingest_need_record`); an
+       external need ``add_need`` made kept them as given, and so does one
+       :func:`~sphinx_needs.api.need.add_external_need` makes, which takes them as
+       keyword arguments
    * - the deprecated ``links_string``, ``hide_tags``, ``hide_status``, ``delete``,
        ``constraints_passed``
      - none (``add_need`` drops them, with a warning)

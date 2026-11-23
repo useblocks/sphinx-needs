@@ -11,8 +11,8 @@ This page states what a part is and how it is addressed. Its executable half is
 repository is its repository of record, and ubCode is to vendor it. Each section below
 names the corpus section that pins it. The user's documentation is the `need_part` section
 of `docs/roles.rst`. The findings named here (`duplicate part id`, `part outside a need`,
-`dead link`, `link target type`, `link condition`) are classes of this contract: each tool
-reports them under codes of its own, which the corpus header maps.
+`dead link`, `link target type`, `link condition`, `unresolved reference`) are classes of
+this contract: each tool reports them under codes of its own, which the corpus header maps.
 
 ## 1. The role and its grammar (corpus: `grammar`)
 
@@ -51,9 +51,15 @@ or the body of a test file, a test suite or a test case; the needs a test file's
 expand have no body, and so no parts. A role outside every need is one finding,
 `part outside a need`, and makes no part.
 
-An external need, whose content is not part of this project, has the parts its record
-states, each with the id and the text the record gives, as given: section 1's removal of
-white space is the role's, and a stated text keeps its ends.
+A need may have parts its content does not mark, stated by the record or the caller that
+gives the need: each has its key in the given parts as its id (a record part's own `id` is
+not read) and its text as given: section 1's removal of white space is the role's, and a
+stated text keeps its ends. A need whose content is read has the parts its content marks
+and the stated parts whose id its content does not mark; where both give an id, the
+content's part is the part, with its text, and there is no finding. An external need, whose
+content is not part of this project, has its stated parts. A stated part's back links are
+this project's: those a record gives it are not read. A prefix or a namespace given to the
+ids of imported needs changes the need's id, never a part's.
 
 ## 3. One id, one part (corpus: `duplicates`)
 
@@ -80,6 +86,10 @@ With namespaced ids, the namespace is split from the need's id only after the pa
 split off, and a namespace segment holds no `.`: the grammar of a need id, section 14 of
 `packages/ub-needs-exchange/design/exchange-contract.md`, is not restated here. So
 `SUP01::REQ_1.p1` is the part `p1` of the need `SUP01::REQ_1`, with namespaced ids on or off.
+
+A stated part (section 2) has the address `NEED.part` like any other; where its need is on
+a page, that address is an anchor beside the need's content. A reference naming a part its
+need does not have, or a need that does not exist, is one finding, `unresolved reference`.
 
 ## 6. A link to a part (corpus: `links`)
 
@@ -148,15 +158,20 @@ A project that does not write the value gets its tool's default: Sphinx-Needs re
 as true through its 9.x series and as false from 10.0. A tool may select needs alone
 whatever the value says; the corpus marks where one does.
 
-## 10. Not on this page yet
+## 10. The order of a need's parts (corpus: `stated`)
+
+A need's parts are in order: the parts its content marks, in the order written (the first
+role of each id), then its stated parts whose id its content does not mark, in the order
+given. Where a need's parts are listed, they are listed in that order. The `needs.json`
+Sphinx-Needs writes (format 1) lists a need's parts sorted by id and cannot carry the order,
+so the corpus reads it from the stored need (`order.<ID>`).
+
+## 11. Not on this page yet
 
 These are decided but not yet built in both tools; each joins this page and the corpus
 with the change that builds it. Two are open: whether a need id that holds a `.` is
 warned on or refused, and parts in a graph query schema.
 
-- The order of a need's parts.
-- Parts a need states that its content does not mark.
-- Which parts an imported need gets when its record and its content give different parts.
 - How a view draws a part.
 - A need id that holds a `.`.
 - How a part is written in `needs.json` format 2.

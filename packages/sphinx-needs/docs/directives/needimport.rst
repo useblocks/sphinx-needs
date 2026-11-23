@@ -75,6 +75,24 @@ file's own ``needs_schema``, the default of the field in the project that wrote 
 from this project's declarations: a need type's default here does not fill it. This
 project's defaults fill only a field to which the file's schema gives no default.
 
+An imported need has the :ref:`parts <need_part>` its content marks, in the order written,
+then the parts its record states (its ``parts``) whose id its content does not mark, in the
+record's order, each with its key in ``parts`` as its id and its text as given. Where both
+give an id, the content's part is the part, with its text, and nothing is reported. The back
+links a record gives a part are not read: this project computes its own. The parts the
+record states alone are shown in a block after the need's content (see :ref:`stated parts
+<need_stated_parts>`), so a link or a ``:need:`` reference to one is live and lands there. A
+``needs.json`` that Sphinx-Needs wrote states each need's parts as its content marked them,
+so importing it adds no such part. ``:id_prefix:`` and ``:namespace:`` change
+the need's id and never a part's, and :ref:`needs_import_restrict_content` does not change
+the parts a record states. A need imported with ``:hide:``, whose content is not read, has
+its record's parts alone.
+
+.. versionchanged:: 9.4.0
+
+   A part the record states that the content does not mark is kept; it was dropped, and a
+   link to it was dead.
+
 .. note::
 
    If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs or a ``file://`` URL, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.

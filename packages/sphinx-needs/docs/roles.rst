@@ -105,6 +105,28 @@ It has no fields, no type, no status and no outgoing links of its own; a piece o
 those is a need of its own. A link to a part, ``<need id>.<part id>``, reads and counts as a link to its need:
 its condition, the target types and the counts are the need's. It is a dead link when the need has no such part.
 
+.. _need_stated_parts:
+
+**Parts a need is given**
+
+.. versionadded:: 9.4.0
+
+A need may also be given parts its content does not mark ("stated" parts): an imported need by its record
+(:ref:`needimport`), and a need created through the API by ``create_need(..., parts={"r1": "a stated part"})``
+(:func:`~sphinx_needs.api.need.create_need`), a mapping of part id to text. A need whose content is read has the
+parts its content marks, in the order written, then the given parts whose id its content does not mark, in the order
+given, each with its text as given. Where both give an id, the content's part is the part, with its text, and
+nothing is reported. A stated part is a part like any other: a link to it is live, its back links are computed, and a
+filter that asks for parts sees it. There is no option to state a part in markup: there, a part is written in the
+content.
+
+The stated parts of a need on a page are shown after its content, in a block with the class
+``needs-stated-parts``: one line per part, in order, each its text, its id and its anchor ``<need id>.<part id>``,
+as a part in the content is shown, with the class ``need-part-stated`` beside ``need-part``. A link or a ``:need:``
+reference to a stated part lands on its line. A need with no stated part has no block. A hidden need, whose content
+is not read, has the parts it is given alone and shows nothing, and an external need (:ref:`needs_external_needs`)
+has the parts its record states.
+
 .. syntax-example::
 
    .. req:: Car must be awesome

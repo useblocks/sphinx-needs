@@ -61,6 +61,24 @@ Improvements
   From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
   keep a project's views through that release.
 
+- ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
+  content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
+  was dead (``needs.link_outgoing``, ``needs.link_ref``). The need now has them, after the parts its content
+  marks, in the record's order, each with its key as its id and its text as given; where both give an id, the
+  content's part is the part, with its text, and nothing is reported. On the page they are shown in a block after
+  the need's content (the class ``needs-stated-parts``), one line per part with its text, its id and its anchor
+  ``NEED.part``, styled as a part in the content with the class ``need-part-stated`` beside ``need-part``, in
+  every builder; links and references to them are live and land there, their warnings go, and the importing
+  project's ``needs.json``, tables, flows and filters have them (see :ref:`stated parts <need_stated_parts>`). A
+  need's parts are listed in that order: its content's as written, then the stated ones. A ``needs.json`` that
+  Sphinx-Needs wrote states each need's parts as its content marked them, so importing it changes nothing on the
+  page. A hidden imported need and an external need keep their record's parts alone, as before.
+  Through the API, :func:`~sphinx_needs.api.need.create_need` takes ``parts``, a mapping of part id to text,
+  merged by the same rule, and the deprecated ``add_need`` keeps the ``parts`` it is given for a need on a page,
+  where it dropped them with one ``needs.part`` warning per need. ``NeedPartData`` records whether a part comes
+  from its need's content or is stated (``origin``), which needs.json and filters do not read. Every project
+  re-reads its sources once after upgrading. (:pr:`NNNN`)
+
 Bug fixes
 .........
 
