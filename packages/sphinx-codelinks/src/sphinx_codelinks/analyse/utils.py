@@ -407,7 +407,8 @@ def find_next_scope(
 
     PowerShell's grammar places a comment before a body's first statement beside the
     body (its statement list, or the script block holding it), so such a comment is
-    followed by that first statement too.
+    followed by that first statement too. So do Swift's, beside the body's statements,
+    and VHDL's (see :data:`FIRST_ITEM_WRAPPER_TYPES`).
     """
     sibling = node.next_named_sibling
     while sibling is not None and is_trivia(sibling, comment_type):
@@ -533,12 +534,19 @@ _ROW_SEARCH_STOP_TYPES = frozenset({"parameter_list_specification"})
 
 def _is_file_header(node: TreeSitterNode) -> bool:
     """Whether the comment ``node`` is one of the comments before the file's first item,
-    and a blank line separates the last of them from that item."""
+    and a blank line separates the last of them from that item.
+
+    A Swift shebang line (``#!/usr/bin/env swift``) is no item: Swift's grammar reads it
+    as a node of its own, not as a comment, as every other grammar here does.
+    """
     parent = node.parent
     if parent is None or parent.parent is not None:
         return False
     siblings = parent.children
     index = 0
+    # @A Swift shebang line comes before the file header, IMPL_SWIFT_10, impl, [FE_SWIFT]
+    if siblings and siblings[0].type == "shebang_line":
+        index = 1
     in_block = False
     last_comment: TreeSitterNode | None = None
     while index < len(siblings) and siblings[index].type in COMMENT_TYPES:
@@ -567,13 +575,23 @@ _CONDITIONAL_DIRECTIVES = frozenset(
 )
 
 
-def _directly_above_a_conditional(node: TreeSitterNode) -> bool:
+# The token that opens the line of a Swift conditional compilation block that rule 7
+# reads: the block's ``#if`` alone.
+_SWIFT_CONDITIONAL_DIRECTIVES = frozenset({"#if"})
+
+
+def _directly_above_a_conditional(
+    node: TreeSitterNode, directives: frozenset[str] = _CONDITIONAL_DIRECTIVES
+) -> bool:
     """Whether the line of a preprocessor conditional (``#if`` ... ``#endif``) comes
     right after the comment ``node``: past other comments only, and with no blank line
     between.
 
     When ``node`` ends a conditional's arm, what comes next is the arm's parent's: the
     next ``#elif`` or ``#else``, or the ``#endif``.
+
+    :param directives: The tokens that open such a line: every C and C++ conditional
+        directive by default, :data:`_SWIFT_CONDITIONAL_DIRECTIVES` for Swift.
     """
     last_row = _last_row(node)
     current = node
@@ -591,7 +609,34 @@ def _directly_above_a_conditional(node: TreeSitterNode) -> bool:
         current = following
     while following.child_count:
         following = following.children[0]
-    return following.type in _CONDITIONAL_DIRECTIVES
+    return following.type in directives
+
+
+# The Swift nodes that hold declarations only: a comment whose every ancestor is one of
+# them is outside any body of code, where rule 7 holds.
+_SWIFT_DECLARATION_CONTEXTS = frozenset(
+    {
+        "source_file",
+        "class_declaration",
+        "class_body",
+        "enum_class_body",
+        "protocol_declaration",
+        "protocol_body",
+    }
+)
+
+
+def _swift_among_declarations(node: TreeSitterNode) -> bool:
+    """Whether the Swift comment ``node`` sits among declarations: at file level, or in
+    the body of a type, an extension or a protocol (a type's inside a function's body
+    excluded), not in any body of code (a function's, a closure's, an accessor's, an
+    ``if``'s) or in a declaration's head."""
+    ancestor = node.parent
+    while ancestor is not None:
+        if ancestor.type not in _SWIFT_DECLARATION_CONTEXTS:
+            return False
+        ancestor = ancestor.parent
+    return True
 
 
 class Unattached(Enum):
@@ -600,7 +645,8 @@ class Unattached(Enum):
 
     above_conditional = "above_conditional"
     """Rule 7: a C or C++ comment directly above a preprocessor conditional's line,
-    outside a function's body."""
+    outside a function's body; a Swift comment directly above an ``#if`` line, among
+    declarations."""
 
 
 # A Doxygen or JSDoc tag saying a documentation comment documents the file, not the
@@ -920,7 +966,8 @@ def associate(
     5. The comments before the file's first item, when a blank line separates the last
        of them from it, belong to the file: no entity. A documentation comment is
        exempt: it documents the next item, blank lines or not (rustc, Doxygen) --
-       unless it says it documents the file (``@file``, ``@fileoverview``).
+       unless it says it documents the file (``@file``, ``@fileoverview``). A Swift
+       shebang line before them is no item.
     6. A leading comment belongs to the entity right after it, when only trivia
        stands between (comments, blank lines, attributes, decorators), through its
        wrappers; never across other code.
@@ -932,7 +979,11 @@ def associate(
        body, or in an ``extern "C"`` block): clang attaches a comment to no
        declaration across a ``#`` line. With a blank line between, or in a
        function's body (a lambda's, or a class defined in one, included), rule 8
-       holds.
+       holds. So does a Swift comment directly above an ``#if`` line among
+       declarations (at file level, or in a type, extension or protocol body, not
+       inside any body of code): swiftc attaches a documentation comment there to the
+       conditional block, not to a declaration inside it. Swift's other directive
+       lines (``#elseif``, ``#else``, ``#endif``) are not read.
     8. Otherwise, the enclosing entity, if any.
 
     A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 8, a
@@ -992,6 +1043,13 @@ def associate(
             comment_type == CommentType.cpp
             and not in_function_body(node)
             and _directly_above_a_conditional(node)
+        ):
+            return Unattached.above_conditional
+        # @Swift rule 7: a marker above an #if among declarations, IMPL_SWIFT_11, impl, [FE_SWIFT]
+        if (
+            comment_type == CommentType.swift
+            and _swift_among_declarations(node)
+            and _directly_above_a_conditional(node, _SWIFT_CONDITIONAL_DIRECTIVES)
         ):
             return Unattached.above_conditional
         return enclosing()

@@ -235,6 +235,160 @@ def test_a_comment_in_a_swift_interpolation_is_a_comment(code, init_swift_tree_s
     assert _in_source_order(comments) == [b"/* in code */"]
 
 
+def _swift_attached_to(
+    source: str, parser: Parser, query: Query
+) -> tuple[str, str, str] | utils.Unattached | None:
+    """What the comment holding ``marker`` in the Swift ``source`` is attached to: the
+    entity's node kind, its first line (stripped) and the mechanism;
+    :attr:`~utils.Unattached.above_conditional` for nothing by rule 7, ``None`` for nothing by any other
+    rule."""
+    comments = utils.extract_comments(source.encode(), parser, query) or []
+    marker = next(c for c in comments if b"marker" in (c.text or b""))
+    association = utils.associate(marker, CommentType.swift)
+    if association is None or isinstance(association, utils.Unattached):
+        return association
+    first_line = (association.node.text or b"").decode().splitlines()[0].strip()
+    return association.node.type, first_line, association.mechanism
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        # a block comment is a comment: trivia between a marker and its entity, ...
+        pytest.param(
+            "// marker\n/* note */\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="block-comment-is-trivia",
+        ),
+        # ... part of the file header, ...
+        pytest.param(
+            "/* marker */\n\nfunc f() {}\n", None, id="block-comment-file-header"
+        ),
+        # ... and no code before a trailing marker
+        pytest.param(
+            "func f() {} /* note */ // marker\n",
+            ("function_declaration", "func f() {}", "trailing"),
+            id="block-comment-before-a-trailing-marker",
+        ),
+        # a shebang line is no item: the comments after it are the file header
+        pytest.param(
+            "#!/usr/bin/env swift\n// marker\n\nfunc main() {}\n",
+            None,
+            id="shebang-then-file-header",
+        ),
+        pytest.param(
+            "#!/usr/bin/env swift\n// marker\nfunc main() {}\n",
+            ("function_declaration", "func main() {}", "leading"),
+            id="shebang-then-leading",
+        ),
+        # attributes and modifiers head their declaration
+        pytest.param(
+            "@MainActor // marker\npublic final class A {}\n",
+            ("class_declaration", "@MainActor // marker", "leading"),
+            id="marker-after-an-attribute-on-its-row",
+        ),
+        pytest.param(
+            "class C {\n    @Published\n    // marker\n    var x = 1\n}\n",
+            ("property_declaration", "@Published", "leading"),
+            id="marker-between-an-attribute-and-its-property",
+        ),
+        pytest.param(
+            "@available(iOS 15, *)\n/// marker\nfunc f() {}\n",
+            ("function_declaration", "@available(iOS 15, *)", "doc_comment"),
+            id="doc-comment-between-an-attribute-and-its-function",
+        ),
+        # a comment before a body's first statement leads it
+        pytest.param(
+            "func f() {\n    // marker\n    func local() {}\n}\n",
+            ("function_declaration", "func local() {}", "leading"),
+            id="marker-first-in-a-body-before-a-local-function",
+        ),
+        pytest.param(
+            "func f() {\n    // marker\n    print(1)\n}\n",
+            ("function_declaration", "func f() {", "enclosing"),
+            id="marker-first-in-a-body-before-a-statement",
+        ),
+        # rule 7: directly above an ``#if`` among declarations
+        pytest.param(
+            "// marker\n#if DEBUG\nfunc f() {}\n#endif\n",
+            utils.Unattached.above_conditional,
+            id="above-if-at-file-level",
+        ),
+        pytest.param(
+            "class C {\n    // marker\n    #if os(iOS)\n    func f() {}\n    #endif\n}\n",
+            utils.Unattached.above_conditional,
+            id="above-if-in-a-class-body",
+        ),
+        pytest.param(
+            "/// marker\n// note\n#if DEBUG\nfunc f() {}\n#endif\n",
+            utils.Unattached.above_conditional,
+            id="above-if-past-another-comment",
+        ),
+        pytest.param(
+            "// marker\n\n#if DEBUG\nfunc f() {}\n#endif\n",
+            None,
+            id="blank-line-before-if",
+        ),
+        pytest.param(
+            "#if DEBUG\nfunc f() {}\n// marker\n#else\nfunc g() {}\n#endif\n",
+            None,
+            id="above-else-is-not-read",
+        ),
+        pytest.param(
+            "func f() {\n    // marker\n    #if DEBUG\n    print(1)\n    #endif\n}\n",
+            ("function_declaration", "func f() {", "enclosing"),
+            id="above-if-in-a-function-body",
+        ),
+        pytest.param(
+            "func f() {\n    class L {\n        // marker\n        #if DEBUG\n"
+            "        func g() {}\n        #endif\n    }\n}\n",
+            ("class_declaration", "class L {", "enclosing"),
+            id="above-if-in-a-class-in-a-function-body",
+        ),
+        pytest.param(
+            "#if DEBUG\n// marker\nfunc f() {}\n#endif\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="inside-if",
+        ),
+        # documentation comments
+        pytest.param(
+            "/// marker\n\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "doc_comment"),
+            id="doc-line-comment-exempt-from-the-file-header",
+        ),
+        pytest.param(
+            "/** marker */\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "doc_comment"),
+            id="doc-block-comment",
+        ),
+        pytest.param(
+            "//// marker\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="four-slashes-is-no-doc-comment",
+        ),
+        pytest.param(
+            "/*** marker */\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="three-stars-is-no-doc-comment",
+        ),
+        # a marker in an accessor documents its property
+        pytest.param(
+            "struct S {\n    var p: Int {\n        get { 1 }\n        // marker\n"
+            "        set {}\n    }\n}\n",
+            ("property_declaration", "var p: Int {", "enclosing"),
+            id="marker-between-accessors",
+        ),
+        # variables are no entities
+        pytest.param("let x = 1 // marker\n", None, id="top-level-variable"),
+    ],
+)
+def test_associate_swift(source, expected, init_swift_tree_sitter):
+    """Swift's attachment: block comments are comments, attributes and modifiers head
+    their declaration, a shebang line is no item, a comment before a body's first
+    statement leads it, and rule 7 holds above an ``#if`` among declarations."""
+    assert _swift_attached_to(source, *init_swift_tree_sitter) == expected
+
+
 def test_every_comment_type_is_wired():
     """A comment type is a ``CommentType`` member plus an entry in each of several
     tables; a member one of them misses fails here, rather than as a ``KeyError`` in

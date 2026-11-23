@@ -45,7 +45,8 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
     """The open word starts a line of a block's body."""
     marker_above_conditional = "marker_above_conditional"
     """A C or C++ marker directly above a preprocessor conditional's line, outside a
-    function's body, which is attached to no entity."""
+    function's body, or a Swift marker directly above an ``#if`` line among
+    declarations, which is attached to no entity."""
 
 
 class SourceComment:
