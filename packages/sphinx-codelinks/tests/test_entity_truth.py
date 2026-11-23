@@ -140,6 +140,7 @@ _LANGUAGES = {
     "tsx": "typescript",
     "js": "javascript",
     "vhdl": "vhdl",
+    "swift": "swift",
 }
 
 

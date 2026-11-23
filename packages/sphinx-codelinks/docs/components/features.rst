@@ -428,6 +428,24 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in VHDL
       :id: FAULT_VHDL_2
 
+.. feature:: Swift Language Support
+   :id: FE_SWIFT
+
+   Support for defining traceability objects in Swift source files.
+
+   The Swift language parser leverages tree-sitter to identify and extract line
+   (``//``, ``///``) and block (``/* */``, ``/** */``, nestable) comments.
+
+   Key capabilities:
+
+   * File extension ``.swift`` auto-discovered when ``comment_type = "swift"``
+
+   .. fault:: Traceability objects are not detected in Swift
+      :id: FAULT_SWIFT_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in Swift
+      :id: FAULT_SWIFT_2
+
 .. feature:: Preprocessor-Aware C/C++ Extraction
    :id: FE_PREPROC
 

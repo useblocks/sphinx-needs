@@ -50,6 +50,7 @@ LANG_MAP: dict[str, tuple[CommentType, str]] = {
     "tsx": (CommentType.ts, "tsx"),
     "js": (CommentType.ts, "js"),
     "vhdl": (CommentType.vhdl, "vhd"),
+    "swift": (CommentType.swift, "swift"),
 }
 
 

@@ -296,6 +296,27 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
         "concurrent_assertion_statement",
         "concurrent_procedure_call_statement",
     },
+    # @Swift Scope Node Types, IMPL_SWIFT_2, impl, [FE_SWIFT]
+    # A class, a struct, an enum, an actor and an extension are all a
+    # ``class_declaration``, told apart by its ``declaration_kind``. A property is an
+    # entity only as a member of a type: see ENTITY_PREDICATES. Not entities: variables
+    # (top-level or local), enum cases, imports, operator and precedence-group
+    # declarations, closures, accessors (a marker in one documents its property) and
+    # macro expansions such as ``#Preview``.
+    CommentType.swift: {
+        "class_declaration",
+        "protocol_declaration",
+        "function_declaration",
+        "protocol_function_declaration",
+        "init_declaration",
+        "deinit_declaration",
+        "subscript_declaration",
+        "property_declaration",
+        "protocol_property_declaration",
+        "typealias_declaration",
+        "associatedtype_declaration",
+        "macro_declaration",
+    },
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
 """The name this table had before entities were named; kept for importers."""
@@ -446,6 +467,16 @@ def _pester_block(node: TreeSitterNode) -> str | None:
     )
 
 
+# The bodies of a Swift type, an extension and a protocol: what a member is declared in.
+SWIFT_TYPE_BODIES = frozenset({"class_body", "enum_class_body", "protocol_body"})
+
+
+def _swift_member(node: TreeSitterNode) -> bool:
+    """A Swift declaration in the body of a type, an extension or a protocol: a
+    property there is a member, where a top-level or local ``var`` is a variable."""
+    return node.parent is not None and node.parent.type in SWIFT_TYPE_BODIES
+
+
 def _is_pester_block(node: TreeSitterNode) -> bool:
     """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
     bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
@@ -473,6 +504,7 @@ ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]
     },
     # @Pester blocks are PowerShell entities, IMPL_PS_5, impl, [FE_POWERSHELL]
     CommentType.powershell: {"command": _is_pester_block},
+    CommentType.swift: {"property_declaration": _swift_member},
 }
 SCOPE_PREDICATES = ENTITY_PREDICATES
 """The name this table had before entities were named; kept for importers."""
@@ -3609,8 +3641,8 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
     ``csharp``; ``javascript`` for a ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in
     any case, and ``typescript`` for every other file of the ``ts`` comment type,
     ``.tsx`` included; otherwise the comment type (``python``, ``rust``, ``go``,
-    ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``). A ``.c`` file is parsed with the C++ grammar too,
-    and its components render as C++'s.
+    ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``, ``swift``). A ``.c`` file is
+    parsed with the C++ grammar too, and its components render as C++'s.
 
     :param comment_type: The project's comment type.
     :param path: The file's path; only its suffix is read, case included for C (discovery

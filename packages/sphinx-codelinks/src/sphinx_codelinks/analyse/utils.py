@@ -93,6 +93,22 @@ POWERSHELL_QUERY = """
     (sub_expression) @string_code
 """
 
+# @Swift comment nodes outside string content, IMPL_SWIFT_4, impl, [FE_SWIFT]
+# Swift names its ``//`` comments ``comment`` and its ``/* */`` comments, which nest,
+# ``multiline_comment``: one pattern, so the captures come in source order. The grammar
+# reads a ``/*`` that opens a string literal's text, or follows whitespace or an
+# interpolation in it (``"/* x */"``, ``"\(a) /* x */"``, a ``"""`` line), as a
+# ``multiline_comment`` inside the string: it is string content. The string literals
+# are captured as ``string`` and the interpolations ``\( … )`` as ``string_code``, so
+# that :func:`captured_comments` leaves out a comment inside a string unless it is in
+# an interpolation, which is code. No comment node is ever placed inside a regex
+# literal.
+SWIFT_QUERY = """
+    [(comment) (multiline_comment)] @comment
+    [(line_string_literal) (multi_line_string_literal) (raw_string_literal)] @string
+    (interpolated_expression) @string_code
+"""
+
 # JSON value node types that can be associated with a comment.
 JSON_STRUCTURE_TYPES = {
     "pair",
@@ -142,7 +158,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL, FE_VHDL]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL, FE_VHDL, FE_SWIFT]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -228,6 +244,14 @@ def init_tree_sitter(
         parsed_language = Language(tree_sitter_vhdl.language())
         # VHDL names its ``--`` and ``/* */`` comments as Rust does
         query = Query(parsed_language, RUST_QUERY)
+    elif comment_type == CommentType.swift:
+        # @Swift comment query for tree-sitter, IMPL_SWIFT_3, impl, [FE_SWIFT]
+        import tree_sitter_swift
+
+        # the wheel's stub types the binding's result as an ``int``, the form
+        # tree-sitter deprecated; at run time it is the language capsule
+        parsed_language = Language(tree_sitter_swift.language())  # ty: ignore[deprecated]
+        query = Query(parsed_language, SWIFT_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)

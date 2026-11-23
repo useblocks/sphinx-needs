@@ -163,6 +163,78 @@ def test_a_comment_in_a_powershell_subexpression_is_a_comment(
     assert [comment.text for comment in comments] == [b"# in code"]
 
 
+@pytest.fixture(scope="session")
+def init_swift_tree_sitter() -> tuple[Parser, Query]:
+    return utils.init_tree_sitter(CommentType.swift)
+
+
+def _in_source_order(comments: list[TreeSitterNode] | None) -> list[bytes]:
+    """The comments' texts in source order: a query's captures come in no set order."""
+    return [c.text or b"" for c in sorted(comments or [], key=lambda c: c.start_byte)]
+
+
+def test_init_tree_sitter_swift(init_swift_tree_sitter):
+    """Swift's line comments (``//``, ``///``) are ``comment`` nodes and its block
+    comments (``/* */``, ``/** */``) ``multiline_comment`` nodes; a nested block
+    comment is one comment, as Swift reads it."""
+    parser, query = init_swift_tree_sitter
+    code = b"// a\n/// b\n/* c */\n/** d */\n/* e /* f */ g */\nfunc f() {}\n"
+    comments = utils.extract_comments(code, parser, query)
+    assert _in_source_order(comments) == [
+        b"// a",
+        b"/// b",
+        b"/* c */",
+        b"/** d */",
+        b"/* e /* f */ g */",
+    ]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # the grammar reads a ``/*`` that opens a string's text as a comment node
+        # inside the string
+        b'let s = "/* @Fake, ID_FAKE, impl */"\n',
+        b'let s = " /* @Fake, ID_FAKE, impl */"\n',
+        b'f("/* @Fake, ID_FAKE, impl */")\n',
+        # after an interpolation, the ``/*`` is in the string, not in the code
+        b'let s = "\\(x) /* @Fake, ID_FAKE, impl */"\n',
+        b'let s = #"\\#(x) /* @Fake, ID_FAKE, impl */"#\n',
+        # a line of a multi-line string
+        b'let s = """\n/* @Fake, ID_FAKE, impl */\n"""\n',
+        # no comment node at all
+        b'let s = "x /* @Fake, ID_FAKE, impl */"\n',
+        b'let s = "// @Fake, ID_FAKE, impl"\n',
+        b'let s = """\n// @Fake, ID_FAKE, impl\n"""\n',
+        b'let s = #"// @Fake, ID_FAKE, impl"#\n',
+        b'let s = "\\(x) // @Fake, ID_FAKE, impl"\n',
+        b"let r = #/ab // @Fake, ID_FAKE, impl/#\n",
+    ],
+)
+def test_a_comment_inside_a_swift_literal_is_no_comment(code, init_swift_tree_sitter):
+    """``//`` and ``/* */`` inside a string or a regex literal are content, never a
+    marker, even where the grammar parses a ``/* */`` there as a comment node."""
+    parser, query = init_swift_tree_sitter
+    comments = utils.extract_comments(code + b"// real\n", parser, query)
+    assert _in_source_order(comments) == [b"// real"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        b'let s = "\\(f(/* in code */ 1)) /* text */"\n',
+        b'let s = #"\\#(f(/* in code */ 1)) /* text */"#\n',
+        b'let s = """\n\\(f(/* in code */ 1))\n/* text */\n"""\n',
+    ],
+)
+def test_a_comment_in_a_swift_interpolation_is_a_comment(code, init_swift_tree_sitter):
+    """A comment inside a string's interpolation, ``\\( … )`` or a raw string's
+    ``\\#( … )``, is in code, and kept; the string's own text is not."""
+    parser, query = init_swift_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert _in_source_order(comments) == [b"/* in code */"]
+
+
 def test_every_comment_type_is_wired():
     """A comment type is a ``CommentType`` member plus an entry in each of several
     tables; a member one of them misses fails here, rather than as a ``KeyError`` in
