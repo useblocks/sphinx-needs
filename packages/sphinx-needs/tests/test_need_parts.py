@@ -1162,6 +1162,72 @@ def test_a_part_in_a_caption_has_no_anchor_in_it_in_texinfo(test_app: Sphinx) ->
     assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
 
 
+#: A figure whose caption and whose legend each hold a part: the legend is the figure's
+#: own text below the caption, and no caption
+PART_IN_A_LEGEND_INDEX = """\
+Legends
+=======
+
+.. req:: A requirement
+   :id: REQ_L
+
+   .. figure:: img.png
+
+      Fig :np:`(k1) in the caption`
+
+      Legend :np:`(g1) in the legend` here.
+
+Refs: :need:`REQ_L.k1`, :need:`REQ_L.g1`.
+"""
+
+
+def _part_in_a_legend(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_LEGEND_INDEX),
+            # read by no writer here: the figure needs a file to point at
+            (Path("img.png"), "not an image"),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_legend("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_figure_s_legend_has_a_label_in_latex(test_app: Sphinx) -> None:
+    """Only a caption gives up its part's anchor: a part in the legend of the same
+    figure is labelled at its text, and the reference to it resolves to that label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    label = r"\phantomsection\label{\detokenize{index:REQ_L.g1}}"
+    assert tex.count(r"\label{\detokenize{index:REQ_L.g1}}") == 1
+    assert rf"{label}in the legend{{\hyperref" in tex
+    assert r"\hyperref[\detokenize{index:REQ_L.g1}]" in tex
+    (caption,) = _arguments(tex, r"\sphinxfigcaption", "\\")
+    assert r"\label" not in caption
+    assert r"\label{\detokenize{index:REQ_L.k1}}" not in tex
+    assert build_warnings(test_app) == []
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_legend("texinfo")], ids=["texinfo"], indirect=True
+)
+def test_a_part_in_a_figure_s_legend_has_its_anchor_in_place_in_texinfo(
+    test_app: Sphinx,
+) -> None:
+    """texinfo anchors a part in a figure's legend at its text, once, and writes no
+    ``@anchor`` in the caption of that figure."""
+    texi = _built_part_page(test_app, "parts.texi")
+    assert re.search(
+        r"Legend @anchor\{index REQ_L g1\}(@anchor\{\d+\})?in the legend@ref\{", texi
+    )
+    assert texi.count("@anchor{index REQ_L g1}") == 1
+    (caption,) = _arguments(texi, "@caption", "@")
+    assert "@anchor" not in caption
+    assert build_warnings(test_app) == []
+
+
 #: A part one inline deeper in a figure's caption, inside strong emphasis, which only
 #: MyST can write: an rst role cannot be nested in other inline markup
 PART_DEEP_IN_A_CAPTION_MYST = """\

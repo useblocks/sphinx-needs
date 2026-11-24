@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 49
+      }
+    },
+    "tagged_scope": "func handle() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 9,
+      "end": 9,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "handle()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handle()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Real Title",
+      "id": "IMPL_SWIFT_AFTER_ATTRIBUTES",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

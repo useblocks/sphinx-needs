@@ -1088,3 +1088,30 @@ libclang_trailing_comment_not_in_run:
     // Body.
     // @endneed
     void trailing() {}
+
+swift_doc_line_run:
+  # A run of Swift ``///`` comments forms one block.
+  lang: swift
+  config: default
+  source: |
+    /// @need impl: Start the engine
+    /// :id: IMPL_SWIFT_RUN
+    ///
+    /// Starts the engine.
+    /// @endneed
+    func start() {}
+
+swift_doc_block_comment:
+  # A Swift ``/** */`` comment with ``*`` leaders: the opener's and the closer's rows
+  # are dropped, and so are the leaders.
+  lang: swift
+  config: default
+  source: |
+    /**
+     * @need impl: Stop the engine
+     * :id: IMPL_SWIFT_BLOCK
+     *
+     * Stops the engine.
+     * @endneed
+     */
+    func stop() {}

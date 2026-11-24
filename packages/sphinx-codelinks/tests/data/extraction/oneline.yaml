@@ -264,3 +264,150 @@ html_comment_closed_oneliner_js:
   source: |
     <!-- @Html Closed, IMPL_HTML_CLOSED, impl, [REQ_HTML] -->
     const x = 1;
+
+# a Swift block comment, the delimiters stripped
+block_oneliner_swift:
+  lang: swift
+  config: default
+  source: |
+    /* @Swift Block Title, IMPL_SWIFT_BLOCK, impl, [REQ_SWIFT] */
+    struct Point {}
+
+# Swift's block comments nest: the inner ``*/`` does not end the comment, so the marker
+# after it is still in it
+nested_block_comment_swift:
+  lang: swift
+  config: default
+  source: |
+    /*
+     /* an inner comment */
+     @Nested Title, IMPL_SWIFT_NESTED, impl
+     */
+    func f() {}
+
+# a Swift shebang is no comment node: no marker, no warning, and the marker after it
+shebang_oneliner_swift:
+  lang: swift
+  config: default
+  source: |
+    #!/usr/bin/env swift
+    // @Swift Title, IMPL_SWIFT_SHEBANG, impl, [REQ_SWIFT]
+    func main() {}
+
+# the grammar parses a ``/*`` that opens a string's text (or follows whitespace or an
+# interpolation in it) as a comment node inside the string: it is string content, and
+# skipped; ``//`` in a string is no comment node at all
+string_content_no_marker_swift:
+  lang: swift
+  config: default
+  source: |
+    let a = "/* @Not a marker, IMPL_SWIFT_NO_1, impl */"
+    let b = "\(a) /* @Not a marker, IMPL_SWIFT_NO_2, impl */"
+    let c = """
+    /* @Not a marker, IMPL_SWIFT_NO_3, impl */
+    // @Not a marker, IMPL_SWIFT_NO_4, impl
+    """
+    // @Real, IMPL_SWIFT_REAL, impl
+    func f() {}
+
+# a comment inside a string's interpolation is in code: a marker there counts
+interpolation_comment_swift:
+  lang: swift
+  config: default
+  source: |
+    let s = "\(max(/* @In code, IMPL_SWIFT_INTERP, impl */ 1, 2))"
+
+# Under ``@``, a Swift comment line holding an attribute's shape, ``@name(`` with no
+# space before the parenthesis (an attribute, a DocC directive, an attribute-shaped
+# example), is no need: a ``swift_attribute`` warning where the one-line parser would
+# have read the line, silence where it would not (no field separator), in any comment
+swift_attribute_swift:
+  lang: swift
+  config: default
+  source: |
+    // @available(iOS 15, macOS 12, *)
+    /// @Available(Swift, introduced: 6.3)
+    /// @Flag(name: [.short, .long])
+    //@available(SwiftStdlib 5.0, *)
+    /* @available(iOS 13, *) */
+    // @objc(handle:)
+    // @MainActor
+    // @Real Title, IMPL_SWIFT_AFTER_ATTRIBUTES, impl
+    func handle() {}
+
+# the rule reads the shape alone: a title that opens with a name and ``(`` is withheld
+# too, and a space before the parenthesis makes the line a need
+swift_attribute_shape_only_swift:
+  lang: swift
+  config: default
+  source: |
+    // @Title(draft), IMPL_SWIFT_WITHHELD, impl
+    // @available (iOS 15, *)
+    func f() {}
+
+# with a start sequence other than ``@`` the rule does not run
+swift_attribute_other_start_sequence_swift:
+  lang: swift
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    // @available(iOS 15, *)
+    // [[available(iOS 15, IMPL_SWIFT_BRACKETS]]
+    func f() {}
+
+# a comment at an interpolation's own level (beside its expression, before or after it,
+# or on a line of its own in a multi-line string) is code, as a comment nested in the
+# expression is: the grammar places it in the string, after the interpolation's ``\(``;
+# a comment in the string's text before or after an interpolation is still text
+interpolation_level_comments_swift:
+  lang: swift
+  config: default
+  source: |
+    let x = 1
+    let a = "\(x /* @After the value, IMPL_SWIFT_INTERP_AFTER, impl */)"
+    let b = "\(/* @Before the value, IMPL_SWIFT_INTERP_BEFORE, impl */ x)"
+    let c = """
+    \(
+    // @Line in an interpolation, IMPL_SWIFT_INTERP_LINE, impl
+    x
+    )
+    """
+    let d = #"\#(x /* @Raw interpolation, IMPL_SWIFT_INTERP_RAW, impl */)"#
+    let e = "/* @Still text, IMPL_SWIFT_TEXT_BEFORE, impl */ \(x)"
+    let f = "\(x) /* @Still text, IMPL_SWIFT_TEXT_AFTER, impl */"
+
+# the attribute shape's identifier is ASCII: a name with a letter outside ASCII, first
+# or later, is no attribute's shape, and the line is read as any other line is
+swift_attribute_ascii_identifier_swift:
+  lang: swift
+  config: default
+  source: |
+    // @Größe(x), IMPL_SWIFT_NON_ASCII_INSIDE, impl
+    // @éclair(x), IMPL_SWIFT_NON_ASCII_FIRST, impl
+    func f() {}
+
+# the attribute shape counts only where nothing alphanumeric precedes the start sequence
+# on the line: with an end sequence other than the newline, the one-line parser reads a
+# marker after prose too, and the prose keeps it from being withheld
+swift_attribute_after_text_swift:
+  lang: swift
+  config:
+    start_sequence: "@"
+    end_sequence: ";"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    // see @available(iOS 15, IMPL_SWIFT_AFTER_PROSE);
+    // @available(iOS 15, IMPL_SWIFT_WITHHELD_SEMICOLON);
+    func f() {}

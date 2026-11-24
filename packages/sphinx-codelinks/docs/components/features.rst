@@ -428,6 +428,75 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in VHDL
       :id: FAULT_VHDL_2
 
+.. feature:: Swift Language Support
+   :id: FE_SWIFT
+
+   Support for defining traceability objects in Swift source files.
+
+   The Swift language parser leverages tree-sitter to identify and extract line
+   (``//``, ``///``) and block (``/* */``, ``/** */``) comments, associating each marker
+   with the declaration it documents.
+
+   Key capabilities:
+
+   * Detection of line and block comments, a nested block comment read as one comment, as
+     Swift reads it; a ``/*`` inside a string literal is string content, never a marker,
+     where a comment inside a string's interpolation (``\( … )``), in its expression or
+     beside it, is code, and counts
+   * Association of a marker with the declaration next to it: a class, struct, enum,
+     actor, extension or protocol; a function (free, local or member), an operator
+     function, a protocol requirement, an initializer, ``deinit`` or a subscript; a
+     property of a type, stored or computed; a ``typealias``, an ``associatedtype`` or a
+     macro. A marker in the accessor of a type's property documents that property;
+     variables (a top-level computed ``var`` included), enum cases and closures are no
+     entities
+   * The attachment rules every language follows, with Swift's shapes: a declaration's
+     attributes and modifiers (``@MainActor public final``) are its head, a shebang line
+     is no item before a file header, a comment before a body's first statement leads a
+     local function, and a marker directly above an ``#if`` line among declarations is
+     attached to no entity, with a ``marker_above_conditional`` warning, as swiftc reads
+     a documentation comment there
+   * ``///`` and ``/** */`` documentation comments (``////``, ``/***`` and ``/**/`` are
+     plain ones)
+   * Each declaration named by Swift's full name: a callable's base name and argument
+     labels (``Widget.greet(name:_:)``, ``init(x:)``, ``subscript(_:)``, ``==(_:_:)``), so
+     that overloads that differ by label only are different entities, with the existing
+     kinds (an actor is a ``class``, an extension an ``impl`` of the type it extends, a
+     protocol an ``interface``, a subscript an ``indexer``)
+   * Multi-line needs over runs of ``//`` and ``///`` comments and in block comments
+   * A comment line holding an attribute's shape (``// @available(iOS 15, *)``,
+     ``/// @Available(Swift, introduced: 6.3)``) under the start sequence ``@`` is a
+     ``swift_attribute`` warning, never a need
+   * File extension ``.swift`` auto-discovered when ``comment_type = "swift"``
+
+   .. note::
+
+      The ``tree-sitter-swift`` grammar reads three shapes as a syntax error: a block
+      comment followed by code on its line at statement level
+      (``/* @Title, ID_1, impl */ func f() {}`` at file level or in a function's body), a
+      bare regular expression literal with an escaped slash at the end of a line
+      (``/a\/b/``), and experimental syntax. Markers in such a file are still extracted,
+      but they and the ones around the error may be attached to the wrong entity, or to
+      none. Put a block comment on a line of its own, and write such a regular
+      expression as ``#/a/b/#``.
+
+      A fourth shape can be silent: a string whose text opens ``/*``
+      (``let open = "/*"``) is read as one comment inside the string up to the next
+      ``*/``. When that ``*/`` is in another string, there is no syntax error and the code
+      between, its markers included, is lost. When it is anywhere else (a ``//``
+      comment, say), the string is left open, a syntax error, and the code after the
+      ``*/`` is lost too. Write such a string as ``"/" + "*"``, or close the ``/*`` in
+      the same string.
+
+   .. fault:: Traceability objects are not detected in Swift
+      :id: FAULT_SWIFT_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in Swift
+      :id: FAULT_SWIFT_2
+
+   .. fault:: A Swift marker is attached to the wrong declaration
+      :id: FAULT_SWIFT_3
+
 .. feature:: Preprocessor-Aware C/C++ Extraction
    :id: FE_PREPROC
 

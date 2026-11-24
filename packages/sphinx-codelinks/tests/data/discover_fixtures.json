@@ -452,5 +452,27 @@
       "src/counter.vhd",
       "src/top.vhdl"
     ]
+  },
+  {
+    "name": "swift_comment_type",
+    "description": "Swift comment type discovers .swift files only",
+    "git_init": false,
+    "files": {
+      "src/App.swift": "// app",
+      "src/Model.swift": "/* model */",
+      "src/main.cpp": "// not swift",
+      "src/Package.resolved": "{}"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "swift"
+    },
+    "expected": [
+      "src/App.swift",
+      "src/Model.swift"
+    ]
   }
 ]

@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 12
+      },
+      "end": {
+        "row": 2,
+        "column": 50
+      }
+    },
+    "tagged_scope": "func load() {\n    let items = [1, 2].map { value in\n        // @In a closure, IMPL_SWIFT_CLOSURE, impl\n        value * 2\n    }\n}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 1,
+      "end": 6,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "load()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "load()"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "In a closure",
+      "id": "IMPL_SWIFT_CLOSURE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

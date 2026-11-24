@@ -1,0 +1,26 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 61
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "File level requirement",
+      "id": "IMPL_R_SWIFT_SHEBANG_HEADER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

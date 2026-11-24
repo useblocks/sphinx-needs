@@ -290,8 +290,8 @@ Bug fixes
   of the part's text, once per page: where a page shows the part twice, as a ``needextract`` of a need on the
   need's own page does, at the first, as a browser does with an id a page holds twice. A part is not anchored at
   its text in a caption (of a figure, a code block or a ``literalinclude``), where a LaTeX anchor stops
-  ``pdflatex``, so there it is left as it was in both, nor, in texinfo, in an admonition's title or a hyperlink's
-  text, which that writer writes as plain text, so its anchor stays where it was.
+  ``pdflatex``, so there it is left as it was in both, nor, in texinfo, in text that writer writes as plain text
+  (an admonition's title, a hyperlink's text, a ``centered`` line), so its anchor stays where it was.
 
   **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a label at the start
   of each part, once per page: ``\phantomsection\label`` in running text, a bare ``\label`` in a title, none in a

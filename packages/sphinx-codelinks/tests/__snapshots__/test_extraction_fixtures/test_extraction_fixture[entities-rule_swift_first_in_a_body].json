@@ -1,0 +1,82 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 53
+      }
+    },
+    "tagged_scope": "func helper() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "outer().helper()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer()"
+        },
+        {
+          "kind": "function",
+          "name": "helper()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Local function",
+      "id": "IMPL_R_SWIFT_BODY_LOCAL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 8
+      },
+      "end": {
+        "row": 6,
+        "column": 54
+      }
+    },
+    "tagged_scope": "func plain() {\n    // @A statement, IMPL_R_SWIFT_BODY_STATEMENT, impl\n    print(1)\n}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 9,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "plain()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "plain()"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "A statement",
+      "id": "IMPL_R_SWIFT_BODY_STATEMENT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

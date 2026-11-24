@@ -1261,3 +1261,78 @@ vhdl_no_scope:
   source: |
     -- @No Scope, IMPL_VHDL_NONE, impl
     library ieee;
+
+swift_above_function:
+  # Marker directly above a top-level function -> binds to that function.
+  lang: swift
+  config: default
+  source: |
+    // @Above Function, IMPL_SWIFT_ABOVE, impl, [REQ_SWIFT_ABOVE]
+    func start() {}
+
+swift_trailing_on_a_member_row:
+  # Marker after a member on its row -> binds to that member, not its type.
+  lang: swift
+  config: default
+  source: |
+    struct Widget {
+        var width = 0 // @Width, IMPL_SWIFT_TRAILING, impl
+    }
+
+swift_inside_function_body:
+  # Marker after the last statement of a body -> falls back to the enclosing method.
+  lang: swift
+  config: default
+  source: |
+    final class Engine {
+        func start() {
+            print("start")
+            // @Inside Function, IMPL_SWIFT_INSIDE, impl
+        }
+    }
+
+swift_in_an_accessor:
+  # A marker in a property's accessor documents the property: accessors are no
+  # entities.
+  lang: swift
+  config: default
+  source: |
+    struct Widget {
+        var area: Int {
+            get { 1 }
+            // @In an accessor, IMPL_SWIFT_ACCESSOR, impl
+            set {}
+        }
+    }
+
+swift_in_a_closure:
+  # A closure is no entity: a marker in one documents its enclosing function.
+  lang: swift
+  config: default
+  source: |
+    func load() {
+        let items = [1, 2].map { value in
+            // @In a closure, IMPL_SWIFT_CLOSURE, impl
+            value * 2
+        }
+    }
+
+swift_no_scope:
+  # Marker followed by a top-level variable, with nothing else around it -> no
+  # associated scope: variables are no entities.
+  lang: swift
+  config: default
+  source: |
+    // @Plain, IMPL_SWIFT_NONE, impl
+    let limit = 10
+
+swift_above_a_conditional:
+  # A marker directly above an ``#if`` line among declarations is on no entity, with
+  # a ``marker_above_conditional`` warning (rule 7).
+  lang: swift
+  config: default
+  source: |
+    // @Above the block, IMPL_SWIFT_ABOVE_IF, impl
+    #if canImport(UIKit)
+    func layout() {}
+    #endif

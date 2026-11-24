@@ -1,0 +1,64 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 50
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Block header",
+      "id": "IMPL_R_SWIFT_BLOCK_HEADER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 57
+      }
+    },
+    "tagged_scope": "func run() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 7,
+      "end": 7,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "run()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "run()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Past a block comment",
+      "id": "IMPL_R_SWIFT_BLOCK_TRIVIA",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

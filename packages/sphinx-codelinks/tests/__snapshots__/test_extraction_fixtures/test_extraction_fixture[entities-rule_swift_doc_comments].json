@@ -1,0 +1,154 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 5
+      },
+      "end": {
+        "row": 0,
+        "column": 42
+      }
+    },
+    "tagged_scope": "func a() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "a()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "a()"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Line doc",
+      "id": "IMPL_R_SWIFT_DOC_LINE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 45
+      }
+    },
+    "tagged_scope": "func b() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "b()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "b()"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Block doc",
+      "id": "IMPL_R_SWIFT_DOC_BLOCK",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 6
+      },
+      "end": {
+        "row": 4,
+        "column": 49
+      }
+    },
+    "tagged_scope": "func c() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 6,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "c()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "c()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Four slashes",
+      "id": "IMPL_R_SWIFT_PLAIN_LINE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 6
+      },
+      "end": {
+        "row": 6,
+        "column": 50
+      }
+    },
+    "tagged_scope": "func d() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 8,
+      "end": 8,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "d()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "d()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Three stars",
+      "id": "IMPL_R_SWIFT_PLAIN_BLOCK",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

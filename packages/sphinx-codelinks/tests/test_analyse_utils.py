@@ -163,6 +163,290 @@ def test_a_comment_in_a_powershell_subexpression_is_a_comment(
     assert [comment.text for comment in comments] == [b"# in code"]
 
 
+@pytest.fixture(scope="session")
+def init_swift_tree_sitter() -> tuple[Parser, Query]:
+    return utils.init_tree_sitter(CommentType.swift)
+
+
+def _in_source_order(comments: list[TreeSitterNode] | None) -> list[bytes]:
+    """The comments' texts in source order: a query's captures come in no set order."""
+    return [c.text or b"" for c in sorted(comments or [], key=lambda c: c.start_byte)]
+
+
+def test_init_tree_sitter_swift(init_swift_tree_sitter):
+    """Swift's line comments (``//``, ``///``) are ``comment`` nodes and its block
+    comments (``/* */``, ``/** */``) ``multiline_comment`` nodes; a nested block
+    comment is one comment, as Swift reads it."""
+    parser, query = init_swift_tree_sitter
+    code = b"// a\n/// b\n/* c */\n/** d */\n/* e /* f */ g */\nfunc f() {}\n"
+    comments = utils.extract_comments(code, parser, query)
+    assert _in_source_order(comments) == [
+        b"// a",
+        b"/// b",
+        b"/* c */",
+        b"/** d */",
+        b"/* e /* f */ g */",
+    ]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # the grammar reads a ``/*`` that opens a string's text as a comment node
+        # inside the string
+        b'let s = "/* @Fake, ID_FAKE, impl */"\n',
+        b'let s = " /* @Fake, ID_FAKE, impl */"\n',
+        b'f("/* @Fake, ID_FAKE, impl */")\n',
+        # after an interpolation, the ``/*`` is in the string, not in the code
+        b'let s = "\\(x) /* @Fake, ID_FAKE, impl */"\n',
+        b'let s = #"\\#(x) /* @Fake, ID_FAKE, impl */"#\n',
+        # a line of a multi-line string
+        b'let s = """\n/* @Fake, ID_FAKE, impl */\n"""\n',
+        # no comment node at all
+        b'let s = "x /* @Fake, ID_FAKE, impl */"\n',
+        b'let s = "// @Fake, ID_FAKE, impl"\n',
+        b'let s = """\n// @Fake, ID_FAKE, impl\n"""\n',
+        b'let s = #"// @Fake, ID_FAKE, impl"#\n',
+        b'let s = "\\(x) // @Fake, ID_FAKE, impl"\n',
+        b"let r = #/ab // @Fake, ID_FAKE, impl/#\n",
+    ],
+)
+def test_a_comment_inside_a_swift_literal_is_no_comment(code, init_swift_tree_sitter):
+    """``//`` and ``/* */`` inside a string or a regex literal are content, never a
+    marker, even where the grammar parses a ``/* */`` there as a comment node."""
+    parser, query = init_swift_tree_sitter
+    comments = utils.extract_comments(code + b"// real\n", parser, query)
+    assert _in_source_order(comments) == [b"// real"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        b'let s = "\\(f(/* in code */ 1)) /* text */"\n',
+        b'let s = #"\\#(f(/* in code */ 1)) /* text */"#\n',
+        b'let s = """\n\\(f(/* in code */ 1))\n/* text */\n"""\n',
+        # at the interpolation's own level, beside its expression: still code
+        b'let s = "\\(x /* in code */) /* text */"\n',
+        b'let s = "/* text */ \\(/* in code */ x)"\n',
+        b'let s = "\\(a) \\(x /* in code */)"\n',
+        b'let s = """\n\\(\n/* in code */\nx\n)\n/* text */\n"""\n',
+        b'let s = #"\\#(x /* in code */) /* text */"#\n',
+    ],
+)
+def test_a_comment_in_a_swift_interpolation_is_a_comment(code, init_swift_tree_sitter):
+    """A comment inside a string's interpolation, ``\\( … )`` or a raw string's
+    ``\\#( … )``, is in code, and kept; the string's own text is not."""
+    parser, query = init_swift_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert _in_source_order(comments) == [b"/* in code */"]
+
+
+def _swift_attached_to(
+    source: str, parser: Parser, query: Query
+) -> tuple[str, str, str] | utils.Unattached | None:
+    """What the comment holding ``marker`` in the Swift ``source`` is attached to: the
+    entity's node kind, its first line (stripped) and the mechanism;
+    :attr:`~utils.Unattached.above_conditional` for nothing by rule 7, ``None`` for nothing by any other
+    rule."""
+    comments = utils.extract_comments(source.encode(), parser, query) or []
+    marker = next(c for c in comments if b"marker" in (c.text or b""))
+    association = utils.associate(marker, CommentType.swift)
+    if association is None or isinstance(association, utils.Unattached):
+        return association
+    first_line = (association.node.text or b"").decode().splitlines()[0].strip()
+    return association.node.type, first_line, association.mechanism
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        # a block comment is a comment: trivia between a marker and its entity, ...
+        pytest.param(
+            "// marker\n/* note */\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="block-comment-is-trivia",
+        ),
+        # ... part of the file header, ...
+        pytest.param(
+            "/* marker */\n\nfunc f() {}\n", None, id="block-comment-file-header"
+        ),
+        # ... and no code before a trailing marker
+        pytest.param(
+            "func f() {} /* note */ // marker\n",
+            ("function_declaration", "func f() {}", "trailing"),
+            id="block-comment-before-a-trailing-marker",
+        ),
+        # a shebang line is no item: the comments after it are the file header
+        pytest.param(
+            "#!/usr/bin/env swift\n// marker\n\nfunc main() {}\n",
+            None,
+            id="shebang-then-file-header",
+        ),
+        pytest.param(
+            "#!/usr/bin/env swift\n// marker\nfunc main() {}\n",
+            ("function_declaration", "func main() {}", "leading"),
+            id="shebang-then-leading",
+        ),
+        # attributes and modifiers head their declaration
+        pytest.param(
+            "@MainActor // marker\npublic final class A {}\n",
+            ("class_declaration", "@MainActor // marker", "leading"),
+            id="marker-after-an-attribute-on-its-row",
+        ),
+        pytest.param(
+            "class C {\n    @Published\n    // marker\n    var x = 1\n}\n",
+            ("property_declaration", "@Published", "leading"),
+            id="marker-between-an-attribute-and-its-property",
+        ),
+        pytest.param(
+            "@available(iOS 15, *)\n/// marker\nfunc f() {}\n",
+            ("function_declaration", "@available(iOS 15, *)", "doc_comment"),
+            id="doc-comment-between-an-attribute-and-its-function",
+        ),
+        # a comment before a body's first statement leads it
+        pytest.param(
+            "func f() {\n    // marker\n    func local() {}\n}\n",
+            ("function_declaration", "func local() {}", "leading"),
+            id="marker-first-in-a-body-before-a-local-function",
+        ),
+        pytest.param(
+            "func f() {\n    // marker\n    print(1)\n}\n",
+            ("function_declaration", "func f() {", "enclosing"),
+            id="marker-first-in-a-body-before-a-statement",
+        ),
+        # rule 7: directly above an ``#if`` among declarations
+        pytest.param(
+            "// marker\n#if DEBUG\nfunc f() {}\n#endif\n",
+            utils.Unattached.above_conditional,
+            id="above-if-at-file-level",
+        ),
+        pytest.param(
+            "class C {\n    // marker\n    #if os(iOS)\n    func f() {}\n    #endif\n}\n",
+            utils.Unattached.above_conditional,
+            id="above-if-in-a-class-body",
+        ),
+        pytest.param(
+            "/// marker\n// note\n#if DEBUG\nfunc f() {}\n#endif\n",
+            utils.Unattached.above_conditional,
+            id="above-if-past-another-comment",
+        ),
+        pytest.param(
+            "// marker\n\n#if DEBUG\nfunc f() {}\n#endif\n",
+            None,
+            id="blank-line-before-if",
+        ),
+        pytest.param(
+            "#if DEBUG\nfunc f() {}\n// marker\n#else\nfunc g() {}\n#endif\n",
+            None,
+            id="above-else-is-not-read",
+        ),
+        pytest.param(
+            "func f() {\n    // marker\n    #if DEBUG\n    print(1)\n    #endif\n}\n",
+            ("function_declaration", "func f() {", "enclosing"),
+            id="above-if-in-a-function-body",
+        ),
+        pytest.param(
+            "func f() {\n    class L {\n        // marker\n        #if DEBUG\n"
+            "        func g() {}\n        #endif\n    }\n}\n",
+            ("class_declaration", "class L {", "enclosing"),
+            id="above-if-in-a-class-in-a-function-body",
+        ),
+        pytest.param(
+            "#if DEBUG\n// marker\nfunc f() {}\n#endif\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="inside-if",
+        ),
+        # documentation comments
+        pytest.param(
+            "/// marker\n\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "doc_comment"),
+            id="doc-line-comment-exempt-from-the-file-header",
+        ),
+        pytest.param(
+            "/** marker */\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "doc_comment"),
+            id="doc-block-comment",
+        ),
+        pytest.param(
+            "//// marker\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="four-slashes-is-no-doc-comment",
+        ),
+        pytest.param(
+            "/*** marker */\nfunc f() {}\n",
+            ("function_declaration", "func f() {}", "leading"),
+            id="three-stars-is-no-doc-comment",
+        ),
+        # a marker in an accessor documents its property
+        pytest.param(
+            "struct S {\n    var p: Int {\n        get { 1 }\n        // marker\n"
+            "        set {}\n    }\n}\n",
+            ("property_declaration", "var p: Int {", "enclosing"),
+            id="marker-between-accessors",
+        ),
+        # variables are no entities
+        pytest.param("let x = 1 // marker\n", None, id="top-level-variable"),
+    ],
+)
+def test_associate_swift(source, expected, init_swift_tree_sitter):
+    """Swift's attachment: block comments are comments, attributes and modifiers head
+    their declaration, a shebang line is no item, a comment before a body's first
+    statement leads it, and rule 7 holds above an ``#if`` among declarations."""
+    assert _swift_attached_to(source, *init_swift_tree_sitter) == expected
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        b"func a() {}\n/* @Block, ID_B, impl */ func b() {}\n",
+        b"import A\n/** doc */ import B\n",
+        b"let x = 1\n/* c */ let y = 2\n",
+    ],
+)
+def test_a_swift_block_comment_before_code_on_its_row_is_a_grammar_error(
+    code, init_swift_tree_sitter
+):
+    """A known tree-sitter-swift limitation (documented in ``analyse.rst``): at
+    statement level, a block comment followed by code on its row is parsed as an
+    ``ERROR`` that swallows the statements before it. The comment is still captured,
+    so its marker is extracted; what is lost is the attachment of the markers around
+    it. When the grammar fixes this, this test fails: update the documentation."""
+    parser, query = init_swift_tree_sitter
+    tree = parser.parse(code)
+    assert tree.root_node.has_error
+    assert tree.root_node.children[0].type == "ERROR"
+    comments = utils.captured_comments(tree, query)
+    assert [c.type for c in comments or []] == ["multiline_comment"]
+
+
+def test_a_swift_string_opening_a_block_comment_hides_code_to_a_later_close(
+    init_swift_tree_sitter,
+):
+    """A known tree-sitter-swift limitation (documented in ``analyse.rst``): a string
+    whose text opens ``/*`` with a later ``*/`` in another string is parsed as one
+    comment inside the string up to that ``*/``, with no syntax error: the code
+    between, and its markers, are silently hidden. (A ``*/`` anywhere else leaves the
+    string open, a syntax error that loses the code after it too.) When the grammar
+    fixes this, this test fails: update the documentation."""
+    parser, query = init_swift_tree_sitter
+    code = b'let s = "/*"\n// @Hidden, ID_H, impl\nfunc f() {}\nlet t = "*/"\n'
+    tree = parser.parse(code)
+    assert not tree.root_node.has_error
+    assert [child.type for child in tree.root_node.named_children] == [
+        "property_declaration"
+    ]
+    assert utils.captured_comments(tree, query) == []
+
+
+def test_a_swift_block_comment_in_a_type_body_is_no_grammar_error(
+    init_swift_tree_sitter,
+):
+    """In a type's body, the same shape parses: the limitation is statement level."""
+    parser, _ = init_swift_tree_sitter
+    tree = parser.parse(b"class C {\n    func a() {}\n    /* c */ func b() {}\n}\n")
+    assert not tree.root_node.has_error
+
+
 def test_every_comment_type_is_wired():
     """A comment type is a ``CommentType`` member plus an entry in each of several
     tables; a member one of them misses fails here, rather than as a ``KeyError`` in

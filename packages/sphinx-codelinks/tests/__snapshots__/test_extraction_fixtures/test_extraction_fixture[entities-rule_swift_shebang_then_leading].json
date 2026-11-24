@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 44
+      }
+    },
+    "tagged_scope": "func main() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "main()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "main()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Main",
+      "id": "IMPL_R_SWIFT_SHEBANG_LEADING",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

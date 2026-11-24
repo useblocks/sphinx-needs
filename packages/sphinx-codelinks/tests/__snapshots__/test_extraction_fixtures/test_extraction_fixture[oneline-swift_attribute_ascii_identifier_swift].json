@@ -1,0 +1,78 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 47
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "f()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Gr\u00f6\u00dfe(x)",
+      "id": "IMPL_SWIFT_NON_ASCII_INSIDE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 47
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "f()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "\u00e9clair(x)",
+      "id": "IMPL_SWIFT_NON_ASCII_FIRST",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]
