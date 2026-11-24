@@ -514,7 +514,7 @@ feature must exist in `docs/components/features.rst` from the first commit that 
    `truth` in `entities.yaml`, then `--snapshot-update` and a review of every new snapshot;
    unit tests beside the precedents' in `test_analyse_utils.py`, `test_entity.py`,
    `test_oneline_parser.py` and `test_analyse.py`. A shared case should parse without a
-   syntax error (ubCode's Rust tree-sitter recovers differently): Swift's are fenced by
+   syntax error (tree-sitter cores recover from one differently): Swift's are fenced by
    `test_a_swift_case_parses_without_an_error`.
 9. **Docs**: the feature and its faults (`components/features.rst`); `comment_type`'s
    supported values, the language table and the `exclude` note
