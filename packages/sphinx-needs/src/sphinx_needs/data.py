@@ -247,9 +247,11 @@ Version 33 adds a field to every stored need part,
 :class:`~sphinx_needs.need_item.NeedPartData` ``origin`` (``"content"`` or ``"stated"``),
 and changes what the stored parts mean: an imported need, and one created with ``parts``
 on a page, keeps the parts it is given that its content does not mark (each whose id is
-one word), after its content's, where version 32 kept its content's alone, and shows them
-in a block after its content. A part pickled by version 32 has no ``origin``, and the documents whose sources
-did not change would keep their needs without the parts their records state.
+one word), after its content's, where version 32 kept its content's alone, each text on
+one line (each run of white space holding a line break, LF, VT, FF, CR, NEL, LS or PS,
+one space), and shows them in a block after its content. A part pickled by version 32
+has no ``origin``, and the documents whose sources did not change would keep their needs
+without the parts their records state.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

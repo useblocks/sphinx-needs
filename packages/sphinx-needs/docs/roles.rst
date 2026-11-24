@@ -118,25 +118,28 @@ A need may also be given parts its content does not mark ("stated" parts): an im
 (:ref:`needimport`), and a need created through the API by ``create_need(..., parts={"r1": "a stated part"})``
 (:func:`~sphinx_needs.api.need.create_need`), a mapping of part id to text. A need whose content is read has the
 parts its content marks, in the order written, then the given parts whose id its content does not mark, in the order
-given, each with its text as given. Where both give an id, the content's part is the part, with its text, and
-nothing is reported. A part id is one word: a given part whose id holds white space (a character of Unicode's
-``White_Space`` property) or a control character (one of the general category ``Cc``) is not taken by a need whose
-content is read, and nothing is reported; ``create_need`` refuses one. A stated part is a part like any other: a
-link to it is live, its back links are computed, and a filter that asks for parts sees it. So does a view's filter
-while :ref:`needs_views_include_parts` is unset or ``True``: a view whose filter an imported need passes lists that
-need's stated parts too, and while the value is unset reports ``needs.views_include_parts`` for it; set the value to
-``False`` to select needs alone, or to ``True`` to keep the parts without the report. There is no option to state a
-part in markup: there, a part is written in the content.
+given. It takes a given part's text on one line: each run of white space that holds a line break (LF, VT, FF, CR,
+NEL U+0085, LS U+2028 or PS U+2029) is one space, and every other character, the text's ends included, is kept, so
+the stored part, ``needs.json``, a filter and every place the text is written have that one line. Where both give
+an id, the content's part is the part, with its text, and nothing is reported. A part id is one word: a given part
+whose id holds white space (a character of Unicode's ``White_Space`` property) or a control character (one of the
+general category ``Cc``) is not taken by a need whose content is read, and nothing is reported; ``create_need``
+refuses one. A stated part is a part like any other: a link to it is live, its back links are computed, and a
+filter that asks for parts sees it. So does a view's filter while :ref:`needs_views_include_parts` is unset or
+``True``: a view whose filter an imported need passes lists that need's stated parts too, and while the value is
+unset reports ``needs.views_include_parts`` for it; set the value to ``False`` to select needs alone, or to
+``True`` to keep the parts without the report. There is no option to state a part in markup: there, a part is
+written in the content.
 
 The stated parts of a need on a page are shown after its content, in a block with the class
 ``needs-stated-parts``: one line per part, in order, each its text, its id and its anchor ``<need id>.<part id>``,
 as a part in the content is shown, with the class ``need-part-stated`` beside ``need-part``. A line shows the
-part's text with each run of white space that holds a line break as one space; the part keeps its text as given.
-html, singlehtml, epub, LaTeX and texinfo anchor each line; text and man, which write no anchors, print its text
-and its id after the need's content (text in the need's cell, which it writes on one line; man with no blank line
-before the first). A link or a ``:need:`` reference to a stated part lands on its line. A need with no stated part
-has no block. A hidden need, whose content is not read, has the parts it is given alone and shows nothing, and an
-external need (:ref:`needs_external_needs`) has the parts its record states.
+part's stored text, which is on one line. html, singlehtml, epub, LaTeX and texinfo anchor each line; text and man,
+which write no anchors, print its text and its id after the need's content (text in the need's cell, which it
+writes on one line; man with no blank line before the first). A link or a ``:need:`` reference to a stated part
+lands on its line. A need with no stated part has no block. A hidden need, whose content is not read, has the
+parts it is given alone, their texts as given, and shows nothing, and an external need
+(:ref:`needs_external_needs`) has the parts its record states, as given.
 
 A need's parts are stored in order, its content's then its stated ones, and the block, needextract, a needtable's
 ``:show_parts:`` rows, needlist and needflow list them in that order. A needtable whose filter selects parts sorts

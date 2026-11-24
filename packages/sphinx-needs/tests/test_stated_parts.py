@@ -691,11 +691,11 @@ def test_the_block_shows_a_line_break_as_a_space(test_app: Sphinx) -> None:
 
 
 def test_a_stated_text_is_shown_in_time_proportional_to_its_length() -> None:
-    """A record's text is any string, a long run of white space included: a line shows
-    it in time proportional to its length. A run with no line break is read once and
-    shown as given; a pattern that starts over at each character of the run takes time
-    proportional to the square of its length, which for this text is many times the
-    bound here."""
+    """A record's text is any string, a long run of white space included: a need takes
+    it on one line in time proportional to its length. A run with no line break is read
+    once and kept as given; a pattern that starts over at each character of the run
+    takes time proportional to the square of its length, which for this text is many
+    times the bound here."""
     # imported here, so that the module still collects on code without the helper
     from sphinx_needs.roles.need_part import _on_one_line
 

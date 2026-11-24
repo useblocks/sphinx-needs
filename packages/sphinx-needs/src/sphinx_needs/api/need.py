@@ -976,9 +976,11 @@ def add_need(
         <its text>}`` (the key is the part's id). They are merged as ``create_need``'s
         ``parts`` are: a need on a page has the parts its content marks (its
         :ref:`need_part` roles), then the given parts whose id its content does not
-        mark, in the order given, shown after its content, except a part whose id is
-        not one word (it holds white space or a control character), which it does
-        not take; an external or a hidden need has the given parts.
+        mark, in the order given, shown after its content, each text taken on one line
+        (each run of white space holding a line break, LF, VT, FF, CR, NEL, LS or PS,
+        as one space), except a part whose id is not one word (it holds white space or
+        a control character), which it does not take; an external or a hidden need has
+        the given parts, as given.
 
         .. versionchanged:: 9.4.0 A need on a page keeps the given parts its content
            does not mark, where they were dropped with one ``needs.part`` warning.
@@ -1143,11 +1145,13 @@ def create_need(
     :param parts: Parts the need is given, a mapping of part id to text, besides the
         parts its content marks (:ref:`need_part`). A need whose content is read has
         the parts its content marks, in the order written, then the given parts whose
-        id its content does not mark, in the order given, each with its text as given;
-        where both give an id, the content's part is the part. A part id is one word:
-        one holding white space or a control character is refused. The given parts a
-        need on a page has are shown after its content, each with its anchor
-        ``NEED.part``. A hidden or an external need has the given parts.
+        id its content does not mark, in the order given, each with its text on one
+        line: each run of white space holding a line break (LF, VT, FF, CR, NEL, LS or
+        PS) is one space, every other character as given; where both give an id, the
+        content's part is the part. A part id is one word: one holding white space or a
+        control character is refused. The given parts a need on a page has are shown
+        after its content, each with its anchor ``NEED.part``. A hidden or an external
+        need has the given parts, as given.
 
         .. versionadded:: 9.4.0
     :return: The need, as it is recorded in the project (the object, not a copy), and

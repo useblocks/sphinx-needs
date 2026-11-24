@@ -77,12 +77,15 @@ project's defaults fill only a field to which the file's schema gives no default
 
 An imported need has the :ref:`parts <need_part>` its content marks, in the order written,
 then the parts its record states (its ``parts``) whose id its content does not mark, in the
-record's order, each with its key in ``parts`` as its id and its text as given. Where both
-give an id, the content's part is the part, with its text, and nothing is reported. A part
-whose id is not one word (it holds white space or a control character) is not taken. The
-back links a record gives a part are not read: this project computes its own. The parts the
-record states alone are shown in a block after the need's content (see :ref:`stated parts
-<need_stated_parts>`), so a link or a ``:need:`` reference to one is live and lands there.
+record's order, each with its key in ``parts`` as its id and its text on one line: each run
+of white space that holds a line break (LF, VT, FF, CR, NEL U+0085, LS U+2028 or PS U+2029)
+is one space, and every other character is kept. Where both give an id, the content's part
+is the part, with its text, and nothing is reported. A part whose id is not one word (it
+holds white space or a control character) is not taken; a ``:hide:`` import keeps it (see
+below). The back links a record gives a part are not read: this project computes its own.
+The parts the record states alone are shown in a block after the need's content (see
+:ref:`stated parts <need_stated_parts>`), so a link or a ``:need:`` reference to one is live
+and lands there.
 They are parts like any other, so a view whose filter the need passes lists them too while
 :ref:`needs_views_include_parts` is unset or ``True``, and while it is unset reports
 ``needs.views_include_parts``: set it to ``False`` to select needs alone, or to ``True`` to
@@ -96,10 +99,12 @@ carries without their text, and a content in another markup than this project re
 such as a MyST need read as reStructuredText, whose ``{np}`` role is no role there; their
 parts are stated parts, and in the second the part's text is on the page twice.
 :ref:`parse_by_doctype <needimport_parse_by_doctype>` reads each content in the markup its
-record names, where this project has a parser for it, which removes the second. ``:id_prefix:`` and ``:namespace:`` change
-the need's id and never a part's, and :ref:`needs_import_restrict_content` does not change
-the parts a record states. A need imported with ``:hide:``, whose content is not read, has
-its record's parts alone.
+record names, where this project has a parser for it, which removes the second.
+``:id_prefix:`` and ``:namespace:`` change the need's id and never a part's, and
+:ref:`needs_import_restrict_content` does not change the parts a record states. A need
+imported with ``:hide:``, whose content is not read, has its record's parts alone, as the
+record gives them: a part whose id is not one word, and a text holding a line break,
+included.
 
 .. versionchanged:: 9.4.0
 
