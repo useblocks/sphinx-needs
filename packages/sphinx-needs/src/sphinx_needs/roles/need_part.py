@@ -99,8 +99,10 @@ def process_need_part(
 
 
 #: The builder formats whose writer anchors a ``target`` node and no ``inline``'s ids:
-#: LaTeX writes no ``\label`` for an inline, and texinfo writes its ``@anchor`` at the
-#: end of the section.
+#: LaTeX writes no ``\label`` for an inline, and texinfo no ``@anchor`` (it writes one
+#: for an address it was given no anchor for at the end of the output file). A part in a
+#: caption gets no target in them, because the LaTeX writer writes one there as
+#: ``\phantomsection\label``, which stops ``pdflatex``.
 _FORMATS_ANCHORING_TARGETS: Final = frozenset({"latex", "texinfo"})
 
 
@@ -122,7 +124,11 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
     as a browser takes the first of an id a page holds twice: a later one on the same
     page, such as a ``needextract`` copy of the need there, keeps its text and its id
     link and carries no target and no id. A copy on another page is anchored on that
-    page, under its name.
+    page, under its name. A part in a caption (of a figure, a code block, a
+    ``literalinclude``) is given no target and keeps its ids, as before, because the
+    LaTeX writer writes a target there as ``\\phantomsection\\label``, which stops
+    ``pdflatex`` inside the caption's argument: the anchor at its text is given up,
+    not the build.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
     and for every document: a part on a page holding no need is in the tree too. A role
@@ -161,9 +167,11 @@ def _parts_by_source_document(
 
     A tree those builders assemble from several documents marks each included one with
     a ``start_of_file`` (and an appendix as a ``document``) holding its name, and the
-    writers take the nearest one around a node. The tree is walked from its root, as
-    the writers walk it: the assembly gives a ``start_of_file`` the children of the
-    included document without making it their ``parent``.
+    writers take the nearest one around a node, but for what LaTeX moves after the
+    appendices (the bibliography), which it names by the last appendix: its writer does
+    not leave an appendix's name at the appendix's end. The tree is walked from its
+    root, as the writers walk it: the assembly gives a ``start_of_file`` the children
+    of the included document without making it their ``parent``.
     """
     found: list[tuple[NeedPart, str]] = []
     stack: list[tuple[nodes.Node, str]] = [(doctree, docname)]

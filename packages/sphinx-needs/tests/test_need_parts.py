@@ -1139,7 +1139,8 @@ def test_a_part_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
 )
 def test_a_part_in_a_caption_has_no_anchor_in_it_in_texinfo(test_app: Sphinx) -> None:
     """texinfo writes no ``@anchor`` inside ``@caption{…}``: a part in a caption is
-    anchored where it was, after the page's text, once."""
+    anchored where it was, once, at the end of the file, where the writer anchors an
+    address it was given no anchor for."""
     texi = _built_part_page(test_app, "parts.texi")
     captions = _arguments(texi, "@caption", "@")
     assert len(captions) == 3
