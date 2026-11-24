@@ -4,6 +4,24 @@ from dataclasses import dataclass
 from sphinx_codelinks.analyse.models import WarningSubTypeEnum
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
+
+def _is_alphanumeric(char: str) -> bool:
+    """Whether ``char`` is a letter or number by Unicode general category (L* or N*).
+
+    The one notion of alphanumeric of every marker rule: what may not precede a
+    one-line start sequence whose end sequence is the newline, nor the start sequence
+    of a docstring, JSDoc, Doxygen or Swift-attribute tag line, nor a reference
+    marker on a reference line; and, with ``_``, a reference marker's word boundary.
+    It is shared with another implementation of these rules. ``str.isalnum`` is
+    exactly that test (no other character passes it): characters Unicode calls
+    Alphabetic without being letters -- a circled letter (So), a combining mark (Mn,
+    Mc) -- are not alphanumeric here. The classification follows each tool's own
+    Unicode tables (here the running Python's, ``unicodedata.unidata_version``), so a
+    character newer than the older of two tables can be classed differently.
+    """
+    return char.isalnum()
+
+
 # Tags of Python docstring conventions (Epydoc, Doxygen, Sphinx field names)
 # that a one-line start sequence such as ``@`` also matches: ``@param a: the
 # first, thing`` would otherwise become a need with the id ``thing``.
@@ -75,7 +93,7 @@ def docstring_tag(line: str, start_sequence: str) -> str | None:
     if not start_sequence:
         return None
     idx = line.find(start_sequence)
-    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+    if idx == -1 or any(_is_alphanumeric(char) for char in line[:idx]):
         return None
     rest = line[idx + len(start_sequence) :]
     word_end = 0
@@ -224,7 +242,7 @@ def jsdoc_tag(line: str, start_sequence: str) -> str | None:
     if not start_sequence:
         return None
     idx = line.find(start_sequence)
-    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+    if idx == -1 or any(_is_alphanumeric(char) for char in line[:idx]):
         return None
     rest = line[idx + len(start_sequence) :]
     word_end = 0
@@ -490,7 +508,7 @@ def doxygen_tag(line: str, start_sequence: str) -> str | None:
     if not start_sequence:
         return None
     idx = line.find(start_sequence)
-    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+    if idx == -1 or any(_is_alphanumeric(char) for char in line[:idx]):
         return None
     rest = line[idx + len(start_sequence) :]
     word_end = 0
@@ -523,7 +541,7 @@ def swift_attribute(line: str, start_sequence: str) -> str | None:
     if not start_sequence:
         return None
     idx = line.find(start_sequence)
-    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+    if idx == -1 or any(_is_alphanumeric(char) for char in line[:idx]):
         return None
     match = _SWIFT_ATTRIBUTE.match(line, idx + len(start_sequence))
     return match.group(1) if match is not None else None
@@ -577,7 +595,7 @@ def oneline_parser(  # handel warnings
     # (issue #88). Explicitly-bounded markers (e.g. `[[ ... ]]`) are
     # self-delimiting and may appear anywhere, so they are exempt.
     if oneline_config.end_sequence == UNIX_NEWLINE and any(
-        char.isalnum() for char in oneline[:start_idx]
+        _is_alphanumeric(char) for char in oneline[:start_idx]
     ):
         return None
 

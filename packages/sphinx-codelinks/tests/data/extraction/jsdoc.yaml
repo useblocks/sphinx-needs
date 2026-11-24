@@ -11,6 +11,8 @@
 # otherwise have read the line as a marker or warned about it. A tag line the one-line
 # parser would have ignored (``@param a the augend``, ``@returns the sum``) stays
 # silent. Tags are case-sensitive. Every other line goes to the one-line parser.
+# Alphanumeric is a letter or a number of any script by Unicode general category (L* or
+# N*), as in every marker rule (``oneline.yaml`` says more).
 #
 # A start sequence that JSDoc also uses cannot tell a need from documentation; the
 # warning says to choose another one.
@@ -155,3 +157,20 @@ jsdoc_tag_asks_the_one_line_parser:
      * @param a; b; c; d; e
      */
     function f(a: number): void {}
+
+jsdoc_tag_letter_or_number_before_start:
+  # What may not precede the ``@`` is a letter or a number by Unicode general category
+  # (``oneline.yaml`` says more): after a combining mark or a circled or squared letter
+  # the tag line warns, as with nothing before it; after a letter number or a superscript
+  # digit the line is prose, and silent.
+  lang: typescript
+  config: default
+  source: "/**\
+    \n * \u0345@param a the first, thing\
+    \n * \u093E@param a the first, thing\
+    \n * \u24B6@param a the first, thing\
+    \n * \U0001F130@param a the first, thing\
+    \n * \u2160@param a the first, thing\
+    \n * \u00B2@param a the first, thing\
+    \n */\
+    \nfunction f(a: number): void {}\n"

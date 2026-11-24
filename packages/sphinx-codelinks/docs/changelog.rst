@@ -35,6 +35,11 @@ New and Improved
   the next ``*/``: silently when that ``*/`` is in another string (``"/*"`` … ``"*/"``),
   and as a syntax error losing the code after it too when it is anywhere else. Close the
   ``/*`` in the same string (:need:`FE_SWIFT`).
+- 📚 What may not precede a one-line start sequence, or the start sequence of a tag line
+  (``docstring_tag``, ``jsdoc_tag``, ``doxygen_tag``, ``swift_attribute``), is now one
+  named rule, :ref:`alphanumeric <oneline_alphanumeric>`: a letter or a number of any
+  script by Unicode general category. A combining mark or a circled letter is neither.
+  New shared test cases pin it; nothing extracted changes.
 
 .. _`release:2.2.0`:
 
