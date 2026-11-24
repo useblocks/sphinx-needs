@@ -4,8 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_codelinks.analyse import analyse as analyse_module
 from sphinx_codelinks.analyse.analyse import SourceAnalyse, _count
-from sphinx_codelinks.config import SourceAnalyseConfig
+from sphinx_codelinks.analyse.utils import NotText, decode_source
+from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 from sphinx_codelinks.source_discover.config import CommentType
 from tests.conftest import (
     ONELINE_COMMENT_STYLE,
@@ -540,3 +542,259 @@ def test_a_swift_attribute_is_a_marker_elsewhere(tmp_path: Path) -> None:
     )
 
     assert [need.need["id"] for need in analyse.oneline_needs] == ["*)"]
+
+
+class _RecordingLogger:
+    """Records the analysis' logger warnings with their subtype and location (the
+    real logger is slotted, so the module-level one is swapped)."""
+
+    def __init__(self) -> None:
+        self.warnings: list[tuple[str, str, str | None]] = []
+
+    def warning(
+        self, msg: str, *, subtype: str = "", location: str | None = None
+    ) -> None:
+        self.warnings.append((msg, subtype, location))
+
+    def info(self, *_a: object, **_k: object) -> None:
+        pass
+
+    def debug(self, *_a: object, **_k: object) -> None:
+        pass
+
+
+#: the two engines that read a C/C++ file; both apply one rule to its bytes
+ENGINES = ["treesitter", "libclang"]
+
+
+def _cpp_run(
+    tmp_path: Path,
+    files: dict[str, bytes],
+    engine: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[SourceAnalyse, _RecordingLogger]:
+    """The files analysed as C++ by ``engine`` with the default one-line style,
+    outside a repository, with the warnings the analysis logged."""
+    if engine == "libclang":
+        pytest.importorskip("clang.cindex")
+    for name, data in files.items():
+        (tmp_path / name).write_bytes(data)
+    recorder = _RecordingLogger()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[tmp_path / name for name in files],
+            src_dir=tmp_path,
+            get_oneline_needs=True,
+            comment_type=CommentType.cpp,
+            preprocessor=PreprocessorConfig() if engine == "libclang" else None,
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+    return analyse, recorder
+
+
+def _ids(analyse: SourceAnalyse) -> set[str]:
+    return {need.need["id"] for need in analyse.oneline_needs}
+
+
+#: a file whose markers the analysis must keep, beside one it skips
+GOOD = b"// @Kept, IMPL_GOOD, impl\nvoid good() {}\n"
+
+
+def _padded(before: bytes, after: bytes, at: int) -> bytes:
+    """``before``, a comment line padding it to ``at`` bytes, then ``after``: the
+    first byte of ``after`` is the file's byte ``at`` (from 0)."""
+    pad = at - len(before) - len(b"//\n")
+    assert pad >= 0
+    return before + b"//" + b"x" * pad + b"\n" + after
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+def test_a_character_across_byte_2048_does_not_skip_the_file(
+    tmp_path: Path, engine: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A UTF-8 file whose 2048th byte starts a two-byte character is text: the file
+    was taken for a binary one, and skipped silently, when only its first 2048 bytes
+    were decoded, which cut the character in two."""
+    data = _padded(
+        b"// @Before, IMPL_BEFORE, impl\n",
+        "// \u00fc\n// @After, IMPL_AFTER, impl\nvoid f() {}\n".encode(),
+        2044,
+    )
+    assert data[2047:2049] == "\u00fc".encode()  # the lead byte is the 2048th
+
+    analyse, recorder = _cpp_run(tmp_path, {"cut.cpp": data}, engine, monkeypatch)
+
+    assert _ids(analyse) == {"IMPL_BEFORE", "IMPL_AFTER"}
+    assert recorder.warnings == []
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+@pytest.mark.parametrize(
+    ("position", "line"),
+    [
+        pytest.param(34, 2, id="in_the_first_2048_bytes"),
+        pytest.param(3046, 3, id="past_the_first_2048_bytes"),
+    ],
+)
+def test_a_file_that_is_not_utf8_is_skipped_with_a_warning(
+    tmp_path: Path,
+    engine: str,
+    position: int,
+    line: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A Latin-1 byte anywhere in a file skips that file, with a ``not_text``
+    warning naming it and the first invalid byte's position and line; every other
+    file keeps its needs. Past the first 2048 bytes it used to stop the whole
+    analysis with a ``UnicodeDecodeError``; within them, skip the file silently."""
+    marker = b"// @Lost, IMPL_LATIN1, impl\n"
+    if position < 2048:
+        data = marker + b"// caf\xe9\n"
+    else:
+        data = _padded(marker, b"// caf\xe9\n", position - len(b"// caf"))
+    assert data.index(b"\xe9") == position
+
+    analyse, recorder = _cpp_run(
+        tmp_path, {"good.cpp": GOOD, "latin1.cpp": data}, engine, monkeypatch
+    )
+
+    assert _ids(analyse) == {"IMPL_GOOD"}
+    path = tmp_path / "latin1.cpp"
+    assert recorder.warnings == [
+        (
+            f"codelinks: skipping {path} \u2014 not UTF-8 (invalid continuation "
+            f"byte): byte 0xe9 at position {position}, line {line}; save the file "
+            "as UTF-8 to trace it",
+            "not_text",
+            f"{path}:{line}",
+        )
+    ]
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+def test_a_utf16_file_is_skipped_with_a_warning(
+    tmp_path: Path, engine: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A file saved as UTF-16 (here with its byte order mark) is not read: it is
+    skipped with the ``not_text`` warning, at its first byte, where it was skipped
+    without one."""
+    data = "\ufeff// @Wide, IMPL_WIDE, impl\n".encode("utf-16-le")
+
+    analyse, recorder = _cpp_run(
+        tmp_path, {"good.cpp": GOOD, "wide.cpp": data}, engine, monkeypatch
+    )
+
+    assert _ids(analyse) == {"IMPL_GOOD"}
+    ((message, subtype, location),) = recorder.warnings
+    assert subtype == "not_text"
+    assert "not UTF-8 (invalid start byte): byte 0xff at position 0, line 1" in message
+    assert location == f"{tmp_path / 'wide.cpp'}:1"
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+def test_a_nul_byte_in_the_first_2048_bytes_skips_the_file_as_binary(
+    tmp_path: Path, engine: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The binary-file heuristic is kept: a NUL byte in a file's first 2048 bytes
+    skips it, valid UTF-8 or not, now with the ``not_text`` warning naming the
+    byte."""
+    data = b"// @Hidden, IMPL_BINARY, impl\n\x00\x01\x02\n"
+
+    analyse, recorder = _cpp_run(
+        tmp_path, {"good.cpp": GOOD, "blob.cpp": data}, engine, monkeypatch
+    )
+
+    assert _ids(analyse) == {"IMPL_GOOD"}
+    path = tmp_path / "blob.cpp"
+    assert recorder.warnings == [
+        (
+            f"codelinks: skipping {path} \u2014 taken for a binary file: a NUL byte "
+            "at position 30, line 2, within its first 2048 bytes",
+            "not_text",
+            f"{path}:2",
+        )
+    ]
+
+
+def test_a_nul_byte_past_the_first_2048_bytes_is_text(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only a file's first 2048 bytes are searched for a NUL byte: a later one, in a
+    file that is UTF-8, leaves it read, as before."""
+    data = _padded(b"// @Read, IMPL_LATE_NUL, impl\n", b"// \x00\n", 3000)
+
+    analyse, recorder = _cpp_run(
+        tmp_path, {"late.cpp": data}, "treesitter", monkeypatch
+    )
+
+    assert _ids(analyse) == {"IMPL_LATE_NUL"}
+    assert recorder.warnings == []
+
+
+@pytest.mark.parametrize(
+    ("data", "position", "line"),
+    [
+        pytest.param(b"a\nb\nc\xe9\n", 5, 3, id="lf"),
+        pytest.param(b"a\r\nb\r\nc\xe9\r\n", 7, 3, id="crlf"),
+        pytest.param(b"a\rb\rc\xe9\r", 5, 3, id="cr"),
+        pytest.param(b"\xe9", 0, 1, id="first_byte"),
+        pytest.param(b"ok \xc3", 3, 1, id="cut_at_the_end"),
+    ],
+)
+def test_the_line_of_the_first_invalid_byte(
+    data: bytes, position: int, line: int
+) -> None:
+    """The warning's line counts LF, CRLF and a lone CR each as one line break, as
+    the analysis reads them; a character cut short by the end of the file is invalid
+    too."""
+    found = decode_source(data)
+
+    assert isinstance(found, NotText)
+    assert (found.position, found.line) == (position, line)
+
+
+@pytest.mark.parametrize(
+    ("data", "binary"),
+    [
+        pytest.param(b"a" * 2047 + b"\x00", True, id="nul_at_index_2047"),
+        pytest.param(b"a" * 2048 + b"\x00", False, id="nul_at_index_2048"),
+    ],
+)
+def test_only_the_first_2048_bytes_are_searched_for_a_nul(
+    data: bytes, binary: bool
+) -> None:
+    """A NUL byte makes a file binary only within its first 2048 bytes: the last
+    byte searched is index 2047, and one at index 2048 is ordinary text."""
+    found = decode_source(data)
+
+    if binary:
+        assert isinstance(found, NotText)
+        assert found.position == 2047
+        assert "binary" in found.reason
+    else:
+        assert found == data.decode("utf-8")
+
+
+@pytest.mark.parametrize(
+    ("data", "position", "kind"),
+    [
+        pytest.param(b"\x00\xe9", 0, "binary", id="nul_first"),
+        pytest.param(b"\xe9\x00", 0, "not UTF-8", id="invalid_byte_first"),
+        pytest.param(b"ok\x00 \xe9", 2, "binary", id="nul_earlier_in_the_file"),
+        pytest.param(b"ok\xe9 \x00", 2, "not UTF-8", id="invalid_earlier_in_the_file"),
+    ],
+)
+def test_the_earlier_of_a_nul_and_an_invalid_byte_is_named(
+    data: bytes, position: int, kind: str
+) -> None:
+    """When a NUL byte and a byte that is not UTF-8 both stop a file, the warning
+    names the one that comes first."""
+    found = decode_source(data)
+
+    assert isinstance(found, NotText)
+    assert found.position == position
+    assert kind in found.reason

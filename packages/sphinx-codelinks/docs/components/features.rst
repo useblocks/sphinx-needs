@@ -319,8 +319,8 @@ Features
      disturb a one-line marker on the first line
 
    Only UTF-8 files are read: a file saved as UTF-16, as Windows PowerShell 5.1's
-   ``Out-File`` and ``New-ModuleManifest`` write it by default, holds NUL bytes, is
-   taken for a binary file and is skipped without a warning, as in every language.
+   ``Out-File`` and ``New-ModuleManifest`` write it by default, is not UTF-8 and is
+   skipped with a ``codelinks.not_text`` warning, as in every language.
    Save such a file as UTF-8 to trace it.
 
    .. note::

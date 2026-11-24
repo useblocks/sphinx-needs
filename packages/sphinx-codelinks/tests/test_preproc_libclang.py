@@ -119,8 +119,9 @@ def test_extract_active_comments_normalizes_crlf(tmp_path: Path):
 
 
 def test_extract_active_comments_tolerates_non_utf8(tmp_path: Path):
-    """A non-UTF-8 byte (past is_text_file's 2 KB sample) must not raise
-    UnicodeDecodeError and abort the whole run; the marker must still extract."""
+    """A non-UTF-8 byte must not raise UnicodeDecodeError out of the parser; the
+    marker must still extract. (The analysis skips such a file, with a ``not_text``
+    warning, before it reaches the parser; the parser stays tolerant on its own.)"""
     src = tmp_path / "latin1.cpp"
     src.write_bytes(
         b'// @Marker, IMPL_LATIN1, impl, [REQ]\nconst char* s = "caf\xe9";\n'

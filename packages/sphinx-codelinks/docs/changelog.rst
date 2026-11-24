@@ -41,6 +41,21 @@ New and Improved
   script by Unicode general category. A combining mark or a circled letter is neither.
   New shared test cases pin it; nothing extracted changes.
 
+Fixes
+.....
+
+- 🐛 A source file is decoded as UTF-8 whole, where only its first 2048 bytes were checked:
+  a UTF-8 file whose 2048th byte starts a multi-byte character (an ``ü`` near the 2 KiB mark)
+  was taken for a binary file and skipped without a word, and a byte that is not UTF-8 after
+  the first 2048 bytes stopped the whole analysis, and with it the Sphinx build,
+  with a ``UnicodeDecodeError``. A file that is
+  not UTF-8 (saved as Latin-1 or UTF-16, for example), or that holds a NUL byte in its first
+  2048 bytes, is still skipped, now with a new ``codelinks.not_text`` warning naming it and the
+  position and line of the first byte that stops it, and every other file keeps its needs.
+  Both engines apply the rule, so the libclang engine now skips a file it read with the
+  invalid bytes replaced when they came after the first 2048. The new warning fails a ``-W``
+  build until the file is saved as UTF-8 or the warning type suppressed.
+
 .. _`release:2.2.0`:
 
 2.2.0
