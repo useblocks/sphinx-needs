@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795537492176,
+  "lastUpdate": 1795537812981,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -31332,6 +31332,48 @@ window.BENCHMARK_DATA = {
             "value": 192.535148,
             "unit": "MB",
             "extra": "Commit: 46b06ad15e84d40db17cf7216b3cdd9034b984d6\nBranch: master\nTime: 2026-11-24T17:23:06+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "30c0ef4cd750faf08db6a95186764b00adf12c7a",
+          "message": "🐛 sphinx-codelinks: decode a source file whole, and warn when it is not UTF-8 (#2579)\n\n## What\n\nsphinx-codelinks (`packages/sphinx-codelinks`) now reads each source\nfile once and decodes it as UTF-8 whole,\ninstead of checking only its first 2048 bytes. A file that is not UTF-8,\nor that holds a NUL byte in its first\n2048 bytes (the binary-file heuristic, kept), is skipped with a new\n`codelinks.not_text` warning naming the file\nand the position and line of the first byte that stops it; every other\nfile keeps its needs. The tree-sitter and\nlibclang engines apply the same rule.\n\n## Why\n\n`analyse/utils.py::is_text_file` decoded a 2048-byte sample, which had\ntwo faults:\n\n- a UTF-8 file whose 2048th byte starts a multi-byte character (an `ü`\nnear the 2 KiB mark) failed the sample\ndecode, was taken for a binary file and was skipped without a warning:\nits needs silently disappeared;\n- a byte that is not UTF-8 *after* the first 2048 bytes passed the\ncheck, and the full read in `get_src_strings`\nthen raised `UnicodeDecodeError` out of `SourceAnalyse.run()`, stopping\nthe whole analysis and with it the\n  Sphinx build.\n\nA UTF-16 file (as Windows PowerShell 5.1 writes `.psd1` manifests) is\nstill not read, but is now reported rather\nthan skipped silently; `FE_POWERSHELL` is updated to say so. Reading\nUTF-16 is #2575.\n\n## Tests\n\n- `tests/test_analyse.py`, on both engines: a `ü` across byte 2048 gives\nits needs and no warning; a Latin-1 byte\nin and past the first 2048 bytes skips that file with the exact\n`not_text` warning (message, subtype, location)\nand leaves the other file's need; a UTF-16 file is warned at byte 0; a\nNUL byte in the first 2048 bytes still\nskips the file (now warned), and one past them does not. A\n`decode_source` unit test pins the reported line for\nLF, CRLF and lone-CR files and a character cut short by the end of the\nfile; two more pin the NUL search's\n2048-byte limit (index 2047 skips, 2048 does not) and that the earlier\nof a NUL and an invalid byte is named.\n- `tests/data/extraction/positions.yaml`: a new shared case,\n`non_ascii_across_byte_2048`, with its snapshots;\n  no existing snapshot changes.\n- Red first: at `master` the new unit tests fail (10 of 11; the past-2\nKiB case with the `UnicodeDecodeError`\n  itself), and the extraction case gives no need.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-codelinks`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-11-24T17:28:16+01:00",
+          "tree_id": "a665c4015c27c0f871e8a3345ce51dc7790561f9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/30c0ef4cd750faf08db6a95186764b00adf12c7a"
+        },
+        "date": 1795537812319,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07680064499999872,
+            "unit": "s",
+            "extra": "Commit: 30c0ef4cd750faf08db6a95186764b00adf12c7a\nBranch: master\nTime: 2026-11-24T17:28:16+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 15.86508646,
+            "unit": "s",
+            "extra": "Commit: 30c0ef4cd750faf08db6a95186764b00adf12c7a\nBranch: master\nTime: 2026-11-24T17:28:16+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 192.535148,
+            "unit": "MB",
+            "extra": "Commit: 30c0ef4cd750faf08db6a95186764b00adf12c7a\nBranch: master\nTime: 2026-11-24T17:28:16+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
