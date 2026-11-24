@@ -755,3 +755,46 @@ def test_the_line_of_the_first_invalid_byte(
 
     assert isinstance(found, NotText)
     assert (found.position, found.line) == (position, line)
+
+
+@pytest.mark.parametrize(
+    ("data", "binary"),
+    [
+        pytest.param(b"a" * 2047 + b"\x00", True, id="nul_at_index_2047"),
+        pytest.param(b"a" * 2048 + b"\x00", False, id="nul_at_index_2048"),
+    ],
+)
+def test_only_the_first_2048_bytes_are_searched_for_a_nul(
+    data: bytes, binary: bool
+) -> None:
+    """A NUL byte makes a file binary only within its first 2048 bytes: the last
+    byte searched is index 2047, and one at index 2048 is ordinary text."""
+    found = decode_source(data)
+
+    if binary:
+        assert isinstance(found, NotText)
+        assert found.position == 2047
+        assert "binary" in found.reason
+    else:
+        assert found == data.decode("utf-8")
+
+
+@pytest.mark.parametrize(
+    ("data", "position", "kind"),
+    [
+        pytest.param(b"\x00\xe9", 0, "binary", id="nul_first"),
+        pytest.param(b"\xe9\x00", 0, "not UTF-8", id="invalid_byte_first"),
+        pytest.param(b"ok\x00 \xe9", 2, "binary", id="nul_earlier_in_the_file"),
+        pytest.param(b"ok\xe9 \x00", 2, "not UTF-8", id="invalid_earlier_in_the_file"),
+    ],
+)
+def test_the_earlier_of_a_nul_and_an_invalid_byte_is_named(
+    data: bytes, position: int, kind: str
+) -> None:
+    """When a NUL byte and a byte that is not UTF-8 both stop a file, the warning
+    names the one that comes first."""
+    found = decode_source(data)
+
+    assert isinstance(found, NotText)
+    assert found.position == position
+    assert kind in found.reason
