@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 from docutils import nodes
+from sphinx import version_info
 from sphinx.application import Sphinx
 from syrupy.extensions.json import JSONSnapshotExtension
 
@@ -619,18 +620,22 @@ PART_PAGE_FINDINGS = [
 #: ``man`` cannot span a cell of a need's table, ``epub`` packs no file of a type it
 #: does not know and resolves the page more than once, reporting the outer role again
 #: each time
+#: Sphinx names the type of a warning of its own, or of docutils, from 8.0
+#: (``show_warning_types``)
+_EPUB_FILES_TYPE = " [epub.unknown_project_files]" if version_info >= (8, 0) else ""
+_DOCUTILS_TYPE = " [docutils]" if version_info >= (8, 0) else ""
+
 PART_PAGE_OTHER_WARNINGS = {
     "man": [
-        '<srcdir>/index.rst:2: WARNING: "table cell spanning" not supported [docutils]'
+        f'<srcdir>/index.rst:2: WARNING: "table cell spanning" not supported{_DOCUTILS_TYPE}'
     ]
     * 2,
     "epub": [
         PART_PAGE_FINDINGS[1],
         PART_PAGE_FINDINGS[1],
         PART_PAGE_FINDINGS[1],
-        "WARNING: unknown mimetype for permalink.html, ignoring [epub.unknown_project_files]",
-        "WARNING: unknown mimetype for schema_violations.json, ignoring "
-        "[epub.unknown_project_files]",
+        f"WARNING: unknown mimetype for permalink.html, ignoring{_EPUB_FILES_TYPE}",
+        f"WARNING: unknown mimetype for schema_violations.json, ignoring{_EPUB_FILES_TYPE}",
     ],
 }
 
@@ -670,7 +675,10 @@ def _assert_part_page_findings(app: Sphinx) -> None:
 
 
 def _words(written: str) -> str:
-    """The text a writer wrote, with its table borders and its line breaks gone."""
+    """The text a writer wrote, with its table borders and its line breaks gone, and
+    the font escapes of a man page: docutils before 0.22 sets a part's id link in
+    italics there (``\\fI\\% p1\\fP``), and docutils 0.22 writes it plain."""
+    written = re.sub(r"\\f[A-Z]|\\%", "", written)
     return " ".join(written.replace("|", " ").split())
 
 
@@ -1003,6 +1011,17 @@ def test_a_part_in_a_section_title_is_left_as_it_was(test_app: Sphinx) -> None:
     assert build_warnings(test_app) == PART_IN_A_TITLE_FINDINGS
 
 
+def _id_in_a_title(part: str) -> str:
+    """A part's id after its text, as the LaTeX writer writes it in a title: a link
+    to the part from Sphinx 9, plain text in Sphinx 7 and 8."""
+    if version_info >= (9, 0):
+        return (
+            rf"{{\hyperref[\detokenize{{index:REQ_1.{part}}}]"
+            rf"{{\sphinxcrossref{{ {part}}}}}}}"
+        )
+    return f" {part}"
+
+
 @pytest.mark.parametrize(
     "test_app", [_part_in_a_title("latex")], ids=["latex"], indirect=True
 )
@@ -1015,10 +1034,11 @@ def test_a_part_in_a_title_that_is_no_sections_in_latex(test_app: Sphinx) -> Non
     a1 = r"\label{\detokenize{index:REQ_1.a1}}"
     b1 = r"\label{\detokenize{index:REQ_1.b1}}"
     assert (tex.count(a1), tex.count(b1)) == (1, 1)
-    assert rf"{{Adm {a1}adm first{{\hyperref" in tex
-    assert r"{\sphinxcrossref{ a1}}} and adm second}" in tex
-    assert rf"\sphinxcaption{{Table {b1}tab first{{\hyperref" in tex
-    assert r"{\sphinxcrossref{ b1}}} and tab second}" in tex
+    assert rf"{{Adm {a1}adm first{_id_in_a_title('a1')} and adm second}}" in tex
+    assert (
+        rf"\sphinxcaption{{Table {b1}tab first{_id_in_a_title('b1')} and tab second}}"
+        in tex
+    )
     assert build_warnings(test_app) == PART_IN_A_TITLE_FINDINGS
 
 
