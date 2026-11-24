@@ -1117,7 +1117,9 @@ def test_a_part_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
     there as ``\\phantomsection\\label{…}``, which breaks ``pdflatex`` inside
     ``\\sphinxfigcaption{…}`` and ``\\sphinxSetupCaptionForVerbatim{…}``, so the anchor
     is given up, as it always was, and not the build. The part's text and its
-    repetition's are in the caption, and the references stay unresolved, as before."""
+    repetition's are in the caption, and the references stay unresolved, as before.
+    The part's inline keeps its address, as it did: no output of LaTeX or texinfo shows
+    it, so the resolved tree is read."""
     tex = _built_part_page(test_app, "parts.tex")
     captions = _arguments(tex, r"\sphinxfigcaption", "\\") + _arguments(
         tex, r"\sphinxSetupCaptionForVerbatim", "\\"
@@ -1132,6 +1134,8 @@ def test_a_part_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
         assert rf"\label{{\detokenize{{index:REQ_K.{part}}}}}" not in tex, part
         assert rf"\hyperref[\detokenize{{index:REQ_K.{part}}}]" in tex, part
     assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+    for part in ("f1", "c1", "l1"):
+        assert _holders(test_app, f"REQ_K.{part}") == [nodes.inline], part
 
 
 @pytest.mark.parametrize(
