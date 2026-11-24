@@ -317,6 +317,33 @@ interpolation_comment_swift:
   source: |
     let s = "\(max(/* @In code, IMPL_SWIFT_INTERP, impl */ 1, 2))"
 
+# a raw string's text is string content too, with one ``#`` or more: a ``/*`` that opens
+# it is no comment node, and one after an interpolation (``\#( … )``, ``\##( … )``), on
+# a line or in a multi-line raw string, is a comment node inside the string, and skipped
+raw_string_content_no_marker_swift:
+  lang: swift
+  config: default
+  source: |
+    let a = #"/* @Not a marker, IMPL_SWIFT_RAW_NO_1, impl */"#
+    let b = #"\#(a) /* @Not a marker, IMPL_SWIFT_RAW_NO_2, impl */"#
+    let c = ##"\##(a) /* @Not a marker, IMPL_SWIFT_RAW_NO_3, impl */"##
+    let d = #"""
+    \#(a) /* @Not a marker, IMPL_SWIFT_RAW_NO_4, impl */
+    """#
+    // @Real, IMPL_SWIFT_RAW_REAL, impl
+    func f() {}
+
+# a comment inside a raw string's interpolation is in code: a marker there counts, nested
+# in the expression or beside it, while the raw string's text after the interpolation is
+# still text
+raw_interpolation_comment_swift:
+  lang: swift
+  config: default
+  source: |
+    let x = 1
+    let s = #"\#(max(/* @In code, IMPL_SWIFT_RAW_INTERP, impl */ 1, 2)) /* @Not a marker, IMPL_SWIFT_RAW_TEXT, impl */"#
+    let t = ##"\##(x /* @In code, IMPL_SWIFT_RAW_INTERP_2, impl */) /* @Not a marker, IMPL_SWIFT_RAW_TEXT_2, impl */"##
+
 # Under ``@``, a Swift comment line holding an attribute's shape, ``@name(`` with no
 # space before the parenthesis (an attribute, a DocC directive, an attribute-shaped
 # example), is no need: a ``swift_attribute`` warning where the one-line parser would
