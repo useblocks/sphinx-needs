@@ -976,8 +976,9 @@ def add_need(
         <its text>}`` (the key is the part's id). They are merged as ``create_need``'s
         ``parts`` are: a need on a page has the parts its content marks (its
         :ref:`need_part` roles), then the given parts whose id its content does not
-        mark, in the order given, shown after its content; an external or a hidden
-        need has the given parts.
+        mark, in the order given, shown after its content, except a part whose id is
+        not one word (it holds white space or a control character), which it does
+        not take; an external or a hidden need has the given parts.
 
         .. versionchanged:: 9.4.0 A need on a page keeps the given parts its content
            does not mark, where they were dropped with one ``needs.part`` warning.
@@ -1143,9 +1144,10 @@ def create_need(
         parts its content marks (:ref:`need_part`). A need whose content is read has
         the parts its content marks, in the order written, then the given parts whose
         id its content does not mark, in the order given, each with its text as given;
-        where both give an id, the content's part is the part. The given parts a need
-        on a page has are shown after its content, each with its anchor ``NEED.part``.
-        A hidden or an external need has the given parts.
+        where both give an id, the content's part is the part. A part id is one word:
+        one holding white space or a control character is refused. The given parts a
+        need on a page has are shown after its content, each with its anchor
+        ``NEED.part``. A hidden or an external need has the given parts.
 
         .. versionadded:: 9.4.0
     :return: The need, as it is recorded in the project (the object, not a copy), and
@@ -1164,7 +1166,7 @@ def create_need(
         declare, or one given in the wrong place: a link type in ``fields``, a field in
         ``links``, or one of this function's own arguments (``title``, ``content``, ...)
         in either; (type ``parts``) for ``parts`` that are not a mapping, a part id that
-        is not a non-empty string, or a text that is not a string.
+        is not a non-empty string or not one word, or a text that is not a string.
     :raises TypeError: If ``source`` is not a ``NeedItemSource``, before anything is
         recorded.
     :raises ValueError: If ``state`` is ``None`` for a source that is not external.

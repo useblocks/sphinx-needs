@@ -234,7 +234,9 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
    * - ``parts``, ``{part_id: {"id": part_id, "content": text}}``
      - ``parts={part_id: text}``, a mapping of part id to text, kept by the same rule:
        the parts the need's content marks, then the given ones it does not mark
-       (:ref:`stated parts <need_stated_parts>`);
+       (:ref:`stated parts <need_stated_parts>`); a part id is one word: ``create_need``
+       refuses one holding white space or a control character, where ``add_need``
+       leaves such a part out of a need on a page;
        :func:`~sphinx_needs.api.need.add_external_need` takes ``add_need``'s shape
    * - ``arch``, ``sections``, ``signature``
      - none: for a need on the page they are computed from its content and the page (a

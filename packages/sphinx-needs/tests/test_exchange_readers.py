@@ -6,7 +6,9 @@ directive on ``index.rst``, once loaded as an external source (a ``needs_externa
 config override). Both read the file through ``ub_needs_exchange`` and create each
 need through one record path, so most rows assert the SAME outcome for both readers;
 the rows where the two are different by design (the ten-field table, where a need is
-recorded) assert the difference as the rule.
+recorded) assert the difference as the rule. The readers still differ on parts where a
+record's content marks one: ``needimport`` reads the content and an external need does not,
+a row this module does not have.
 
 The outcomes are the warnings of the build (``-W`` off, the list asserted whole) and the
 needs read back from the build's own ``needs.json``.

@@ -56,10 +56,13 @@ gives the need: each has its key in the given parts as its id (a record part's o
 not read) and its text as given: section 1's removal of white space is the role's, and a
 stated text keeps its ends. A need whose content is read has the parts its content marks
 and the stated parts whose id its content does not mark; where both give an id, the
-content's part is the part, with its text, and there is no finding. An external need, whose
-content is not part of this project, has its stated parts. A stated part's back links are
-this project's: those a record gives it are not read. A prefix or a namespace given to the
-ids of imported needs changes the need's id, never a part's.
+content's part is the part, with its text, and there is no finding. A part id is one word: a
+stated part whose id holds white space (a character of Unicode's `White_Space` property) or
+a control character (one of the general category `Cc`) is not taken by a need whose content
+is read, and there is no finding. An external need, whose content is not part of this
+project, has its stated parts. A stated part's back links are this project's: those a
+record gives it are not read. A prefix or a namespace given to the ids of imported needs
+changes the need's id, never a part's.
 
 ## 3. One id, one part (corpus: `duplicates`)
 
@@ -162,9 +165,12 @@ whatever the value says; the corpus marks where one does.
 
 A need's parts are in order: the parts its content marks, in the order written (the first
 role of each id), then its stated parts whose id its content does not mark, in the order
-given. Where a need's parts are listed, they are listed in that order. The `needs.json`
-Sphinx-Needs writes (format 1) lists a need's parts sorted by id and cannot carry the order,
-so the corpus reads it from the stored need (`order.<ID>`).
+given. The stored need keeps that order, and in sphinx-needs so do the places that list a
+need's parts from it: the block of stated parts, needextract, a needtable's `:show_parts:`
+rows, needlist and needflow. Two do not: a needtable whose filter selects parts sorts them as
+it sorts its rows, and `links_from_match` and a derived join take them in part-id order. The
+`needs.json` Sphinx-Needs writes (format 1) lists a need's parts sorted by id and cannot
+carry the order, so the corpus reads it from the stored need (`order.<ID>`).
 
 ## 11. Not on this page yet
 
