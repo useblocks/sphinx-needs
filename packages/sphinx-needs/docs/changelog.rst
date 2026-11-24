@@ -105,7 +105,7 @@ Improvements
   merged by the same rule; it refuses a part id that is not one word. The deprecated ``add_need`` keeps the
   ``parts`` it is given for a need on a page, where it dropped them with one ``needs.part`` warning per need.
   ``NeedPartData`` records whether a part comes from its need's content or is stated (``origin``), which
-  needs.json and filters do not read. Every project re-reads its sources once after upgrading. (:pr:`NNNN`)
+  needs.json and filters do not read. Every project re-reads its sources once after upgrading. (:pr:`2581`)
 
 Bug fixes
 .........
