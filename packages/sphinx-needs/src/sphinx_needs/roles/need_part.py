@@ -12,6 +12,7 @@ import re
 from typing import Final
 
 from docutils import nodes
+from sphinx import addnodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxRole
@@ -97,22 +98,116 @@ def process_need_part(
             )
 
 
+#: The builder formats whose writer anchors a ``target`` node and no ``inline``'s ids:
+#: LaTeX writes no ``\label`` for an inline, and texinfo no ``@anchor`` (it writes one
+#: for an address it was given no anchor for at the end of the output file). A part in a
+#: caption gets no target in them, because the LaTeX writer writes one there as
+#: ``\phantomsection\label``, which stops ``pdflatex``.
+_FORMATS_ANCHORING_TARGETS: Final = frozenset({"latex", "texinfo"})
+
+
 def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> None:
-    """Replace every ``NeedPart`` in a resolved doctree by the nodes it holds.
+    """Replace every ``NeedPart`` in a resolved doctree by what a reader sees of it.
 
     The node only marks where a part is while needs are collected and resolved; what a
-    reader sees is its ``inline`` (the part's text, with its id and its link). Removing
-    the wrapper before a writer runs means a writer, of Sphinx or of another extension,
-    need not know the node for a part in a page's body.
+    reader sees of a part is its ``inline`` (the part's text, with its id and its link).
+    A role that made no part -- one repeating a part id of its need, or one outside
+    every need -- is its text, with no id. Removing the wrapper before a writer runs
+    means a writer, of Sphinx or of another extension, need not know the node for a
+    part in a page's body.
+
+    The html family keeps the part's id on its ``inline``, as it was written there; for
+    LaTeX and texinfo the id moves to a ``target`` at the start of the inline, which is
+    what those writers anchor in place. Those builders resolve every page of an output
+    file in one tree, and name a label or an anchor by the page (the source document) a
+    node is on, so an address is anchored once per page, at its first occurrence there,
+    as a browser takes the first of an id a page holds twice: a later one on the same
+    page, such as a ``needextract`` copy of the need there, keeps its text and its id
+    link and carries no target and no id. A copy on another page is anchored on that
+    page, under its name. A part in a caption (of a figure, a code block, a
+    ``literalinclude``) is given no target and keeps its ids, as before, because the
+    LaTeX writer writes a target there as ``\\phantomsection\\label``, which stops
+    ``pdflatex`` inside the caption's argument: the anchor at its text is given up,
+    not the build.
 
     Connected late to ``doctree-resolved``, after the handlers that still read the node,
-    and for every document: a part on a page holding no need is in the tree too. A part
-    written in a section title is not reached here: Sphinx copies a title into its
-    tables of contents when the page is read, and the html writer still meets the node
-    there, which its ``html`` visitor is kept for.
+    and for every document: a part on a page holding no need is in the tree too. A role
+    in a section title is reached here in the page's heading, but not in the copies of
+    the title Sphinx made for its tables of contents when the page was read: the html
+    writer still meets the node there, which its ``html`` visitor is kept for. The
+    heading's own node is left without text on purpose (``_in_section_title``), so that
+    the heading reads as those entries do.
     """
-    for node in list(doctree.findall(NeedPart)):
-        node.replace_self(list(node.children))
+    anchor_with_target = app.builder.format in _FORMATS_ANCHORING_TARGETS
+    anchored: set[tuple[str, str]] = set()
+    for node, source in _parts_by_source_document(doctree, docname):
+        if node.children:
+            shown = list(node.children)
+            if anchor_with_target and not _in_caption(node):
+                for child in shown:
+                    if isinstance(child, nodes.Element) and child["ids"]:
+                        ids = [i for i in child["ids"] if (source, i) not in anchored]
+                        if ids:
+                            child.insert(0, nodes.target(ids=ids))
+                            anchored.update((source, i) for i in ids)
+                        child["ids"] = []
+        elif _in_section_title(node):
+            shown = []
+        else:
+            shown = [nodes.Text(node.title)]
+        node.replace_self(shown)
+
+
+def _parts_by_source_document(
+    doctree: nodes.document, docname: str
+) -> list[tuple[NeedPart, str]]:
+    """Every ``NeedPart`` of a resolved tree, in document order, with the name of the
+    source document it is from: the name the LaTeX and texinfo writers put before an id
+    in its label or anchor.
+
+    A tree those builders assemble from several documents marks each included one with
+    a ``start_of_file`` (and an appendix as a ``document``) holding its name, and the
+    writers take the nearest one around a node, but for what LaTeX moves after the
+    appendices (the bibliography), which it names by the last appendix: its writer does
+    not leave an appendix's name at the appendix's end. The tree is walked from its
+    root, as the writers walk it: the assembly gives a ``start_of_file`` the children
+    of the included document without making it their ``parent``.
+    """
+    found: list[tuple[NeedPart, str]] = []
+    stack: list[tuple[nodes.Node, str]] = [(doctree, docname)]
+    while stack:
+        node, source = stack.pop()
+        if isinstance(node, NeedPart):
+            found.append((node, source))
+            continue
+        if isinstance(node, addnodes.start_of_file) or (
+            isinstance(node, nodes.document) and node is not doctree
+        ):
+            source = node.get("docname", "")
+        if isinstance(node, nodes.Element):
+            stack.extend((child, source) for child in reversed(node.children))
+    return found
+
+
+def _in_caption(node: nodes.Element) -> bool:
+    """Whether the node is in a caption: of a figure, a code block, a
+    ``literalinclude``."""
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, nodes.caption):
+            return True
+        parent = parent.parent
+    return False
+
+
+def _in_section_title(node: nodes.Element) -> bool:
+    """Whether the node is in the title of a section."""
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, nodes.title):
+            return isinstance(parent.parent, nodes.section)
+        parent = parent.parent
+    return False
 
 
 def update_need_with_parts(
@@ -126,14 +221,14 @@ def update_need_with_parts(
         if part_id in parts:
             log_warning(
                 LOGGER,
-                "part_need id {} in need {} is already taken. need_part may get overridden.".format(
-                    part_id, need["id"]
-                ),
+                f"Need '{need['id']}' already has a part '{part_id}': the first role "
+                "of an id marks the part, this one is shown as plain text.",
                 "duplicate_part_id",
                 part_node,
             )
-            # the first part of an id is kept and this one is dropped, but it is in
-            # the need: recorded so, it is not also reported as outside every need
+            # the first part of an id is kept and this one makes no part: it holds no
+            # node, and is shown as its text alone (`unwrap_need_parts`). It is in the
+            # need: recorded so, it is not also reported as outside every need
             part_node.need_id = need["id"]
             continue
 
