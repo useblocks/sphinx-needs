@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 from typing import Final
 
 from docutils import nodes
@@ -57,6 +58,31 @@ _PART_TEXT_WHITE_SPACE: Final = (
     "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
     "\u2028\u2029\u202f\u205f\u3000"
 )
+
+#: The white space that breaks a line: the code points of ``White_Space`` that Unicode's
+#: line breaking algorithm (UAX #14) makes a mandatory break (classes BK, CR, LF, NL).
+_LINE_BREAKS: Final = "\n\x0b\x0c\r\x85\u2028\u2029"
+
+#: A run of white space holding a line break, as a stated part's text is shown.
+_BROKEN_RUN: Final = re.compile(
+    f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]*[{re.escape(_LINE_BREAKS)}]"
+    f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]*"
+)
+
+
+def part_id_is_one_word(part_id: str) -> bool:
+    """Whether a part id is one word: it holds no white space, a character of Unicode's
+    ``White_Space`` property, and no control character, one of the general category
+    ``Cc`` (``design/parts-contract.md`` section 2).
+
+    An id the role writes always is (``[\\w-]+``); an id a record or a caller gives may
+    not be, and a need whose content is read does not take a given part whose id is not
+    (``update_need_with_parts``), nor does ``create_need`` (it refuses it).
+    """
+    return not any(
+        char in _PART_TEXT_WHITE_SPACE or unicodedata.category(char) == "Cc"
+        for char in part_id
+    )
 
 
 class NeedPartRole(SphinxRole):
@@ -200,10 +226,13 @@ def update_need_with_parts(
     each id), in the order written, then the parts it was given (by its record or its
     caller, ``need.parts`` until now) whose id its content does not mark, in the order
     given: a given part whose id the content marks is the content's part, with no
-    finding.
+    finding. A given part whose id is not one word (:func:`part_id_is_one_word`) is not
+    taken, with no finding either.
 
     :return: The block that shows the need's stated parts after its content, one line
-        per part, or ``None`` when the need has none.
+        per part, or ``None`` when the need has none. A line shows the part's text with
+        each run of white space holding a line break as one space, so that no text
+        ends a paragraph inside the line; the part keeps its text as given.
     """
     app = env.app
     parts: dict[str, NeedPartData] = {}
@@ -232,15 +261,20 @@ def update_need_with_parts(
         )
         _mark_part(app, need, part_node, part_id, part_node.title)
 
-    stated = [part for part in need.parts if part.id not in parts]
+    stated = [
+        part
+        for part in need.parts
+        if part.id not in parts and part_id_is_one_word(part.id)
+    ]
     need.set_parts([*parts.values(), *stated])
     if not stated:
         return None
 
     block = nodes.container(classes=["needs-stated-parts"])
     for part in stated:
-        part_node = NeedPart(title=part.content, part_id=part.id, need_id=None)
-        _mark_part(app, need, part_node, part.id, part.content, stated=True)
+        shown = _BROKEN_RUN.sub(" ", part.content)
+        part_node = NeedPart(title=shown, part_id=part.id, need_id=None)
+        _mark_part(app, need, part_node, part.id, shown, stated=True)
         block.append(nodes.paragraph("", "", part_node))
     return block
 

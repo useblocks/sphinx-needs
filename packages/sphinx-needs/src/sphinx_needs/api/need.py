@@ -71,7 +71,11 @@ from sphinx_needs.needs_schema import (
     TypeFieldsSchema,
 )
 from sphinx_needs.nodes import Need
-from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
+from sphinx_needs.roles.need_part import (
+    find_parts,
+    part_id_is_one_word,
+    update_need_with_parts,
+)
 from sphinx_needs.services.config.github import GITHUB_FIELDS
 from sphinx_needs.utils import jinja_parse
 from sphinx_needs.variant_data import VariantDataParsed
@@ -1230,7 +1234,8 @@ def _given_parts(parts: Mapping[str, str]) -> dict[str, NeedsPartType]:
     """``create_need``'s ``parts``, id to text, as the parts a record gives.
 
     :raises InvalidNeedException: (type ``parts``) If ``parts`` is not a mapping, a part
-        id not a non-empty string, or a text not a string.
+        id not a non-empty string or not one word (:func:`part_id_is_one_word`), or a
+        text not a string.
     """
     if not isinstance(parts, Mapping):
         raise InvalidNeedException(
@@ -1241,6 +1246,12 @@ def _given_parts(parts: Mapping[str, str]) -> dict[str, NeedsPartType]:
         if not isinstance(part_id, str) or not part_id:
             raise InvalidNeedException(
                 "parts", f"a part id must be a non-empty string, not {part_id!r}"
+            )
+        if not part_id_is_one_word(part_id):
+            raise InvalidNeedException(
+                "parts",
+                "a part id is one word, with no white space and no control "
+                f"character, not {part_id!r}",
             )
         if not isinstance(text, str):
             raise InvalidNeedException(
