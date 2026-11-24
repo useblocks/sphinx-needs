@@ -1177,7 +1177,6 @@ TEST_1 = ["IMP_1.other"]
 name = "stated-parts-follow-the-content-s-in-order"
 section = "stated"
 why = "a need's parts are in order: the parts its content marks as written, then the parts stated that its content does not mark, in the order given"
-divergent = { ubcode = "lists a need's parts in the order of their ids" }
 config = '''
 [needs]
 '''
@@ -1197,7 +1196,6 @@ name = "stated-a-part-id-holding-white-space-is-not-taken"
 section = "stated"
 why = "a part id is one word: a part a record states whose id holds white space is not a part of the imported need, with no finding, and its other stated parts are kept, a link to one live"
 clean = true
-divergent = { ubcode = "takes the part" }
 config = '''
 [needs.links.tests]
 '''
@@ -1223,7 +1221,6 @@ name = "stated-a-part-id-holding-any-white-space-or-a-control-character-is-not-t
 section = "stated"
 why = "a part id is one word: a part a record states whose id holds any character of Unicode's White_Space property or of the general category Cc (a tab, a no-break space, U+0001, a next line, a line separator) is not taken, with no finding; one holding a format character (U+200B) is one word and taken, and a link to a taken part is live"
 clean = true
-divergent = { ubcode = "takes the parts" }
 config = '''
 [needs.links.tests]
 '''
@@ -1249,7 +1246,6 @@ name = "stated-a-text-holding-a-line-break-is-taken-on-one-line"
 section = "stated"
 why = "a need whose content is read takes a stated part's text on one line: each run of white space holding a line break (LF, CR, VT, FF, NEL, LS or PS, each alone here) is one space, an end that is such a run too, every other character is kept (U+001C is no line break), and a text holding no line break is taken as given"
 clean = true
-divergent = { ubcode = "keeps the text as given" }
 config = '''
 [needs]
 '''
