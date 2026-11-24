@@ -1271,7 +1271,8 @@ def test_a_part_in_a_footnote_has_a_label_in_latex(test_app: Sphinx) -> None:
 #: page AFTER its toctree, whose page holds a ``needextract`` of it (the root's name
 #: holds again after the included page); the need in an appendix, a ``needextract`` of
 #: it on the root page (an appendix is named by itself); the need on the root page and
-#: a ``needextract`` of it after the toctree (one page, one label, around the toctree)
+#: a ``needextract`` of it after the toctree, whose page holds one too (one page, one
+#: label, however often the walk leaves the root page and comes back to it)
 PART_SOURCES = {
     "root-after-toctree": [
         (Path("conf.py"), PART_PAGE_CONF),
@@ -1292,7 +1293,7 @@ PART_SOURCES = {
             Path("index.rst"),
             f"Root\n====\n\n{PART_NEED}\n.. toctree::\n\n   a\n\n{PART_EXTRACT}",
         ),
-        (Path("a.rst"), "Page A\n======\n\nText.\n"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
     ],
 }
 
@@ -1300,7 +1301,7 @@ PART_SOURCES = {
 PART_SOURCE_PAGES = {
     "root-after-toctree": ("index", "a"),
     "appendix": ("index", "a"),
-    "root-around-toctree": ("index",),
+    "root-around-toctree": ("index", "a"),
 }
 
 
