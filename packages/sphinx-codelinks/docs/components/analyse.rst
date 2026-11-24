@@ -49,6 +49,12 @@ Limitations
 
 - **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``), Bash (``#``), PowerShell (``#``, ``<# #>``), VHDL (``--``, ``/* */``) and Swift (``//``, ``/* */``, ``///``, ``/** */``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
+- **UTF-8 Only**: A source file is read as UTF-8, by both engines. A file that is not UTF-8 (saved as Latin-1 or
+  UTF-16, for example), or that holds a NUL byte in its first 2048 bytes and so is taken for a binary file, is
+  skipped with a warning naming it and the position and line of the first byte that stops it:
+  ``src/x.cpp:3: WARNING: codelinks: skipping src/x.cpp — not UTF-8 (invalid continuation byte): byte 0xe9 at
+  position 3046, line 3; save the file as UTF-8 to trace it [codelinks.not_text]``. Every other file keeps its
+  needs. ``suppress_warnings = ["codelinks.not_text"]`` silences it; ``codelinks analyse`` prints it too.
 
 .. _attachment:
 

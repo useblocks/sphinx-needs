@@ -1,5 +1,6 @@
 import configparser
 import re
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from urllib.request import pathname2url
@@ -147,19 +148,61 @@ def ts_grammar_key(src_path: Path) -> str:
     )
 
 
-def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
-    """Return True if file is likely text, False if binary."""
+#: How many of a source file's first bytes are searched for a NUL byte, the sign of a
+#: binary file.
+BINARY_SAMPLE_SIZE = 2048
+
+
+@dataclass(frozen=True)
+class NotText:
+    """Why a source file's bytes are not read as text: the first byte that stops them."""
+
+    position: int
+    """The byte's offset in the file, from 0."""
+    line: int
+    """The byte's line, from 1."""
+    reason: str
+    """What is wrong, worded for the warning that skips the file."""
+
+
+def _line_of(data: bytes, position: int) -> int:
+    """The line, from 1, of byte ``position`` of ``data``: LF, CRLF and a lone CR each
+    end a line, as the analysis reads them."""
+    before = data[:position]
+    return before.count(b"\n") + before.count(b"\r") - before.count(b"\r\n") + 1
+
+
+def decode_source(data: bytes) -> str | NotText:
+    """The text of a source file's bytes, ``data``, decoded as UTF-8, or why it is not
+    read.
+
+    The whole file is decoded, strictly: a sample would cut a multi-byte character
+    at its end in two, and miss an invalid byte after it. A NUL byte within the first
+    :data:`BINARY_SAMPLE_SIZE` bytes makes it a binary file, valid UTF-8 or not. When
+    both stop it, the earlier byte is named.
+    """
+    nul = data.find(b"\x00", 0, BINARY_SAMPLE_SIZE)
     try:
-        with filepath.open("rb") as f:
-            chunk = f.read(sample_size)
-        # Quick binary heuristic: null byte present
-        if b"\x00" in chunk:
-            return False
-        # Try UTF-8 decode on the sample
-        chunk.decode("utf-8")
-        return True
-    except UnicodeDecodeError:
-        return False
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        if nul == -1 or exc.start < nul:
+            line = _line_of(data, exc.start)
+            return NotText(
+                exc.start,
+                line,
+                f"not UTF-8 ({exc.reason}): byte 0x{data[exc.start]:02x} at position "
+                f"{exc.start}, line {line}; save the file as UTF-8 to trace it",
+            )
+    else:
+        if nul == -1:
+            return text
+    line = _line_of(data, nul)
+    return NotText(
+        nul,
+        line,
+        f"taken for a binary file: a NUL byte at position {nul}, line {line}, "
+        f"within its first {BINARY_SAMPLE_SIZE} bytes",
+    )
 
 
 # @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL, FE_VHDL, FE_SWIFT]

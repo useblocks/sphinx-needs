@@ -405,14 +405,27 @@ class SourceAnalyse:
         """The old name of :attr:`warnings`, kept for one release; read-only."""
         return self.warnings
 
+    def read_source(self, src_path: Path) -> str | None:
+        """The text of ``src_path``, decoded as UTF-8 (:func:`.utils.decode_source`),
+        or ``None`` for a file that is not UTF-8 text, which is skipped with a
+        ``not_text`` warning naming it and the first byte that stops it."""
+        text = utils.decode_source(src_path.read_bytes())
+        if isinstance(text, utils.NotText):
+            logger.warning(
+                f"codelinks: skipping {src_path} — {text.reason}",
+                subtype="not_text",
+                location=f"{src_path}:{text.line}",
+            )
+            return None
+        return text
+
     def get_src_strings(self) -> Generator[tuple[Path, bytes], Any, None]:
         """Load source files and extract their content."""
         for src_path in self.analyse_config.src_files:
-            if not utils.is_text_file(src_path):
+            text = self.read_source(src_path)
+            if text is None:
                 continue
-            with src_path.open("r", encoding="utf-8", newline="") as f:
-                # Normalize all line endings to Unix LF
-                text = f.read()
+            # Normalize all line endings to Unix LF
             text = text.replace("\r\n", "\n").replace("\r", "\n")
             yield src_path, text.encode("utf-8")
 
@@ -1283,7 +1296,8 @@ class SourceAnalyse:
         # the headers no database lists: read through every entry that includes them
         headers: list[_Header] = []
         for position, src_path in enumerate(src_files):
-            if not utils.is_text_file(src_path):
+            # libclang reads the file itself; the same rule decides whether it is read
+            if self.read_source(src_path) is None:
                 continue
             resolved = self._resolve_preproc(src_path)
             if resolved is None:
