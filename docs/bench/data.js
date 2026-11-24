@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795467332742,
+  "lastUpdate": 1795536224011,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -31248,6 +31248,48 @@ window.BENCHMARK_DATA = {
             "value": 187.864941,
             "unit": "MB",
             "extra": "Commit: 371f9fa005c7162a04cd7dddba9baf1ff6f3b8f8\nBranch: master\nTime: 2026-11-23T21:54:00+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e297be5e2e29d2e87ace3e7b9299a8dfec28bfa5",
+          "message": "🐛 Need parts: a repeated part's text stays on the page; a part's anchor in LaTeX and texinfo (#2577)\n\n## Summary\n\nFor a reader of a page with need parts:\n\n- A second `:np:` role with a part id its need already has, such as\n``:np:`(p1) the second` `` after\n``:np:`(p1) the first` ``, rendered nothing: `Marks the first p1 and the\nsecond here.` read\n`Marks the first p1 and here.` in every builder. It now shows its text,\nas plain text, with no id, no anchor\nand no link: the first role of an id is the part, as before. The same\nholds for a role outside every need,\nwhose text was dropped too. A role in a section title is left as it was.\n- The `needs.duplicate_part_id` warning now says what happens: `Need\n'REQ_1' already has a part 'p1': the first\nrole of an id marks the part, this one is shown as plain text.` It said\nthe part \"may get overridden\", which\n  has not been so since 6.0.0.\n- In LaTeX (PDF) output a part's address `NEED.part` had no `\\label`, so\nevery link and `:need:` reference to a\npart was an undefined reference; in texinfo its `@anchor` was written at\nthe end of the output file. Both now\n  anchor the part at the start of its text.\n- A part is anchored once per page: where a page shows it twice, as a\n`needextract` of a need on the need's own\npage does, at the first, as a browser does with an id a page holds\ntwice, so no part's label is \"multiply\ndefined\"; a `needextract` on another page has its own anchor there, as\nLaTeX and texinfo name each by its page.\n- Two places keep what they had. A part in a caption (of a figure, a\ncode block or a `literalinclude`) gets no\nlabel and keeps its texinfo anchor at the end of the file: LaTeX's\nanchor inside a caption stops `pdflatex`\n(and `xelatex` and `lualatex`), so there the anchor is given up, not the\nbuild. And texinfo writes an\nadmonition's title, a hyperlink's text and a `centered` line as plain\ntext, so a part there keeps its anchor\n  at the end of the file.\n\nUnchanged: the html, dirhtml, singlehtml and epub output of a part, byte\nfor byte (its id stays on the\n`need-part` span, which stylesheets and scripts select), xml and\npseudoxml, the stored parts, needs.json, filters\nand links. No re-read on upgrade.\n\n## How\n\n`unwrap_need_parts` (the late `doctree-resolved` step that removes the\n`NeedPart` wrapper) now gives a role\nthat made no part its text, and, for the `latex` and `texinfo` formats\nonly, moves the part inline's id to a\n`target` node at its start, which those writers anchor in place: once\nper source page of the resolved tree, at\nthe first occurrence of the address there, and not in a caption, where\nthe part is left as it was. Those two\nbuilders resolve every page of an output file in one tree, so the step\nwalks that tree from its root and keeps\nthe name of the page each part is on (an included page, an appendix),\nwhich is the name the writers put before\nthe id in a label or an anchor.\n\n## Tests\n\nNew tests build one page with a part, a repeated part id, a link and a\nreference to the part, and a role outside\nevery need, in html, dirhtml, singlehtml, epub, text, man, latex and\ntexinfo, and pin: the repeated and the\nouter text; the html span byte for byte; one LaTeX label at the part\nthat the references on the page resolve to;\nthe texinfo anchor before the part's text; each builder's full warning\nlist. A page holding a need and a\n`needextract` of it pins one label and one anchor, at the first\noccurrence; a need and a `needextract` of it on two\npages, in either order, pin a label and an anchor on each page, and so\ndo a need on the root page after its\ntoctree, one in an appendix, and one on the root page before and after\nits toctree. A part in a section title is\npinned as unchanged, and a repetition in an admonition's title and a\ntable's caption as shown, with the part\nlabelled in LaTeX. A part in a figure's, a code block's and a\n`literalinclude`'s caption (and one nested deeper,\nin MyST) pins no label and no anchor inside the caption, and its\nrepetition's text; a part in the legend of such a\nfigure pins its label and its anchor at its text; a part in a footnote\npins its label and its repetition's text.\n\n## What was checked by hand, and what was not\n\nThe LaTeX output was compiled with `latexmk`: a part in each place a\nneed's content can hold one (paragraphs,\nlists, tables and their titles, spanning cells, admonitions and their\ntitles, definition and field lists,\nfootnotes, citations, line blocks, literal blocks, legends, captions,\neach built-in need layout), with pdflatex,\nand the caption cases with xelatex and lualatex too. Each compiles where\nit compiles today.\n\nThe texinfo output was read, not compiled with `makeinfo`. One shape in\nit is new and unverified by a compiler: a\npart in a footnote is anchored inside `@footnote{…}`, as Sphinx's writer\nanchors any target there, also where the\nfootnote is referenced from a caption.",
+          "timestamp": "2026-11-24T17:02:13+01:00",
+          "tree_id": "45a2edad2b84c363a3062ea5878f9d4f163e0b4f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e297be5e2e29d2e87ace3e7b9299a8dfec28bfa5"
+        },
+        "date": 1795536223026,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.054804121000000094,
+            "unit": "s",
+            "extra": "Commit: e297be5e2e29d2e87ace3e7b9299a8dfec28bfa5\nBranch: master\nTime: 2026-11-24T17:02:13+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.935385834999991,
+            "unit": "s",
+            "extra": "Commit: e297be5e2e29d2e87ace3e7b9299a8dfec28bfa5\nBranch: master\nTime: 2026-11-24T17:02:13+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 191.343204,
+            "unit": "MB",
+            "extra": "Commit: e297be5e2e29d2e87ace3e7b9299a8dfec28bfa5\nBranch: master\nTime: 2026-11-24T17:02:13+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
