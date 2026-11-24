@@ -232,6 +232,7 @@ def lexical_closure(
     args: list[str],
     keep: Callable[[Path], bool],
     memo: ClosureMemo | None = None,
+    pending: set[Path] | None = None,
 ) -> set[Path]:
     """Every file a unit whose arms no parse decides may include, canonical, that
     ``keep`` keeps by its canonical path or by the path the compiler names it by
@@ -245,7 +246,12 @@ def lexical_closure(
     keep are followed too (an SDK header that includes a project one), and nothing cuts
     the walk short: each file is read once, and ``memo`` shares what the other units of
     the analysis read and found. ``#if`` arms are not read, a computed
-    ``#include MACRO`` is not resolved."""
+    ``#include MACRO`` is not resolved.
+
+    With ``pending``, every place a name the lookup could not resolve would have
+    been found (:func:`.includer.lookup_directories`) is added to it, so a parse
+    made before such a file existed goes stale when it appears
+    (useblocks/sphinx-needs#2584)."""
     memo = memo if memo is not None else ClosureMemo()
     search = includer.compiler_search_path(args)
     id_ = memo.id(search)
@@ -261,18 +267,27 @@ def lexical_closure(
             seen.add(found.canonical)
             stack.append(found.canonical)
 
+    def look_up(directive: includer.IncludeDirective, including: Path) -> None:
+        found = memo.find(id_, directive, including, search)
+        if found is not None:
+            reach(found)
+        elif pending is not None:
+            pending.update(
+                directory / directive.name
+                for directory in includer.lookup_directories(
+                    directive, including, search
+                )
+            )
+
     # as if the first lines of the main file, looked up from the working directory
     command_line = working / "<command line>"
     for name in includer.forced_includes(args):
-        directive = includer.IncludeDirective(name, angled=False, line=0)
-        if (found := memo.find(id_, directive, command_line, search)) is not None:
-            reach(found)
+        look_up(includer.IncludeDirective(name, angled=False, line=0), command_line)
     stack.append(main)
     while stack:
         file = stack.pop()
         for directive in memo.directives(file):
-            if (found := memo.find(id_, directive, file, search)) is not None:
-                reach(found)
+            look_up(directive, file)
     kept.discard(main)
     return kept
 
@@ -313,14 +328,20 @@ class UnitRecord:
     file."""
     deps: dict[Path, int] = field(default_factory=dict)
     """Each of those files' ``st_mtime_ns`` when it was read."""
+    pending: tuple[tuple[Path, int | None], ...] = ()
+    """Where the unit's includes that resolved nowhere would resolve
+    (useblocks/sphinx-needs#2584): :func:`.includer.pending_signature` pairs --
+    ``None`` for a path that held no file, a directory's time past the cap."""
 
     def fresh(self, fingerprint: tuple[Any, ...], main_mtime: int) -> bool:
         """Whether the record still holds: the same fingerprint, its main file and every
-        file it includes unchanged."""
+        file it includes unchanged, and no file appearing where an include it
+        could not resolve would resolve."""
         return (
             self.fingerprint == fingerprint
             and self.main_mtime == main_mtime
             and all(mtime_ns(path) == mtime for path, mtime in self.deps.items())
+            and pending_holds(self.pending)
         )
 
 
@@ -330,3 +351,17 @@ def mtime_ns(path: Path) -> int | None:
         return path.stat().st_mtime_ns
     except OSError:
         return None
+
+
+def pending_holds(pending: Iterable[tuple[Path, int | None]]) -> bool:
+    """Whether none of a parse's unresolved-include places gained a file
+    (useblocks/sphinx-needs#2584): a path signed ``None`` still holds no FILE --
+    a directory named like the include does not count -- and a path (or, past the
+    cap, a watched directory) signed a time still carries it."""
+    for path, signed in pending:
+        if signed is None:
+            if path.is_file():
+                return False
+        elif mtime_ns(path) != signed:
+            return False
+    return True

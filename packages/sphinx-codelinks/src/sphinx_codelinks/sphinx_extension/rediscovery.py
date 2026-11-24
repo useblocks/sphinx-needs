@@ -86,6 +86,11 @@ logger = logging.getLogger(__name__)
 Fingerprint = tuple[tuple[str, int, int], ...]
 """``(path relative to the scanned directory, POSIX; st_mtime_ns; st_size)``, sorted."""
 
+PendingFingerprint = tuple[tuple[str, int | None], ...]
+"""``(path, POSIX, absolute; st_mtime_ns or None)``, sorted: where a parse's
+unresolved includes would resolve (``SourceAnalyse.pending``,
+useblocks/sphinx-needs#2584)."""
+
 ScopeKind = Literal["file", "directory"]
 
 SCOPES_ATTRIBUTE = "codelinks_src_trace_scopes"
@@ -248,6 +253,34 @@ def dependencies_fingerprint(paths: Iterable[Path]) -> Fingerprint:
     return tuple(sorted(entries))
 
 
+def pending_fingerprint(pending: dict[Path, int | None]) -> PendingFingerprint:
+    """The fingerprint of a parse's unresolved-include places, by absolute POSIX
+    path (``SourceAnalyse.pending``, useblocks/sphinx-needs#2584)."""
+    return tuple(sorted((path.as_posix(), signed) for path, signed in pending.items()))
+
+
+def pending_changed(pending: PendingFingerprint) -> bool:
+    """Whether one of a parse's unresolved-include places changed since it was
+    fingerprinted: a path signed ``None`` now holds a FILE -- a directory named
+    like the include does not count -- or a path (or, past the cap, a watched
+    directory) signed a time no longer carries it. The stat logic of
+    :func:`.preproc.headers.pending_holds`, on serialized paths, as nothing under
+    ``analyse.preproc`` imports without the ``libclang`` wheel."""
+    for spelled, signed in pending:
+        path = Path(spelled)
+        if signed is None:
+            if path.is_file():
+                return True
+        else:
+            try:
+                mtime = path.stat().st_mtime_ns
+            except OSError:
+                mtime = None
+            if mtime != signed:
+                return True
+    return False
+
+
 def file_fingerprint(src_dir: Path, file: str) -> Fingerprint:
     """The fingerprint of a ``:file:`` scope: that one file, or ``()`` if it is missing
     or lies outside ``src_dir`` (an empty scope, as :func:`discover_scope` has it)."""
@@ -291,6 +324,11 @@ class ScopeRecord:
     """``(need id, owning document)`` of each one-line need the directive did not create
     because another document defines it (``""``: an external need). A default, so that
     a record pickled before the field existed loads and defers nothing."""
+    pending: PendingFingerprint = ()
+    """Where the scope's parses' unresolved includes would resolve
+    (useblocks/sphinx-needs#2584): a file appearing at one re-reads the document.
+    A plain default, so that a record pickled before the field existed loads and
+    holds nothing pending."""
 
 
 def scope_store(env: BuildEnvironment) -> dict[str, list[ScopeRecord]]:
@@ -446,6 +484,10 @@ class ConfigOnlyScan:
     (``SourceAnalyse.dependencies``), by absolute POSIX path, with their modification
     times and sizes (:func:`dependencies_fingerprint`); a change to one analyses the
     project again. A plain default, as for ``pages``."""
+    pending: PendingFingerprint = ()
+    """Where the analysis' parses' unresolved includes would resolve
+    (``SourceAnalyse.pending``, useblocks/sphinx-needs#2584); a file appearing at
+    one analyses the project again. A plain default, as for ``pages``."""
 
 
 def config_only_refs_store(env: BuildEnvironment) -> dict[str, ConfigOnlyScan]:
@@ -571,6 +613,7 @@ def scan_config_only_project(
         and previous.fingerprint == found
         and dependencies_fingerprint(Path(path) for path, *_ in previous.dependencies)
         == previous.dependencies
+        and not pending_changed(previous.pending)
     ):
         return previous
     if not files:
@@ -616,6 +659,7 @@ def scan_config_only_project(
         records,
         tuple(pages),
         dependencies_fingerprint(src_analyse.dependencies),
+        pending_fingerprint(src_analyse.pending),
     )
 
 
@@ -701,7 +745,13 @@ def _scope_changed(
             )
         except OSError:
             memo[key] = None
-    return memo[key] is None or memo[key] != scope.fingerprint
+    # a file appearing where a parse's include resolved nowhere re-reads the
+    # document, its discovered files unchanged or not (useblocks/sphinx-needs#2584)
+    return (
+        memo[key] is None
+        or memo[key] != scope.fingerprint
+        or pending_changed(scope.pending)
+    )
 
 
 def find_outdated_scopes(
