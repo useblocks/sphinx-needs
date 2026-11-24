@@ -1035,7 +1035,7 @@ IMP_1 = { c1 = "content one", r1 = "record one" }
 [[case]]
 name = "stated-the-content-wins-a-clash"
 section = "stated"
-why = "where an imported need's record and content give one part id, the content's part is the part, with the content's text and no finding, and a part the record states alone is kept"
+why = "where an imported need's record and content give one part id, the content's part is the part, with the content's text, in the content's place, and no finding; a part the record states alone is kept after it, also where the record states it first"
 clean = true
 config = '''
 [needs]
@@ -1043,7 +1043,7 @@ config = '''
 source = '''
 .. needimport:: imported.json
 '''
-files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(p1) content text`.", "parts": {"p1": {"id": "p1", "content": " record text"}, "r2": {"id": "r2", "content": "record two"}}}}}}}''' }
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(p1) content text`.", "parts": {"r2": {"id": "r2", "content": "record two"}, "p1": {"id": "p1", "content": " record text"}}}}}}}''' }
 [case.expect]
 findings = []
 [case.expect.parts]

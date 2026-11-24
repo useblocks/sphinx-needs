@@ -70,6 +70,12 @@ _BROKEN_RUN: Final = re.compile(
 )
 
 
+def _shown_on_one_line(text: str) -> str:
+    """A stated part's text as its line shows it: each run of white space holding a
+    line break as one space, every other character as given."""
+    return _BROKEN_RUN.sub(" ", text)
+
+
 def part_id_is_one_word(part_id: str) -> bool:
     """Whether a part id is one word: it holds no white space, a character of Unicode's
     ``White_Space`` property, and no control character, one of the general category
@@ -272,7 +278,7 @@ def update_need_with_parts(
 
     block = nodes.container(classes=["needs-stated-parts"])
     for part in stated:
-        shown = _BROKEN_RUN.sub(" ", part.content)
+        shown = _shown_on_one_line(part.content)
         part_node = NeedPart(title=shown, part_id=part.id, need_id=None)
         _mark_part(app, need, part_node, part.id, shown, stated=True)
         block.append(nodes.paragraph("", "", part_node))

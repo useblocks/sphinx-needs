@@ -22,6 +22,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_parts
 from sphinx_needs.need_item import NeedPartData
+from sphinx_needs.roles.need_part import _shown_on_one_line
 from sphinx_needs_testkit import build_warnings
 
 # --- create_need(parts=...) ---------------------------------------------------------------
@@ -685,6 +687,21 @@ def test_the_block_shows_a_line_break_as_a_space(test_app: Sphinx) -> None:
     for part_id, text in texts:
         assert "\n" not in text, part_id
     assert dict(texts)["r1"] == "para1 para2"
+
+
+def test_a_stated_text_is_shown_in_time_proportional_to_its_length() -> None:
+    """A record's text is any string, a long run of white space included: a line shows
+    it in time proportional to its length. A run with no line break is read once and
+    shown as given; a pattern that starts over at each character of the run takes time
+    proportional to the square of its length, which for this text is many times the
+    bound here."""
+    run = " " * 100_000
+    text = f"a{run}b\n{run}c"
+    started = time.perf_counter()
+    shown = _shown_on_one_line(text)
+    elapsed = time.perf_counter() - started
+    assert shown == f"a{run}b c"
+    assert elapsed < 2.0, elapsed
 
 
 # --- the views ---------------------------------------------------------------------------
