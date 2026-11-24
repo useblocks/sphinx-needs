@@ -100,8 +100,9 @@ on the line after the ``(id)`` starts with its first word. White space and line 
 A need has one part of an id: when its content marks an id more than once, the first role is the part, and every
 later one is shown as its text alone, with no anchor, and reported as ``needs.duplicate_part_id``.
 In LaTeX and texinfo output the part is anchored at the start of its text, except in a caption (of a figure, a code
-block or a ``literalinclude``), where a LaTeX anchor would stop ``pdflatex``, and, in texinfo, in an admonition's
-title or a hyperlink's text, which that writer writes as plain text: there no anchor is written at the text.
+block or a ``literalinclude``), where a LaTeX anchor would stop ``pdflatex``, and, in texinfo, in text that writer
+writes as plain text (an admonition's title, a hyperlink's text, a ``centered`` line): there no anchor is written
+at the text.
 
 A need part is a named, addressable piece of one need: an id, a text, and the links that point at it.
 It has no fields, no type, no status and no outgoing links of its own; a piece of a need that needs any of
