@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 12
+      },
+      "end": {
+        "row": 3,
+        "column": 52
+      }
+    },
+    "tagged_scope": "func start() {\n        print(\"start\")\n        // @Inside Function, IMPL_SWIFT_INSIDE, impl\n    }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 5,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Engine.start()",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Engine"
+        },
+        {
+          "kind": "method",
+          "name": "start()"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_SWIFT_INSIDE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

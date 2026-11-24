@@ -19,3 +19,10 @@ default_oneliner_vhdl:
     -- @Vhdl Title, IMPL_VHDL, impl, [REQ_VHDL]
     entity e is
     end entity e;
+
+default_oneliner_swift:
+  lang: swift
+  config: default
+  source: |
+    // @Swift Title, IMPL_SWIFT, impl, [REQ_SWIFT]
+    func f() {}

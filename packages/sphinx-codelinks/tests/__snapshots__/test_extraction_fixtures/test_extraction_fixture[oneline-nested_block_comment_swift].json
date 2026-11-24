@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 2
+      },
+      "end": {
+        "row": 2,
+        "column": 39
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "f()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Nested Title",
+      "id": "IMPL_SWIFT_NESTED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

@@ -1,0 +1,130 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 48
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Above the block",
+      "id": "IMPL_R_SWIFT_ABOVE_IF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 50
+      }
+    },
+    "tagged_scope": "func debugDump() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "debugDump()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "debugDump()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Inside the block",
+      "id": "IMPL_R_SWIFT_INSIDE_IF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 9
+      },
+      "end": {
+        "row": 6,
+        "column": 60
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Above in a class",
+      "id": "IMPL_R_SWIFT_ABOVE_IF_CLASS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 12
+      },
+      "end": {
+        "row": 11,
+        "column": 61
+      }
+    },
+    "tagged_scope": "func draw() {\n        // @Above in a body, IMPL_R_SWIFT_ABOVE_IF_BODY, impl\n        #if DEBUG\n        print(1)\n        #endif\n    }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 11,
+      "end": 16,
+      "language": "swift",
+      "entity_kind": "method",
+      "qualified_name": "Screen.draw()",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Screen"
+        },
+        {
+          "kind": "method",
+          "name": "draw()"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Above in a body",
+      "id": "IMPL_R_SWIFT_ABOVE_IF_BODY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

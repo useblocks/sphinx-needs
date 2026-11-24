@@ -500,3 +500,43 @@ def test_a_powershell_title_cannot_open_with_a_parenthesis_or_a_brace(
         "S1_PAREN",
         "S1_BRACE",
     ]
+
+
+SWIFT_ATTRIBUTES = """\
+// @available(iOS 15, macOS 12, *)
+/// @Available(Swift, introduced: 6.3)
+/// @Flag(name: [.short, .long])
+//@available(SwiftStdlib 5.0, *)
+// @objc(handle:)
+// @Real, IMPL_SWIFT_REAL, impl
+func handle() {}
+"""
+
+
+def test_a_swift_attribute_is_no_marker(tmp_path: Path) -> None:
+    """Under the start sequence ``@``, a Swift comment line holding an attribute's
+    shape, ``@name(``, is no need: a ``swift_attribute`` warning where the one-line
+    parser would have read it (a need, or a malformed one), silence where it would not
+    (``@objc(handle:)`` holds no field separator)."""
+    analyse = _oneline_run(tmp_path, "demo.swift", SWIFT_ATTRIBUTES, CommentType.swift)
+
+    assert [need.need["id"] for need in analyse.oneline_needs] == ["IMPL_SWIFT_REAL"]
+    assert [(w.lineno, w.sub_type) for w in analyse.warnings] == [
+        (1, "swift_attribute"),
+        (2, "swift_attribute"),
+        (3, "swift_attribute"),
+        (4, "swift_attribute"),
+    ]
+    assert analyse.warnings[0].msg == (
+        "'@available' is a Swift attribute, not a one-line need; use a start "
+        "sequence that Swift attributes do not contain"
+    )
+
+
+def test_a_swift_attribute_is_a_marker_elsewhere(tmp_path: Path) -> None:
+    """The rule is Swift's: in another language, the same line is a need as before."""
+    analyse = _oneline_run(
+        tmp_path, "demo.cpp", "// @available(iOS 15, *)\nvoid f() {}\n", CommentType.cpp
+    )
+
+    assert [need.need["id"] for need in analyse.oneline_needs] == ["*)"]

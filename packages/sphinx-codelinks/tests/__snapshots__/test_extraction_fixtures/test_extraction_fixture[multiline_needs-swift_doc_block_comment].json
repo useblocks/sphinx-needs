@@ -1,0 +1,63 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 5,
+        "column": 11
+      }
+    },
+    "tagged_scope": "func stop() {}",
+    "need": {
+      "type": "impl",
+      "title": "Stop the engine",
+      "id": "IMPL_SWIFT_BLOCK",
+      "content": "Stops the engine.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.swift",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "content_start": {
+        "line": 5,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_declaration",
+        "start": 8,
+        "end": 8,
+        "language": "swift",
+        "entity_kind": "function",
+        "qualified_name": "stop()",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "stop()"
+          }
+        ],
+        "mechanism": "doc_comment"
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

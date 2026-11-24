@@ -18,6 +18,7 @@ import pytest
 import yaml
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.utils import init_tree_sitter
 from sphinx_codelinks.config import (
     MultilineNeedsConfig,
     NeedIdRefsConfig,
@@ -50,6 +51,7 @@ LANG_MAP: dict[str, tuple[CommentType, str]] = {
     "tsx": (CommentType.ts, "tsx"),
     "js": (CommentType.ts, "js"),
     "vhdl": (CommentType.vhdl, "vhd"),
+    "swift": (CommentType.swift, "swift"),
 }
 
 
@@ -294,3 +296,41 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     # separately named one.
     assert snapshot_extraction == content
     assert snapshot_extraction(name="warnings") == warnings
+
+
+def _swift_cases() -> list:
+    return [param for param in _load_cases() if param.values[0]["lang"] == "swift"]
+
+
+@pytest.mark.parametrize("case", _swift_cases())
+def test_a_swift_case_parses_without_an_error(case: dict) -> None:
+    """Every Swift case is valid Swift as tree-sitter-swift reads it: no ``ERROR`` or
+    ``MISSING`` node. The cases are shared with ubCode, whose Rust tree-sitter recovers
+    from a syntax error differently from py-tree-sitter, so a case that needed recovery
+    would pin one runtime's recovery rather than the extraction."""
+    parser, _ = init_tree_sitter(CommentType.swift)
+    tree = parser.parse(case["source"].encode("utf-8"))
+    assert not tree.root_node.has_error
+
+
+#: How many Swift cases each shared file holds: the guard above runs over every one of
+#: them, and a case added or moved updates this table.
+SWIFT_CASES_PER_FILE = {
+    "entities": 11,
+    "extra_languages": 1,
+    "line_endings": 1,
+    "multiline_needs": 2,
+    "need_refs": 1,
+    "oneline": 11,
+    "positions": 2,
+    "scope": 7,
+}
+
+
+def test_the_swift_cases_are_the_ones_listed() -> None:
+    """The guard above runs over exactly the Swift cases of each file."""
+    counts: dict[str, int] = {}
+    for param in _swift_cases():
+        stem = str(param.id).split("-", 1)[0]
+        counts[stem] = counts.get(stem, 0) + 1
+    assert counts == SWIFT_CASES_PER_FILE

@@ -55,6 +55,7 @@ dependencies = [
   "tree-sitter-bash>=0.25.1",
   "tree-sitter-powershell>=0.26.4",
   "tree-sitter-vhdl>=1.4.0",
+  "tree-sitter-swift>=0.7.4",
 ]
 
 [project.optional-dependencies]

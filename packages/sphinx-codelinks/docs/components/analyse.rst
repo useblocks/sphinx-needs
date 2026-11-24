@@ -47,7 +47,7 @@ Limitations
 
 **Current Limitations:**
 
-- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``), Bash (``#``), PowerShell (``#``, ``<# #>``) and VHDL (``--``, ``/* */``) comment styles are supported
+- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``), Bash (``#``), PowerShell (``#``, ``<# #>``), VHDL (``--``, ``/* */``) and Swift (``//``, ``/* */``, ``///``, ``/** */``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
 .. _attachment:
@@ -116,6 +116,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
        - ``.ps1``, ``.psm1`` and ``.psd1``
      * - ``vhdl``
        - ``.vhd`` and ``.vhdl``
+     * - ``swift``
+       - ``.swift``
 
   One language is one name, so the value groups files that editors may tell apart:
   a ``.h`` header is ``cpp`` whether C or C++ includes it,
@@ -138,7 +140,13 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   an ``enum``, ``record`` or ``class``, and any other type or subtype a ``type``. Every other VHDL design element --
   a configuration, a context, a process, a block, a generate, a component instance, a concurrent signal assignment,
   assertion or procedure call, a signal, constant, variable, file or alias, a generic, a port, a parameter -- has
-  ``null``, and is named all the same (see ``semantic``);
+  ``null``, and is named all the same (see ``semantic``).
+  Swift takes these kinds too: a class, a struct and an enum are themselves, an actor is a ``class``, an extension
+  an ``impl`` (named after the type it extends, as a Rust impl is), a protocol an ``interface``; a function is a
+  ``method`` in the body of a type, an extension or a protocol and a ``function`` anywhere else (a local function
+  included), an operator function an ``operator``; an initializer is a ``constructor``, ``deinit`` a
+  ``destructor``, a subscript an ``indexer``; a property of a type (stored or computed) and a protocol's property
+  requirement a ``property``; a ``typealias`` and an ``associatedtype`` a ``type``; a macro a ``macro``;
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
@@ -153,9 +161,24 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   never expanded (``It 'adds <a>'`` stays ``adds <a>``, ``It "starts $x"`` stays ``starts $x``). A block named by a
   variable or an expression, or past a parameter Pester does not declare, has no name, and neither has any block
   inside it.
-  No module, crate or package prefix: the file's path decides that.
+  ``Widget.greet(name:_:)`` in Swift, where a function, an initializer, a subscript and an operator are named by
+  their full name, as Swift itself writes it: the base name and the argument labels, each followed by ``:``
+  (``init(x:)``, ``subscript(_:)``, ``==(_:_:)``, ``f()`` without parameters), so that overloads that differ by
+  their labels alone (``init(x:)`` and ``init(y:)``) are different entities. A label is the parameter's external
+  name where it declares one (``for`` in ``for x: Int``, ``_`` in ``_ x: Int``), else its name; a subscript's and an
+  operator's parameters have no label unless they declare one (``subscript(index: Int)`` is ``subscript(_:)``). A
+  parameter's type, default value, ``inout`` and ``...`` are not part of the name, a failable ``init?`` is
+  ``init``, and ``deinit``, a type, a property, a ``typealias`` and a macro are named by their name alone. A local
+  function is named after the functions around it (``Widget.greet(name:_:).repeated(_:)``), and a member of an
+  extension after the extended type, without its generic arguments (``Array.dedup()`` in
+  ``extension Array where Element: Equatable``). Identifiers are written as the source writes them, backticks
+  included.
+  No module, crate or package prefix: the file's path decides that. A Swift extension of a type qualified by its
+  module (``extension Foundation.Date``) keeps the module as a part of the name (``Foundation.Date.f()``): the syntax
+  cannot tell a module from a type.
   ``null`` in YAML and JSON, and for an entity without a name -- in VHDL an unlabelled process or statement, a
-  declaration of several names (``signal a, b : bit``), and anything inside one of them;
+  declaration of several names (``signal a, b : bit``), and anything inside one of them; in Swift a property
+  declaring several names (``var a = 0, b = 0``) or a tuple pattern (``var (a, b) = t``), and anything inside one;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
   (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` but ``key`` and ``item``
   (a YAML or JSON entry has no name, so no parts), and one more, for what the syntax alone cannot classify:
@@ -165,6 +188,9 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   whose ``entity_kind`` is ``null`` (``module counter``, ``impl rtl``, ``scope p_main``, ``scope v`` for a variable
   of a process).
   The type a Go method's receiver names is a part of kind ``type``.
+  A Swift extension is a part of kind ``impl`` named after the type it extends, and a dotted path is split, the
+  types before the last a ``scope`` each (``extension Outer.Inner`` is ``scope Outer``, ``impl Inner``), with no
+  ``trait`` key for the protocols it conforms to.
   A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
   (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl (the trait as ``qualified_name`` spells it); the
   in-file modules an impl is written in are parts of their own before it (``mod m { impl G {} }`` is ``module m``,
@@ -186,12 +212,14 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   identity-bearing part of their rendering: the names, a ``trait`` (``<Widget as Shape>::area`` and
   ``<Widget as Other>::area`` differ by their ``trait`` alone) and Python's ``<locals>`` boundaries (``A.f.g``, the
   method of a nested class, is not ``A.f.<locals>.g``, a function in a method) -- never by their kinds. So a Rust
-  impl's methods are inside the module the impl is written in, as its free functions are. A name chain cannot tell
-  apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, C# classes that
-  differ in their number of type parameters;
+  impl's methods are inside the module the impl is written in, as its free functions are, and a Swift method written
+  in an extension has the name chain it has written in its type. A name chain cannot tell
+  apart what the qualified name cannot: overloads (but for Swift's, whose names carry their argument labels;
+  ``f(x: Int)`` and ``f(x: String)`` still share one), a C ``struct stat`` and a function ``stat()``, C# classes
+  that differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
-  ``/*!``, a C# ``///``, a JSDoc ``/**``, a VHDL ``--!`` (not ``--!!``) -- a Python docstring, or PowerShell comment-based help
-  first in a function's body),
+  ``/*!``, a C# ``///``, a JSDoc ``/**``, a VHDL ``--!`` (not ``--!!``), a Swift ``///`` or ``/**`` -- a Python
+  docstring, or PowerShell comment-based help first in a function's body),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
   or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its
   body).
@@ -334,7 +362,8 @@ In this order:
    ``signal s : bit; -- @...``, the port of ``clk : in std_logic; -- @...``, but never a subprogram's parameter: after
    ``procedure inc(variable v : inout integer); -- @...`` it is the procedure. An attribute, a decorator or a template header before the marker
    is not code: the marker leads the item they precede (an inner attribute, ``#![...]``, precedes none: it applies to
-   what it is inside).
+   what it is inside). So are a Swift declaration's attributes and modifiers: ``@MainActor // @...`` leads the
+   class on the next line.
 5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
    file -- documentation comments (``///``, ``/** */``, ``/*!``, a VHDL ``--!``) excepted: they document the next
    item, blank lines or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents
@@ -347,6 +376,8 @@ In this order:
    comment, as Doxygen reads it: a ``--! @file`` line makes every line of its run document the file.
    A VHDL design unit's first item is the unit itself, its ``library``, ``use`` and ``context`` clauses included, so
    a licence banner before them, and a blank line after the banner, is the file's.
+   A Swift shebang line (``#!/usr/bin/env swift``) is no item: the comments after it are the ones before the first
+   item.
 6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
    blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
@@ -354,9 +385,13 @@ In this order:
    first line's entity, if it is one. In VHDL, a comment before a design unit's context clauses belongs to the unit
    they open, and a comment before the first declaration of a process, a block or a generate, or before the first
    generic or port of a list, belongs to that declaration, generic or port, if it is an entity.
-7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
-   between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
-   ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
+   In Swift, a declaration's attributes and modifiers are part of it, so a marker between them and the declaration
+   (``@Published`` on one line, the marker on the next, ``var count`` after it) leads it, and a comment before the
+   first statement of a body (a function's, a closure's, an accessor's) belongs to that statement's entity, if it is
+   one: a local function.
+7. **A marker directly above a preprocessor conditional**, in C and C++ (and in Swift, as below) -- with only other
+   comments, and no blank line, between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``,
+   ``#elifndef``, ``#else`` or ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
    struct, union or enum body, or in an ``extern "C"`` block), where the namespace, class, struct, union or enum around
    it would otherwise hold it, and a namespace or class would then trace every function inside, whichever arm is
    compiled.
@@ -373,6 +408,12 @@ In this order:
    To trace an arm's definition, write the marker inside the arm, directly above the definition (rule 6); to mean the
    namespace or class as a whole, leave a blank line between the marker and the directive (rule 8).
    In a function's body (a lambda's, or a class defined in one, included), rule 8 holds.
+   **In Swift**, the rule reads ``#if`` lines alone (not ``#elseif``, ``#else`` or ``#endif``): a marker directly
+   above one, among declarations -- at file level, or in the body of a type, an extension or a protocol, not in any
+   body of code (a function's, a closure's, an accessor's, an ``if``'s; a type declared in a function's body
+   included) -- belongs to no entity, with the same warning, as swiftc attaches a documentation comment there to
+   the conditional compilation block rather than to a declaration inside it. A marker inside the block, above a
+   declaration, leads that declaration (rule 6).
 8. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
    after, an attribute, a decorator or a template header the entity owns (its head; a comment nested deeper, in such a
    head's argument list, is not), ``trailing`` when it trails code on the entity's first line, ``enclosing``
@@ -418,6 +459,32 @@ What counts as an entity
   ``tree-sitter-powershell`` grammar cannot read an attribute before a class or an enum (``[DscResource()]``,
   ``[Flags()]``), so a marker above such an attribute is attached to no entity; with the attribute on a line of its
   own, a marker trailing the ``class`` or ``enum`` line is attached to it.
+- **Swift**: classes, structs, enums, actors, extensions, protocols; functions (free, local and member), operator
+  functions, protocol requirements, initializers, ``deinit``, subscripts; the properties of a type, stored or
+  computed, and a protocol's property requirements; ``typealias``, ``associatedtype`` and macro declarations. Not
+  entities: a top-level or local ``var`` or ``let``, an enum ``case``, an ``import``, an ``operator`` or
+  ``precedencegroup`` declaration, a closure, an accessor (a marker in a ``get``, ``set``, ``willSet`` or ``didSet``
+  of a type's property is attached to that property; a top-level computed ``var`` is a variable, so a marker in its
+  accessor is attached to the file) and a macro expansion such as ``#Preview``. A swift-testing ``@Test`` function or
+  an XCTest ``test…`` method is a ``function`` or a ``method``, not a ``test``. Four limits of the
+  ``tree-sitter-swift`` grammar, documented rather than worked around:
+
+  - A block comment followed by code on its own line at statement level (at file level or in a body of code, not in
+    a type's body) -- ``/* @Title, ID_1, impl */ func f() {}`` -- is parsed as a syntax error that takes the
+    statements before it in: its marker is still extracted, but it and the markers around it may lose their entity,
+    and the comments before the file's first item may no longer be its header. Put the block comment on a line of its own,
+    or use ``//``.
+  - A bare regular expression literal with an escaped slash at the end of a line (``let r = /a\/b/``) swallows the
+    lines after it: a marker there is still extracted, but attached to the wrong entity. Write it as an extended
+    literal, ``#/a/b/#``.
+  - Experimental or very new syntax (``@_lifetime(...)``, ``unsafe`` expressions, ``@_extern``) can parse as a
+    syntax error: markers in such a file are still extracted (in a sample of public code, 8 comment lines in
+    81,000 were lost, all in one file), but their attachment around the error degrades.
+  - A string whose text opens ``/*`` (``let open = "/*"``) is read as one comment inside the string up to the next
+    ``*/``. When that ``*/`` is in another string (``"/*"`` … ``"*/"``), there is no syntax error: the code between,
+    its markers included, is silently lost. When it is anywhere else (a ``//`` comment, say), the string is left open,
+    which is a syntax error, and the code after the ``*/`` is lost too, up to the next ``"`` or the end of the file.
+    Write such a string as ``"/" + "*"``, or close the ``/*`` in the same string.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

@@ -31,6 +31,7 @@ COMMENT_FILETYPE = {
     # source with `#` and `<# #>` comments.
     "powershell": ["ps1", "psm1", "psd1"],
     "vhdl": ["vhd", "vhdl"],
+    "swift": ["swift"],
 }
 
 
@@ -91,6 +92,8 @@ class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), whi
     powershell = "powershell"
     # @Support VHDL style comments, IMPL_VHDL_1, impl, [FE_VHDL]
     vhdl = "vhdl"
+    # @Support Swift style comments, IMPL_SWIFT_1, impl, [FE_SWIFT]
+    swift = "swift"
 
 
 def default_exclude_for_comment_type(comment_type: str) -> list[str]:

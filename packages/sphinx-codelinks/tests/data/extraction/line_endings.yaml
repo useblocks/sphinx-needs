@@ -89,3 +89,23 @@ vhdl_crlf:
     -- @need impl: Crlf block
     -- :id: IMPL_VHDL_CRLF_BLOCK
     -- @endneed
+
+swift_crlf:
+  # A Swift file with CRLF endings: a line marker, a trailing reference, a block
+  # comment over several rows and a multi-line need read as with LF.
+  lang: swift
+  config: default
+  line_endings: crlf
+  source: |
+    // @Crlf need, IMPL_SWIFT_CRLF, impl
+    struct Widget {
+        func draw() {} // @need-ids: REQ_1
+        /*
+         @Crlf block, IMPL_SWIFT_CRLF_BLOCK, impl
+         */
+        func reset() {}
+    }
+    /// @need impl: Crlf run
+    /// :id: IMPL_SWIFT_CRLF_RUN
+    /// @endneed
+    func run() {}

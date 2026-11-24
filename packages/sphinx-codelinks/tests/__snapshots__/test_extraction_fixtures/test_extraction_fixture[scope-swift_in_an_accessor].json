@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 12
+      },
+      "end": {
+        "row": 3,
+        "column": 53
+      }
+    },
+    "tagged_scope": "var area: Int {\n        get { 1 }\n        // @In an accessor, IMPL_SWIFT_ACCESSOR, impl\n        set {}\n    }",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 2,
+      "end": 6,
+      "language": "swift",
+      "entity_kind": "property",
+      "qualified_name": "Widget.area",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "property",
+          "name": "area"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "In an accessor",
+      "id": "IMPL_SWIFT_ACCESSOR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  }
+]

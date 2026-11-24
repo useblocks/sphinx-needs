@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.swift",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 46
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "swift",
+      "entity_kind": "function",
+      "qualified_name": "f()",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f()"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Swift Title",
+      "id": "IMPL_SWIFT",
+      "type": "impl",
+      "links": [
+        "REQ_SWIFT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

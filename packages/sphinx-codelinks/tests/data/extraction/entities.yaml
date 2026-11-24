@@ -39,6 +39,8 @@
 #   TS      the TypeScript checker's getFullyQualifiedName on each declaration
 #   C#      no compiler: syntax-only
 #   VHDL    no compiler: syntax-only, by VHDL's expanded names (``pkg.add``)
+#   Swift   no compiler: syntax-only, by Swift's full names: a callable's base name and
+#           argument labels (``Widget.greet(name:_:)``, ``init(x:)``, ``subscript(_:)``)
 #
 # Rust names follow the compiler's v0 form for trait impls (``<Widget as Shape>::area``)
 # and the path form for inherent methods (``Widget::new``); a generic function or impl
@@ -2720,3 +2722,354 @@ rule_vhdl_double_bang_is_no_doc_comment:
   truth:
     - {id: IMPL_R_VHDL_DOUBLE_BANG, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
     - {id: IMPL_R_VHDL_SINGLE_BANG, outcome: exact, entity_kind: "module", qualified_name: "other", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+corpus_swift:
+  # A Swift file with markers in the positions that matter for attachment: 26 markers.
+  # Unlike the other ``corpus_*`` cases it is constructed, not a sample file unchanged,
+  # and syntax-only: it parses without an error, but would not type-check (``Widget``
+  # does not witness ``Shape`` in full, and ``Widget.Style`` is declared nowhere), which
+  # no name here depends on.
+  # An accessor (SW_12) and an enum case (SW_20) are no entities: their markers fall
+  # back to the property and the enum.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    import Foundation
+
+    /// @Shape protocol, SW_01, impl
+    public protocol Shape {
+        // @Area requirement, SW_02, impl
+        func area() -> Double
+        /// @Name requirement, SW_03, impl
+        var name: String { get }
+        // @Element type, SW_04, impl
+        associatedtype Element
+    }
+
+    // @Widget struct, SW_05, impl
+    @MainActor
+    public struct Widget: Shape {
+        // @Width property, SW_06, impl
+        var width: Double
+        var height: Double = 1 // @Height property, SW_07, impl
+
+        // @Init width, SW_08, impl
+        init(width: Double) {
+            self.width = width
+        }
+
+        // @Init side, SW_09, impl
+        init(side: Double) {
+            self.width = side
+            self.height = side
+        }
+
+        /// @Area, SW_10, impl
+        func area() -> Double {
+            // @Area body, SW_11, impl
+            return width * height
+        }
+
+        var name: String {
+            get { "widget" } // @Getter, SW_12, impl
+        }
+
+        // @Greet, SW_13, impl
+        func greet(name: String, _ times: Int) -> String {
+            // @Local helper, SW_14, impl
+            func repeated(_ s: String) -> String { s }
+            return repeated(name)
+        }
+
+        // @Index, SW_15, impl
+        subscript(index: Int) -> Double { width }
+
+        // @Equals, SW_16, impl
+        static func == (lhs: Widget, rhs: Widget) -> Bool { lhs.width == rhs.width }
+    }
+
+    // @Cache actor, SW_17, impl
+    actor Cache {
+        deinit {} // @Deinit, SW_18, impl
+    }
+
+    // @Kind enum, SW_19, impl
+    enum Kind {
+        case small, large // @Cases, SW_20, impl
+    }
+
+    // @Array extension, SW_21, impl
+    extension Array where Element: Shape {
+        // @Total area, SW_22, impl
+        func totalArea() -> Double { 0 }
+    }
+
+    // @Nested extension, SW_23, impl
+    extension Widget.Style {
+        func apply() {} // @Apply, SW_24, impl
+    }
+
+    // @Free function, SW_25, impl
+    func makeWidget(width w: Double) -> Widget { Widget(width: w) }
+
+    // @need-ids: SWREF_26
+    typealias Area = Double
+  truth:
+    - {id: SW_01, outcome: exact, entity_kind: "interface", qualified_name: "Shape", start: 4, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_02, outcome: exact, entity_kind: "method", qualified_name: "Shape.area()", start: 6, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_03, outcome: exact, entity_kind: "property", qualified_name: "Shape.name", start: 8, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_04, outcome: exact, entity_kind: "type", qualified_name: "Shape.Element", start: 10, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_05, outcome: exact, entity_kind: "struct", qualified_name: "Widget", start: 14, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_06, outcome: exact, entity_kind: "property", qualified_name: "Widget.width", start: 17, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_07, outcome: exact, entity_kind: "property", qualified_name: "Widget.height", start: 18, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_08, outcome: exact, entity_kind: "constructor", qualified_name: "Widget.init(width:)", start: 21, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_09, outcome: exact, entity_kind: "constructor", qualified_name: "Widget.init(side:)", start: 26, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_10, outcome: exact, entity_kind: "method", qualified_name: "Widget.area()", start: 32, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_11, outcome: exact, entity_kind: "method", qualified_name: "Widget.area()", start: 32, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_12, outcome: fallback, entity_kind: "property", qualified_name: "Widget.name", start: 37, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_13, outcome: exact, entity_kind: "method", qualified_name: "Widget.greet(name:_:)", start: 42, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_14, outcome: exact, entity_kind: "function", qualified_name: "Widget.greet(name:_:).repeated(_:)", start: 44, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_15, outcome: exact, entity_kind: "indexer", qualified_name: "Widget.subscript(_:)", start: 49, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_16, outcome: exact, entity_kind: "operator", qualified_name: "Widget.==(_:_:)", start: 52, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_17, outcome: exact, entity_kind: "class", qualified_name: "Cache", start: 56, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_18, outcome: exact, entity_kind: "destructor", qualified_name: "Cache.deinit", start: 57, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_19, outcome: exact, entity_kind: "enum", qualified_name: "Kind", start: 61, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_20, outcome: fallback, entity_kind: "enum", qualified_name: "Kind", start: 61, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_21, outcome: exact, entity_kind: "impl", qualified_name: "Array", start: 66, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_22, outcome: exact, entity_kind: "method", qualified_name: "Array.totalArea()", start: 68, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_23, outcome: exact, entity_kind: "impl", qualified_name: "Widget.Style", start: 72, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_24, outcome: exact, entity_kind: "method", qualified_name: "Widget.Style.apply()", start: 73, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SW_25, outcome: exact, entity_kind: "function", qualified_name: "makeWidget(width:)", start: 77, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+    - {id: SWREF_26, outcome: exact, entity_kind: "type", qualified_name: "Area", start: 80, compiler: "syntax-only: no Swift compiler in the measuring environment"}
+
+rule_swift_file_header_after_a_shebang:
+  # Swift's grammar reads a shebang line as a node of its own, not as a comment: it is
+  # no item, so the comments after it, a blank line after them, are the file's.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #!/usr/bin/env swift
+    // Copyright (c) 2026 ACME
+    // @File level requirement, IMPL_R_SWIFT_SHEBANG_HEADER, impl
+
+    func main() {}
+  truth:
+    - {id: IMPL_R_SWIFT_SHEBANG_HEADER, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_swift_shebang_then_leading:
+  # Without the blank line, the comments after a shebang lead the first item.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #!/usr/bin/env swift
+    // @Main, IMPL_R_SWIFT_SHEBANG_LEADING, impl
+    func main() {}
+  truth:
+    - {id: IMPL_R_SWIFT_SHEBANG_LEADING, outcome: exact, entity_kind: "function", qualified_name: "main()", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_swift_block_comment_is_a_comment:
+  # Swift's ``/* */`` is a ``multiline_comment`` node: a file header, and trivia
+  # between a leading marker and its entity.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /* Copyright (c) 2026 ACME
+       @Block header, IMPL_R_SWIFT_BLOCK_HEADER, impl */
+
+    import Foundation
+    // @Past a block comment, IMPL_R_SWIFT_BLOCK_TRIVIA, impl
+    /* a note */
+    func run() {}
+  truth:
+    - {id: IMPL_R_SWIFT_BLOCK_HEADER, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_BLOCK_TRIVIA, outcome: exact, entity_kind: "function", qualified_name: "run()", start: 7, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_swift_attributes_head_their_declaration:
+  # Attributes and modifiers are inside a Swift declaration (its ``modifiers``): a
+  # marker after one, on its row or on the next, leads the declaration.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    @MainActor // @On the attribute row, IMPL_R_SWIFT_ATTR_ROW, impl
+    public final class Model {
+        @Published
+        // @Between attribute and property, IMPL_R_SWIFT_ATTR_NEXT, impl
+        var count = 0
+        @available(iOS 15, *)
+        /// @Doc after an attribute, IMPL_R_SWIFT_ATTR_DOC, impl
+        func refresh() {}
+    }
+  truth:
+    - {id: IMPL_R_SWIFT_ATTR_ROW, outcome: exact, entity_kind: "class", qualified_name: "Model", start: 1, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ATTR_NEXT, outcome: exact, entity_kind: "property", qualified_name: "Model.count", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ATTR_DOC, outcome: exact, entity_kind: "method", qualified_name: "Model.refresh()", start: 6, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_swift_first_in_a_body:
+  # Swift's grammar places a comment before a body's first statement beside the body's
+  # statements: it leads that statement when it is an entity (a local function), and
+  # falls to the enclosing entity when it is not.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    func outer() {
+        // @Local function, IMPL_R_SWIFT_BODY_LOCAL, impl
+        func helper() {}
+        helper()
+    }
+    func plain() {
+        // @A statement, IMPL_R_SWIFT_BODY_STATEMENT, impl
+        print(1)
+    }
+  truth:
+    - {id: IMPL_R_SWIFT_BODY_LOCAL, outcome: exact, entity_kind: "function", qualified_name: "outer().helper()", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_BODY_STATEMENT, outcome: exact, entity_kind: "function", qualified_name: "plain()", start: 6, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_swift_above_a_conditional:
+  # Rule 7: a marker directly above an ``#if`` line among declarations documents the
+  # conditional block, which swiftc attaches a doc comment to, so it is on no entity
+  # (and warned about); inside the block it leads the declaration, and in a body of
+  # code rule 8 holds.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Above the block, IMPL_R_SWIFT_ABOVE_IF, impl
+    #if DEBUG
+    // @Inside the block, IMPL_R_SWIFT_INSIDE_IF, impl
+    func debugDump() {}
+    #endif
+    final class Screen {
+        /// @Above in a class, IMPL_R_SWIFT_ABOVE_IF_CLASS, impl
+        #if os(iOS)
+        func layout() {}
+        #endif
+        func draw() {
+            // @Above in a body, IMPL_R_SWIFT_ABOVE_IF_BODY, impl
+            #if DEBUG
+            print(1)
+            #endif
+        }
+    }
+  truth:
+    - {id: IMPL_R_SWIFT_ABOVE_IF, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_INSIDE_IF, outcome: exact, entity_kind: "function", qualified_name: "debugDump()", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ABOVE_IF_CLASS, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ABOVE_IF_BODY, outcome: exact, entity_kind: "method", qualified_name: "Screen.draw()", start: 11, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_swift_doc_comments:
+  # ``///`` and ``/**`` are Swift's documentation comments; ``////``, ``/***`` and
+  # ``/**/`` are plain ones.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @Line doc, IMPL_R_SWIFT_DOC_LINE, impl
+    func a() {}
+    /** @Block doc, IMPL_R_SWIFT_DOC_BLOCK, impl */
+    func b() {}
+    //// @Four slashes, IMPL_R_SWIFT_PLAIN_LINE, impl
+    func c() {}
+    /*** @Three stars, IMPL_R_SWIFT_PLAIN_BLOCK, impl */
+    func d() {}
+  truth:
+    - {id: IMPL_R_SWIFT_DOC_LINE, outcome: exact, entity_kind: "function", qualified_name: "a()", start: 2, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_DOC_BLOCK, outcome: exact, entity_kind: "function", qualified_name: "b()", start: 4, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_PLAIN_LINE, outcome: exact, entity_kind: "function", qualified_name: "c()", start: 6, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_PLAIN_BLOCK, outcome: exact, entity_kind: "function", qualified_name: "d()", start: 8, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_swift_names:
+  # Swift's full names: overloads that differ by argument label only are different
+  # entities; a subscript's and an operator's parameters have no label unless they
+  # declare one; a failable initializer is ``init``; an extension is named after the
+  # type it extends, its generic arguments left out and a dotted path split.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    struct Point {
+        // @By x, IMPL_N_SWIFT_INIT_X, impl
+        init(x: Int) {}
+        // @By y, IMPL_N_SWIFT_INIT_Y, impl
+        init?(y: Int) {}
+        // @Move by, IMPL_N_SWIFT_MOVE_BY, impl
+        func move(by delta: Int) {}
+        // @Move to, IMPL_N_SWIFT_MOVE_TO, impl
+        func move(to target: Int, _ animated: Bool = false) {}
+        // @Unlabelled subscript, IMPL_N_SWIFT_SUBSCRIPT, impl
+        subscript(index: Int) -> Int { 0 }
+        // @Labelled subscript, IMPL_N_SWIFT_SUBSCRIPT_ROW, impl
+        subscript(row r: Int, column c: Int) -> Int { 0 }
+        // @Prefix operator, IMPL_N_SWIFT_PREFIX_OP, impl
+        static prefix func - (p: Point) -> Point { p }
+        // @Two names, IMPL_N_SWIFT_TWO_NAMES, impl
+        var a = 0, b = 0
+        // @Variadic, IMPL_N_SWIFT_VARIADIC, impl
+        mutating func add(_ values: Int..., into total: inout Int) {}
+    }
+    extension Outer.Inner {
+        // @In a dotted extension, IMPL_N_SWIFT_DOTTED, impl
+        func run() {}
+    }
+    extension Dictionary<String, [Int]> {
+        // @In a generic extension, IMPL_N_SWIFT_GENERIC, impl
+        var keyCount: Int { count }
+    }
+  truth:
+    - {id: IMPL_N_SWIFT_INIT_X, outcome: exact, entity_kind: "constructor", qualified_name: "Point.init(x:)", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_INIT_Y, outcome: exact, entity_kind: "constructor", qualified_name: "Point.init(y:)", start: 5, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_MOVE_BY, outcome: exact, entity_kind: "method", qualified_name: "Point.move(by:)", start: 7, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_MOVE_TO, outcome: exact, entity_kind: "method", qualified_name: "Point.move(to:_:)", start: 9, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_SUBSCRIPT, outcome: exact, entity_kind: "indexer", qualified_name: "Point.subscript(_:)", start: 11, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_SUBSCRIPT_ROW, outcome: exact, entity_kind: "indexer", qualified_name: "Point.subscript(row:column:)", start: 13, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_PREFIX_OP, outcome: exact, entity_kind: "operator", qualified_name: "Point.-(_:)", start: 15, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_TWO_NAMES, outcome: exact, entity_kind: "property", qualified_name: null, start: 17, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_VARIADIC, outcome: exact, entity_kind: "method", qualified_name: "Point.add(_:into:)", start: 19, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_DOTTED, outcome: exact, entity_kind: "method", qualified_name: "Outer.Inner.run()", start: 23, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_N_SWIFT_GENERIC, outcome: exact, entity_kind: "property", qualified_name: "Dictionary.keyCount", start: 27, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_swift_conditional_other_lines:
+  # Rule 7 reads ``#if`` lines alone: a marker directly above ``#elseif``, ``#else`` or
+  # ``#endif`` among declarations falls to rule 8, the entity around it, with no warning.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    final class Screen {
+        #if DEBUG
+        func a() {}
+        // @Above elseif, IMPL_R_SWIFT_ABOVE_ELSEIF, impl
+        #elseif os(iOS)
+        func c() {}
+        // @Above else, IMPL_R_SWIFT_ABOVE_ELSE, impl
+        #else
+        func b() {}
+        // @Above endif, IMPL_R_SWIFT_ABOVE_ENDIF, impl
+        #endif
+    }
+  truth:
+    - {id: IMPL_R_SWIFT_ABOVE_ELSEIF, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ABOVE_ELSE, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_SWIFT_ABOVE_ENDIF, outcome: fallback, entity_kind: "class", qualified_name: "Screen", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_swift_names_inside_an_unnamed_property:
+  # A property declaring several names has no name, and neither has anything inside it:
+  # a local function in the closure that initialises one of them.
+  lang: swift
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    final class Counter {
+        var a = 1, b: Int = {
+            // @In an unnamed property, IMPL_N_SWIFT_NAMELESS, impl
+            func f() -> Int { 1 }
+            return f()
+        }()
+    }
+  truth:
+    - {id: IMPL_N_SWIFT_NAMELESS, outcome: exact, entity_kind: "function", qualified_name: null, start: 4, mechanism: leading, compiler: "syntax-only: rule case"}

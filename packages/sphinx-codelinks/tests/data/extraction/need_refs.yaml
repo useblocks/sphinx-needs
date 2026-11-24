@@ -241,3 +241,16 @@ vhdl_marker:
     entity top is
     end entity top;
     /* @need-ids: REQ_3 */
+
+swift_marker:
+  # References in a Swift line comment, a documentation comment and a block comment.
+  lang: swift
+  config: default
+  extract: [need_refs]
+  source: |
+    // @need-ids: REQ_1, REQ_2
+    func start() {}
+    /// @need-ids: REQ_3
+    func stop() {}
+    /* @need-ids: REQ_4 */
+    func reset() {}
