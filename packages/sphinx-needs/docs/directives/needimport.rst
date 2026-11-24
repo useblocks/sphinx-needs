@@ -91,15 +91,19 @@ They are parts like any other, so a view whose filter the need passes lists them
 ``needs.views_include_parts``: set it to ``False`` to select needs alone, or to ``True`` to
 keep the parts without the report.
 
-A ``needs.json`` that Sphinx-Needs wrote states each need's parts as its content marked
-them, so importing it adds no such part where this project reads each content as the writing
-project did. Two cases do not: a content holding an ``.. include::`` this project cannot
+A ``needs.json`` that Sphinx-Needs wrote states each need's parts: those its content marked,
+and those it was given there (its stated parts). So where this project reads each content as
+the writing project did, a need that had no stated part there has none here, and its page is
+unchanged. Two cases do not: a content holding an ``.. include::`` this project cannot
 resolve, or may not read (:ref:`needs_import_restrict_content`), whose parts the record
 carries without their text, and a content in another markup than this project reads it in,
 such as a MyST need read as reStructuredText, whose ``{np}`` role is no role there; their
 parts are stated parts, and in the second the part's text is on the page twice.
 :ref:`parse_by_doctype <needimport_parse_by_doctype>` reads each content in the markup its
-record names, where this project has a parser for it, which removes the second.
+record names, where this project has a parser for it, which removes the second. A need that
+had stated parts there (imported, or given by ``create_need``) has them here, with the same
+texts, in the file's order, which is by id, so its block can list them in another order than
+the writing project's.
 ``:id_prefix:`` and ``:namespace:`` change the need's id and never a part's, and
 :ref:`needs_import_restrict_content` does not change the parts a record states. A need
 imported with ``:hide:``, whose content is not read, has its record's parts alone, as the

@@ -88,8 +88,11 @@ Improvements
   appear: a PlantUML :ref:`needflow` that draws a stated part whose one-word id holds a double quote, a
   backslash, ``@`` or a square bracket fails to draw it and reports ``[plantuml]`` (graphviz draws it).
 
-  Importing a ``needs.json`` that Sphinx-Needs wrote changes nothing on the page where this project reads each
-  need's content as the writing project did: a record states only the parts its content marks. In two cases a
+  Importing a ``needs.json`` that Sphinx-Needs wrote changes nothing on the page for a need that had no stated
+  part there, where this project reads each need's content as the writing project did: its record states only
+  the parts its content marks. A need that had stated parts there (imported, or given by ``create_need``) is
+  written with them in the file's order, which is by id, and this project takes them in that order, with the
+  same texts, so its block can list them in another order than the writing project's. In two cases a
   record's parts are now stated parts, where they were dropped: a content holding an ``.. include::`` this
   project cannot resolve, or may not read (:ref:`needs_import_restrict_content`), whose parts the record carries
   without their text; and a content in another markup than this project reads it in, such as a MyST need read
