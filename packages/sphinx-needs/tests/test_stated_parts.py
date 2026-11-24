@@ -29,6 +29,7 @@ from typing import Any
 
 import pytest
 from docutils import nodes
+from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import plantuml
 
@@ -429,18 +430,22 @@ def _block_page(buildername: str, **conf: str) -> dict[str, Any]:
     }
 
 
+#: Sphinx names the type of a warning of its own, or of docutils, from 8.0
+#: (``show_warning_types``)
+_EPUB_FILES_TYPE = " [epub.unknown_project_files]" if version_info >= (8, 0) else ""
+_DOCUTILS_TYPE = " [docutils]" if version_info >= (8, 0) else ""
+
 #: what a builder reports on this page, as it does on any page with a need: ``man``
 #: cannot span a cell of a need's table, ``epub`` packs no file of a type it does not
 #: know
 BLOCK_PAGE_WARNINGS = {
     "man": [
-        '<srcdir>/index.rst:2: WARNING: "table cell spanning" not supported [docutils]'
+        f'<srcdir>/index.rst:2: WARNING: "table cell spanning" not supported{_DOCUTILS_TYPE}'
     ]
     * 2,
     "epub": [
-        "WARNING: unknown mimetype for permalink.html, ignoring [epub.unknown_project_files]",
-        "WARNING: unknown mimetype for schema_violations.json, ignoring "
-        "[epub.unknown_project_files]",
+        f"WARNING: unknown mimetype for permalink.html, ignoring{_EPUB_FILES_TYPE}",
+        f"WARNING: unknown mimetype for schema_violations.json, ignoring{_EPUB_FILES_TYPE}",
     ],
 }
 
@@ -490,7 +495,10 @@ def test_the_block_in_the_html_family(test_app: Sphinx, filename: str) -> None:
 
 
 def _words(written: str) -> str:
-    """The text a writer wrote, with its table borders and its line breaks gone."""
+    """The text a writer wrote, with its table borders and its line breaks gone, and
+    the font escapes of a man page: docutils before 0.22 sets a part's id link in
+    italics there (``\\fI\\% rp\\fP``), and docutils 0.22 writes it plain."""
+    written = re.sub(r"\\f[A-Z]|\\%", "", written)
     return " ".join(written.replace("|", " ").split())
 
 
@@ -678,9 +686,11 @@ def test_the_block_shows_a_line_break_as_a_space(test_app: Sphinx) -> None:
             assert f'id="IMP_1.{part_id}">{shown}<a ' in html, part_id
         return
     tex = Path(app.outdir, "parts.tex").read_text(encoding="utf-8")
+    # Sphinx 7 writes an inline's classes in one role (``\DUrole{need-part,
+    # need-part-stated}{``), Sphinx 8 and 9 one role inside the other
     texts = re.findall(
-        r"\\DUrole\{need-part-stated\}\{\\phantomsection\\label\{\\detokenize\{"
-        r"index:IMP_1\.(r\d)\}\}(.*?)\{\\hyperref",
+        r"\\DUrole\{(?:need-part,)?need-part-stated\}\{\\phantomsection\\label\{"
+        r"\\detokenize\{index:IMP_1\.(r\d)\}\}(.*?)\{\\hyperref",
         tex,
         re.DOTALL,
     )
