@@ -1048,6 +1048,8 @@ files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"
 findings = []
 [case.expect.parts]
 IMP_1 = { p1 = "content text", r2 = "record two" }
+[case.expect.order]
+IMP_1 = ["p1", "r2"]
 
 [[case]]
 name = "stated-a-record-part-s-back-links-are-not-read"
@@ -1186,6 +1188,32 @@ findings = []
 IMP_1 = { c2 = "content two", c1 = "content one", r2 = "record two", r1 = "record one" }
 [case.expect.order]
 IMP_1 = ["c2", "c1", "r2", "r1"]
+
+[[case]]
+name = "stated-a-part-id-holding-white-space-is-not-taken"
+section = "stated"
+why = "a part id is one word: a part a record states whose id holds white space is not a part of the imported need, with no finding, and its other stated parts are kept, a link to one live"
+clean = true
+divergent = { ubcode = "takes the part" }
+config = '''
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+
+.. test:: Links
+   :id: TEST_1
+   :tests: IMP_1.ok
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"a b": {"id": "a b", "content": "two words"}, "ok": {"id": "ok", "content": "one word"}}}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.parts]
+IMP_1 = { ok = "one word" }
+[case.expect.dead]
+TEST_1 = []
+[case.expect.back]
+"IMP_1.ok" = { tests = ["TEST_1"] }
 
 # --- addressing ------------------------------------------------------------------------
 
@@ -1389,6 +1417,27 @@ source = '''
    :np:`(p1) the part`
 
 See :need:`REQ_1.nope`.
+'''
+[case.expect]
+findings = [{ class = "unresolved reference" }]
+[case.expect.parts]
+REQ_1 = { p1 = "the part" }
+
+[[case]]
+name = "addressing-a-reference-to-a-need-that-does-not-exist"
+section = "addressing"
+why = "a reference to a part of a need that does not exist names nothing: it is one finding, unresolved reference"
+clean = true
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(p1) the part`
+
+See :need:`NOPE_1.p1`.
 '''
 [case.expect]
 findings = [{ class = "unresolved reference" }]

@@ -53,7 +53,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 75
+EXPECTED_CASE_COUNT = 77
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -294,6 +294,21 @@ def test_the_header_lists_every_class_and_section() -> None:
     assert tuple(placed) == SECTIONS
     for tool in TOOLS:
         assert f"`{tool}`" in prose
+
+
+def test_the_header_lists_every_expect_key() -> None:
+    """The header's list of the keys of ``[case.expect]`` is the runner's, and each key
+    has its rule: a second runner learns the keys from the header alone."""
+    header = CORPUS_PATH.read_text(encoding="utf-8").split("\n[[case]]", 1)[0]
+    listed = header.split("\n#   [case.expect]\n", 1)[1].split(
+        "\n#   [[case.filters]]", 1
+    )[0]
+    keys = re.findall(r"^#\s{5}([a-z]+)(?:\.<[A-Z]+>)?\s+- ", listed, re.M)
+    assert len(keys) == len(listed.splitlines())
+    assert set(keys) == _EXPECT_KEYS
+    assert len(keys) == len(_EXPECT_KEYS)
+    for key in _EXPECT_KEYS:
+        assert re.search(rf"^#\s{{3}}- `{key}[.`]", header, re.M), key
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:
