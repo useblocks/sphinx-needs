@@ -1,0 +1,30 @@
+[
+  {
+    "file_path": "case.py",
+    "lineno": 4,
+    "msg": "'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings do not contain",
+    "type": "need",
+    "sub_type": "docstring_tag"
+  },
+  {
+    "file_path": "case.py",
+    "lineno": 5,
+    "msg": "'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings do not contain",
+    "type": "need",
+    "sub_type": "docstring_tag"
+  },
+  {
+    "file_path": "case.py",
+    "lineno": 6,
+    "msg": "'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings do not contain",
+    "type": "need",
+    "sub_type": "docstring_tag"
+  },
+  {
+    "file_path": "case.py",
+    "lineno": 7,
+    "msg": "'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings do not contain",
+    "type": "need",
+    "sub_type": "docstring_tag"
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 27,
+        "column": 4
+      },
+      "end": {
+        "row": 27,
+        "column": 45
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 29,
+      "end": 29,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After byte 2048",
+      "id": "IMPL_UTF8_BOUNDARY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

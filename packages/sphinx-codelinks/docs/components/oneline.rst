@@ -23,6 +23,20 @@ To have a better understanding of the syntax of a one-line comment, we will brea
 
 The text between **start_sequence** and **end_sequence** contains the fields of a ``need item``.
 
+When **end_sequence** is the end of the line (``\n``, the default), the marker runs to the end of the
+line, so nothing alphanumeric may precede its **start_sequence** on the line: comment decoration
+(``//``, ``#``, ``*``, ...), whitespace, punctuation and marks may. Otherwise the start sequence is part
+of prose (``// see @author, ...``) and the line is no marker. A marker with an explicit
+**end_sequence** (``[[ ... ]]``) delimits itself and may stand anywhere on the line.
+
+.. _oneline_alphanumeric:
+
+*Alphanumeric*, here and in every rule of this page, is a letter or a number of any script: a character
+whose Unicode general category is L* or N*, which is what Python's ``str.isalnum`` tests. A combining
+mark (U+093E, say) or a circled letter (``Ⓐ``) is neither, so it may precede the start sequence. The
+classification follows the Unicode tables of the Python that runs the build, so a character those tables
+do not yet assign is not alphanumeric.
+
 field_split_char
 ----------------
 
@@ -259,18 +273,15 @@ reported as one of these kinds, the kind leading the message:
 - ``newline_in_field`` -- a field holding a newline (not produced from a source file,
   which is parsed one line at a time);
 - ``docstring_tag`` -- a line of a Python docstring (any bare string statement directly in
-  a module, class or function body; never a ``#`` comment) with nothing alphanumeric before
-  its start sequence, which is directly followed by a docstring tag such as ``param``,
+  a module, class or function body; never a ``#`` comment) with nothing
+  :ref:`alphanumeric <oneline_alphanumeric>` before its start sequence, which is
+  directly followed by a docstring tag such as ``param``,
   ``return`` or ``raises`` in the Epydoc field shape ``:|[ \t]+[^ \t:]+:`` -- ``:``
   directly, or spaces or tabs, one word without space, tab or ``:``, and ``:``
   (``@return: text``, ``@param a: text``):
   ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
   do not contain``. A start sequence the docstrings also use cannot tell a need from
-  documentation, so choose another one, ``[[`` for example. Whether anything alphanumeric
-  precedes the start sequence is Python's own notion of alphanumeric (``str.isalnum``):
-  characters outside ASCII before the start sequence -- combining marks, circled letters,
-  and letters newer than the interpreter's Unicode tables -- are where ubCode's notion of
-  alphanumeric differs: a documented non-goal.
+  documentation, so choose another one, ``[[`` for example.
 - ``jsdoc_tag`` -- a line of a JSDoc comment (a block comment opened by exactly ``/**``,
   under ``comment_type = "ts"``) is a ``jsdoc_tag`` warning, and never a need, when all
   hold: the one-line start sequence is ``@`` (JSDoc's own sigil -- with any other start
@@ -288,11 +299,7 @@ reported as one of these kinds, the kind leading the message:
   a JSDoc line is then read as any other line, a marker only where it holds that start
   sequence. Under ``[[``, ECMAScript's internal-slot notation in a JSDoc line is read as a
   marker: ``[[Prototype]]`` alone is a ``too_few_fields`` warning, and
-  ``[[Prototype]], [[Extensible]]`` a need. Whether anything alphanumeric precedes the
-  ``@`` is Python's own notion of alphanumeric (``str.isalnum``): characters outside ASCII
-  before the start sequence -- combining marks, circled letters, and letters newer than
-  the interpreter's Unicode tables -- are where ubCode's notion of alphanumeric differs: a
-  documented non-goal.
+  ``[[Prototype]], [[Extensible]]`` a need.
 - ``doxygen_tag`` -- a line of a Doxygen comment (a VHDL line comment opened by ``--!``,
   under ``comment_type = "vhdl"``) is a ``doxygen_tag`` warning, and never a need, under the
   same rule as ``jsdoc_tag``, with Doxygen's special commands as the Doxygen 1.19.0 manual

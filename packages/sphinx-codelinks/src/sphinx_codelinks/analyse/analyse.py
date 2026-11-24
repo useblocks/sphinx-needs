@@ -27,6 +27,7 @@ from sphinx_codelinks.analyse.models import (
 )
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
+    _is_alphanumeric,
     docstring_tag,
     doxygen_tag,
     jsdoc_tag,
@@ -72,20 +73,6 @@ _KIND_RANK: dict[MarkedContentType, int] = {
 # ``preprocessor_parse_refused`` warning names them (:meth:`SourceAnalyse._warn_parse_refused`).
 _DATABASE = "the compilation database"
 _TABLE = "the `[preprocessor]` table"
-
-
-def _is_alphanumeric(char: str) -> bool:
-    """Whether ``char``'s Unicode general category is a letter (L*) or a number (N*).
-
-    The one notion of alphanumeric of the reference markers' rules, shared with another
-    implementation of them. ``str.isalnum`` is exactly that test (no other character
-    passes it): characters Unicode calls Alphabetic without being letters -- a circled
-    letter (So), a combining mark (Mn, Mc) -- are not alphanumeric here. The
-    classification follows each tool's own Unicode tables (here the running Python's,
-    ``unicodedata.unidata_version``), so a character newer than the older of two tables
-    can be classed differently.
-    """
-    return char.isalnum()
 
 
 def _is_word_char(char: str) -> bool:
@@ -405,14 +392,27 @@ class SourceAnalyse:
         """The old name of :attr:`warnings`, kept for one release; read-only."""
         return self.warnings
 
+    def read_source(self, src_path: Path) -> str | None:
+        """The text of ``src_path``, decoded as UTF-8 (:func:`.utils.decode_source`),
+        or ``None`` for a file that is not UTF-8 text, which is skipped with a
+        ``not_text`` warning naming it and the first byte that stops it."""
+        text = utils.decode_source(src_path.read_bytes())
+        if isinstance(text, utils.NotText):
+            logger.warning(
+                f"codelinks: skipping {src_path} — {text.reason}",
+                subtype="not_text",
+                location=f"{src_path}:{text.line}",
+            )
+            return None
+        return text
+
     def get_src_strings(self) -> Generator[tuple[Path, bytes], Any, None]:
         """Load source files and extract their content."""
         for src_path in self.analyse_config.src_files:
-            if not utils.is_text_file(src_path):
+            text = self.read_source(src_path)
+            if text is None:
                 continue
-            with src_path.open("r", encoding="utf-8", newline="") as f:
-                # Normalize all line endings to Unix LF
-                text = f.read()
+            # Normalize all line endings to Unix LF
             text = text.replace("\r\n", "\n").replace("\r", "\n")
             yield src_path, text.encode("utf-8")
 
@@ -1283,7 +1283,8 @@ class SourceAnalyse:
         # the headers no database lists: read through every entry that includes them
         headers: list[_Header] = []
         for position, src_path in enumerate(src_files):
-            if not utils.is_text_file(src_path):
+            # libclang reads the file itself; the same rule decides whether it is read
+            if self.read_source(src_path) is None:
                 continue
             resolved = self._resolve_preproc(src_path)
             if resolved is None:
