@@ -9,8 +9,9 @@ per part with its text, its id and its anchor ``NEED.part``. A hidden and an ext
 need keep the given parts alone, as they did.
 
 A part id is one word: a given part whose id holds white space or a control character
-is not a part of a need whose content is read, and ``create_need`` refuses it. The
-block shows a stated text's line breaks as spaces.
+is not a part of a need whose content is read, and ``create_need`` refuses it. Such a
+need takes a stated text on one line: each run of white space holding a line break is
+one space, in the stored part and so wherever the text is written.
 
 ``design/parts-contract.md`` is the rule; ``tests/fixtures/parts_conformance.toml``
 pins what both tools answer, and this module what only a page, the API and the stored
@@ -35,7 +36,6 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_parts
 from sphinx_needs.need_item import NeedPartData
-from sphinx_needs.roles.need_part import _shown_on_one_line
 from sphinx_needs_testkit import build_warnings
 
 # --- create_need(parts=...) ---------------------------------------------------------------
@@ -658,19 +658,20 @@ BREAKS = {
 def test_the_block_shows_a_line_break_as_a_space(test_app: Sphinx) -> None:
     """The block shows a stated part's text with each run of white space holding a
     line break as one space, so no text ends a paragraph inside a line (a blank line
-    in LaTeX is a ``\\par``); a run with no line break is shown as given. The stored
-    text, needs.json and what a part answers keep the text as given."""
+    in LaTeX is a ``\\par``); a run with no line break is shown as given. The block
+    shows the text the need took: the stored text and what a part answers are the
+    same one line."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     assert _parts(app, "IMP_1") == [
-        (part_id, given, "stated") for part_id, (given, _) in BREAKS.items()
+        (part_id, shown, "stated") for part_id, (_, shown) in BREAKS.items()
     ]
     need = SphinxNeedsData(app.env).get_needs_view()["IMP_1"]
-    for part_id, (given, _) in BREAKS.items():
+    for part_id, (_, shown) in BREAKS.items():
         item = need.get_part_item(part_id)
         assert item is not None
-        assert item["content"] == given
+        assert item["content"] == shown
     if app.builder.name == "html":
         html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
         for part_id, (_, shown) in BREAKS.items():
@@ -695,6 +696,9 @@ def test_a_stated_text_is_shown_in_time_proportional_to_its_length() -> None:
     shown as given; a pattern that starts over at each character of the run takes time
     proportional to the square of its length, which for this text is many times the
     bound here."""
+    # imported here, so that the module still collects on code without the helper
+    from sphinx_needs.roles.need_part import _shown_on_one_line
+
     run = " " * 100_000
     text = f"a{run}b\n{run}c"
     started = time.perf_counter()
@@ -702,6 +706,338 @@ def test_a_stated_text_is_shown_in_time_proportional_to_its_length() -> None:
     elapsed = time.perf_counter() - started
     assert shown == f"a{run}b c"
     assert elapsed < 2.0, elapsed
+
+
+# --- a stated text is taken on one line ----------------------------------------------------
+
+#: each stated text as given, and as a need whose content is read takes it: one text per
+#: kind of line break with no LF in it, a run holding a break beside a run of two spaces
+#: holding none, and a text holding no line break at all
+ONE_LINE = {
+    "r1": ("para1\n\npara2", "para1 para2"),
+    "r2": ("a \n b", "a b"),
+    "r3": ("one  line\t", "one  line\t"),
+    "cr": ("a\r\rb", "a b"),
+    "vtff": ("a\x0b\x0cb", "a b"),
+    "nel": ("a\x85b", "a b"),
+    "ls": ("a\u2028b", "a b"),
+    "ps": ("a\u2029b", "a b"),
+    "crlf": ("a\r\nb", "a b"),
+    "mixed": ("a  b\nc", "a  b c"),
+}
+
+ONE_LINE_CONF = '''\
+import json
+from pathlib import Path
+
+from sphinx.util.docutils import SphinxDirective
+
+from sphinx_needs.api import NeedItemSource, add_need, create_need, ingest_need_record
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_external_needs = [{"base_url": "http://example.org/", "json_path": "external.json"}]
+
+#: part id to text, as every route below is given it
+TEXTS = json.loads(Path(__file__).with_name("texts.json").read_text(encoding="utf-8"))
+RECORD_PARTS = {part_id: {"id": part_id, "content": text} for part_id, text in TEXTS.items()}
+
+
+class Given(SphinxDirective):
+    """A need given ``TEXTS`` as its parts by one route: ``ingest`` (an extension's
+    record), ``add`` (the deprecated ``add_need``), ``create`` or ``create-hidden``."""
+
+    required_arguments = 2
+
+    def run(self):
+        route, need_id = self.arguments
+        app, source = self.env.app, NeedItemSource.from_directive(self)
+        if route == "ingest":
+            record = {
+                "id": need_id, "type": "req", "title": "Given",
+                "content": "No role here.", "parts": RECORD_PARTS,
+            }
+            return ingest_need_record(app, self.state, record, need_source=source)[0]
+        if route == "add":
+            return add_need(
+                app, self.state, self.env.docname, self.lineno, "req", "Given",
+                id=need_id, content="No role here.", parts=RECORD_PARTS,
+            )
+        fields = {"hide": True} if route == "create-hidden" else {}
+        return create_need(
+            app, self.state, source, "req", "Given", id=need_id,
+            content="No role here.", parts=TEXTS, fields=fields,
+        )[1]
+
+
+def setup(app):
+    app.add_directive("given", Given)
+'''
+
+ONE_LINE_INDEX = """\
+One line
+========
+
+.. needimport:: imported.json
+
+.. needimport:: hidden.json
+   :hide:
+
+.. given:: ingest ING_1
+
+.. given:: add ADD_1
+
+.. given:: create API_1
+
+.. given:: create-hidden API_HID
+"""
+
+
+def _one_line_record(need_id: str, content: str) -> str:
+    """A needs.json holding one need stating every text of ``ONE_LINE``."""
+    parts = {
+        part_id: {"id": part_id, "content": given}
+        for part_id, (given, _) in ONE_LINE.items()
+    }
+    record = {
+        "id": need_id,
+        "type": "req",
+        "title": "Given",
+        "content": content,
+        "parts": parts,
+    }
+    return json.dumps(
+        {"current_version": "1.0", "versions": {"1.0": {"needs": {need_id: record}}}}
+    )
+
+
+#: the imported need's content marks a part whose role is written across two lines
+TWO_LINE_ROLE = "Marks :np:`(m1) line one\nline two`."
+
+ONE_LINE_PROJECT = {
+    "buildername": "html",
+    "files": [
+        (Path("conf.py"), ONE_LINE_CONF),
+        (Path("index.rst"), ONE_LINE_INDEX),
+        (
+            Path("texts.json"),
+            json.dumps({part_id: given for part_id, (given, _) in ONE_LINE.items()}),
+        ),
+        (Path("imported.json"), _one_line_record("IMP_1", TWO_LINE_ROLE)),
+        (Path("hidden.json"), _one_line_record("IMP_HID", "No role here.")),
+        (Path("external.json"), _one_line_record("EXT_1", "No role here.")),
+    ],
+}
+
+#: the needs whose content is read, one per route a need is given parts by
+READ_NEEDS = ("IMP_1", "ING_1", "ADD_1", "API_1")
+#: the needs whose content is not read: a hidden import, an external need, a hidden
+#: ``create_need``
+UNREAD_NEEDS = ("IMP_HID", "EXT_1", "API_HID")
+
+
+def _built_one_line(app: Sphinx) -> None:
+    with pytest.warns(DeprecationWarning, match="add_need is deprecated"):
+        app.build()
+    assert build_warnings(app) == []
+
+
+@pytest.mark.parametrize("test_app", [ONE_LINE_PROJECT], ids=["routes"], indirect=True)
+def test_a_stated_text_is_taken_on_one_line(test_app: Sphinx) -> None:
+    """A need whose content is read takes a stated part's text with each run of white
+    space holding a line break (LF, VT, FF, CR, NEL, LS, PS) as one space, by every
+    route a need is given parts: a visible import, an extension's record, ``add_need``
+    and ``create_need`` on a page. The stored part, needs.json, what the part answers
+    and the block's line all hold that one line; a run holding no line break is kept."""
+    app = test_app
+    _built_one_line(app)
+    written = _written(app)
+    view = SphinxNeedsData(app.env).get_needs_view()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    for need_id in READ_NEEDS:
+        stated = [(p, t) for p, t, origin in _parts(app, need_id) if origin == "stated"]
+        assert stated == [(p, taken) for p, (_, taken) in ONE_LINE.items()], need_id
+        assert {
+            p: part["content"]
+            for p, part in written[need_id]["parts"].items()
+            if p in ONE_LINE
+        } == {p: taken for p, (_, taken) in ONE_LINE.items()}, need_id
+        for part_id, (_, taken) in ONE_LINE.items():
+            item = view[need_id].get_part_item(part_id)
+            assert item is not None
+            assert item["content"] == taken, (need_id, part_id)
+            assert f'id="{need_id}.{part_id}">{taken}<a ' in html, (need_id, part_id)
+
+
+@pytest.mark.parametrize("test_app", [ONE_LINE_PROJECT], ids=["routes"], indirect=True)
+def test_a_need_whose_content_is_not_read_keeps_a_text_as_given(
+    test_app: Sphinx,
+) -> None:
+    """A hidden import, an external need and a hidden ``create_need`` do not read their
+    content, and keep the texts they are given, line breaks and all."""
+    app = test_app
+    _built_one_line(app)
+    view = SphinxNeedsData(app.env).get_needs_view()
+    for need_id in UNREAD_NEEDS:
+        assert _parts(app, need_id) == [
+            (p, given, "stated") for p, (given, _) in ONE_LINE.items()
+        ], need_id
+        for part_id, (given, _) in ONE_LINE.items():
+            item = view[need_id].get_part_item(part_id)
+            assert item is not None
+            assert item["content"] == given, (need_id, part_id)
+    written = _written(app)
+    for need_id in ("IMP_HID", "API_HID"):
+        assert {
+            p: part["content"] for p, part in written[need_id]["parts"].items()
+        } == {p: given for p, (given, _) in ONE_LINE.items()}, need_id
+
+
+@pytest.mark.parametrize("test_app", [ONE_LINE_PROJECT], ids=["routes"], indirect=True)
+def test_a_content_part_keeps_its_line_break(test_app: Sphinx) -> None:
+    """The rule is a stated part's alone: a content part whose role is written across
+    two lines keeps its line break, in the stored part and on its line, beside the
+    stated parts of the same need, which are taken on one line."""
+    app = test_app
+    _built_one_line(app)
+    assert _parts(app, "IMP_1")[:2] == [
+        ("m1", "line one\nline two", "content"),
+        ("r1", "para1 para2", "stated"),
+    ]
+    assert _written(app)["IMP_1"]["parts"]["m1"]["content"] == "line one\nline two"
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert 'id="IMP_1.m1">line one\nline two<a ' in html
+    assert 'id="IMP_1.r1">para1 para2<a ' in html
+
+
+#: a stated text holding a blank line, listed by a needlist and named by ``:need:``
+WRITTEN_INDEX = """\
+Parts
+=====
+
+.. needimport:: imported.json
+
+.. needlist::
+   :filter: type == "req"
+
+A reference to :need:`IMP_1.r1`.
+"""
+
+WRITTEN_RECORD = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_1": {
+                    "id": "IMP_1",
+                    "type": "req",
+                    "title": "Imported",
+                    "content": "No role here.",
+                    "parts": {"r1": {"id": "r1", "content": "para1\n\npara2"}},
+                }
+            }
+        }
+    },
+}
+
+
+def _written_page(
+    buildername: str, extensions: str = "", **conf: str
+) -> dict[str, Any]:
+    conf_py = (
+        BLOCK_CONF
+        + extensions
+        + "needs_views_include_parts = True\n"
+        + "".join(f"{k} = {v}\n" for k, v in conf.items())
+    )
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), conf_py),
+            (Path("index.rst"), WRITTEN_INDEX),
+            (Path("imported.json"), json.dumps(WRITTEN_RECORD)),
+        ],
+    }
+
+
+def _hyperref_bodies(tex: str) -> list[str]:
+    """The text of every ``\\hyperref[...]{...}`` of a LaTeX file, its braces matched."""
+    bodies = []
+    for found in re.finditer(r"\\hyperref\[[^\]]*\]\{", tex):
+        depth, start = 1, found.end()
+        end = start
+        while depth:
+            depth += {"{": 1, "}": -1}.get(tex[end], 0)
+            end += 1
+        bodies.append(tex[start : end - 1])
+    return bodies
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _written_page("latex"),
+        _written_page("latex", needs_role_need_template='"{{ title }} <{{ id }}>"'),
+    ],
+    ids=["default", "template"],
+    indirect=True,
+)
+def test_a_view_and_a_reference_write_a_stated_text_on_one_line(
+    test_app: Sphinx,
+) -> None:
+    """A needlist's line for a stated part and a ``:need:`` reference to it write its
+    text on one line inside their ``\\hyperref``: a blank line there stops ``pdflatex``
+    (``Paragraph ended before \\label@@hyperref was complete``)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    tex = Path(app.outdir, "parts.tex").read_text(encoding="utf-8")
+    shown = [body for body in _hyperref_bodies(tex) if "para1" in body]
+    # the needlist's line, the reference, and the part's own id link in the block
+    assert len(shown) >= 2, shown
+    for body in shown:
+        assert "\n" not in body, body
+        assert "para1 para2" in body, body
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "plantuml": True,
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+                ),
+                (
+                    Path("index.rst"),
+                    "Parts\n=====\n\n.. needimport:: imported.json\n\n"
+                    ".. needuml::\n\n"
+                    '   Alice -> Bob: {{ref("IMP_1.r1", option="title")}}\n',
+                ),
+                (Path("imported.json"), json.dumps(WRITTEN_RECORD)),
+            ],
+        }
+    ],
+    ids=["needuml"],
+    indirect=True,
+)
+def test_a_needuml_reference_to_a_stated_part_draws(test_app: Sphinx) -> None:
+    """A needuml ``ref()`` to a stated part writes its text into the diagram's line: on
+    one line, the diagram draws."""
+    app = test_app
+    sources: list[str] = []
+
+    def collect(app_: Sphinx, doctree: Any, docname: str) -> None:
+        sources.extend(node["uml"] for node in doctree.findall(plantuml))
+
+    app.connect("doctree-resolved", collect, priority=900)
+    app.build()
+    assert build_warnings(app) == []
+    (uml,) = sources
+    assert "para1 para2" in uml
 
 
 # --- the views ---------------------------------------------------------------------------
@@ -1003,6 +1339,72 @@ def test_a_part_id_holding_white_space_or_a_control_character_is_not_taken(
     app.build()
     assert build_warnings(app) == []
     _assert_not_taken(app)
+
+
+#: one-word ids outside ``White_Space`` and ``Cc``: a zero width space, a byte order
+#: mark, a right-to-left override and a soft hyphen (general category ``Cf``) and a
+#: private use character (``Co``)
+OTHER_WORDS = ["a\u200bb", "a\ufeffb", "a\u202eb", "a\ue000b", "a\xadb"]
+
+OTHER_WORDS_RECORD = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_1": {
+                    "id": "IMP_1",
+                    "type": "req",
+                    "title": "Imported",
+                    "content": "Marks :np:`(c1) content one`.",
+                    "parts": {
+                        **{
+                            part_id: {"id": part_id, "content": "one word"}
+                            for part_id in OTHER_WORDS
+                        },
+                        "ok": {"id": "ok", "content": "one word"},
+                    },
+                }
+            }
+        }
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\nneeds_build_json = True\n',
+                ),
+                (
+                    Path("index.rst"),
+                    "Parts\n=====\n\n.. needimport:: imported.json\n\n"
+                    ".. test:: Links\n   :id: TEST_1\n   :links: IMP_1.ok\n",
+                ),
+                (Path("imported.json"), json.dumps(OTHER_WORDS_RECORD)),
+            ],
+        }
+    ],
+    ids=["format-and-private-use"],
+    indirect=True,
+)
+def test_a_part_id_holding_another_character_of_category_c_is_taken(
+    test_app: Sphinx,
+) -> None:
+    """The control characters an id may not hold are the general category ``Cc``
+    alone: an id holding a format (``Cf``) or a private use (``Co``) character is one
+    word, and taken."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert [p for p, _, _ in _parts(app, "IMP_1")] == ["c1", *OTHER_WORDS, "ok"]
+    assert set(_written(app)["IMP_1"]["parts"]) == {"c1", *OTHER_WORDS, "ok"}
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert html.count("need-part-stated") == len(OTHER_WORDS) + 1
 
 
 # --- what does not change ----------------------------------------------------------------
