@@ -417,9 +417,10 @@ swift_attribute_after_text_swift:
 # nothing alphanumeric may precede its start sequence on the line. A combining mark (Mn
 # U+0345 and U+0301, Mc U+093E) and a circled or squared letter (So U+24B6, and U+1F130
 # outside the Basic Multilingual Plane) are neither, though Unicode calls each of them but
-# U+0301 Alphabetic: each of those lines is a need. A modifier letter (Lm U+02B0), a letter
-# number (Nl U+2160, Alphabetic too), a superscript digit (No U+00B2) and an Arabic-Indic
-# digit (Nd U+0663) are alphanumeric: each of those lines is prose, and no marker.
+# U+0301 Alphabetic: each of those lines is a need. A titlecase letter (Lt U+01C5), a modifier
+# letter (Lm U+02B0), a letter number (Nl U+2160, Alphabetic too), a superscript digit (No
+# U+00B2) and an Arabic-Indic digit (Nd U+0663) are alphanumeric: each of those lines is
+# prose, and no marker.
 #
 # The sources are written with escapes, as the characters are hard to see. Every character
 # was assigned by Unicode 6.0: a character assigned after Unicode 14.0, the oldest table a
@@ -434,6 +435,7 @@ oneline_letter_or_number_before_start:
     \n// \u093E@Mc vowel sign, IMPL_MC, impl\
     \n// \u24B6@So circled letter, IMPL_SO, impl\
     \n// \U0001F130@So squared letter, IMPL_SO_ASTRAL, impl\
+    \n// \u01C5@Lt titlecase letter, IMPL_LT, impl\
     \n// \u02B0@Lm modifier letter, IMPL_LM, impl\
     \n// \u2160@Nl letter number, IMPL_NL, impl\
     \n// \u00B2@No superscript digit, IMPL_NO, impl\

@@ -24,9 +24,9 @@ To have a better understanding of the syntax of a one-line comment, we will brea
 The text between **start_sequence** and **end_sequence** contains the fields of a ``need item``.
 
 When **end_sequence** is the end of the line (``\n``, the default), the marker runs to the end of the
-line, so its **start_sequence** must open the comment's text: only comment decoration (``//``, ``#``,
-``*``, ...) and whitespace may precede it on the line, and nothing alphanumeric. Otherwise the start
-sequence is part of prose (``// see @author, ...``) and the line is no marker. A marker with an explicit
+line, so nothing alphanumeric may precede its **start_sequence** on the line: comment decoration
+(``//``, ``#``, ``*``, ...), whitespace, punctuation and marks may. Otherwise the start sequence is part
+of prose (``// see @author, ...``) and the line is no marker. A marker with an explicit
 **end_sequence** (``[[ ... ]]``) delimits itself and may stand anywhere on the line.
 
 .. _oneline_alphanumeric:

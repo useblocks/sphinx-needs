@@ -235,7 +235,8 @@ letter_or_number_before_marker:
   # What may not precede a reference line's first marker is a letter or a number by
   # Unicode general category, as before a one-line start sequence: after a combining mark
   # or a circled letter the line is a reference line, which withholds its one-line need;
-  # after a letter number it is not, and the one-line need after the reference is created.
+  # after a letter number its references are still read, but it withholds nothing, and the
+  # one-line need after the reference is created.
   lang: cpp
   config:
     need_id_markers: ["@need-ids:"]
