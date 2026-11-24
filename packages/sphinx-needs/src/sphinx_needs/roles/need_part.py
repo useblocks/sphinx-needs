@@ -7,6 +7,7 @@ Provides the ability to mark specific parts of a need with an own id.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import re
 import unicodedata
@@ -69,14 +70,15 @@ _LINE_BREAKS: Final = "\n\x0b\x0c\r\x85\u2028\u2029"
 _WHITE_SPACE_RUN: Final = re.compile(f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]+")
 
 
-def _shown_on_one_line(text: str) -> str:
-    """A stated part's text as its line shows it: each run of white space holding a
-    line break as one space, every other character as given."""
+def _on_one_line(text: str) -> str:
+    """A stated part's text as a need whose content is read takes it: each run of white
+    space (``White_Space``) holding a line break (LF, VT, FF, CR, NEL, LS or PS) as one
+    space, every other character as given (``design/parts-contract.md`` section 2)."""
     return _WHITE_SPACE_RUN.sub(_one_space_where_broken, text)
 
 
 def _one_space_where_broken(run: re.Match[str]) -> str:
-    """A run of white space as shown: one space where it holds a line break."""
+    """A run of white space as taken: one space where it holds a line break."""
     white_space = run.group()
     return " " if any(char in _LINE_BREAKS for char in white_space) else white_space
 
@@ -257,12 +259,14 @@ def update_need_with_parts(
     caller, ``need.parts`` until now) whose id its content does not mark, in the order
     given: a given part whose id the content marks is the content's part, with no
     finding. A given part whose id is not one word (:func:`part_id_is_one_word`) is not
-    taken, with no finding either.
+    taken, with no finding either. A stated part's text is taken on one line: each run
+    of white space holding a line break (LF, VT, FF, CR, NEL, LS or PS) is one space,
+    so that no place the text is written (the block, a needlist's line, a ``:need:``
+    reference, a needuml label) ends a paragraph or a line inside it. A part the content
+    marks keeps its text.
 
     :return: The block that shows the need's stated parts after its content, one line
-        per part, or ``None`` when the need has none. A line shows the part's text with
-        each run of white space holding a line break as one space, so that no text
-        ends a paragraph inside the line; the part keeps its text as given.
+        per part with its stored text, or ``None`` when the need has none.
     """
     app = env.app
     parts: dict[str, NeedPartData] = {}
@@ -292,7 +296,7 @@ def update_need_with_parts(
         _mark_part(app, need, part_node, part_id, part_node.title)
 
     stated = [
-        part
+        dataclasses.replace(part, content=_on_one_line(part.content))
         for part in need.parts
         if part.id not in parts and part_id_is_one_word(part.id)
     ]
@@ -302,9 +306,8 @@ def update_need_with_parts(
 
     block = nodes.container(classes=["needs-stated-parts"])
     for part in stated:
-        shown = _shown_on_one_line(part.content)
-        part_node = NeedPart(title=shown, part_id=part.id, need_id=None)
-        _mark_part(app, need, part_node, part.id, shown, stated=True)
+        part_node = NeedPart(title=part.content, part_id=part.id, need_id=None)
+        _mark_part(app, need, part_node, part.id, part.content, stated=True)
         block.append(nodes.paragraph("", "", part_node))
     return block
 

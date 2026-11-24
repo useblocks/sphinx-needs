@@ -697,12 +697,12 @@ def test_a_stated_text_is_shown_in_time_proportional_to_its_length() -> None:
     proportional to the square of its length, which for this text is many times the
     bound here."""
     # imported here, so that the module still collects on code without the helper
-    from sphinx_needs.roles.need_part import _shown_on_one_line
+    from sphinx_needs.roles.need_part import _on_one_line
 
     run = " " * 100_000
     text = f"a{run}b\n{run}c"
     started = time.perf_counter()
-    shown = _shown_on_one_line(text)
+    shown = _on_one_line(text)
     elapsed = time.perf_counter() - started
     assert shown == f"a{run}b c"
     assert elapsed < 2.0, elapsed
