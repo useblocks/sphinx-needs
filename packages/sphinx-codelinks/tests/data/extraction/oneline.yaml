@@ -411,3 +411,63 @@ swift_attribute_after_text_swift:
     // see @available(iOS 15, IMPL_SWIFT_AFTER_PROSE);
     // @available(iOS 15, IMPL_SWIFT_WITHHELD_SEMICOLON);
     func f() {}
+
+# Alphanumeric, in every marker rule, is a letter or a number of any script by Unicode
+# general category (L* or N*). A marker whose end sequence is the newline is anchored:
+# nothing alphanumeric may precede its start sequence on the line. A combining mark (Mn
+# U+0345 and U+0301, Mc U+093E) and a circled or squared letter (So U+24B6, and U+1F130
+# outside the Basic Multilingual Plane) are neither, though Unicode calls each of them but
+# U+0301 Alphabetic: each of those lines is a need. A modifier letter (Lm U+02B0), a letter
+# number (Nl U+2160, Alphabetic too), a superscript digit (No U+00B2) and an Arabic-Indic
+# digit (Nd U+0663) are alphanumeric: each of those lines is prose, and no marker.
+#
+# The sources are written with escapes, as the characters are hard to see. Every character
+# was assigned by Unicode 6.0: a character assigned after Unicode 14.0, the oldest table a
+# supported interpreter carries, is classed by whichever table a tool reads, so it makes no
+# shared case. The other direction has none either: on every supported interpreter
+# Python's ``str.isalnum`` accepts exactly the letters and numbers, and nothing else.
+oneline_letter_or_number_before_start:
+  lang: cpp
+  config: default
+  source: "// \u0345@Mn ypogegrammeni, IMPL_MN, impl\
+    \n// \u0301@Mn acute accent, IMPL_MN_ACUTE, impl\
+    \n// \u093E@Mc vowel sign, IMPL_MC, impl\
+    \n// \u24B6@So circled letter, IMPL_SO, impl\
+    \n// \U0001F130@So squared letter, IMPL_SO_ASTRAL, impl\
+    \n// \u02B0@Lm modifier letter, IMPL_LM, impl\
+    \n// \u2160@Nl letter number, IMPL_NL, impl\
+    \n// \u00B2@No superscript digit, IMPL_NO, impl\
+    \n// \u0663@Nd Arabic-Indic digit, IMPL_ND, impl\
+    \nvoid f() {}\n"
+
+# the same rule before a Swift attribute's shape: after a combining mark it is a
+# ``swift_attribute`` warning and a marker is a need, as with nothing before the ``@``;
+# after a letter number each line is prose
+swift_attribute_letter_or_number_before_start_swift:
+  lang: swift
+  config: default
+  source: "// \u093E@available(iOS 15, *)\
+    \n// \u093E@Title after a mark, IMPL_SWIFT_MARK, impl\
+    \n// \u2160@available(iOS 15, *)\
+    \n// \u2160@Title after a numeral, IMPL_SWIFT_NUMERAL, impl\
+    \nfunc f() {}\n"
+
+# with an end sequence other than the newline the one-line parser reads a marker after
+# anything, so the attribute rule's own test of what precedes the start sequence decides:
+# after a combining mark or a circled letter the shape is withheld with a warning, after a
+# letter number the line is read as a need, as after prose
+swift_attribute_letter_or_number_bounded_swift:
+  lang: swift
+  config:
+    start_sequence: "@"
+    end_sequence: ";"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: "// \u093E@available(iOS 15, IMPL_SWIFT_MARK_WITHHELD);\
+    \n// \u24B6@available(iOS 15, IMPL_SWIFT_CIRCLED_WITHHELD);\
+    \n// \u2160@available(iOS 15, IMPL_SWIFT_NUMERAL_READ);\
+    \nfunc f() {}\n"

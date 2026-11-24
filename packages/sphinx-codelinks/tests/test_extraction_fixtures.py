@@ -321,7 +321,7 @@ SWIFT_CASES_PER_FILE = {
     "line_endings": 1,
     "multiline_needs": 2,
     "need_refs": 1,
-    "oneline": 11,
+    "oneline": 13,
     "positions": 2,
     "scope": 7,
 }

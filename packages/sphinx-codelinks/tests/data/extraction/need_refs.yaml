@@ -231,6 +231,22 @@ digit_after_marker:
     // 1 \verifies REQ_3 [[B title, IMPL_2]]
     void f() {}
 
+letter_or_number_before_marker:
+  # What may not precede a reference line's first marker is a letter or a number by
+  # Unicode general category, as before a one-line start sequence: after a combining mark
+  # or a circled letter the line is a reference line, which withholds its one-line need;
+  # after a letter number it is not, and the one-line need after the reference is created.
+  lang: cpp
+  config:
+    need_id_markers: ["@need-ids:"]
+    start_sequence: "[["
+    end_sequence: "]]"
+  extract: [oneline, need_refs]
+  source: "// \u093E @need-ids: REQ_1 [[A title, IMPL_1]]\
+    \n// \u24B6 @need-ids: REQ_2 [[B title, IMPL_2]]\
+    \n// \u2160 @need-ids: REQ_3 [[C title, IMPL_3]]\
+    \nvoid f() {}\n"
+
 vhdl_marker:
   # A reference in a VHDL ``--`` comment, and one in a VHDL-2008 block comment.
   lang: vhdl
