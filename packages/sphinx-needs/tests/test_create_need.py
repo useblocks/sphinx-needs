@@ -121,7 +121,7 @@ LOCATION = ("docname", "lineno", "lineno_content", "is_import", "is_external", "
 #: ``add_need``'s keywords that ``create_need`` has too
 NAMED = ("id", "content", "doctype", "jinja_content", "full_title", "allow_type_coercion")
 #: ``add_need``'s keywords that only the record paths give, through the private core
-RECORD_ONLY = ("parts", "arch", "signature", "sections", "external_css")
+RECORD_ONLY = ("arch", "signature", "sections", "external_css")
 
 #: name -> (the legacy keywords, the sources it applies to (None: all))
 CASES = {
@@ -152,9 +152,11 @@ CASES = {
     "no_id_content": (dict(id=None, title="", content="hashed {source}"), None),
     "coercion_on": (dict(count="3"), None),
     "coercion_off": (dict(count="3", allow_type_coercion=False), None),
+    # ``create_need`` takes the parts as a mapping of id to text
+    "parts": (dict(parts={"p1": {"id": "p1", "content": "a part"}}), None),
     "record_only": (
-        dict(parts={"p1": {"id": "p1", "content": "a part"}}, arch={"x": "y"},
-             signature="sig()", sections=["A section"], external_css="ext_css"),
+        dict(arch={"x": "y"}, signature="sig()", sections=["A section"],
+             external_css="ext_css"),
         None,
     ),
     "location": (dict(lineno_content=7, is_import=True), ("unknown",)),
@@ -238,6 +240,10 @@ class DelegationFence(SphinxDirective):
                     location = {k: kw.pop(k) for k in LOCATION if k in kw}
                     explicit_source = source or NeedItemSourceUnknown(**location)
                     named = {k: kw.pop(k) for k in NAMED if k in kw}
+                    if "parts" in kw:
+                        named["parts"] = {
+                            k: v["content"] for k, v in kw.pop("parts").items()
+                        }
                     record_only = {k: kw.pop(k) for k in RECORD_ONLY if k in kw}
                     fields = {k: v for k, v in kw.items() if k not in link_names}
                     links = {k: v for k, v in kw.items() if k in link_names}
@@ -300,15 +306,7 @@ DELEGATION_FILES = [
 @pytest.fixture
 def delegation_rows(test_app: SphinxTestApp) -> list[tuple]:
     test_app.build()
-    # the one case ``add_need`` warns of and the private core does not: the ``parts`` it
-    # is given for a need on a page, which takes its parts from its content (#2486);
-    # the external source keeps them
-    assert build_warnings(test_app) == [
-        f"<srcdir>/index.rst:7: WARNING: Need 'FN_{source}_RECORD_ONLY': the parts ['p1'] "
-        "given to add_need are dropped: a need on a page takes its parts from its content "
-        "[needs.part]"
-        for source in ("UNKNOWN", "DIRECTIVE", "SERVICE", "IMPORT")
-    ]
+    assert build_warnings(test_app) == []
     return test_app.env.delegation_rows
 
 
@@ -469,9 +467,9 @@ def test_an_argument_of_create_need_in_fields_or_links_is_refused_naming_it(
 
 def test_only_the_need_s_own_values_are_named_as_arguments(make_app, tmp_path):
     """The names refused as arguments are the need's own values -- ``title``, ``id``,
-    ``content``, ``doctype``, ``jinja_content``, ``full_title`` --, never the caller's
-    plumbing (``state``, ``source``, ...), which a field author reading a sibling's
-    warning cannot give; two of them are named together."""
+    ``content``, ``doctype``, ``jinja_content``, ``full_title``, ``parts`` --, never
+    the caller's plumbing (``state``, ``source``, ...), which a field author reading a
+    sibling's warning cannot give; two of them are named together."""
     (tmp_path / "conf.py").write_text(
         'extensions = ["sphinx_needs"]\n', encoding="utf-8"
     )

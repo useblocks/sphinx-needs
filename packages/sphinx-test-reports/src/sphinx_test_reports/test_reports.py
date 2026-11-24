@@ -277,7 +277,9 @@ def _fields_the_directives_set(config: Config) -> dict[str, str]:
     - the report-path and source-location fields under their configured names;
     - a Sphinx-Needs core field that is neither a field of the field schema nor an
       argument of ``create_need`` (``external_url``, ``sections``, ...): ``add_need``
-      took one as its own keyword, and it sets nothing a test report means.
+      took one as its own keyword, and it sets nothing a test report means. ``parts``
+      is one, though ``create_need`` takes it: a need's parts are a mapping of id to
+      text, which no option's text is.
     """
     directive_names = {
         "file": config.tr_file[0],
@@ -298,7 +300,7 @@ def _fields_the_directives_set(config: Config) -> dict[str, str]:
             taken.setdefault(name, f"a field {directive_names[kind]} sets itself")
     for option in ("tr_file_option", "tr_source_file_option", "tr_source_line_option"):
         taken.setdefault(getattr(config, option), f"a field {option} names")
-    arguments = set(inspect.signature(create_need).parameters)
+    arguments = set(inspect.signature(create_need).parameters) - {"parts"}
     for name in sorted(set(NeedsCoreFields) - schema_core - arguments):
         taken.setdefault(name, "a core field of Sphinx-Needs that no option can set")
     return taken

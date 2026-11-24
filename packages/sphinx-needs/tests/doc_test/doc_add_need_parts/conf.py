@@ -11,12 +11,12 @@ def _part(part_id):
 
 # each case: the need's id, then what ``add_need`` is given besides it
 CASES = {
-    # content marks no part: both given parts are dropped
+    # content marks no part: both given parts are kept, in the order given
     "plain": (
         "ADD_PLAIN",
         {"content": "Plain content.", "parts": {"bp": _part("bp"), "ap": _part("ap")}},
     ),
-    # content marks another part: the given one is dropped, the content's is kept
+    # content marks another part: the content's first, then the given one
     "marks_other": (
         "ADD_MARKS_OTHER",
         {"content": "Has :np:`(cp)content cp`.", "parts": {"ap": _part("ap")}},
@@ -41,7 +41,7 @@ CASES = {
             "parts": {"ap": _part("ap")},
         },
     ),
-    # nothing given, nothing dropped
+    # nothing given: no part
     "empty": ("ADD_EMPTY", {"content": "Plain.", "parts": {}}),
 }
 

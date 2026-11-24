@@ -7,8 +7,10 @@ Provides the ability to mark specific parts of a need with an own id.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import re
+import unicodedata
 from typing import Final
 
 from docutils import nodes
@@ -57,6 +59,43 @@ _PART_TEXT_WHITE_SPACE: Final = (
     "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
     "\u2028\u2029\u202f\u205f\u3000"
 )
+
+#: The white space that breaks a line: the code points of ``White_Space`` that Unicode's
+#: line breaking algorithm (UAX #14) makes a mandatory break (classes BK, CR, LF, NL).
+_LINE_BREAKS: Final = "\n\x0b\x0c\r\x85\u2028\u2029"
+
+#: A whole run of white space. A stated part's text is any string of a record, so a run is
+#: matched once, from its start: a pattern that may start anywhere inside a run takes time
+#: proportional to the square of the run's length where the run holds no line break.
+_WHITE_SPACE_RUN: Final = re.compile(f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]+")
+
+
+def _on_one_line(text: str) -> str:
+    """A stated part's text as a need whose content is read takes it: each run of white
+    space (``White_Space``) holding a line break (LF, VT, FF, CR, NEL, LS or PS) as one
+    space, every other character as given (``design/parts-contract.md`` section 2)."""
+    return _WHITE_SPACE_RUN.sub(_one_space_where_broken, text)
+
+
+def _one_space_where_broken(run: re.Match[str]) -> str:
+    """A run of white space as taken: one space where it holds a line break."""
+    white_space = run.group()
+    return " " if any(char in _LINE_BREAKS for char in white_space) else white_space
+
+
+def part_id_is_one_word(part_id: str) -> bool:
+    """Whether a part id is one word: it holds no white space, a character of Unicode's
+    ``White_Space`` property, and no control character, one of the general category
+    ``Cc`` (``design/parts-contract.md`` section 2).
+
+    An id the role writes always is (``[\\w-]+``); an id a record or a caller gives may
+    not be, and a need whose content is read does not take a given part whose id is not
+    (``update_need_with_parts``), nor does ``create_need`` (it refuses it).
+    """
+    return not any(
+        char in _PART_TEXT_WHITE_SPACE or unicodedata.category(char) == "Cc"
+        for char in part_id
+    )
 
 
 class NeedPartRole(SphinxRole):
@@ -212,9 +251,25 @@ def _in_section_title(node: nodes.Element) -> bool:
 
 def update_need_with_parts(
     env: BuildEnvironment, need: NeedItem, part_nodes: list[NeedPart]
-) -> None:
+) -> nodes.container | None:
+    """Set the parts of a need whose content is read, and render its stated parts.
+
+    The need's parts are those its content marks (``part_nodes``, the first role of
+    each id), in the order written, then the parts it was given (by its record or its
+    caller, ``need.parts`` until now) whose id its content does not mark, in the order
+    given: a given part whose id the content marks is the content's part, with no
+    finding. A given part whose id is not one word (:func:`part_id_is_one_word`) is not
+    taken, with no finding either. A stated part's text is taken on one line: each run
+    of white space holding a line break (LF, VT, FF, CR, NEL, LS or PS) is one space,
+    so that no place the text is written (the block, a needlist's line, a ``:need:``
+    reference, a needuml label) ends a paragraph or a line inside it. A part the content
+    marks keeps its text.
+
+    :return: The block that shows the need's stated parts after its content, one line
+        per part with its stored text, or ``None`` when the need has none.
+    """
     app = env.app
-    parts = {}
+    parts: dict[str, NeedPartData] = {}
     for part_node in part_nodes:
         part_id = part_node.part_id
 
@@ -236,26 +291,57 @@ def update_need_with_parts(
             id=part_id,
             content=part_node.title,
             backlinks={name: [] for name in need.iter_links_keys()},
+            origin="content",
         )
+        _mark_part(app, need, part_node, part_id, part_node.title)
 
-        part_node.need_id = need["id"]
-        part_id_ref = "{}.{}".format(need["id"], part_id)
-        part_node["reftarget"] = part_id_ref
+    stated = [
+        dataclasses.replace(part, content=_on_one_line(part.content))
+        for part in need.parts
+        if part.id not in parts and part_id_is_one_word(part.id)
+    ]
+    need.set_parts([*parts.values(), *stated])
+    if not stated:
+        return None
 
-        node_need_part_line = nodes.inline(ids=[part_id_ref], classes=["need-part"])
-        node_need_part_line.append(nodes.Text(part_node.title))
+    block = nodes.container(classes=["needs-stated-parts"])
+    for part in stated:
+        part_node = NeedPart(title=part.content, part_id=part.id, need_id=None)
+        _mark_part(app, need, part_node, part.id, part.content, stated=True)
+        block.append(nodes.paragraph("", "", part_node))
+    return block
 
-        if docname := need["docname"]:
-            part_ref_node = make_refnode(
-                app.builder, docname, docname, part_id_ref, nodes.Text(f" {part_id}")
-            )
-            part_ref_node["classes"] += ["needs-id"]
-            node_need_part_line.append(part_ref_node)
 
-        part_node.children = []
-        part_node.append(node_need_part_line)
+def _mark_part(
+    app: Sphinx,
+    need: NeedItem,
+    part_node: NeedPart,
+    part_id: str,
+    text: str,
+    *,
+    stated: bool = False,
+) -> None:
+    """Make ``part_node`` show a part of ``need``: its text, then a link with its id,
+    in an inline holding its address ``NEED.part``, which ``unwrap_need_parts``
+    anchors as each builder anchors it. A stated part's inline has the class
+    ``need-part-stated`` beside ``need-part``."""
+    part_node.need_id = need["id"]
+    part_id_ref = "{}.{}".format(need["id"], part_id)
+    part_node["reftarget"] = part_id_ref
 
-    need.set_parts(list(parts.values()))
+    classes = ["need-part", "need-part-stated"] if stated else ["need-part"]
+    node_need_part_line = nodes.inline(ids=[part_id_ref], classes=classes)
+    node_need_part_line.append(nodes.Text(text))
+
+    if docname := need["docname"]:
+        part_ref_node = make_refnode(
+            app.builder, docname, docname, part_id_ref, nodes.Text(f" {part_id}")
+        )
+        part_ref_node["classes"] += ["needs-id"]
+        node_need_part_line.append(part_ref_node)
+
+    part_node.children = []
+    part_node.append(node_need_part_line)
 
 
 def find_parts(node: nodes.Node) -> list[NeedPart]:

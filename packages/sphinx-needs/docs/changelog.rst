@@ -61,6 +61,52 @@ Improvements
   From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
   keep a project's views through that release.
 
+- ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
+  content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
+  was dead (``needs.link_outgoing``, ``needs.link_ref``). The need now has them, after the parts its content
+  marks, in the record's order, each with its key as its id and its text on one line: each run of white space
+  that holds a line break (LF, VT, FF, CR, NEL U+0085, LS U+2028 or PS U+2029) is one space, in the stored part
+  and so in ``needs.json``, filters and every place the text is written, and every other character is kept;
+  where both give an id, the content's part is the part, with its text, and nothing is reported. A part id is
+  one word: a record part whose id holds white space or a control character is not taken, and is dropped as
+  before. On the page the stated parts are shown in a block after the need's content (the class
+  ``needs-stated-parts``), one line per part with its text, its id and its anchor ``NEED.part``, styled as a part
+  in the content with the class ``need-part-stated`` beside ``need-part``. html, singlehtml, epub, LaTeX and texinfo
+  anchor each line; text and man print each line's text and id after the need's content, text in the need's
+  cell with every paragraph of it on one line, man with no blank line before the first. Links and references to
+  a stated part are live and land on its line, their warnings go, and the importing project's ``needs.json``,
+  tables, flows and filters have it (see :ref:`stated parts <need_stated_parts>`). A need's parts are stored in
+  that order, its content's as written then the stated ones, and a needtable's ``:show_parts:`` rows, needlist,
+  needflow, needextract and the block list them in it; a needtable whose filter selects parts sorts them as it
+  sorts its rows, and :ref:`links_from_match` and a derived join take them in part-id order, as before.
+
+  **A view now lists the stated parts**: a stated part is a part like any other, so a view's filter tests it
+  while :ref:`needs_views_include_parts` is unset or ``True``. With the value unset (the 9.x default), every
+  view whose filter an imported need passes now also lists that need's stated parts and reports
+  ``needs.views_include_parts`` once where it is written, so a ``-W`` build that passed fails. Set the value to
+  ``False`` to select needs alone, or to ``True`` to keep the parts without the report. One more warning can
+  appear: a PlantUML :ref:`needflow` that draws a stated part whose one-word id holds a double quote, a
+  backslash, ``@`` or a square bracket fails to draw it and reports ``[plantuml]`` (graphviz draws it).
+
+  Importing a ``needs.json`` that Sphinx-Needs wrote changes nothing on the page for a need that had no stated
+  part there, where this project reads each need's content as the writing project did: its record states only
+  the parts its content marks. A need that had stated parts there (imported, or given by ``create_need``) is
+  written with them in the file's order, which is by id, and this project takes them in that order, with the
+  same texts, so its block can list them in another order than the writing project's. In two cases a
+  record's parts are now stated parts, where they were dropped: a content holding an ``.. include::`` this
+  project cannot resolve, or may not read (:ref:`needs_import_restrict_content`), whose parts the record carries
+  without their text; and a content in another markup than this project reads it in, such as a MyST need read
+  as reStructuredText, whose ``{np}`` role is no role there, so that its part's text is on the page twice, in
+  the content and in the block (:ref:`needs_import_parse_by_doctype` reads each content in the markup its record
+  names, where this project has a parser for it, and removes that case). A hidden imported need and an external
+  need keep their record's parts alone, as the record gives them, as before.
+
+  Through the API, :func:`~sphinx_needs.api.need.create_need` takes ``parts``, a mapping of part id to text,
+  merged by the same rule; it refuses a part id that is not one word. The deprecated ``add_need`` keeps the
+  ``parts`` it is given for a need on a page, where it dropped them with one ``needs.part`` warning per need.
+  ``NeedPartData`` records whether a part comes from its need's content or is stated (``origin``), which
+  needs.json and filters do not read. Every project re-reads its sources once after upgrading. (:pr:`2581`)
+
 Bug fixes
 .........
 
@@ -126,7 +172,8 @@ Bug fixes
   line after its ``(id)`` no longer starts with a line break. White space at the end, which a MyST role can hold, is
   removed too; white space and line breaks inside the text are kept. White space is Unicode's ``White_Space``. No
   part id changes, and a part with no ``(id)`` keeps its whole text as written. A part a record states keeps its
-  text as given wherever that part is kept, as the ``parts`` of an external need are.
+  text as given wherever that part is kept, as the ``parts`` of an external need are, but for its line breaks
+  where a need whose content is read takes it (see the entry on the parts a record states, above).
 
   **Changed output**: a part's text wherever it is shown or read: in needs.json ``parts`` (and ``content.parts`` of
   the draft format 2a1); as ``content`` in a filter; in the text of ``:need:`` and of a need card's link to a part,
