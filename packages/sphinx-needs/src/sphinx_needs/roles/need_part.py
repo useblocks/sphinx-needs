@@ -63,17 +63,22 @@ _PART_TEXT_WHITE_SPACE: Final = (
 #: line breaking algorithm (UAX #14) makes a mandatory break (classes BK, CR, LF, NL).
 _LINE_BREAKS: Final = "\n\x0b\x0c\r\x85\u2028\u2029"
 
-#: A run of white space holding a line break, as a stated part's text is shown.
-_BROKEN_RUN: Final = re.compile(
-    f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]*[{re.escape(_LINE_BREAKS)}]"
-    f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]*"
-)
+#: A whole run of white space. A stated part's text is any string of a record, so a run is
+#: matched once, from its start: a pattern that may start anywhere inside a run takes time
+#: proportional to the square of the run's length where the run holds no line break.
+_WHITE_SPACE_RUN: Final = re.compile(f"[{re.escape(_PART_TEXT_WHITE_SPACE)}]+")
 
 
 def _shown_on_one_line(text: str) -> str:
     """A stated part's text as its line shows it: each run of white space holding a
     line break as one space, every other character as given."""
-    return _BROKEN_RUN.sub(" ", text)
+    return _WHITE_SPACE_RUN.sub(_one_space_where_broken, text)
+
+
+def _one_space_where_broken(run: re.Match[str]) -> str:
+    """A run of white space as shown: one space where it holds a line break."""
+    white_space = run.group()
+    return " " if any(char in _LINE_BREAKS for char in white_space) else white_space
 
 
 def part_id_is_one_word(part_id: str) -> bool:
