@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795536224011,
+  "lastUpdate": 1795537492176,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -31290,6 +31290,48 @@ window.BENCHMARK_DATA = {
             "value": 191.343204,
             "unit": "MB",
             "extra": "Commit: e297be5e2e29d2e87ace3e7b9299a8dfec28bfa5\nBranch: master\nTime: 2026-11-24T17:02:13+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "46b06ad15e84d40db17cf7216b3cdd9034b984d6",
+          "message": "👌 sphinx-codelinks: one named rule for what may precede a start sequence, pinned by shared cases (#2578)\n\n## What\n\nsphinx-codelinks (`packages/sphinx-codelinks`). The five checks of what\nmay precede a one-line start sequence (the\none-line parser's anchor, and the `docstring_tag`, `jsdoc_tag`,\n`doxygen_tag` and `swift_attribute` rules) now call one\nnamed helper, `_is_alphanumeric` (moved into\n`analyse/oneline_parser.py`; `analyse.py`'s reference-line and\nword-boundary\nrules import it), whose docstring states the rule: a letter or number by\nUnicode general category (L* or N*), which is\nexactly what `str.isalnum` tests. No behaviour changes.\n\n`docs/components/oneline.rst` now states the anchor rule as the code\ntests it (nothing alphanumeric may precede the start\nsequence; comment decoration, whitespace, punctuation and marks may) and\ndefines *alphanumeric* once\n(`oneline_alphanumeric`); the two tag bullets that called the character\nclass a documented non-goal no longer do. An\n*Unreleased* changelog line says the rule is named and pinned.\n\n## Why\n\nWhat counts as alphanumeric before a start sequence was the one part of\nthe marker rules without a named predicate or a\ncase: the corpus headers called it a non-goal. It is now part of the\nshared extraction contract, so any implementation\nof these rules is held to the same characters.\n\n## Tests\n\nSeven cases in the existing shared extraction files, sources written\nwith `\\u` escapes, every character assigned by\nUnicode 6.0: `oneline_letter_or_number_before_start` (cpp; Mn U+0345 and\nU+0301, Mc U+093E, So U+24B6 and U+1F130 each\nyield a need; Lt U+01C5, Lm U+02B0, Nl U+2160, No U+00B2, Nd U+0663 each\nblock),\n`swift_attribute_letter_or_number_before_start_swift` and\n`swift_attribute_letter_or_number_bounded_swift` (the attribute\nrule, default and `@`…`;` styles),\n`jsdoc_tag_letter_or_number_before_start`,\n`doxygen_command_letter_or_number_before_start`,\n`docstring_tag_letter_or_number_before_start`, and `need_refs`'\n`letter_or_number_before_marker` (the reference-line rule). 14 new\nsnapshots; every existing snapshot unchanged.\n`SWIFT_CASES_PER_FILE[\"oneline\"]` 11 -> 13; the new Swift cases parse\nwithout an error. Replacing the helper's `isalnum`\nwith `isalpha` turns all seven red; dropping the titlecase letters (Lt)\nfrom it turns the one-line case red.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-codelinks`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-11-24T17:23:06+01:00",
+          "tree_id": "2a4a6f09db3bbc2d98eaf6d60bbe49310681aa64",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/46b06ad15e84d40db17cf7216b3cdd9034b984d6"
+        },
+        "date": 1795537491426,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0753018179999998,
+            "unit": "s",
+            "extra": "Commit: 46b06ad15e84d40db17cf7216b3cdd9034b984d6\nBranch: master\nTime: 2026-11-24T17:23:06+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.807721598,
+            "unit": "s",
+            "extra": "Commit: 46b06ad15e84d40db17cf7216b3cdd9034b984d6\nBranch: master\nTime: 2026-11-24T17:23:06+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 192.535148,
+            "unit": "MB",
+            "extra": "Commit: 46b06ad15e84d40db17cf7216b3cdd9034b984d6\nBranch: master\nTime: 2026-11-24T17:23:06+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
