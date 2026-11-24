@@ -42,10 +42,12 @@ dependencies = [
   "tree-sitter-cpp>=0.23.4",
   "giturlparse>=0.12.0",
   "tree-sitter-python>=0.23.6",
-  # >=0.25.1: 0.25.0 segfaulted on linux-arm, https://github.com/tree-sitter/py-tree-sitter/issues/386
-  # Not 0.26.0: its Point getters return a borrowed ref, corrupting the heap past row 256 (py-tree-sitter#472,
-  # fixed by #466, unreleased at 2026-09-29). Once 0.26.1 ships: `>=0.25.1,!=0.26.0,<0.27`, proven by test_analyse_long_source.py
-  "tree-sitter~=0.25.1",
+  # >=0.26.1: the 0.26 core recovers better from a syntax error, so a marker near one is attached to its
+  # entity more often (the 0.25 core cut more of them off). 0.26.0 itself is out: its Point getters
+  # return a borrowed ref, corrupting the heap past row 256 (py-tree-sitter#472, fixed by #466 in 0.26.1),
+  # which test_analyse_long_source.py proves. <0.28: a new minor can change the recovery, and with it
+  # which entity a marker binds, or the grammar ABI range (13-15 on 0.27): admit it once the suite passes.
+  "tree-sitter>=0.26.1,<0.28",
   "tree-sitter-c-sharp>=0.23.1",
   "tree-sitter-typescript>=0.23.2",
   "tree-sitter-yaml>=0.7.1",

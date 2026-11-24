@@ -396,25 +396,40 @@ def test_associate_swift(source, expected, init_swift_tree_sitter):
 
 
 @pytest.mark.parametrize(
-    "code",
+    ("code", "top_level"),
     [
-        b"func a() {}\n/* @Block, ID_B, impl */ func b() {}\n",
-        b"import A\n/** doc */ import B\n",
-        b"let x = 1\n/* c */ let y = 2\n",
+        # after a declaration or an import, an ERROR takes in the statements before it
+        (
+            b"func a() {}\n/* @Block, ID_B, impl */ func b() {}\n",
+            ["ERROR", "multiline_comment", "function_declaration"],
+        ),
+        (
+            b"import A\n/** doc */ import B\n",
+            ["ERROR", "multiline_comment", "import_declaration"],
+        ),
+        # after a statement ending in an expression, the comment and the code after it
+        # on its row are read into that expression: a declaration there is lost
+        (b"let x = 1\n/* c */ let y = 2\n", ["property_declaration"]),
+        (b"var x = 1\n/* c */ func g() {}\n", ["property_declaration"]),
     ],
 )
 def test_a_swift_block_comment_before_code_on_its_row_is_a_grammar_error(
-    code, init_swift_tree_sitter
+    code, top_level, init_swift_tree_sitter
 ):
     """A known tree-sitter-swift limitation (documented in ``analyse.rst``): at
-    statement level, a block comment followed by code on its row is parsed as an
-    ``ERROR`` that swallows the statements before it. The comment is still captured,
-    so its marker is extracted; what is lost is the attachment of the markers around
-    it. When the grammar fixes this, this test fails: update the documentation."""
+    statement level, a block comment followed by code on its row is a syntax error,
+    recovered in one of two ways. After a declaration or an import, an ``ERROR`` takes
+    in the statements before it. After a statement that ends in an expression, the
+    tree-sitter core (since 0.26) reads the comment and the code after it on its row
+    into that expression, so the first statement spans both rows and a declaration
+    after the comment is no entity. The comment is still captured either way, so its
+    marker is extracted; what is lost is the attachment of the markers around it.
+    When the grammar or the core changes this, this test fails: update the
+    documentation."""
     parser, query = init_swift_tree_sitter
     tree = parser.parse(code)
     assert tree.root_node.has_error
-    assert tree.root_node.children[0].type == "ERROR"
+    assert [child.type for child in tree.root_node.children] == top_level
     comments = utils.captured_comments(tree, query)
     assert [c.type for c in comments or []] == ["multiline_comment"]
 
