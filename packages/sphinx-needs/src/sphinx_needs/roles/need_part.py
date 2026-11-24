@@ -137,7 +137,7 @@ def unwrap_need_parts(app: Sphinx, doctree: nodes.document, docname: str) -> Non
     for node, source in _parts_by_source_document(doctree, docname):
         if node.children:
             shown = list(node.children)
-            if anchor_with_target:
+            if anchor_with_target and not _in_caption(node):
                 for child in shown:
                     if isinstance(child, nodes.Element) and child["ids"]:
                         ids = [i for i in child["ids"] if (source, i) not in anchored]
@@ -179,6 +179,17 @@ def _parts_by_source_document(
         if isinstance(node, nodes.Element):
             stack.extend((child, source) for child in reversed(node.children))
     return found
+
+
+def _in_caption(node: nodes.Element) -> bool:
+    """Whether the node is in a caption: of a figure, a code block, a
+    ``literalinclude``."""
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, nodes.caption):
+            return True
+        parent = parent.parent
+    return False
 
 
 def _in_section_title(node: nodes.Element) -> bool:
