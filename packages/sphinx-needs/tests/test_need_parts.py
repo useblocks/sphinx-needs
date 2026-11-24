@@ -1023,3 +1023,343 @@ def test_a_part_in_a_title_that_is_no_sections_in_latex(test_app: Sphinx) -> Non
     assert rf"\sphinxcaption{{Table {b1}tab first{{\hyperref" in tex
     assert r"{\sphinxcrossref{ b1}}} and tab second}" in tex
     assert build_warnings(test_app) == PART_IN_A_TITLE_FINDINGS
+
+
+#: A part and a repetition of it in the caption of a figure, of a code block and of a
+#: ``literalinclude``, inside a need, and a ``:need:`` reference to each part
+PART_IN_A_CAPTION_INDEX = """\
+Captions
+========
+
+.. req:: A requirement
+   :id: REQ_K
+
+   .. figure:: img.png
+
+      Fig :np:`(f1) fig first` and :np:`(f1) fig second`
+
+   .. code-block:: text
+      :caption: Code :np:`(c1) code first` and :np:`(c1) code second`
+
+      some code
+
+   .. literalinclude:: included.txt
+      :caption: Lit :np:`(l1) lit first` and :np:`(l1) lit second`
+
+Refs: :need:`REQ_K.f1`, :need:`REQ_K.c1`, :need:`REQ_K.l1`.
+"""
+
+#: each at the line Sphinx gives the caption's text
+PART_IN_A_CAPTION_FINDINGS = [
+    f"<srcdir>/index.rst:{line}: WARNING: Need 'REQ_K' already has a part '{part}': "
+    "the first role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]"
+    for line, part in ((9, "f1"), (14, "c1"), (19, "l1"))
+]
+
+#: each caption's part and repetition, as the html family writes them
+PART_IN_A_CAPTION_HTML = [
+    f'<span class="need-part" id="REQ_K.{part}">{word} first<a class="needs-id '
+    f'reference internal" href="#REQ_K.{part}"> {part}</a></span> and {word} second'
+    for part, word in (("f1", "fig"), ("c1", "code"), ("l1", "lit"))
+]
+
+
+def _part_in_a_caption(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_CAPTION_INDEX),
+            # read by no writer here: the figure needs a file to point at
+            (Path("img.png"), "not an image"),
+            (Path("included.txt"), "included text\n"),
+        ],
+    }
+
+
+def _arguments(written: str, command: str, escape: str) -> list[str]:
+    """The argument of each ``command{…}`` in a written file, up to its closing brace;
+    a brace after ``escape`` is text, not a brace."""
+    found = []
+    start = written.find(command + "{")
+    while start != -1:
+        index = start + len(command) + 1
+        depth = 1
+        while depth:
+            char = written[index]
+            if char == escape:
+                index += 1
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+            index += 1
+        found.append(written[start + len(command) + 1 : index - 1])
+        start = written.find(command + "{", index)
+    return found
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_caption("html")], ids=["html"], indirect=True
+)
+def test_a_part_in_a_caption_in_html(test_app: Sphinx) -> None:
+    """In a figure's, a code block's and a ``literalinclude``'s caption a part is its
+    span, with its id, and a repetition of it is its text, as in a paragraph."""
+    html = _built_part_page(test_app, "index.html")
+    for shown in PART_IN_A_CAPTION_HTML:
+        assert shown in html
+    assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_caption("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
+    """A part in a caption is given no ``\\label`` in LaTeX: the writer puts a target
+    there as ``\\phantomsection\\label{…}``, which breaks ``pdflatex`` inside
+    ``\\sphinxfigcaption{…}`` and ``\\sphinxSetupCaptionForVerbatim{…}``, so the anchor
+    is given up, as it always was, and not the build. The part's text and its
+    repetition's are in the caption, and the references stay unresolved, as before.
+    The part's inline keeps its address, as it did: no output of LaTeX or texinfo shows
+    it, so the resolved tree is read."""
+    tex = _built_part_page(test_app, "parts.tex")
+    captions = _arguments(tex, r"\sphinxfigcaption", "\\") + _arguments(
+        tex, r"\sphinxSetupCaptionForVerbatim", "\\"
+    )
+    assert len(captions) == 3
+    for caption, word in zip(captions, ("fig", "code", "lit"), strict=True):
+        assert r"\phantomsection" not in caption, word
+        assert r"\label" not in caption, word
+        assert f"{word} first" in caption, word
+        assert f" and {word} second" in caption, word
+    for part in ("f1", "c1", "l1"):
+        assert rf"\label{{\detokenize{{index:REQ_K.{part}}}}}" not in tex, part
+        assert rf"\hyperref[\detokenize{{index:REQ_K.{part}}}]" in tex, part
+    assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+    for part in ("f1", "c1", "l1"):
+        assert _holders(test_app, f"REQ_K.{part}") == [nodes.inline], part
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_caption("texinfo")], ids=["texinfo"], indirect=True
+)
+def test_a_part_in_a_caption_has_no_anchor_in_it_in_texinfo(test_app: Sphinx) -> None:
+    """texinfo writes no ``@anchor`` inside ``@caption{…}``: a part in a caption is
+    anchored where it was, once, at the end of the file, where the writer anchors an
+    address it was given no anchor for."""
+    texi = _built_part_page(test_app, "parts.texi")
+    captions = _arguments(texi, "@caption", "@")
+    assert len(captions) == 3
+    for caption, word in zip(captions, ("fig", "code", "lit"), strict=True):
+        assert "@anchor" not in caption, word
+        assert f"{word} first" in caption, word
+        assert f" and {word} second" in caption, word
+    for part in ("f1", "c1", "l1"):
+        anchor = f"@anchor{{index REQ_K {part}}}"
+        assert texi.count(anchor) == 1, part
+        assert texi.index(anchor) > texi.index("Refs: "), part
+    assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+
+
+#: A part one inline deeper in a figure's caption, inside strong emphasis, which only
+#: MyST can write: an rst role cannot be nested in other inline markup
+PART_DEEP_IN_A_CAPTION_MYST = """\
+# Deep
+
+`````{req} A requirement
+:id: REQ_M
+
+````{figure} img.png
+Fig **{np}`(m1) deep first`** and {np}`(m1) deep second`
+````
+`````
+
+Refs: {need}`REQ_M.m1`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "latex",
+            "files": [
+                (
+                    Path("conf.py"),
+                    PART_PAGE_CONF.replace(
+                        '"sphinx_needs"', '"sphinx_needs", "myst_parser"'
+                    ),
+                ),
+                (Path("index.md"), PART_DEEP_IN_A_CAPTION_MYST),
+                (Path("img.png"), "not an image"),
+            ],
+        }
+    ],
+    ids=["latex"],
+    indirect=True,
+)
+def test_a_part_deep_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
+    """A part anywhere in a caption, not only directly in it, is given no label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    [caption] = _arguments(tex, r"\sphinxfigcaption", "\\")
+    assert r"\phantomsection" not in caption
+    assert r"\label" not in caption
+    assert "deep first" in caption
+    assert " and deep second" in caption
+    assert r"\label{\detokenize{index:REQ_M.m1}}" not in tex
+    assert build_warnings(test_app) == [
+        "<srcdir>/index.md:7: WARNING: Need 'REQ_M' already has a part 'm1': the "
+        "first role of an id marks the part, this one is shown as plain text. "
+        "[needs.duplicate_part_id]"
+    ]
+
+
+#: A part and a repetition of it in a footnote of a need, and a reference to the part
+PART_IN_A_FOOTNOTE_INDEX = """\
+Footnotes
+=========
+
+.. req:: A requirement
+   :id: REQ_F
+
+   With a note [#n1]_.
+
+   .. [#n1] Note :np:`(f1) foot part` and :np:`(f1) foot again`.
+
+Refs: :need:`REQ_F.f1`.
+"""
+
+PART_IN_A_FOOTNOTE_FINDINGS = [
+    "<srcdir>/index.rst:9: WARNING: Need 'REQ_F' already has a part 'f1': the first "
+    "role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]"
+]
+
+
+def _part_in_a_footnote(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_FOOTNOTE_INDEX),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_footnote("html")], ids=["html"], indirect=True
+)
+def test_a_part_in_a_footnote_in_html(test_app: Sphinx) -> None:
+    """A part in a footnote is its span, and a repetition of it its text."""
+    html = _built_part_page(test_app, "index.html")
+    assert (
+        'Note <span class="need-part" id="REQ_F.f1">foot part<a class="needs-id '
+        'reference internal" href="#REQ_F.f1"> f1</a></span> and foot again.'
+    ) in html
+    assert build_warnings(test_app) == PART_IN_A_FOOTNOTE_FINDINGS
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_footnote("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_footnote_has_a_label_in_latex(test_app: Sphinx) -> None:
+    """A part in a footnote has its ``\\label`` where the writer puts the footnote's
+    text, once, and the reference to it resolves to it."""
+    tex = _built_part_page(test_app, "parts.tex")
+    label = r"\phantomsection\label{\detokenize{index:REQ_F.f1}}"
+    assert tex.count(r"\label{\detokenize{index:REQ_F.f1}}") == 1
+    assert rf"{label}foot part{{\hyperref" in tex
+    assert r"{\sphinxcrossref{ f1}}}} and foot again." in tex
+    assert r"\hyperref[\detokenize{index:REQ_F.f1}]" in tex
+    assert build_warnings(test_app) == PART_IN_A_FOOTNOTE_FINDINGS
+
+
+#: Where the LaTeX and texinfo writers take a page's name from: the need on the ROOT
+#: page AFTER its toctree, whose page holds a ``needextract`` of it (the root's name
+#: holds again after the included page); the need in an appendix, a ``needextract`` of
+#: it on the root page (an appendix is named by itself); the need on the root page and
+#: a ``needextract`` of it after the toctree, whose page holds one too (one page, one
+#: label, however often the walk leaves the root page and comes back to it)
+PART_SOURCES = {
+    "root-after-toctree": [
+        (Path("conf.py"), PART_PAGE_CONF),
+        (Path("index.rst"), f"Root\n====\n\n.. toctree::\n\n   a\n\n{PART_NEED}"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
+    ],
+    "appendix": [
+        (
+            Path("conf.py"),
+            PART_PAGE_CONF + 'latex_appendices = ["a"]\ntexinfo_appendices = ["a"]\n',
+        ),
+        (Path("index.rst"), f"Root\n====\n\n{PART_EXTRACT}"),
+        (Path("a.rst"), f":orphan:\n\nPage A\n======\n\n{PART_NEED}"),
+    ],
+    "root-around-toctree": [
+        (Path("conf.py"), PART_PAGE_CONF),
+        (
+            Path("index.rst"),
+            f"Root\n====\n\n{PART_NEED}\n.. toctree::\n\n   a\n\n{PART_EXTRACT}",
+        ),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
+    ],
+}
+
+#: the pages each project labels the part on
+PART_SOURCE_PAGES = {
+    "root-after-toctree": ("index", "a"),
+    "appendix": ("index", "a"),
+    "root-around-toctree": ("index", "a"),
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "latex", "files": files} for files in PART_SOURCES.values()],
+    ids=list(PART_SOURCES),
+    indirect=True,
+)
+def test_a_part_is_labelled_by_its_page_in_latex(
+    test_app: Sphinx, request: pytest.FixtureRequest
+) -> None:
+    """LaTeX names a label by the page a node is on, as it walks the assembled tree:
+    a part on the root page after its toctree is the root page's, one in an appendix
+    is the appendix's, and an address shown on the root page before and after its
+    toctree is one label there. Each page's label is written once, at the part's text,
+    and every reference to the part names one of them."""
+    project = request.node.callspec.id
+    tex = _built_part_page(test_app, "parts.tex")
+    pages = PART_SOURCE_PAGES[project]
+    labels = re.findall(r"\\label\{\\detokenize\{([^}]*REQ_A\.p1)\}\}", tex)
+    assert sorted(labels) == sorted(f"{page}:REQ_A.p1" for page in pages)
+    for page in pages:
+        label = rf"\phantomsection\label{{\detokenize{{{page}:REQ_A.p1}}}}"
+        assert f"{label}a local part" in tex, page
+    references = re.findall(r"\\hyperref\[\\detokenize\{([^}]*REQ_A\.p1)\}\]", tex)
+    assert set(references) <= set(labels)
+    assert build_warnings(test_app) == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {"buildername": "texinfo", "files": PART_SOURCES[project]}
+        for project in ("root-after-toctree", "appendix")
+    ],
+    ids=["root-after-toctree", "appendix"],
+    indirect=True,
+)
+def test_a_part_is_anchored_by_its_page_in_texinfo(
+    test_app: Sphinx, request: pytest.FixtureRequest
+) -> None:
+    """texinfo names an anchor by the page a node is on, as LaTeX names a label: the
+    root page's after its toctree, and an appendix's, each before the part's text."""
+    project = request.node.callspec.id
+    texi = _built_part_page(test_app, "parts.texi")
+    for page in PART_SOURCE_PAGES[project]:
+        anchor = f"@anchor{{{page} REQ_A p1}}"
+        assert texi.count(anchor) == 1, page
+        assert re.search(
+            re.escape(anchor) + r"(@anchor\{\d+\})?a local part@ref\{", texi
+        ), page
+    assert build_warnings(test_app) == []

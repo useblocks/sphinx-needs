@@ -280,15 +280,19 @@ Bug fixes
 
   A part's address ``ID.part`` is now an anchor in ``latex`` and ``texinfo`` output. LaTeX wrote no label for it,
   so every link and :ref:`need <role_need>` reference to a part was an undefined reference in the PDF, and texinfo
-  wrote the anchor at the end of the section, so a link to a part landed there. Both now anchor it at the start of
-  the part's text, once per page: where a page shows the part twice, as a ``needextract`` of a need on the need's
-  own page does, at the first, as a browser does with an id a page holds twice.
+  wrote the anchor at the end of the output file, so a link to a part landed there. Both now anchor it at the start
+  of the part's text, once per page: where a page shows the part twice, as a ``needextract`` of a need on the
+  need's own page does, at the first, as a browser does with an id a page holds twice. A part is not anchored at
+  its text in a caption (of a figure, a code block or a ``literalinclude``), where a LaTeX anchor stops
+  ``pdflatex``, so there it is left as it was in both, nor, in texinfo, in an admonition's title or a hyperlink's
+  text, which that writer writes as plain text, so its anchor stays where it was.
 
-  **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a
-  ``\phantomsection\label`` at the start of each part; in ``texinfo``, its ``@anchor`` there instead of at the
-  section's end. A part in ``html``, ``dirhtml``, ``singlehtml`` and ``epub`` is written byte for byte as before,
-  its id on the ``need-part`` span, and so is a part in ``xml`` and ``pseudoxml``. Stored parts, ``needs.json``,
-  filters and links do not change. (:pr:`NNNN`)
+  **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a label at the start
+  of each part, once per page: ``\phantomsection\label`` in running text, a bare ``\label`` in a title, none in a
+  caption; in ``texinfo``, its ``@anchor`` there instead of at the end of the file. A part in ``html``,
+  ``dirhtml``, ``singlehtml`` and ``epub`` is written byte for byte as before, its id on the ``need-part`` span,
+  and so is a part in ``xml`` and ``pseudoxml``. Stored parts, ``needs.json``, filters and links do not change.
+  (:pr:`NNNN`)
 
 Internal changes
 ................
