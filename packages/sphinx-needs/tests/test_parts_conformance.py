@@ -453,8 +453,9 @@ _BUILT = {
     "TEST_C": {"parts": {}, "has_dead_links": True, "tests_back": []},
 }
 _REPORTED = [
-    "<srcdir>/index.rst:5: WARNING: part_need id p1 in need REQ_1 is already taken. "
-    "need_part may get overridden. [needs.duplicate_part_id]",
+    "<srcdir>/index.rst:5: WARNING: Need 'REQ_1' already has a part 'p1': the first "
+    "role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]",
     "<srcdir>/index.rst:9: WARNING: Need 'TEST_C' has unknown outgoing link 'REQ_1.' "
     "in field 'tests' [needs.link_outgoing]",
 ]

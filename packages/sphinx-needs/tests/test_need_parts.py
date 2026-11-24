@@ -1,9 +1,12 @@
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 import pytest
+from docutils import nodes
+from sphinx import version_info
 from sphinx.application import Sphinx
 from syrupy.extensions.json import JSONSnapshotExtension
 
@@ -74,8 +77,8 @@ def test_duplicate_part_id_is_reported_once(test_app: Sphinx):
     app.build()
 
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:8: WARNING: part_need id p1 in need REQ_001 is already taken. need_part may get overridden. [needs.duplicate_part_id]",
-        "<srcdir>/index.rst:13: WARNING: part_need id p1 in need REQ_002 is already taken. need_part may get overridden. [needs.duplicate_part_id]",
+        "<srcdir>/index.rst:8: WARNING: Need 'REQ_001' already has a part 'p1': the first role of an id marks the part, this one is shown as plain text. [needs.duplicate_part_id]",
+        "<srcdir>/index.rst:13: WARNING: Need 'REQ_002' already has a part 'p1': the first role of an id marks the part, this one is shown as plain text. [needs.duplicate_part_id]",
         "<srcdir>/index.rst:15: WARNING: Need part not associated with a need. [needs.part]",
     ]
 
@@ -570,3 +573,876 @@ def test_a_part_outside_every_need_builds_with_text(
     app.build()
 
     assert [w for w in build_warnings(app) if "unknown node type" in w] == []
+
+
+PART_PAGE_CONF = """\
+project = "parts"
+extensions = ["sphinx_needs"]
+needs_build_json = True
+# epub warns of an empty version or copyright
+version = "1.0"
+copyright = "the authors"
+"""
+
+#: A part, a repetition of a part id, a link and a reference to the part, and a part
+#: outside every need, followed by a paragraph: the end of the section, where texinfo
+#: wrote the part's anchor
+PART_PAGE_INDEX = """\
+Parts
+=====
+
+.. req:: A requirement
+   :id: REQ_1
+
+   Marks :np:`(p1) a local part` here.
+   Marks :np:`(d1) the first` and :np:`(d1) the second` here.
+
+.. test:: A test
+   :id: TEST_1
+   :links: REQ_1.p1
+
+Outside: :np:`(o1) outside text` here.
+
+A reference to :need:`REQ_1.p1`.
+
+The last paragraph.
+"""
+
+#: each one finding, where it is written, on every builder
+PART_PAGE_FINDINGS = [
+    "<srcdir>/index.rst:7: WARNING: Need 'REQ_1' already has a part 'd1': the first "
+    "role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]",
+    "<srcdir>/index.rst:14: WARNING: Need part not associated with a need. [needs.part]",
+]
+
+#: what a builder reports beside them on this page, as it does without the parts:
+#: ``man`` cannot span a cell of a need's table, ``epub`` packs no file of a type it
+#: does not know and resolves the page more than once, reporting the outer role again
+#: each time
+#: Sphinx names the type of a warning of its own, or of docutils, from 8.0
+#: (``show_warning_types``)
+_EPUB_FILES_TYPE = " [epub.unknown_project_files]" if version_info >= (8, 0) else ""
+_DOCUTILS_TYPE = " [docutils]" if version_info >= (8, 0) else ""
+
+PART_PAGE_OTHER_WARNINGS = {
+    "man": [
+        f'<srcdir>/index.rst:2: WARNING: "table cell spanning" not supported{_DOCUTILS_TYPE}'
+    ]
+    * 2,
+    "epub": [
+        PART_PAGE_FINDINGS[1],
+        PART_PAGE_FINDINGS[1],
+        PART_PAGE_FINDINGS[1],
+        f"WARNING: unknown mimetype for permalink.html, ignoring{_EPUB_FILES_TYPE}",
+        f"WARNING: unknown mimetype for schema_violations.json, ignoring{_EPUB_FILES_TYPE}",
+    ],
+}
+
+#: the html family's span of a part, byte for byte: stylesheets and scripts select it
+P1_SPAN = (
+    '<span class="need-part" id="REQ_1.p1">a local part<a class="needs-id reference '
+    'internal" href="#REQ_1.p1"> p1</a></span>'
+)
+D1_SPAN = (
+    '<span class="need-part" id="REQ_1.d1">the first<a class="needs-id reference '
+    'internal" href="#REQ_1.d1"> d1</a></span>'
+)
+
+
+def _part_page(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_PAGE_INDEX),
+        ],
+    }
+
+
+def _built_part_page(app: Sphinx, page: str) -> str:
+    """Build the page and read what the builder wrote for it."""
+    app.build()
+    return Path(app.outdir, page).read_text(encoding="utf-8")
+
+
+def _assert_part_page_findings(app: Sphinx) -> None:
+    """The page reports its two findings, and nothing its builder does not report on
+    any page with a need."""
+    assert sorted(build_warnings(app)) == sorted(
+        PART_PAGE_FINDINGS + PART_PAGE_OTHER_WARNINGS.get(app.builder.name, [])
+    )
+
+
+def _words(written: str) -> str:
+    """The text a writer wrote, with its table borders and its line breaks gone, and
+    the font escapes of a man page: docutils before 0.22 sets a part's id link in
+    italics there (``\\fI\\% p1\\fP``), and docutils 0.22 writes it plain."""
+    written = re.sub(r"\\f[A-Z]|\\%", "", written)
+    return " ".join(written.replace("|", " ").split())
+
+
+@pytest.mark.parametrize(
+    "test_app,page",
+    [
+        (_part_page("html"), "index.html"),
+        (_part_page("dirhtml"), "index.html"),
+        (_part_page("singlehtml"), "index.html"),
+        (_part_page("epub"), "index.xhtml"),
+    ],
+    ids=["html", "dirhtml", "singlehtml", "epub"],
+    indirect=["test_app"],
+)
+def test_a_part_in_the_html_family(test_app: Sphinx, page: str) -> None:
+    """The html family writes a part's span exactly as before, the part's id on it, and
+    a role repeating the part id shows its text, as plain text with no id: the
+    repetition is no part. A role outside every need shows its text too.
+
+    The repetition's and the outer role's text was dropped from the page.
+    """
+    html = _built_part_page(test_app, page)
+    assert f"Marks {P1_SPAN} here." in html
+    assert f"Marks {D1_SPAN} and the second here." in html
+    assert html.count('id="REQ_1.d1"') == 1
+    assert "Outside: outside text here." in html
+    _assert_part_page_findings(test_app)
+
+    # the stored parts are the first of each id, as they were: needs.json, the filters
+    # and the links read them
+    needs = SphinxNeedsData(test_app.env).get_needs_view()
+    assert {
+        part_id: dict(part) for part_id, part in needs["REQ_1"]["parts"].items()
+    } == {
+        "p1": {"id": "p1", "content": "a local part", "links_back": ["TEST_1"]},
+        "d1": {"id": "d1", "content": "the first"},
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app,page",
+    [(_part_page("text"), "index.txt"), (_part_page("man"), "parts.1")],
+    ids=["text", "man"],
+    indirect=["test_app"],
+)
+def test_a_repeated_part_shows_its_text_in_text_and_man(
+    test_app: Sphinx, page: str
+) -> None:
+    """``text`` and ``man`` write no anchors: a part is its text and its id, and a
+    repetition of the id, or a role outside every need, is its text."""
+    written = _words(_built_part_page(test_app, page))
+    assert "Marks a local part p1 here." in written
+    assert "Marks the first d1 and the second here." in written
+    assert "Outside: outside text here." in written
+    _assert_part_page_findings(test_app)
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_page("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_has_a_label_in_latex(test_app: Sphinx) -> None:
+    """LaTeX writes a ``\\label`` for a part's address, once, where the part is, so the
+    ``\\hyperref`` of each link and reference to it on this page resolves: the part's
+    own id link, the link of ``TEST_1`` and ``:need:``. The LaTeX writer labels no
+    ``inline``'s ids, and wrote none. A repetition of the id writes no label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    label = r"\phantomsection\label{\detokenize{index:REQ_1.p1}}"
+    assert rf"Marks \DUrole{{need-part}}{{{label}a local part{{\hyperref" in tex
+    assert tex.count(label) == 1
+    assert tex.count(r"\label{\detokenize{index:REQ_1.d1}}") == 1
+    labels = re.findall(r"\\label\{\\detokenize\{(index:REQ_1\.[^}]*)\}\}", tex)
+    references = re.findall(r"\\hyperref\[\\detokenize\{(index:REQ_1\.[^}]*)\}\]", tex)
+    assert sorted(labels) == ["index:REQ_1.d1", "index:REQ_1.p1"]
+    assert set(references) == set(labels)
+    assert "{ d1}}}} and the second here." in tex
+    assert "Outside: outside text here." in tex
+    _assert_part_page_findings(test_app)
+
+    # the address is the target's alone: the part's inline gave its id up
+    doctree = test_app.env.get_and_resolve_doctree("index", test_app.builder)
+    holders = [
+        node for node in doctree.findall(nodes.Element) if "REQ_1.p1" in node["ids"]
+    ]
+    assert [type(node) for node in holders] == [nodes.target]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_page("texinfo")], ids=["texinfo"], indirect=True
+)
+def test_a_part_has_its_anchor_in_place_in_texinfo(test_app: Sphinx) -> None:
+    """texinfo writes a part's ``@anchor`` before the part's text, once; it wrote it
+    after the last paragraph of the section, so a link to the part landed there."""
+    texi = _built_part_page(test_app, "parts.texi")
+    assert re.search(
+        r"Marks @anchor\{index REQ_1 p1\}(@anchor\{\d+\})?a local part@ref\{", texi
+    )
+    assert texi.count("@anchor{index REQ_1 p1}") == 1
+    assert re.search(
+        r"Marks @anchor\{index REQ_1 d1\}(@anchor\{\d+\})?the first@ref\{[^}]*\} and "
+        r"the second here\.",
+        texi,
+    )
+    assert texi.count("@anchor{index REQ_1 d1}") == 1
+    assert "Outside: outside text here." in texi
+    _assert_part_page_findings(test_app)
+
+
+#: A need holding a part, and a ``needextract`` of the need on the same page: the page
+#: shows the need, and so its part, twice
+PART_SHOWN_TWICE_INDEX = """\
+Parts
+=====
+
+.. req:: A requirement
+   :id: REQ_1
+
+   Marks :np:`(p1) a local part` here.
+
+.. needextract::
+   :filter: id == "REQ_1"
+
+A reference to :need:`REQ_1.p1`.
+"""
+
+
+def _part_shown_twice(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_SHOWN_TWICE_INDEX),
+        ],
+    }
+
+
+def _holders(app: Sphinx, address: str) -> list[type[nodes.Element]]:
+    """The type of each node of the resolved page that holds the address as an id."""
+    doctree = app.env.get_and_resolve_doctree("index", app.builder)
+    return [
+        type(node) for node in doctree.findall(nodes.Element) if address in node["ids"]
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_shown_twice("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_shown_twice_has_one_label_in_latex(test_app: Sphinx) -> None:
+    """A part on a page twice, here in a need and in a ``needextract`` of it, has one
+    ``\\label``, at its first occurrence, as a browser takes the first of an id written
+    twice; the later one keeps its text and its id link. A label written at each made
+    LaTeX report the address multiply defined and keep the last, so a link to the part
+    landed on the copy."""
+    tex = _built_part_page(test_app, "parts.tex")
+    label = r"\phantomsection\label{\detokenize{index:REQ_1.p1}}"
+    assert tex.count(r"\label{\detokenize{index:REQ_1.p1}}") == 1
+    assert tex[: tex.index("a local part")].endswith(label)
+    assert tex.count(r"a local part{\hyperref[\detokenize{index:REQ_1.p1}]") == 2
+    assert build_warnings(test_app) == []
+    assert _holders(test_app, "REQ_1.p1") == [nodes.target]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_shown_twice("texinfo")], ids=["texinfo"], indirect=True
+)
+def test_a_part_shown_twice_has_one_anchor_in_texinfo(test_app: Sphinx) -> None:
+    """A part on a page twice has one ``@anchor``, before the text of its first
+    occurrence, and the page's tree holds its address once: the texinfo writer skips an
+    id it has written, so its output alone does not show a second target."""
+    texi = _built_part_page(test_app, "parts.texi")
+    assert texi.count("@anchor{index REQ_1 p1}") == 1
+    assert re.search(
+        r"@anchor\{index REQ_1 p1\}(@anchor\{\d+\})?$",
+        texi[: texi.index("a local part")],
+    )
+    assert texi.count("a local part@ref{") == 2
+    assert build_warnings(test_app) == []
+    assert _holders(test_app, "REQ_1.p1") == [nodes.target]
+
+
+#: A need with a part, a link to the part and a reference to it
+PART_NEED = """\
+.. req:: A need
+   :id: REQ_A
+
+   Marks :np:`(p1) a local part` here.
+
+.. test:: A test
+   :id: TEST_A
+   :links: REQ_A.p1
+
+   See :need:`REQ_A.p1`.
+"""
+
+PART_EXTRACT = """\
+.. needextract::
+   :filter: id == "REQ_A"
+"""
+
+#: The need on one page and a ``needextract`` of it on another, the root page first
+#: and the other page in its toctree: the extract on the earlier page, or on the later
+PART_ON_TWO_PAGES = {
+    "extract-first": [
+        (Path("index.rst"), f"Root\n====\n\n{PART_EXTRACT}\n.. toctree::\n\n   a\n"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_NEED}"),
+    ],
+    "need-first": [
+        (Path("index.rst"), f"Root\n====\n\n{PART_NEED}\n.. toctree::\n\n   a\n"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
+    ],
+}
+
+
+def _part_on_two_pages(buildername: str, order: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [(Path("conf.py"), PART_PAGE_CONF), *PART_ON_TWO_PAGES[order]],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_part_on_two_pages("latex", order) for order in PART_ON_TWO_PAGES],
+    ids=list(PART_ON_TWO_PAGES),
+    indirect=True,
+)
+def test_a_part_on_two_pages_has_a_label_on_each_in_latex(test_app: Sphinx) -> None:
+    """A part shown on two pages, in its need and in a ``needextract`` of it, has a
+    ``\\label`` on each page, at its text: LaTeX names a label by the page it is on
+    (``index:REQ_A.p1``, ``a:REQ_A.p1``), so the two are not one label written twice,
+    and each reference to the part, written with the name of a page, has its label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    page_a = tex.index(r"\label{\detokenize{a::doc}}")
+    for page, written in (("index", tex[:page_a]), ("a", tex[page_a:])):
+        label = rf"\label{{\detokenize{{{page}:REQ_A.p1}}}}"
+        assert tex.count(label) == 1, page
+        assert rf"\phantomsection{label}a local part" in written, page
+    references = re.findall(r"\\hyperref\[\\detokenize\{([^}]*REQ_A\.p1)\}\]", tex)
+    assert set(references) == {"index:REQ_A.p1", "a:REQ_A.p1"}
+    assert build_warnings(test_app) == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_part_on_two_pages("texinfo", order) for order in PART_ON_TWO_PAGES],
+    ids=list(PART_ON_TWO_PAGES),
+    indirect=True,
+)
+def test_a_part_on_two_pages_has_an_anchor_on_each_in_texinfo(
+    test_app: Sphinx,
+) -> None:
+    """A part shown on two pages has an ``@anchor`` on each, before its text there:
+    texinfo names an anchor by the page it is on, as LaTeX names a label."""
+    texi = _built_part_page(test_app, "parts.texi")
+    for page in ("index", "a"):
+        anchor = f"@anchor{{{page} REQ_A p1}}"
+        assert texi.count(anchor) == 1, page
+        assert re.search(
+            re.escape(anchor) + r"(@anchor\{\d+\})?a local part@ref\{", texi
+        ), page
+    assert build_warnings(test_app) == []
+
+
+#: A role in a section title, and a repeated role in an admonition's title and in a
+#: table's caption, inside a need: titles that are no section's
+PART_IN_A_TITLE_INDEX = """\
+Index
+=====
+
+Section :np:`(t1) in a title`
+-----------------------------
+
+Body.
+
+.. req:: A requirement
+   :id: REQ_1
+
+   .. admonition:: Adm :np:`(a1) adm first` and :np:`(a1) adm second`
+
+      Inside.
+
+   .. list-table:: Table :np:`(b1) tab first` and :np:`(b1) tab second`
+
+      * - Cell.
+"""
+
+PART_IN_A_TITLE_FINDINGS = [
+    "<srcdir>/index.rst:12: WARNING: Need 'REQ_1' already has a part 'a1': the first "
+    "role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]",
+    "<srcdir>/index.rst:16: WARNING: Need 'REQ_1' already has a part 'b1': the first "
+    "role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]",
+    "<srcdir>/index.rst:4: WARNING: Need part not associated with a need. [needs.part]",
+]
+
+
+def _part_in_a_title(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_TITLE_INDEX),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_title("html")], ids=["html"], indirect=True
+)
+def test_a_part_in_a_section_title_is_left_as_it_was(test_app: Sphinx) -> None:
+    """A role in a section title shows no text in the heading, as in the entries of the
+    tables of contents, which Sphinx copied from the title when the page was read: a
+    role outside every need shows its text everywhere else, but here the heading would
+    then read otherwise than its entries.
+
+    A title that is no section's is not left so: a repetition in an admonition's title
+    or a table's caption shows its text."""
+    html = _built_part_page(test_app, "index.html")
+    assert '<h2>Section <a class="headerlink" href="#section"' in html
+    assert "in a title" not in html
+    assert "in a title" not in test_app.env.tocs["index"].astext()
+    assert (
+        'Adm <span class="need-part" id="REQ_1.a1">adm first<a class="needs-id '
+        'reference internal" href="#REQ_1.a1"> a1</a></span> and adm second</p>'
+    ) in html
+    assert (
+        'Table <span class="need-part" id="REQ_1.b1">tab first<a class="needs-id '
+        'reference internal" href="#REQ_1.b1"> b1</a></span> and tab second</span>'
+    ) in html
+    assert build_warnings(test_app) == PART_IN_A_TITLE_FINDINGS
+
+
+def _id_in_a_title(part: str) -> str:
+    """A part's id after its text, as the LaTeX writer writes it in a title: a link
+    to the part from Sphinx 9, plain text in Sphinx 7 and 8."""
+    if version_info >= (9, 0):
+        return (
+            rf"{{\hyperref[\detokenize{{index:REQ_1.{part}}}]"
+            rf"{{\sphinxcrossref{{ {part}}}}}}}"
+        )
+    return f" {part}"
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_title("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_title_that_is_no_sections_in_latex(test_app: Sphinx) -> None:
+    """In LaTeX too a section title is left without the role's text, and an admonition's
+    title and a table's caption are not: the part there is labelled, and its repetition
+    shows its text."""
+    tex = _built_part_page(test_app, "parts.tex")
+    assert r"\chapter{Section }" in tex
+    a1 = r"\label{\detokenize{index:REQ_1.a1}}"
+    b1 = r"\label{\detokenize{index:REQ_1.b1}}"
+    assert (tex.count(a1), tex.count(b1)) == (1, 1)
+    assert rf"{{Adm {a1}adm first{_id_in_a_title('a1')} and adm second}}" in tex
+    assert (
+        rf"\sphinxcaption{{Table {b1}tab first{_id_in_a_title('b1')} and tab second}}"
+        in tex
+    )
+    assert build_warnings(test_app) == PART_IN_A_TITLE_FINDINGS
+
+
+#: A part and a repetition of it in the caption of a figure, of a code block and of a
+#: ``literalinclude``, inside a need, and a ``:need:`` reference to each part
+PART_IN_A_CAPTION_INDEX = """\
+Captions
+========
+
+.. req:: A requirement
+   :id: REQ_K
+
+   .. figure:: img.png
+
+      Fig :np:`(f1) fig first` and :np:`(f1) fig second`
+
+   .. code-block:: text
+      :caption: Code :np:`(c1) code first` and :np:`(c1) code second`
+
+      some code
+
+   .. literalinclude:: included.txt
+      :caption: Lit :np:`(l1) lit first` and :np:`(l1) lit second`
+
+Refs: :need:`REQ_K.f1`, :need:`REQ_K.c1`, :need:`REQ_K.l1`.
+"""
+
+#: each at the line Sphinx gives the caption's text
+PART_IN_A_CAPTION_FINDINGS = [
+    f"<srcdir>/index.rst:{line}: WARNING: Need 'REQ_K' already has a part '{part}': "
+    "the first role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]"
+    for line, part in ((9, "f1"), (14, "c1"), (19, "l1"))
+]
+
+#: each caption's part and repetition, as the html family writes them
+PART_IN_A_CAPTION_HTML = [
+    f'<span class="need-part" id="REQ_K.{part}">{word} first<a class="needs-id '
+    f'reference internal" href="#REQ_K.{part}"> {part}</a></span> and {word} second'
+    for part, word in (("f1", "fig"), ("c1", "code"), ("l1", "lit"))
+]
+
+
+def _part_in_a_caption(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_CAPTION_INDEX),
+            # read by no writer here: the figure needs a file to point at
+            (Path("img.png"), "not an image"),
+            (Path("included.txt"), "included text\n"),
+        ],
+    }
+
+
+def _arguments(written: str, command: str, escape: str) -> list[str]:
+    """The argument of each ``command{…}`` in a written file, up to its closing brace;
+    a brace after ``escape`` is text, not a brace."""
+    found = []
+    start = written.find(command + "{")
+    while start != -1:
+        index = start + len(command) + 1
+        depth = 1
+        while depth:
+            char = written[index]
+            if char == escape:
+                index += 1
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+            index += 1
+        found.append(written[start + len(command) + 1 : index - 1])
+        start = written.find(command + "{", index)
+    return found
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_caption("html")], ids=["html"], indirect=True
+)
+def test_a_part_in_a_caption_in_html(test_app: Sphinx) -> None:
+    """In a figure's, a code block's and a ``literalinclude``'s caption a part is its
+    span, with its id, and a repetition of it is its text, as in a paragraph."""
+    html = _built_part_page(test_app, "index.html")
+    for shown in PART_IN_A_CAPTION_HTML:
+        assert shown in html
+    assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_caption("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
+    """A part in a caption is given no ``\\label`` in LaTeX: the writer puts a target
+    there as ``\\phantomsection\\label{…}``, which breaks ``pdflatex`` inside
+    ``\\sphinxfigcaption{…}`` and ``\\sphinxSetupCaptionForVerbatim{…}``, so the anchor
+    is given up, as it always was, and not the build. The part's text and its
+    repetition's are in the caption, and the references stay unresolved, as before.
+    The part's inline keeps its address, as it did: no output of LaTeX or texinfo shows
+    it, so the resolved tree is read."""
+    tex = _built_part_page(test_app, "parts.tex")
+    captions = _arguments(tex, r"\sphinxfigcaption", "\\") + _arguments(
+        tex, r"\sphinxSetupCaptionForVerbatim", "\\"
+    )
+    assert len(captions) == 3
+    for caption, word in zip(captions, ("fig", "code", "lit"), strict=True):
+        assert r"\phantomsection" not in caption, word
+        assert r"\label" not in caption, word
+        assert f"{word} first" in caption, word
+        assert f" and {word} second" in caption, word
+    for part in ("f1", "c1", "l1"):
+        assert rf"\label{{\detokenize{{index:REQ_K.{part}}}}}" not in tex, part
+        assert rf"\hyperref[\detokenize{{index:REQ_K.{part}}}]" in tex, part
+    assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+    for part in ("f1", "c1", "l1"):
+        assert _holders(test_app, f"REQ_K.{part}") == [nodes.inline], part
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_caption("texinfo")], ids=["texinfo"], indirect=True
+)
+def test_a_part_in_a_caption_has_no_anchor_in_it_in_texinfo(test_app: Sphinx) -> None:
+    """texinfo writes no ``@anchor`` inside ``@caption{…}``: a part in a caption is
+    anchored where it was, once, at the end of the file, where the writer anchors an
+    address it was given no anchor for."""
+    texi = _built_part_page(test_app, "parts.texi")
+    captions = _arguments(texi, "@caption", "@")
+    assert len(captions) == 3
+    for caption, word in zip(captions, ("fig", "code", "lit"), strict=True):
+        assert "@anchor" not in caption, word
+        assert f"{word} first" in caption, word
+        assert f" and {word} second" in caption, word
+    for part in ("f1", "c1", "l1"):
+        anchor = f"@anchor{{index REQ_K {part}}}"
+        assert texi.count(anchor) == 1, part
+        assert texi.index(anchor) > texi.index("Refs: "), part
+    assert build_warnings(test_app) == PART_IN_A_CAPTION_FINDINGS
+
+
+#: A figure whose caption and whose legend each hold a part: the legend is the figure's
+#: own text below the caption, and no caption
+PART_IN_A_LEGEND_INDEX = """\
+Legends
+=======
+
+.. req:: A requirement
+   :id: REQ_L
+
+   .. figure:: img.png
+
+      Fig :np:`(k1) in the caption`
+
+      Legend :np:`(g1) in the legend` here.
+
+Refs: :need:`REQ_L.k1`, :need:`REQ_L.g1`.
+"""
+
+
+def _part_in_a_legend(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_LEGEND_INDEX),
+            # read by no writer here: the figure needs a file to point at
+            (Path("img.png"), "not an image"),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_legend("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_figure_s_legend_has_a_label_in_latex(test_app: Sphinx) -> None:
+    """Only a caption gives up its part's anchor: a part in the legend of the same
+    figure is labelled at its text, and the reference to it resolves to that label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    label = r"\phantomsection\label{\detokenize{index:REQ_L.g1}}"
+    assert tex.count(r"\label{\detokenize{index:REQ_L.g1}}") == 1
+    assert rf"{label}in the legend{{\hyperref" in tex
+    assert r"\hyperref[\detokenize{index:REQ_L.g1}]" in tex
+    (caption,) = _arguments(tex, r"\sphinxfigcaption", "\\")
+    assert r"\label" not in caption
+    assert r"\label{\detokenize{index:REQ_L.k1}}" not in tex
+    assert build_warnings(test_app) == []
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_legend("texinfo")], ids=["texinfo"], indirect=True
+)
+def test_a_part_in_a_figure_s_legend_has_its_anchor_in_place_in_texinfo(
+    test_app: Sphinx,
+) -> None:
+    """texinfo anchors a part in a figure's legend at its text, once, and writes no
+    ``@anchor`` in the caption of that figure."""
+    texi = _built_part_page(test_app, "parts.texi")
+    assert re.search(
+        r"Legend @anchor\{index REQ_L g1\}(@anchor\{\d+\})?in the legend@ref\{", texi
+    )
+    assert texi.count("@anchor{index REQ_L g1}") == 1
+    (caption,) = _arguments(texi, "@caption", "@")
+    assert "@anchor" not in caption
+    assert build_warnings(test_app) == []
+
+
+#: A part one inline deeper in a figure's caption, inside strong emphasis, which only
+#: MyST can write: an rst role cannot be nested in other inline markup
+PART_DEEP_IN_A_CAPTION_MYST = """\
+# Deep
+
+`````{req} A requirement
+:id: REQ_M
+
+````{figure} img.png
+Fig **{np}`(m1) deep first`** and {np}`(m1) deep second`
+````
+`````
+
+Refs: {need}`REQ_M.m1`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "latex",
+            "files": [
+                (
+                    Path("conf.py"),
+                    PART_PAGE_CONF.replace(
+                        '"sphinx_needs"', '"sphinx_needs", "myst_parser"'
+                    ),
+                ),
+                (Path("index.md"), PART_DEEP_IN_A_CAPTION_MYST),
+                (Path("img.png"), "not an image"),
+            ],
+        }
+    ],
+    ids=["latex"],
+    indirect=True,
+)
+def test_a_part_deep_in_a_caption_has_no_label_in_latex(test_app: Sphinx) -> None:
+    """A part anywhere in a caption, not only directly in it, is given no label."""
+    tex = _built_part_page(test_app, "parts.tex")
+    [caption] = _arguments(tex, r"\sphinxfigcaption", "\\")
+    assert r"\phantomsection" not in caption
+    assert r"\label" not in caption
+    assert "deep first" in caption
+    assert " and deep second" in caption
+    assert r"\label{\detokenize{index:REQ_M.m1}}" not in tex
+    assert build_warnings(test_app) == [
+        "<srcdir>/index.md:7: WARNING: Need 'REQ_M' already has a part 'm1': the "
+        "first role of an id marks the part, this one is shown as plain text. "
+        "[needs.duplicate_part_id]"
+    ]
+
+
+#: A part and a repetition of it in a footnote of a need, and a reference to the part
+PART_IN_A_FOOTNOTE_INDEX = """\
+Footnotes
+=========
+
+.. req:: A requirement
+   :id: REQ_F
+
+   With a note [#n1]_.
+
+   .. [#n1] Note :np:`(f1) foot part` and :np:`(f1) foot again`.
+
+Refs: :need:`REQ_F.f1`.
+"""
+
+PART_IN_A_FOOTNOTE_FINDINGS = [
+    "<srcdir>/index.rst:9: WARNING: Need 'REQ_F' already has a part 'f1': the first "
+    "role of an id marks the part, this one is shown as plain text. "
+    "[needs.duplicate_part_id]"
+]
+
+
+def _part_in_a_footnote(buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (Path("conf.py"), PART_PAGE_CONF),
+            (Path("index.rst"), PART_IN_A_FOOTNOTE_INDEX),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_footnote("html")], ids=["html"], indirect=True
+)
+def test_a_part_in_a_footnote_in_html(test_app: Sphinx) -> None:
+    """A part in a footnote is its span, and a repetition of it its text."""
+    html = _built_part_page(test_app, "index.html")
+    assert (
+        'Note <span class="need-part" id="REQ_F.f1">foot part<a class="needs-id '
+        'reference internal" href="#REQ_F.f1"> f1</a></span> and foot again.'
+    ) in html
+    assert build_warnings(test_app) == PART_IN_A_FOOTNOTE_FINDINGS
+
+
+@pytest.mark.parametrize(
+    "test_app", [_part_in_a_footnote("latex")], ids=["latex"], indirect=True
+)
+def test_a_part_in_a_footnote_has_a_label_in_latex(test_app: Sphinx) -> None:
+    """A part in a footnote has its ``\\label`` where the writer puts the footnote's
+    text, once, and the reference to it resolves to it."""
+    tex = _built_part_page(test_app, "parts.tex")
+    label = r"\phantomsection\label{\detokenize{index:REQ_F.f1}}"
+    assert tex.count(r"\label{\detokenize{index:REQ_F.f1}}") == 1
+    assert rf"{label}foot part{{\hyperref" in tex
+    assert r"{\sphinxcrossref{ f1}}}} and foot again." in tex
+    assert r"\hyperref[\detokenize{index:REQ_F.f1}]" in tex
+    assert build_warnings(test_app) == PART_IN_A_FOOTNOTE_FINDINGS
+
+
+#: Where the LaTeX and texinfo writers take a page's name from: the need on the ROOT
+#: page AFTER its toctree, whose page holds a ``needextract`` of it (the root's name
+#: holds again after the included page); the need in an appendix, a ``needextract`` of
+#: it on the root page (an appendix is named by itself); the need on the root page and
+#: a ``needextract`` of it after the toctree, whose page holds one too (one page, one
+#: label, however often the walk leaves the root page and comes back to it)
+PART_SOURCES = {
+    "root-after-toctree": [
+        (Path("conf.py"), PART_PAGE_CONF),
+        (Path("index.rst"), f"Root\n====\n\n.. toctree::\n\n   a\n\n{PART_NEED}"),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
+    ],
+    "appendix": [
+        (
+            Path("conf.py"),
+            PART_PAGE_CONF + 'latex_appendices = ["a"]\ntexinfo_appendices = ["a"]\n',
+        ),
+        (Path("index.rst"), f"Root\n====\n\n{PART_EXTRACT}"),
+        (Path("a.rst"), f":orphan:\n\nPage A\n======\n\n{PART_NEED}"),
+    ],
+    "root-around-toctree": [
+        (Path("conf.py"), PART_PAGE_CONF),
+        (
+            Path("index.rst"),
+            f"Root\n====\n\n{PART_NEED}\n.. toctree::\n\n   a\n\n{PART_EXTRACT}",
+        ),
+        (Path("a.rst"), f"Page A\n======\n\n{PART_EXTRACT}"),
+    ],
+}
+
+#: the pages each project labels the part on
+PART_SOURCE_PAGES = {
+    "root-after-toctree": ("index", "a"),
+    "appendix": ("index", "a"),
+    "root-around-toctree": ("index", "a"),
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "latex", "files": files} for files in PART_SOURCES.values()],
+    ids=list(PART_SOURCES),
+    indirect=True,
+)
+def test_a_part_is_labelled_by_its_page_in_latex(
+    test_app: Sphinx, request: pytest.FixtureRequest
+) -> None:
+    """LaTeX names a label by the page a node is on, as it walks the assembled tree:
+    a part on the root page after its toctree is the root page's, one in an appendix
+    is the appendix's, and an address shown on the root page before and after its
+    toctree is one label there. Each page's label is written once, at the part's text,
+    and every reference to the part names one of them."""
+    project = request.node.callspec.id
+    tex = _built_part_page(test_app, "parts.tex")
+    pages = PART_SOURCE_PAGES[project]
+    labels = re.findall(r"\\label\{\\detokenize\{([^}]*REQ_A\.p1)\}\}", tex)
+    assert sorted(labels) == sorted(f"{page}:REQ_A.p1" for page in pages)
+    for page in pages:
+        label = rf"\phantomsection\label{{\detokenize{{{page}:REQ_A.p1}}}}"
+        assert f"{label}a local part" in tex, page
+    references = re.findall(r"\\hyperref\[\\detokenize\{([^}]*REQ_A\.p1)\}\]", tex)
+    assert set(references) <= set(labels)
+    assert build_warnings(test_app) == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {"buildername": "texinfo", "files": PART_SOURCES[project]}
+        for project in ("root-after-toctree", "appendix")
+    ],
+    ids=["root-after-toctree", "appendix"],
+    indirect=True,
+)
+def test_a_part_is_anchored_by_its_page_in_texinfo(
+    test_app: Sphinx, request: pytest.FixtureRequest
+) -> None:
+    """texinfo names an anchor by the page a node is on, as LaTeX names a label: the
+    root page's after its toctree, and an appendix's, each before the part's text."""
+    project = request.node.callspec.id
+    texi = _built_part_page(test_app, "parts.texi")
+    for page in PART_SOURCE_PAGES[project]:
+        anchor = f"@anchor{{{page} REQ_A p1}}"
+        assert texi.count(anchor) == 1, page
+        assert re.search(
+            re.escape(anchor) + r"(@anchor\{\d+\})?a local part@ref\{", texi
+        ), page
+    assert build_warnings(test_app) == []

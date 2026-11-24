@@ -231,6 +231,31 @@ Bug fixes
   **Changed output**: a double space, a tab or a no-break space inside a title is drawn as one space. A title
   with single spaces and no bracket is drawn as before.
 
+- 🐛 The text of a :ref:`need part <need_part>` role is on the page where the role makes no part. A second role
+  with a part id its need already has, such as ``(p1) the second`` after ``(p1) the first``, and a role outside
+  every need rendered nothing, in every builder: ``Marks the first p1 and the second here.`` read ``Marks the first
+  p1 and  here.``. Such a role is now its text, as plain text: no id, no anchor, no link and no ``need-part``
+  class. The first role of an id is still the part, and the ``needs.duplicate_part_id`` warning, still one per
+  repetition, now says so (``Need 'REQ_1' already has a part 'p1': the first role of an id marks the part, this
+  one is shown as plain text.``), where it said the part "may get overridden", which has not been so since 6.0.0.
+  A role in a section title is not changed and still shows no text.
+
+  A part's address ``ID.part`` is now an anchor in ``latex`` and ``texinfo`` output. LaTeX wrote no label for it,
+  so every link and :ref:`need <role_need>` reference to a part was an undefined reference in the PDF, and texinfo
+  wrote the anchor at the end of the output file, so a link to a part landed there. Both now anchor it at the start
+  of the part's text, once per page: where a page shows the part twice, as a ``needextract`` of a need on the
+  need's own page does, at the first, as a browser does with an id a page holds twice. A part is not anchored at
+  its text in a caption (of a figure, a code block or a ``literalinclude``), where a LaTeX anchor stops
+  ``pdflatex``, so there it is left as it was in both, nor, in texinfo, in text that writer writes as plain text
+  (an admonition's title, a hyperlink's text, a ``centered`` line), so its anchor stays where it was.
+
+  **Changed output**: the repeated and the outer roles' text, in every builder; in ``latex``, a label at the start
+  of each part, once per page: ``\phantomsection\label`` in running text, a bare ``\label`` in a title, none in a
+  caption; in ``texinfo``, its ``@anchor`` there instead of at the end of the file. A part in ``html``,
+  ``dirhtml``, ``singlehtml`` and ``epub`` is written byte for byte as before, its id on the ``need-part`` span,
+  and so is a part in ``xml`` and ``pseudoxml``. Stored parts, ``needs.json``, filters and links do not change.
+  (:pr:`2577`)
+
 Internal changes
 ................
 
