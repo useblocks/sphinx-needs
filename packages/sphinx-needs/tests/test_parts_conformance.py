@@ -516,6 +516,9 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
         ("parts", {"REQ_1": {"p1": " one ", "p2": " two"}, "REQ_2": {}}),
         # one skipping a need the case names with no parts
         ("parts", {"REQ_1": {}, "REQ_2": {}}),
+        # one comparing part ids after dropping white space or a character that is not
+        # printable, here a format character (U+200B)
+        ("parts", {"REQ_1": {"p1": " one", "p\u200b2": " two"}, "REQ_2": {}}),
         # one comparing the order as a set, or skipping a need with no parts
         ("order", {"REQ_1": ["p2", "p1"], "REQ_2": []}),
         ("order", {"REQ_1": ["p1", "p2"], "REQ_2": ["p1"]}),
@@ -533,6 +536,7 @@ def test_the_runner_reads_a_faithful_project_as_one() -> None:
     ids=[
         "texts",
         "a-need-with-no-parts",
+        "ids-without-an-invisible-character",
         "the-order-as-a-set",
         "a-need-with-no-parts-in-order",
         "findings-as-a-set",

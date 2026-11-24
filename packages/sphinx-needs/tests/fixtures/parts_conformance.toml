@@ -1247,7 +1247,7 @@ TEST_1 = []
 [[case]]
 name = "stated-a-text-holding-a-line-break-is-taken-on-one-line"
 section = "stated"
-why = "a need whose content is read takes a stated part's text on one line: each run of white space holding a line break is one space, and a text holding no line break is taken as given"
+why = "a need whose content is read takes a stated part's text on one line: each run of white space holding a line break (LF, CR, VT, FF, NEL, LS or PS, each alone here) is one space, an end that is such a run too, every other character is kept (U+001C is no line break), and a text holding no line break is taken as given"
 clean = true
 divergent = { ubcode = "keeps the text as given" }
 config = '''
@@ -1256,11 +1256,11 @@ config = '''
 source = '''
 .. needimport:: imported.json
 '''
-files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"r1": {"id": "r1", "content": "para1\n\npara2"}, "r2": {"id": "r2", "content": "a \n b"}, "r3": {"id": "r3", "content": "one  line\t"}}}}}}}''' }
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"r1": {"id": "r1", "content": "para1\n\npara2"}, "r2": {"id": "r2", "content": "a \n b"}, "r3": {"id": "r3", "content": "one  line\t"}, "cr": {"id": "cr", "content": "a\rb"}, "vt": {"id": "vt", "content": "a\u000bb"}, "ff": {"id": "ff", "content": "a\u000cb"}, "nel": {"id": "nel", "content": "a\u0085b"}, "ls": {"id": "ls", "content": "a\u2028b"}, "ps": {"id": "ps", "content": "a\u2029b"}, "mixed": {"id": "mixed", "content": "a  b\nc"}, "fs": {"id": "fs", "content": "a\u001cb"}, "start": {"id": "start", "content": "\nab"}}}}}}}''' }
 [case.expect]
 findings = []
 [case.expect.parts]
-IMP_1 = { r1 = "para1 para2", r2 = "a b", r3 = "one  line\t" }
+IMP_1 = { r1 = "para1 para2", r2 = "a b", r3 = "one  line\t", cr = "a b", vt = "a b", ff = "a b", nel = "a b", ls = "a b", ps = "a b", mixed = "a  b c", fs = "a\u001cb", start = " ab" }
 
 # --- addressing ------------------------------------------------------------------------
 

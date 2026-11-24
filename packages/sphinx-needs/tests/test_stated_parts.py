@@ -711,19 +711,28 @@ def test_a_stated_text_is_shown_in_time_proportional_to_its_length() -> None:
 # --- a stated text is taken on one line ----------------------------------------------------
 
 #: each stated text as given, and as a need whose content is read takes it: one text per
-#: kind of line break with no LF in it, a run holding a break beside a run of two spaces
-#: holding none, and a text holding no line break at all
+#: kind of line break with no LF in it, each alone, a run holding a break beside a run of
+#: two spaces holding none, and a text holding no line break at all; the rule's edges: a
+#: control character Python also splits lines at (U+001C) is no line break, white space
+#: beyond ASCII (U+00A0, U+3000) beside a break is in its run, and an end that is a run
+#: holding a break is one space, as is a text of breaks alone
 ONE_LINE = {
     "r1": ("para1\n\npara2", "para1 para2"),
     "r2": ("a \n b", "a b"),
     "r3": ("one  line\t", "one  line\t"),
     "cr": ("a\r\rb", "a b"),
-    "vtff": ("a\x0b\x0cb", "a b"),
+    "vt": ("a\x0bb", "a b"),
+    "ff": ("a\x0cb", "a b"),
     "nel": ("a\x85b", "a b"),
     "ls": ("a\u2028b", "a b"),
     "ps": ("a\u2029b", "a b"),
     "crlf": ("a\r\nb", "a b"),
     "mixed": ("a  b\nc", "a  b c"),
+    "fs": ("a\x1cb", "a\x1cb"),
+    "wide": ("a\xa0\n\u3000b", "a b"),
+    "start": ("\nab", " ab"),
+    "end": ("ab\n", "ab "),
+    "breaks": ("\n\r\n", " "),
 }
 
 ONE_LINE_CONF = '''\
@@ -793,12 +802,19 @@ One line
 """
 
 
-def _one_line_record(need_id: str, content: str) -> str:
-    """A needs.json holding one need stating every text of ``ONE_LINE``."""
+def _one_line_record(
+    need_id: str, content: str, more: dict[str, str] | None = None
+) -> str:
+    """A needs.json holding one need stating ``more`` (part id to text), then every text
+    of ``ONE_LINE``."""
     parts = {
         part_id: {"id": part_id, "content": given}
-        for part_id, (given, _) in ONE_LINE.items()
+        for part_id, given in (more or {}).items()
     }
+    parts.update(
+        (part_id, {"id": part_id, "content": given})
+        for part_id, (given, _) in ONE_LINE.items()
+    )
     record = {
         "id": need_id,
         "type": "req",
@@ -813,6 +829,8 @@ def _one_line_record(need_id: str, content: str) -> str:
 
 #: the imported need's content marks a part whose role is written across two lines
 TWO_LINE_ROLE = "Marks :np:`(m1) line one\nline two`."
+#: the imported need's record states that part too, with another text holding a break
+CLASHING_PART = {"m1": "the record's\n\ntext"}
 
 ONE_LINE_PROJECT = {
     "buildername": "html",
@@ -823,7 +841,10 @@ ONE_LINE_PROJECT = {
             Path("texts.json"),
             json.dumps({part_id: given for part_id, (given, _) in ONE_LINE.items()}),
         ),
-        (Path("imported.json"), _one_line_record("IMP_1", TWO_LINE_ROLE)),
+        (
+            Path("imported.json"),
+            _one_line_record("IMP_1", TWO_LINE_ROLE, CLASHING_PART),
+        ),
         (Path("hidden.json"), _one_line_record("IMP_HID", "No role here.")),
         (Path("external.json"), _one_line_record("EXT_1", "No role here.")),
     ],
@@ -848,7 +869,8 @@ def test_a_stated_text_is_taken_on_one_line(test_app: Sphinx) -> None:
     space holding a line break (LF, VT, FF, CR, NEL, LS, PS) as one space, by every
     route a need is given parts: a visible import, an extension's record, ``add_need``
     and ``create_need`` on a page. The stored part, needs.json, what the part answers
-    and the block's line all hold that one line; a run holding no line break is kept."""
+    and the block's line all hold that one line; a run holding no line break is kept,
+    as is every other character, and an end that is a run holding a break is one space."""
     app = test_app
     _built_one_line(app)
     written = _written(app)
@@ -897,13 +919,17 @@ def test_a_need_whose_content_is_not_read_keeps_a_text_as_given(
 def test_a_content_part_keeps_its_line_break(test_app: Sphinx) -> None:
     """The rule is a stated part's alone: a content part whose role is written across
     two lines keeps its line break, in the stored part and on its line, beside the
-    stated parts of the same need, which are taken on one line."""
+    stated parts of the same need, which are taken on one line. So does it where the
+    record states that id too, with another text: the content's part is the part,
+    with its own text as written."""
     app = test_app
     _built_one_line(app)
-    assert _parts(app, "IMP_1")[:2] == [
+    parts = _parts(app, "IMP_1")
+    assert parts[:2] == [
         ("m1", "line one\nline two", "content"),
         ("r1", "para1 para2", "stated"),
     ]
+    assert [p for p, _, _ in parts].count("m1") == 1
     assert _written(app)["IMP_1"]["parts"]["m1"]["content"] == "line one\nline two"
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert 'id="IMP_1.m1">line one\nline two<a ' in html
