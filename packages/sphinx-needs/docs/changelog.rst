@@ -254,7 +254,7 @@ Bug fixes
   caption; in ``texinfo``, its ``@anchor`` there instead of at the end of the file. A part in ``html``,
   ``dirhtml``, ``singlehtml`` and ``epub`` is written byte for byte as before, its id on the ``need-part`` span,
   and so is a part in ``xml`` and ``pseudoxml``. Stored parts, ``needs.json``, filters and links do not change.
-  (:pr:`NNNN`)
+  (:pr:`2577`)
 
 Internal changes
 ................
