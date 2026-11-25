@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import html
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import cache
 from typing import Literal
 from urllib.parse import urlparse
@@ -152,7 +152,7 @@ def process_needflow_graphviz(
         # calculate edge definitions
         content += "\n// edge definitions\n"
         for edge in graph.edges:
-            content += _render_edge(edge, graph.link_labels, cluster_ids)
+            content += _render_edge(edge, graph.link_labels, cluster_ids, graph.nodes)
 
         # note this lists only the need types that were actually drawn, whereas the
         # plantuml engine lists every configured type, so the same bare `:show_legend:`
@@ -403,12 +403,14 @@ def _render_edge(
     edge: GraphEdge,
     link_labels: LinkLabels,
     cluster_ids: dict[str, str | None],
+    drawn: Mapping[str, GraphNode],
 ) -> str:
     """Render an edge in the graphviz format.
 
     :param edge: The edge to render.
     :param link_labels: What to label the edge with, if anything.
     :param cluster_ids: The cluster ids collected by :func:`_render_node`.
+    :param drawn: Every drawn node, by complete id.
     """
     if not (edge.source_drawn and edge.target_drawn):
         # if the start or end node is not rendered, we should not create a link
@@ -429,8 +431,12 @@ def _render_edge(
     )
 
     start_id = _quote(edge.source_id)
-    if (ltail := cluster_ids[edge.source_id]) is not None:
-        # the need has been created as a subgraph and so we also need to create a logical link to the cluster
+    if (ltail := cluster_ids[edge.source_id]) is not None and not _part_of(
+        drawn[edge.target_id], edge.source_id
+    ):
+        # the need has been created as a subgraph and so we also need to create a logical link to the cluster;
+        # not to one of its own parts, drawn inside that cluster (`dot` warns that the
+        # head is inside the tail cluster, and ignores the `ltail`)
         params.append(("ltail", _quote(ltail)))
 
     end_id = _quote(edge.target_id)
@@ -440,6 +446,11 @@ def _render_edge(
 
     param_str = ", ".join(f"{key}={value}" for key, value in params)
     return f"{start_id} -> {end_id} [{param_str}];\n"
+
+
+def _part_of(node: GraphNode, need_id: str, /) -> bool:
+    """Whether *node* is a part of the need *need_id*, drawn inside the need."""
+    return not node.need["is_need"] and node.need["id_parent"] == need_id
 
 
 @cache
