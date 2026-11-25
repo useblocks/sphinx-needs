@@ -13,6 +13,11 @@ is not a part of a need whose content is read, and ``create_need`` refuses it. S
 need takes a stated text on one line: each run of white space holding a line break is
 one space, in the stored part and so wherever the text is written.
 
+A given part's keys the format does not define are one ``needs.unknown_part_keys``
+warning for the need, by every route a need is given parts whose keys the caller does
+not fix, for every part given (also one the need does not take, and one whose id its
+content marks), and such a key costs no part.
+
 ``design/parts-contract.md`` is the rule; ``tests/fixtures/parts_conformance.toml``
 pins what both tools answer, and this module what only a page, the API and the stored
 data show.
@@ -1610,3 +1615,293 @@ def test_a_round_trip_states_no_part(make_app: Any, tmp_path: Path) -> None:
     assert "needs-stated-parts" not in html
     assert "need-part-stated" not in html
     assert html.count('class="need-part"') == 3
+
+
+# --- a given part's unknown keys -----------------------------------------------------------
+
+UNKNOWN_KEYS_CONF = '''\
+import json
+from pathlib import Path
+
+from sphinx.util.docutils import SphinxDirective
+
+from sphinx_needs.api import (
+    NeedItemSource,
+    add_external_need,
+    add_need,
+    generate_need,
+    ingest_need_record,
+)
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
+
+extensions = ["sphinx_needs"]
+needs_links = {"tests": {}}
+needs_external_needs = [{"base_url": "http://example.org/", "json_path": "external.json"}]
+
+#: the parts every route below is given, as a record states them
+PARTS = json.loads(Path(__file__).with_name("parts.json").read_text(encoding="utf-8"))
+
+
+class Given(SphinxDirective):
+    """A need given ``PARTS`` by one route: ``ingest`` (an extension's record), ``add``
+    (the deprecated ``add_need``), ``add-external`` or ``generate`` (which records
+    nothing)."""
+
+    required_arguments = 2
+
+    def run(self):
+        route, need_id = self.arguments
+        app, source = self.env.app, NeedItemSource.from_directive(self)
+        if route == "ingest":
+            record = {
+                "id": need_id, "type": "req", "title": "Given",
+                "content": "No role here.", "parts": PARTS,
+            }
+            return ingest_need_record(app, self.state, record, need_source=source)[0]
+        if route == "add":
+            return add_need(
+                app, self.state, self.env.docname, self.lineno, "req", "Given",
+                id=need_id, content="No role here.", parts=PARTS,
+            )
+        if route == "add-external":
+            return add_external_need(
+                app, "req", "Given", id=need_id,
+                external_url="http://example.org/", parts=PARTS,
+            )
+        generate_need(
+            NeedsSphinxConfig(app.config), SphinxNeedsData(app.env).get_schema(),
+            "req", "Given", id=need_id, need_source=source, parts=PARTS,
+        )
+        return []
+
+
+def setup(app):
+    app.add_directive("given", Given)
+'''
+
+UNKNOWN_KEYS_INDEX = """\
+Unknown part keys
+=================
+
+.. needimport:: imported.json
+
+.. needimport:: hidden.json
+   :hide:
+
+.. given:: ingest ING_1
+
+.. given:: add ADD_1
+
+.. given:: add-external AEX_1
+
+.. given:: generate GEN_1
+"""
+
+#: two parts with keys the format does not define, the first's given unsorted, and a
+#: third with none; the parts are not in the order of their ids
+UNKNOWN_PARTS: dict[str, dict[str, Any]] = {
+    "z1": {"id": "z1", "content": "first", "b": 1, "a": 2},
+    "a2": {"id": "a2", "content": "second", "c": 3},
+    "m3": {"id": "m3", "content": "third"},
+}
+
+#: the report of a need given ``UNKNOWN_PARTS``, without its location
+UNKNOWN_REPORT = (
+    "WARNING: Unknown keys in the parts of need {!r}: ['a', 'b'] in part 'z1', "
+    "['c'] in part 'a2' [needs.unknown_part_keys]"
+)
+
+
+def _needs_json(
+    contents: dict[str, str] | None = None, /, **needs: dict[str, Any]
+) -> str:
+    """A needs.json holding each need, of type ``req``, stating the given parts; its
+    content is ``contents``' for its id, or marks no part."""
+    records = {
+        need_id: {
+            "id": need_id,
+            "type": "req",
+            "title": "Given",
+            "content": (contents or {}).get(need_id, "No role here."),
+            "parts": parts,
+        }
+        for need_id, parts in needs.items()
+    }
+    return json.dumps(
+        {"current_version": "1.0", "versions": {"1.0": {"needs": records}}}
+    )
+
+
+#: a second imported need with an unknown key, on a part whose ``id`` is not its key
+#: (the key is the part's id); one stating the back links of a link type the project
+#: has (``tests``), of one it lacks (``implements``) and two keys that only look like
+#: the first; one stating a part it does not take (its id is not one word); and one
+#: stating a part whose id its content marks
+UNKNOWN_IMPORTED = _needs_json(
+    {"IMP_CW": "Marks :np:`(cw) content text`."},
+    IMP_1=UNKNOWN_PARTS,
+    IMP_2={"q1": {"id": "other", "content": "only", "extra": 1}},
+    IMP_BACK={
+        "k": {"id": "k", "content": "known", "tests_back": ["ELSEWHERE_1"]},
+        "u": {
+            "id": "u",
+            "content": "unknown",
+            "implements_back": ["ELSEWHERE_1"],
+            "xtests_back": ["ELSEWHERE_1"],
+            "tests_backs": ["ELSEWHERE_1"],
+        },
+    },
+    IMP_NW={
+        "two words": {"id": "two words", "content": "not taken", "extra": 1},
+        "ok": {"id": "ok", "content": "taken"},
+    },
+    IMP_CW={"cw": {"id": "cw", "content": "record text", "extra": 1}},
+)
+
+#: the report of ``IMP_BACK``: every ``*_back`` key but that of a link type the project has
+BACK_REPORT = (
+    "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_BACK': "
+    "['implements_back', 'tests_backs', 'xtests_back'] in part 'u' "
+    "[needs.unknown_part_keys]"
+)
+
+#: the reports of ``IMP_NW`` and ``IMP_CW``: a part not taken, and one the content marks
+NOT_KEPT_REPORTS = [
+    "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_NW': "
+    "['extra'] in part 'two words' [needs.unknown_part_keys]",
+    "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_CW': "
+    "['extra'] in part 'cw' [needs.unknown_part_keys]",
+]
+
+
+def _unknown_keys_project(**confoverrides: Any) -> dict[str, Any]:
+    return {
+        "buildername": "html",
+        "confoverrides": confoverrides,
+        "files": [
+            (Path("conf.py"), UNKNOWN_KEYS_CONF),
+            (Path("index.rst"), UNKNOWN_KEYS_INDEX),
+            (Path("parts.json"), json.dumps(UNKNOWN_PARTS)),
+            (Path("imported.json"), UNKNOWN_IMPORTED),
+            (Path("hidden.json"), _needs_json(IMP_HID=UNKNOWN_PARTS)),
+            (Path("external.json"), _needs_json(EXT_1=UNKNOWN_PARTS)),
+        ],
+    }
+
+
+#: each route a need is given parts by whose keys the caller does not fix, its need,
+#: and the location of its report: an import's directive, the caller's line, or none
+#: for an external need (``create_need`` builds each part itself and cannot give one)
+UNKNOWN_ROUTES = {
+    "visible-import": ("IMP_1", "<srcdir>/index.rst:4: "),
+    "hidden-import": ("IMP_HID", "<srcdir>/index.rst:6: "),
+    "external-source": ("EXT_1", ""),
+    "ingest_need_record": ("ING_1", "<srcdir>/index.rst:9: "),
+    "add_need": ("ADD_1", "<srcdir>/index.rst:11: "),
+    "add_external_need": ("AEX_1", ""),
+    "generate_need": ("GEN_1", "<srcdir>/index.rst:15: "),
+}
+
+#: every report of the project, one per need with unknown part keys
+UNKNOWN_REPORTS = sorted(
+    [
+        *(where + UNKNOWN_REPORT.format(nid) for nid, where in UNKNOWN_ROUTES.values()),
+        "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_2': "
+        "['extra'] in part 'q1' [needs.unknown_part_keys]",
+        BACK_REPORT,
+        *NOT_KEPT_REPORTS,
+    ]
+)
+
+
+def _built_unknown_keys(app: Sphinx) -> list[str]:
+    with pytest.warns(DeprecationWarning, match="add_need is deprecated"):
+        app.build()
+    return build_warnings(app)
+
+
+@pytest.mark.parametrize("route", list(UNKNOWN_ROUTES))
+@pytest.mark.parametrize(
+    "test_app", [_unknown_keys_project()], ids=["unknown-keys"], indirect=True
+)
+def test_a_need_s_unknown_part_keys_are_one_warning(
+    test_app: Sphinx, route: str
+) -> None:
+    """A need given parts with keys the format does not define gets ONE
+    ``needs.unknown_part_keys`` warning, naming each such part in the order given with
+    its unknown keys sorted, at the location the need is reported at, and keeps every
+    part, by every route a need is given parts whose keys the caller does not fix."""
+    app = test_app
+    need_id, where = UNKNOWN_ROUTES[route]
+    warnings = _built_unknown_keys(app)
+    assert [w for w in warnings if f"need {need_id!r}" in w] == [
+        where + UNKNOWN_REPORT.format(need_id)
+    ]
+    if route != "generate_need":
+        assert [p for p, _, _ in _parts(app, need_id)] == ["z1", "a2", "m3"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_unknown_keys_project()], ids=["unknown-keys"], indirect=True
+)
+def test_each_need_with_unknown_part_keys_is_one_warning(test_app: Sphinx) -> None:
+    """Two needs of one import with unknown part keys are two warnings, one each, and
+    nothing is reported under ``needs.part``; the parts are kept."""
+    app = test_app
+    warnings = _built_unknown_keys(app)
+    assert sorted(warnings) == UNKNOWN_REPORTS
+    assert not [w for w in warnings if "[needs.part]" in w]
+    assert _parts(app, "IMP_2") == [("q1", "only", "stated")]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_unknown_keys_project()], ids=["unknown-keys"], indirect=True
+)
+def test_a_part_s_back_links_key_is_unknown_for_a_link_type_the_project_lacks(
+    test_app: Sphinx,
+) -> None:
+    """``<link>_back`` is a part's key for a link type the project has, never reported;
+    for one it lacks, and for a key that only starts or ends like one, it is an unknown
+    key like any other. The part is kept either way."""
+    app = test_app
+    warnings = _built_unknown_keys(app)
+    assert [w for w in warnings if "'IMP_BACK'" in w] == [BACK_REPORT]
+    assert [p for p, _, _ in _parts(app, "IMP_BACK")] == ["k", "u"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_unknown_keys_project()], ids=["unknown-keys"], indirect=True
+)
+def test_an_unknown_key_is_reported_for_a_part_the_need_does_not_keep(
+    test_app: Sphinx,
+) -> None:
+    """The report is about the record: a stated part the need does not take (its id is
+    not one word), and one whose id the content marks (the content's part is the part),
+    has its unknown key reported like any other, and which part the need has is as
+    without the key."""
+    app = test_app
+    warnings = _built_unknown_keys(app)
+    assert [w for w in warnings if "'IMP_NW'" in w or "'IMP_CW'" in w] == (
+        NOT_KEPT_REPORTS
+    )
+    assert _parts(app, "IMP_NW") == [("ok", "taken", "stated")]
+    assert _parts(app, "IMP_CW") == [("cw", "content text", "content")]
+
+
+@pytest.mark.parametrize(
+    "test_app,reported",
+    [
+        (_unknown_keys_project(suppress_warnings=["needs.unknown_part_keys"]), []),
+        (_unknown_keys_project(suppress_warnings=["needs.part"]), UNKNOWN_REPORTS),
+    ],
+    ids=["its-own-code", "not-needs-part"],
+    indirect=["test_app"],
+)
+def test_the_unknown_part_keys_warning_is_suppressed_by_its_own_code(
+    test_app: Sphinx, reported: list[str]
+) -> None:
+    """``suppress_warnings = ["needs.unknown_part_keys"]`` silences the report, and
+    ``["needs.part"]``, the code of a part outside a need, does not."""
+    app = test_app
+    assert sorted(_built_unknown_keys(app)) == reported

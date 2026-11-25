@@ -637,20 +637,25 @@ def _generate_need(
     )
 
     parts_objects = []
+    known_part_keys = {"id", "content"} | {k + "_back" for k in links}
+    # each given part's keys the format does not define, in the order given: one
+    # report for the need
+    unknown_part_keys: list[str] = []
     for part_id, part_data in (parts or {}).items():
-        if unknown_part_keys := set(part_data) - (
-            {"id", "content"} | {k + "_back" for k in links}
-        ):
-            log_warning(
-                logger,
-                f"Unused keys {sorted(unknown_part_keys)} in part {part_id!r} of need {need_id!r}.",
-                "part",
-                location,
-            )
+        if unknown := set(part_data) - known_part_keys:
+            unknown_part_keys.append(f"{sorted(unknown)} in part {part_id!r}")
         parts_objects.append(
             NeedPartData(
                 id=part_id, content=str(part_data.get("content", "")), origin="stated"
             )
+        )
+    if unknown_part_keys:
+        log_warning(
+            logger,
+            f"Unknown keys in the parts of need {need_id!r}: "
+            + ", ".join(unknown_part_keys),
+            "unknown_part_keys",
+            location,
         )
 
     extras_pre: dict[str, AllowedTypes | None] = {}
