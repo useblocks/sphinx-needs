@@ -23,7 +23,7 @@ from sphinx_needs.data import NeedsFilteredBaseType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.utils import get_scale, split_link_types
+from sphinx_needs.utils import external_item_url, get_scale, split_link_types
 
 logger = get_logger(__name__)
 
@@ -253,14 +253,13 @@ def calculate_link(
     link = ""
     try:
         if need_info["is_external"]:
-            assert need_info["external_url"] is not None, (
-                "external_url must be set for external needs"
-            )
-            link = need_info["external_url"]
-            # check if need_info["external_url"] is relative path
-            parsed_url = urlparse(need_info["external_url"])
-            if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
-                link = relative + "/" + need_info["external_url"]
+            # a part links the part's anchor
+            external_url = external_item_url(need_info, NeedsSphinxConfig(app.config))
+            link = external_url
+            # check if the external url is relative path
+            parsed_url = urlparse(external_url)
+            if not parsed_url.scheme and not os.path.isabs(external_url):
+                link = relative + "/" + external_url
         elif _docname := need_info["docname"]:
             link = (
                 relative

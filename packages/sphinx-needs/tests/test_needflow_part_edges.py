@@ -509,7 +509,7 @@ def test_an_external_part_links_its_anchor(test_app: SphinxTestApp) -> None:
     assert _links(_cell(row, "id_complete")) == {"→\xa0EXT_1.rp": anchor}
     assert _links(_cell(_row(test_app, "table", "TEST_1"), "tests")) == {
         "EXT_1.rp": anchor,
-        "IMP_1.rp": "#IMP_1.rp",
+        "IMP_1.rp": "index.html#IMP_1.rp",
     }
     plain = _container(test_app, "table-plain")
     assert [r.get("data-need-id") for r in plain.xpath(".//tr[@data-need-id]")] == (
