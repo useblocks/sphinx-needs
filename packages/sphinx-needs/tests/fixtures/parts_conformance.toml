@@ -1263,7 +1263,6 @@ IMP_1 = { r1 = "para1 para2", r2 = "a b", r3 = "one  line\t", cr = "a b", vt = "
 name = "stated-a-record-part-s-unknown-key"
 section = "stated"
 why = "a record part's key the format does not define is one finding for the need, however many of its parts hold one, and costs no part"
-divergent = { ubcode = "reports nothing for a record part's unknown key" }
 config = '''
 [needs]
 '''
@@ -1280,7 +1279,6 @@ IMP_1 = { rp = "a record part", rq = "another" }
 name = "stated-an-unknown-key-of-a-part-not-taken-is-reported"
 section = "stated"
 why = "the finding for a record part's unknown key is about the record: a stated part the need does not take (its id is not one word) has its unknown key reported like any other, and is still not taken"
-divergent = { ubcode = "reports nothing for a record part's unknown key" }
 config = '''
 [needs]
 '''
