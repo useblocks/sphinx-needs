@@ -150,7 +150,7 @@ Parts
 
 .. spec:: A live and a dead part of one need
    :id: SPEC_8
-   :links: REQ_1.zeta, REQ_1.nope
+   :links: REQ_1.zeta, REQ_1.nope, REQ_1.zz
 
 .. spec:: One part named twice, the second time with a condition
    :id: SPEC_9
@@ -577,6 +577,8 @@ DEAD = [
         (42, "SPEC_5", "MISSING.p1"),
         (46, "SPEC_6", "REQ_9.x"),
         (54, "SPEC_8", "REQ_1.nope"),
+        # a dead part whose id sorts after the live one's, as the links are stored
+        (54, "SPEC_8", "REQ_1.zz"),
     )
 ]
 

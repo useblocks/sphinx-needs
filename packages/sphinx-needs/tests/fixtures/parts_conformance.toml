@@ -2568,14 +2568,14 @@ source = '''
 
    :np:`(zeta) the zeta text`
 
-.. spec:: A live and a dead part of one need
+.. spec:: A live and two dead parts of one need
    :id: SPEC_8
-   :links: REQ_1.nope, REQ_1.zeta
+   :links: REQ_1.nope, REQ_1.zeta, REQ_1.zz
 
 .. needflow::
 '''
 [case.expect]
-findings = [{ class = "dead link" }]
+findings = [{ class = "dead link" }, { class = "dead link" }]
 
 [case.expect.flow]
 nodes = ["REQ_1", "SPEC_8"]
