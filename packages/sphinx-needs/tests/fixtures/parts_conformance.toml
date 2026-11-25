@@ -1262,7 +1262,7 @@ IMP_1 = { r1 = "para1 para2", r2 = "a b", r3 = "one  line\t", cr = "a b", vt = "
 [[case]]
 name = "stated-a-record-part-s-unknown-key"
 section = "stated"
-why = "a record part's key the format does not define is one finding for the need, and the part is kept"
+why = "a record part's key the format does not define is one finding for the need, however many of its parts hold one, and costs no part"
 divergent = { ubcode = "reports nothing for a record part's unknown key" }
 config = '''
 [needs]
@@ -1270,11 +1270,28 @@ config = '''
 source = '''
 .. needimport:: imported.json
 '''
-files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"rp": {"id": "rp", "content": "a record part", "extra": 1}}}}}}}''' }
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"rp": {"id": "rp", "content": "a record part", "extra": 1}, "rq": {"id": "rq", "content": "another", "more": 2}}}}}}}''' }
 [case.expect]
 findings = [{ class = "unknown part key" }]
 [case.expect.parts]
-IMP_1 = { rp = "a record part" }
+IMP_1 = { rp = "a record part", rq = "another" }
+
+[[case]]
+name = "stated-an-unknown-key-of-a-part-not-taken-is-reported"
+section = "stated"
+why = "the finding for a record part's unknown key is about the record: a stated part the need does not take (its id is not one word) has its unknown key reported like any other, and is still not taken"
+divergent = { ubcode = "reports nothing for a record part's unknown key" }
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "No role here.", "parts": {"a b": {"id": "a b", "content": "two words", "extra": 1}, "ok": {"id": "ok", "content": "one word"}}}}}}}''' }
+[case.expect]
+findings = [{ class = "unknown part key" }]
+[case.expect.parts]
+IMP_1 = { ok = "one word" }
 
 # --- addressing ------------------------------------------------------------------------
 

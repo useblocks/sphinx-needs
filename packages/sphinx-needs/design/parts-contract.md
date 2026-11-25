@@ -71,8 +71,10 @@ content is not part of this project, has its stated parts, their texts as given.
 part's back links are this project's: those a record gives it are not read. A record part's
 key the format does not define, any but `id`, `content` and the back links of a link type
 the project has, is one finding for the need, `unknown part key`, however many of its parts
-hold one, and the part is kept. A prefix or a namespace given to the ids of imported needs
-changes the need's id, never a part's.
+hold one. It is a finding about the record, made for every part the record states: also for
+one the need does not take, and for one whose id the content marks. Such a key costs no
+part. A prefix or a namespace given to the ids of imported needs changes the need's id,
+never a part's.
 
 ## 3. One id, one part (corpus: `duplicates`)
 

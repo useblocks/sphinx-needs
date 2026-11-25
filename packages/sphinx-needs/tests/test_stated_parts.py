@@ -15,7 +15,8 @@ one space, in the stored part and so wherever the text is written.
 
 A given part's keys the format does not define are one ``needs.unknown_part_keys``
 warning for the need, by every route a need is given parts whose keys the caller does
-not fix, and the part is kept.
+not fix, for every part given (also one the need does not take, and one whose id its
+content marks), and such a key costs no part.
 
 ``design/parts-contract.md`` is the rule; ``tests/fixtures/parts_conformance.toml``
 pins what both tools answer, and this module what only a page, the API and the stored
@@ -1712,14 +1713,17 @@ UNKNOWN_REPORT = (
 )
 
 
-def _needs_json(**needs: dict[str, Any]) -> str:
-    """A needs.json holding each need, of type ``req``, stating the given parts."""
+def _needs_json(
+    contents: dict[str, str] | None = None, /, **needs: dict[str, Any]
+) -> str:
+    """A needs.json holding each need, of type ``req``, stating the given parts; its
+    content is ``contents``' for its id, or marks no part."""
     records = {
         need_id: {
             "id": need_id,
             "type": "req",
             "title": "Given",
-            "content": "No role here.",
+            "content": (contents or {}).get(need_id, "No role here."),
             "parts": parts,
         }
         for need_id, parts in needs.items()
@@ -1729,16 +1733,46 @@ def _needs_json(**needs: dict[str, Any]) -> str:
     )
 
 
-#: a second imported need with an unknown key; and one stating the back links of a link
-#: type the project has (``tests``) and of one it lacks (``implements``)
+#: a second imported need with an unknown key, on a part whose ``id`` is not its key
+#: (the key is the part's id); one stating the back links of a link type the project
+#: has (``tests``), of one it lacks (``implements``) and two keys that only look like
+#: the first; one stating a part it does not take (its id is not one word); and one
+#: stating a part whose id its content marks
 UNKNOWN_IMPORTED = _needs_json(
+    {"IMP_CW": "Marks :np:`(cw) content text`."},
     IMP_1=UNKNOWN_PARTS,
-    IMP_2={"q1": {"id": "q1", "content": "only", "extra": 1}},
+    IMP_2={"q1": {"id": "other", "content": "only", "extra": 1}},
     IMP_BACK={
         "k": {"id": "k", "content": "known", "tests_back": ["ELSEWHERE_1"]},
-        "u": {"id": "u", "content": "unknown", "implements_back": ["ELSEWHERE_1"]},
+        "u": {
+            "id": "u",
+            "content": "unknown",
+            "implements_back": ["ELSEWHERE_1"],
+            "xtests_back": ["ELSEWHERE_1"],
+            "tests_backs": ["ELSEWHERE_1"],
+        },
     },
+    IMP_NW={
+        "two words": {"id": "two words", "content": "not taken", "extra": 1},
+        "ok": {"id": "ok", "content": "taken"},
+    },
+    IMP_CW={"cw": {"id": "cw", "content": "record text", "extra": 1}},
 )
+
+#: the report of ``IMP_BACK``: every ``*_back`` key but that of a link type the project has
+BACK_REPORT = (
+    "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_BACK': "
+    "['implements_back', 'tests_backs', 'xtests_back'] in part 'u' "
+    "[needs.unknown_part_keys]"
+)
+
+#: the reports of ``IMP_NW`` and ``IMP_CW``: a part not taken, and one the content marks
+NOT_KEPT_REPORTS = [
+    "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_NW': "
+    "['extra'] in part 'two words' [needs.unknown_part_keys]",
+    "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_CW': "
+    "['extra'] in part 'cw' [needs.unknown_part_keys]",
+]
 
 
 def _unknown_keys_project(**confoverrides: Any) -> dict[str, Any]:
@@ -1775,8 +1809,8 @@ UNKNOWN_REPORTS = sorted(
         *(where + UNKNOWN_REPORT.format(nid) for nid, where in UNKNOWN_ROUTES.values()),
         "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_2': "
         "['extra'] in part 'q1' [needs.unknown_part_keys]",
-        "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_BACK': "
-        "['implements_back'] in part 'u' [needs.unknown_part_keys]",
+        BACK_REPORT,
+        *NOT_KEPT_REPORTS,
     ]
 )
 
@@ -1828,14 +1862,31 @@ def test_a_part_s_back_links_key_is_unknown_for_a_link_type_the_project_lacks(
     test_app: Sphinx,
 ) -> None:
     """``<link>_back`` is a part's key for a link type the project has, never reported;
-    for one it lacks it is an unknown key like any other. The part is kept either way."""
+    for one it lacks, and for a key that only starts or ends like one, it is an unknown
+    key like any other. The part is kept either way."""
     app = test_app
     warnings = _built_unknown_keys(app)
-    assert [w for w in warnings if "'IMP_BACK'" in w] == [
-        "<srcdir>/index.rst:4: WARNING: Unknown keys in the parts of need 'IMP_BACK': "
-        "['implements_back'] in part 'u' [needs.unknown_part_keys]"
-    ]
+    assert [w for w in warnings if "'IMP_BACK'" in w] == [BACK_REPORT]
     assert [p for p, _, _ in _parts(app, "IMP_BACK")] == ["k", "u"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [_unknown_keys_project()], ids=["unknown-keys"], indirect=True
+)
+def test_an_unknown_key_is_reported_for_a_part_the_need_does_not_keep(
+    test_app: Sphinx,
+) -> None:
+    """The report is about the record: a stated part the need does not take (its id is
+    not one word), and one whose id the content marks (the content's part is the part),
+    has its unknown key reported like any other, and which part the need has is as
+    without the key."""
+    app = test_app
+    warnings = _built_unknown_keys(app)
+    assert [w for w in warnings if "'IMP_NW'" in w or "'IMP_CW'" in w] == (
+        NOT_KEPT_REPORTS
+    )
+    assert _parts(app, "IMP_NW") == [("ok", "taken", "stated")]
+    assert _parts(app, "IMP_CW") == [("cw", "content text", "content")]
 
 
 @pytest.mark.parametrize(
