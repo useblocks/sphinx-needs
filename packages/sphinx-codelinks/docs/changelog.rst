@@ -40,6 +40,15 @@ New and Improved
   named rule, :ref:`alphanumeric <oneline_alphanumeric>`: a letter or a number of any
   script by Unicode general category. A combining mark or a circled letter is neither.
   New shared test cases pin it; nothing extracted changes.
+- 👌 The ``tree-sitter`` requirement is now ``>=0.26.1,<0.28`` (it was ``~=0.25.1``): its
+  newer core recovers better from a syntax error, so a marker near one is attached to its
+  entity more often, mostly in C++, where a marker the error had cut off from its entity was
+  attached to none. Code without a syntax error extracts as before. 0.26.0 is left out: past
+  line 256 it can crash the analysis or report a wrong line. Swift's documented block-comment
+  limit changes shape: after a statement that ends in an expression (``let x = 1``), a block
+  comment followed by code on its line is read into that expression, with the code after it,
+  so a declaration there is no entity, where the older core kept it. Put such a comment on a
+  line of its own.
 
 Fixes
 .....

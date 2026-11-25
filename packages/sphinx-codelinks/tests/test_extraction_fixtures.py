@@ -305,9 +305,9 @@ def _swift_cases() -> list:
 @pytest.mark.parametrize("case", _swift_cases())
 def test_a_swift_case_parses_without_an_error(case: dict) -> None:
     """Every Swift case is valid Swift as tree-sitter-swift reads it: no ``ERROR`` or
-    ``MISSING`` node. The cases are shared with ubCode, whose Rust tree-sitter recovers
-    from a syntax error differently from py-tree-sitter, so a case that needed recovery
-    would pin one runtime's recovery rather than the extraction."""
+    ``MISSING`` node. tree-sitter cores recover from a syntax error differently (0.25 and
+    0.27 do, for Swift's block comments), so a case that needed recovery would pin one
+    core's recovery rather than the extraction."""
     parser, _ = init_tree_sitter(CommentType.swift)
     tree = parser.parse(case["source"].encode("utf-8"))
     assert not tree.root_node.has_error

@@ -476,10 +476,12 @@ What counts as an entity
   ``tree-sitter-swift`` grammar, documented rather than worked around:
 
   - A block comment followed by code on its own line at statement level (at file level or in a body of code, not in
-    a type's body) -- ``/* @Title, ID_1, impl */ func f() {}`` -- is parsed as a syntax error that takes the
-    statements before it in: its marker is still extracted, but it and the markers around it may lose their entity,
-    and the comments before the file's first item may no longer be its header. Put the block comment on a line of its own,
-    or use ``//``.
+    a type's body) -- ``/* @Title, ID_1, impl */ func f() {}`` -- is parsed as a syntax error. After a declaration
+    or an ``import``, the error takes the statements before it in. After a statement that ends in an expression
+    (``let x = 1``, a call, ``typealias T = Int``), the comment and the code after it on its line are read into that
+    expression, so a declaration there is no entity. Either way its marker is still extracted, but it and the markers
+    around it may lose their entity, and the comments before the file's first item may no longer be its header. Put
+    the block comment on a line of its own, or use ``//``.
   - A bare regular expression literal with an escaped slash at the end of a line (``let r = /a\/b/``) swallows the
     lines after it: a marker there is still extracted, but attached to the wrong entity. Write it as an extended
     literal, ``#/a/b/#``.
