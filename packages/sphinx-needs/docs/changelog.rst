@@ -115,7 +115,7 @@ Improvements
   :ref:`needs_external_needs` source, or ``parts`` given to ``add_need``, ``add_external_need``,
   ``generate_need`` or ``ingest_need_record``. A project that lists ``needs.part`` in ``suppress_warnings`` to
   silence it sees it again, and a ``-W`` build then fails: list ``needs.unknown_part_keys``. Which parts a need
-  keeps is unchanged. (:pr:`NNNN`)
+  keeps is unchanged. (:pr:`2586`)
 
 Bug fixes
 .........
