@@ -11,8 +11,9 @@ This page states what a part is and how it is addressed. Its executable half is
 repository is its repository of record, and ubCode is to vendor it. Each section below
 names the corpus section that pins it. The user's documentation is the `need_part` section
 of `docs/roles.rst`. The findings named here (`duplicate part id`, `part outside a need`,
-`dead link`, `link target type`, `link condition`, `unresolved reference`) are classes of
-this contract: each tool reports them under codes of its own, which the corpus header maps.
+`dead link`, `link target type`, `link condition`, `unresolved reference`,
+`unknown part key`) are classes of this contract: each tool reports them under codes of its
+own, which the corpus header maps.
 
 ## 1. The role and its grammar (corpus: `grammar`)
 
@@ -67,8 +68,11 @@ id is one word: a stated part whose id holds white space (a character of Unicode
 `White_Space` property) or a control character (one of the general category `Cc`) is not
 taken by a need whose content is read, and there is no finding. An external need, whose
 content is not part of this project, has its stated parts, their texts as given. A stated
-part's back links are this project's: those a record gives it are not read. A prefix or a
-namespace given to the ids of imported needs changes the need's id, never a part's.
+part's back links are this project's: those a record gives it are not read. A record part's
+key the format does not define, any but `id`, `content` and the back links of a link type
+the project has, is one finding for the need, `unknown part key`, however many of its parts
+hold one, and the part is kept. A prefix or a namespace given to the ids of imported needs
+changes the need's id, never a part's.
 
 ## 3. One id, one part (corpus: `duplicates`)
 

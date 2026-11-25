@@ -53,7 +53,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 79
+EXPECTED_CASE_COUNT = 80
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -86,6 +86,7 @@ CLASSES = {
     "link_target_type": "link target type",
     "link_condition_failed": "link condition",
     "link_ref": "unresolved reference",
+    "unknown_part_keys": "unknown part key",
 }
 
 #: The tools a ``divergent`` marker may name; this runner is the first's.

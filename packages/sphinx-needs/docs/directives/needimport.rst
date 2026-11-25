@@ -83,6 +83,9 @@ is one space, and every other character is kept. Where both give an id, the cont
 is the part, with its text, and nothing is reported. A part whose id is not one word (it
 holds white space or a control character) is not taken; a ``:hide:`` import keeps it (see
 below). The back links a record gives a part are not read: this project computes its own.
+A part's key other than ``id``, ``content`` and the back links of a link type this project
+has is reported once for the need, naming each such part and its keys, as
+``needs.unknown_part_keys``; the part is kept.
 The parts the record states alone are shown in a block after the need's content (see
 :ref:`stated parts <need_stated_parts>`), so a link or a ``:need:`` reference to one is live
 and lands there.

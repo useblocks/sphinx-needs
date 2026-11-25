@@ -107,6 +107,16 @@ Improvements
   ``NeedPartData`` records whether a part comes from its need's content or is stated (``origin``), which
   needs.json and filters do not read. Every project re-reads its sources once after upgrading. (:pr:`2581`)
 
+- 👌 The warning for the keys of a need's given parts that the format does not define (any but ``id``,
+  ``content`` and the ``<link>_back`` of a link type the project has) now has its own code,
+  ``needs.unknown_part_keys``, and comes once per need, naming each such part in the order given with its keys,
+  where it came once per part under ``needs.part``, the code of a part outside a need. Only a project that
+  imports or loads records whose parts carry such keys is affected: a :ref:`needimport` or a
+  :ref:`needs_external_needs` source, or ``parts`` given to ``add_need``, ``add_external_need``,
+  ``generate_need`` or ``ingest_need_record``. A project that lists ``needs.part`` in ``suppress_warnings`` to
+  silence it sees it again, and a ``-W`` build then fails: list ``needs.unknown_part_keys``. The parts are kept,
+  as before. (:pr:`NNNN`)
+
 Bug fixes
 .........
 
