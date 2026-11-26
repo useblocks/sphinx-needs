@@ -10,7 +10,6 @@ lookups: how many a cold analysis makes, and where in the source a call may be w
 
 import ast
 import ctypes
-import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -21,7 +20,7 @@ import pytest
 pytest.importorskip("clang.cindex")
 
 import sphinx_codelinks
-from sphinx_codelinks.analyse.preproc import libclang_parser, loader
+from sphinx_codelinks.analyse.preproc import compile_db, libclang_parser, loader
 
 from .test_extraction_fixtures import LINE_ENDINGS, _extract, _load_cases
 from .test_preproc_includer import _db, _run, _write
@@ -123,40 +122,26 @@ def test_a_file_entered_twice_is_looked_up(tmp_path: Path) -> None:
 
 @contextmanager
 def _costs() -> Iterator[dict[str, int]]:
-    """What finding the starts costs inside: ``loader.inclusions`` calls, and the walks
-    of a unit's top-level cursors ``loader.entry_starts`` makes (the (d) anchors), with
-    the cursors each walk took. Counted from outside the engine, so a cost the engine
-    does not count is counted too."""
-    cx = loader.load_clang_cindex()
-    costs = {"inclusions": 0, "walks": 0, "cursors": 0, "children": 0}
+    """What finding the starts costs inside: ``loader.inclusions`` calls, counted from
+    outside the engine, and the walks of a unit's top-level cursors
+    ``loader.entry_starts`` makes (the (d) anchors) with the cursors they took, from
+    the engine's own count (``loader.costs``)."""
+    costs = {"inclusions": 0}
     inclusions = loader.inclusions
-    get_children = cx.Cursor.get_children
+    before = loader.costs()
 
     def counting_inclusions(*args: Any) -> Any:
         costs["inclusions"] += 1
         return inclusions(*args)
 
-    def counting_children(self: Any) -> Iterator[Any]:
-        children = list(get_children(self))
-        if sys._getframe(1).f_code.co_name != "entry_starts":
-            return iter(children)
-        costs["walks"] += 1
-        costs["children"] += len(children)
-
-        def taken() -> Iterator[Any]:
-            for child in children:
-                costs["cursors"] += 1
-                yield child
-
-        return taken()
-
     loader.inclusions = counting_inclusions
-    cx.Cursor.get_children = counting_children
     try:
         yield costs
     finally:
         loader.inclusions = inclusions
-        cx.Cursor.get_children = get_children
+        after = loader.costs()
+        costs["walks"] = after["walks"] - before["walks"]
+        costs["cursors"] = after["cursors"] - before["cursors"]
 
 
 def test_a_unit_read_for_many_headers_finds_its_starts_once(tmp_path: Path) -> None:
@@ -216,11 +201,12 @@ def test_the_walk_stops_once_every_file_has_a_start(tmp_path: Path) -> None:
         tmp_path / "main.c", [f"-working-directory={tmp_path}"]
     )
     leaf = tu.get_file(str(tmp_path / "leaf.h"))
+    children = len(list(tu.cursor.get_children()))
     with _costs() as costs:
         starts = loader.entry_starts(tu, [leaf])
     assert list(starts) == [loader.file_id(leaf)]
     assert costs["walks"] == 1
-    assert costs["cursors"] < costs["children"] - 250
+    assert costs["cursors"] < children - 250
 
 
 def _lookup_sites() -> list[str]:
@@ -282,12 +268,14 @@ def _file_location(location: Any) -> tuple[Any, int]:
     return loader.file_id(file.value), offset.value
 
 
-def _check_unit(tu: Any) -> tuple[int, list[str]]:
+def _check_unit(tu: Any, working: Path) -> tuple[int, list[str]]:
     """Assert that every file ``tu`` entered once and has a start for reads as the
     lookup reads it: the same start (raw encoding), the same system-header answer, and
-    the same range for ``_active_comments`` (both raw ends, every token by kind and
-    offsets). Returns how many files had a start and the non-empty files entered once
-    that had none."""
+    the same range for ``_active_comments``, made from the unit's starts and the file's
+    bytes as it reads them (both ends, every token by kind and offsets); and that a
+    file entered once with no start holds no token but comments. A relative name is
+    taken against ``working``, the unit's working directory. Returns how many files had
+    a start and the non-empty files entered once that had none."""
     cx = loader.load_clang_cindex()
     entered = loader.inclusions(tu)
     counts: dict[Any, int] = {}
@@ -306,16 +294,28 @@ def _check_unit(tu: Any) -> tuple[int, list[str]]:
         if start is None:
             if loader.file_contents(tu, file):
                 without.append(file.name)
+                # no location in it: comments only
+                kinds = {
+                    kind
+                    for _, _, kind in _comments(
+                        tu,
+                        cx.SourceRange.from_locations(
+                            cx.SourceLocation.from_position(tu, file, 1, 1),
+                            cx.SourceLocation.from_offset(
+                                tu, file, len(loader.file_contents(tu, file) or b"")
+                            ),
+                        ),
+                    )
+                }
+                assert kinds <= {"COMMENT"}, f"{file.name} has {kinds} but no start"
             continue
         looked = cx.SourceLocation.from_offset(tu, file, 0)
         assert int(start.int_data) == int(looked.int_data), file.name
         assert bool(start.is_in_system_header) == bool(looked.is_in_system_header)
         # the range _active_comments reads, its end line as it counts it
-        raw = Path(file.name).read_bytes() if Path(file.name).is_absolute() else None
-        if raw is None:
-            continue
+        raw = (working / file.name).read_bytes()
         line = len(raw.decode("utf-8", errors="replace").splitlines()) + 1
-        made = libclang_parser._whole_file(tu, file, line)
+        made = libclang_parser._whole_file(tu, file, line, starts, raw)
         reference = cx.SourceRange.from_locations(
             cx.SourceLocation.from_position(tu, file, 1, 1),
             cx.SourceLocation.from_position(tu, file, line, 1),
@@ -335,9 +335,9 @@ def _every_unit_checked() -> Iterator[list[tuple[int, list[str]]]]:
     checked: list[tuple[int, list[str]]] = []
     parse: Callable[..., Any] = loader.parse_translation_unit
 
-    def checking(*args: Any) -> Any:
-        tu = parse(*args)
-        checked.append(_check_unit(tu))
+    def checking(main: Path, args: list[str], *rest: Any) -> Any:
+        tu = parse(main, args, *rest)
+        checked.append(_check_unit(tu, compile_db.working_directory(args)))
         return tu
 
     loader.parse_translation_unit = checking
@@ -387,7 +387,7 @@ def test_a_made_range_is_the_looked_up_one(tmp_path: Path) -> None:
     tu = libclang_parser.parse_translation_unit(
         main, [f"-working-directory={tmp_path}"]
     )
-    started, without = _check_unit(tu)
+    started, without = _check_unit(tu, tmp_path)
     assert sorted(Path(n).name for n in without) == ["comments_only.h"]
     # every file but twice.h, empty.h and comments_only.h, and the main file
     assert started == len(HAND_CASES) - 2 + 1
@@ -406,15 +406,12 @@ def test_every_preproc_case_reads_its_made_ranges_as_looked_up(
     case: dict, tmp_path: Path
 ) -> None:
     """Every unit the engine parses for a libclang case of the shared corpus
-    (``tests/data/extraction/preproc_*.yaml``) passes :func:`_check_unit`, and only a
-    file with no location in it (comments only) is without a start."""
+    (``tests/data/extraction/preproc_*.yaml``) passes :func:`_check_unit`: a file
+    entered once without a start holds comments only."""
     source = case["source"].replace("\n", LINE_ENDINGS[case.get("line_endings", "lf")])
-    with _every_unit_checked() as checked:
+    # a case whose every parse is refused parses no unit; the next test counts them
+    with _every_unit_checked():
         _extract(case, tmp_path, source)
-    for _, without in checked:
-        for name in without:
-            text = Path(name).read_bytes()
-            assert b"#" not in text, f"{name} has a directive but no start"
 
 
 def test_the_corpus_has_units_and_starts(tmp_path: Path) -> None:
@@ -481,7 +478,7 @@ def test_a_system_header_is_told_at_the_start_of_its_entry(tmp_path: Path) -> No
         work / "usr" / "pragma.h",
         work / "usr" / "marker.h",
     }
-    started, without = _check_unit(tu)
+    started, without = _check_unit(tu, tmp_path)
     assert (started, without) == (5, [])
 
 
@@ -501,6 +498,10 @@ def test_a_system_header_is_told_at_the_start_of_its_entry(tmp_path: Path) -> No
         "// a\u2028b\n// c".encode(),
         b"// \xff\xfe\n// c\n",
         b"// a\x1cb\n/* c */",
+        b"\xef\xbb\xbf// bom\nint x;\n// c\n",
+        # a CRLF across clang's 8-byte word scan of the buffer
+        b"1234567\r\n89\r\n1234\r\n// c\r\n",
+        b"// 345678901234\r\n/* c */\r",
     ],
 )
 def test_a_line_is_where_clang_places_it(raw: bytes, tmp_path: Path) -> None:
@@ -588,3 +589,63 @@ def test_a_location_that_is_not_the_files_is_no_start(tmp_path: Path) -> None:
     size = len((tmp_path / "m.c").read_bytes())
     assert loader.made_at(start, size) is not None
     assert loader.made_at(start, size + 10) is None
+
+
+def test_an_unreadable_entry_makes_no_start(tmp_path: Path) -> None:
+    """An exception while ``loader.inclusions`` copies an entry (inside a ctypes
+    callback, where it would be printed and swallowed) marks the list incomplete: no
+    file's count of entries is known, so no start is made, every location is looked up,
+    and ``included_files`` gives the same answer."""
+    cx = loader.load_clang_cindex()
+    (tmp_path / "a.h").write_text("int a;\n")
+    (tmp_path / "main.c").write_text('#include "a.h"\n')
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "main.c", [f"-working-directory={tmp_path}"]
+    )
+    files = [i.file for i in loader.inclusions(tu)]
+    work = tmp_path.resolve()
+    assert loader.entry_starts(tu, files)
+    copy = cx.SourceLocation.from_buffer_copy
+
+    def failing(*_args: Any) -> Any:
+        raise RuntimeError("an entry that cannot be read")
+
+    cx.SourceLocation.from_buffer_copy = failing
+    try:
+        assert not loader.inclusions(tu).complete
+        assert loader.entry_starts(tu, files) == {}
+        assert libclang_parser.included_files(tu, work) == {work / "a.h"}
+    finally:
+        cx.SourceLocation.from_buffer_copy = copy
+
+
+@pytest.mark.parametrize("change", [b"// grown\n", b""])
+def test_a_file_changed_since_the_parse_is_looked_up(
+    change: bytes, tmp_path: Path
+) -> None:
+    """The end is made over the file's bytes as read from disk only when its entry
+    holds exactly as many; a file grown or shrunk since the parse is looked up, so its
+    comments are what the looked-up range gives."""
+    cx = loader.load_clang_cindex()
+    header = tmp_path / "h.h"
+    header.write_bytes(b"// one\nint h;\n// two\n")
+    (tmp_path / "main.c").write_text('#include "h.h"\n')
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "main.c", [f"-working-directory={tmp_path}"]
+    )
+    file = tu.get_file(str(header))
+    starts = loader.entry_starts(tu, [file])
+    start = starts[loader.file_id(file)]
+    assert loader.entry_has(start, len(header.read_bytes()))
+    # grown by a line, or shrunk to its first
+    before = header.read_bytes()
+    header.write_bytes(before + change if change else before[:7])
+    raw = header.read_bytes()
+    assert not loader.entry_has(start, len(raw))
+    line = len(raw.decode().splitlines()) + 1
+    made = libclang_parser._whole_file(tu, file, line, starts, raw)
+    reference = cx.SourceRange.from_locations(
+        cx.SourceLocation.from_position(tu, file, 1, 1),
+        cx.SourceLocation.from_position(tu, file, line, 1),
+    )
+    assert _comments(tu, made) == _comments(tu, reference)

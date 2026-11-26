@@ -15,8 +15,11 @@ clang_parseTranslationUnit2, which says why (:class:`ParseError`).
 
 from __future__ import annotations
 
+import bisect
 import ctypes
 import enum
+import os
+import re
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -259,15 +262,15 @@ class _CXTUResourceUsage(ctypes.Structure):
 _EXTERNAL_AST_SOURCE_MEMORY = (9, 10)
 """``CXTUResourceUsage_ExternalASTSource_Membuffer_Malloc`` and ``…_MMap``."""
 
-_LOCATION_CALLS: dict[str, Any] = {}
+_OWN_FUNCTIONS: dict[str, Any] = {}
 
 
 def _call(name: str) -> Any:
     """libclang's ``name``, as a function pointer of its own (``CDLL.__getitem__``
     makes a new one), so that a binding ``clang.cindex`` makes of the same function is
     left as it is; bound on first use, for what :func:`entry_starts` calls."""
-    if name in _LOCATION_CALLS:
-        return _LOCATION_CALLS[name]
+    if name in _OWN_FUNCTIONS:
+        return _OWN_FUNCTIONS[name]
     cx = load_clang_cindex()
     signatures: dict[str, tuple[list[Any], Any]] = {
         "clang_getFileUniqueID": (
@@ -293,7 +296,7 @@ def _call(name: str) -> Any:
     }
     function = cx.conf.lib[name]
     function.argtypes, function.restype = signatures[name]
-    _LOCATION_CALLS[name] = function
+    _OWN_FUNCTIONS[name] = function
     return function
 
 
@@ -321,9 +324,9 @@ def file_contents(tu: Any, file: Any) -> bytes | None:
     return ctypes.string_at(data, size.value)
 
 
-def _decoded(location: Any) -> tuple[tuple[int, int, int] | None, int] | None:
-    """The file and offset a FILE location of a unit is at (``clang_getFileLocation``);
-    ``None`` for a macro location, or one in no file."""
+def _file_location(location: Any) -> tuple[int, int] | None:
+    """The ``CXFile`` and offset a FILE location of a unit is at
+    (``clang_getFileLocation``); ``None`` for a macro location, or one in no file."""
     if int(location.int_data) & _MACRO_BIT:
         return None
     file, offset = ctypes.c_void_p(), ctypes.c_uint()
@@ -332,7 +335,67 @@ def _decoded(location: Any) -> tuple[tuple[int, int, int] | None, int] | None:
     )
     if not file.value:
         return None
-    return file_id(file.value), offset.value
+    return file.value, offset.value
+
+
+def _decoded(location: Any) -> tuple[tuple[int, int, int] | None, int] | None:
+    """The file (:func:`file_id`) and offset a FILE location of a unit is at; ``None``
+    for a macro location, or one in no file."""
+    at = _file_location(location)
+    return None if at is None else (file_id(at[0]), at[1])
+
+
+def _in_entry(begin: Any, offset: int, file: int) -> bool:
+    """Whether ``offset`` bytes past ``begin``, a location at the start of an entry of
+    the ``CXFile`` ``file``, is still in that entry."""
+    cx = load_clang_cindex()
+    made = cx.SourceLocation()
+    made.ptr_data = begin.ptr_data
+    made.int_data = int(begin.int_data) + offset
+    return _file_location(made) == (file, offset)
+
+
+def _entry_end(location: Any, file: int, offset: int) -> int:
+    """The last offset of the entry ``location`` is in, at ``offset`` of the ``CXFile``
+    ``file``: an entry spans ``[start, start + size]``, the next starts after it.
+    Found by probing (``clang_getFileLocation``), never ``clang_getFileContents``,
+    whose ``SourceManager::translateFile`` walks every entry of the unit: milliseconds
+    a call in a unit of many macro expansions."""
+    cx = load_clang_cindex()
+    begin = cx.SourceLocation()
+    begin.ptr_data = location.ptr_data
+    begin.int_data = int(location.int_data) - offset
+    inside, step = offset, 1
+    while _in_entry(begin, inside + step, file):
+        inside += step
+        step *= 2
+    outside = inside + step
+    while outside - inside > 1:
+        middle = (inside + outside) // 2
+        if _in_entry(begin, middle, file):
+            inside = middle
+        else:
+            outside = middle
+    return inside
+
+
+def entry_has(start: Any, size: int) -> bool:
+    """Whether the entry ``start`` (a location at offset 0, :func:`entry_starts`)
+    begins holds exactly ``size`` bytes: its last offset is ``size``."""
+    at = _file_location(start)
+    if at is None or at[1] != 0:
+        return False
+    return _in_entry(start, size, at[0]) and not _in_entry(start, size + 1, at[0])
+
+
+def _empty_on_disk(file: Any) -> bool:
+    """Whether ``file``, named by an absolute path, is an empty file on disk; ``False``
+    for a relative name (relative to a working directory this does not know)."""
+    name = file.name
+    try:
+        return os.path.isabs(name) and os.path.getsize(name) == 0
+    except OSError:
+        return False
 
 
 def loads_an_ast_file(tu: Any) -> bool:
@@ -362,27 +425,52 @@ class Inclusion(NamedTuple):
     while libclang hands them out."""
 
 
-def inclusions(tu: Any) -> list[Inclusion]:
+class Inclusions(list[Inclusion]):
+    """:func:`inclusions`' list, and whether it holds every entry."""
+
+    complete: bool = True
+    """``False`` when an entry could not be read: then no file's count of entries is
+    known, and :func:`entry_starts` makes no start."""
+
+
+_COSTS = {"inclusions": 0, "walks": 0, "cursors": 0}
+
+
+def costs() -> dict[str, int]:
+    """How many times this process listed a unit's inclusions (:func:`inclusions`),
+    walked a unit's top-level cursors for anchors (:func:`entry_starts`), and how many
+    cursors those walks took."""
+    return dict(_COSTS)
+
+
+def inclusions(tu: Any) -> Inclusions:
     """Every entry of a file into ``tu``, in the order the unit made them, the main
     file's first.
 
     ``clang.cindex``'s ``TranslationUnit.get_includes`` keeps ``lptr.contents``, a view
     of the stack libclang reuses for every entry and frees when the call returns, so
     its ``FileInclusion.location`` reads freed memory once the call is over (never read
-    it); here each location is copied inside the callback.
+    it); here each location is copied inside the callback. An exception there would be
+    printed and swallowed by ctypes, losing the entry: it marks the list incomplete
+    instead (:attr:`Inclusions.complete`).
     """
     cx = load_clang_cindex()
-    out: list[Inclusion] = []
+    _COSTS["inclusions"] += 1
+    out = Inclusions()
 
     def visit(file: Any, stack: Any, depth: int, _data: Any) -> None:
-        out.append(
-            Inclusion(
-                cx.File(file),
-                tuple(
-                    cx.SourceLocation.from_buffer_copy(stack[k]) for k in range(depth)
-                ),
+        try:
+            out.append(
+                Inclusion(
+                    cx.File(file),
+                    tuple(
+                        cx.SourceLocation.from_buffer_copy(stack[k])
+                        for k in range(depth)
+                    ),
+                )
             )
-        )
+        except Exception:  # ctypes would print and swallow it: fail closed
+            out.complete = False
 
     callback = cx.callbacks["translation_unit_includes"](visit)
     cx.conf.lib.clang_getInclusions(tu, callback, None)
@@ -390,7 +478,7 @@ def inclusions(tu: Any) -> list[Inclusion]:
 
 
 def entry_starts(
-    tu: Any, wanted: list[Any], entered: list[Inclusion] | None = None
+    tu: Any, wanted: list[Any], entered: Inclusions | None = None
 ) -> dict[tuple[int, int, int], Any]:
     """The location at offset 0 of each of ``wanted`` (``clang.cindex.File``\\ s) that
     ``tu`` entered once, made from a location the unit already hands out in it, with no
@@ -407,12 +495,18 @@ def entry_starts(
     with no anchor and every file of a unit that loaded an AST file
     (:func:`loads_an_ast_file`) have none: they are looked up.
 
+    Each call lists the unit's inclusions and may walk its cursors once: a caller
+    that reads several files through one unit asks once, for all of them, and keeps
+    what it gets while the unit lives (a made location is a location of ``tu``).
+
     :param entered: :func:`inclusions` of ``tu``, if the caller has them.
     """
     if loads_an_ast_file(tu):
         return {}
     cx = load_clang_cindex()
     entered = inclusions(tu) if entered is None else entered
+    if not entered.complete:
+        return {}
     entries: dict[tuple[int, int, int] | None, int] = {}
     for inclusion in entered:
         key = file_id(inclusion.file)
@@ -431,6 +525,8 @@ def entry_starts(
         made = cx.SourceLocation()
         made.ptr_data = location.ptr_data
         made.int_data = int(location.int_data) - at[1]
+        # always so for a file location less its own offset: a guard against a
+        # libclang whose encoding of a location is not its entry's start plus it
         if _decoded(made) == (at[0], 0):
             starts[at[0]] = made
             del missing[at[0]]
@@ -456,13 +552,79 @@ def entry_starts(
             finally:
                 cx.conf.lib.clang_disposeSourceRangeList(ranges)
     # an empty file holds no location: it is looked up, which costs nothing there
-    sought = {key for key, file in missing.items() if file_contents(tu, file)}
-    for cursor in tu.cursor.get_children() if sought else ():
-        offer(cursor.location)
-        sought &= missing.keys()
-        if not sought:
-            break
+    sought = {key for key, file in missing.items() if not _empty_on_disk(file)}
+    if sought:
+        _walk(tu, sought, missing, offer)
     return starts
+
+
+_CONTINUE, _BREAK = 1, 0
+"""``CXChildVisit_Continue`` and ``CXChildVisit_Break``."""
+
+
+def _walk(
+    tu: Any,
+    sought: set[tuple[int, int, int]],
+    missing: dict[tuple[int, int, int], Any],
+    offer: Any,
+) -> None:
+    """Offer the location of the first top-level cursor (``clang_visitChildren`` of the
+    unit: its preprocessing record and declarations) in each entry of a file, until
+    every file in ``sought`` has a start (it leaves ``missing``).
+
+    Each entry is decoded once (``clang_getFileLocation``): a cursor whose raw location
+    falls in an entry already seen, ``[start, start + size]``, is passed over without a
+    call, as is a macro location.
+    """
+    cx = load_clang_cindex()
+    location_of = cx.conf.lib.clang_getCursorLocation
+    bisect_right = bisect.bisect_right
+    _COSTS["walks"] += 1
+    # the entries seen, sorted by start, and where each ends; the last one seen first,
+    # as consecutive cursors are mostly in one entry
+    begins: list[int] = []
+    ends: list[int] = []
+    last = [1, 0]
+    visited = [0]
+
+    def seen(location: Any, raw: int) -> None:
+        """Note the entry ``location`` is in, and offer it."""
+        at = _file_location(location)
+        if at is None:
+            return
+        begin = raw - at[1]
+        end = begin + _entry_end(location, at[0], at[1])
+        i = bisect.bisect_left(begins, begin)
+        begins.insert(i, begin)
+        ends.insert(i, end)
+        last[0], last[1] = begin, end
+        offer(location)
+        sought.intersection_update(missing.keys())
+
+    def visit(cursor: Any, _parent: Any, _data: Any) -> int:
+        visited[0] += 1
+        location = location_of(cursor)
+        raw = location.int_data
+        if raw & _MACRO_BIT or last[0] <= raw <= last[1]:
+            return _CONTINUE
+        i = bisect_right(begins, raw) - 1
+        if i >= 0 and raw <= ends[i]:
+            last[0], last[1] = begins[i], ends[i]
+            return _CONTINUE
+        try:
+            seen(location, raw)
+        except Exception:  # ctypes would print and swallow it: stop the walk
+            return _BREAK
+        return _CONTINUE if sought else _BREAK
+
+    cx.conf.lib.clang_visitChildren(
+        tu.cursor, cx.callbacks["cursor_visit"](visit), None
+    )
+    _COSTS["cursors"] += visited[0]
+
+
+_LINE_BREAK = re.compile(rb"\r\n?|\n")
+"""A line break as clang counts one: ``\\r\\n``, a lone ``\\r`` or ``\\n``."""
 
 
 def line_offset(contents: bytes, line: int) -> int:
@@ -470,25 +632,25 @@ def line_offset(contents: bytes, line: int) -> int:
     ``contents``, where clang places it (``SourceManager::translateLineCol``): a line
     starts after ``\\n``, ``\\r`` or ``\\r\\n``, and a line past the last is the file's
     last byte (its offset 0 when it is empty)."""
-    starts = [0]
-    i, size = 0, len(contents)
-    while i < size:
-        byte = contents[i]
-        if byte in (0x0A, 0x0D):
-            if byte == 0x0D and i + 1 < size and contents[i + 1] == 0x0A:
-                i += 1
-            starts.append(i + 1)
-        i += 1
-    if line > len(starts):
-        return max(size - 1, 0)
-    return starts[line - 1]
+    if line == 1:
+        return 0
+    breaks = contents.count(b"\n") + contents.count(b"\r") - contents.count(b"\r\n")
+    if line > breaks + 1:
+        return max(len(contents) - 1, 0)
+    if line == breaks + 1:  # the last line, the one a whole file's range ends at
+        return max(contents.rfind(b"\n"), contents.rfind(b"\r")) + 1
+    for number, found in enumerate(_LINE_BREAK.finditer(contents), start=2):
+        if number == line:
+            return found.end()
+    return max(len(contents) - 1, 0)  # pragma: no cover -- counted above
 
 
 def made_at(start: Any, offset: int) -> Any | None:
     """The location ``offset`` bytes into the entry that ``start`` (a location at
     offset 0, :func:`entry_starts`) begins, if it decodes to that file at that offset,
-    else ``None`` (it lies past the file: bytes read before the parse that are not the
-    bytes clang read)."""
+    else ``None``. The engine asks only for offsets within the bytes clang read, which
+    always decode so: the check guards against a libclang whose encoding of a location
+    is not its entry's start plus the offset."""
     cx = load_clang_cindex()
     made = cx.SourceLocation()
     made.ptr_data = start.ptr_data

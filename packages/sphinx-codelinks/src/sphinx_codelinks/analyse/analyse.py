@@ -813,6 +813,8 @@ class SourceAnalyse:
             read_for = ""
             tu = None
             includes: set[Path] = set()
+            # where each file the unit includes starts, found once for the unit
+            starts: dict[tuple[int, int, int], Any] = {}
             if not decision.unknown:
                 try:
                     tu, args, decision = target.parse_or_again(
@@ -845,8 +847,9 @@ class SourceAnalyse:
                 self._warn_missing_builtin_header(main, tu, args)
                 working_directory = compile_db.working_directory(args)
                 includes = libclang_parser.main_file_inclusions(tu, working_directory)
+                starts = libclang_parser.unit_starts(tu)
                 self.dependencies.update(
-                    libclang_parser.included_files(tu, working_directory)
+                    libclang_parser.included_files(tu, working_directory, starts)
                 )
             for position, w in list(unread.items()):
                 if w.database != database or next_candidate[position] >= len(
@@ -860,13 +863,14 @@ class SourceAnalyse:
                         f"codelinks: reading {w.path} through {main}, which includes it"
                     )
                     read[position] = libclang_parser.extract_included_active_comments(
-                        tu, w.path
+                        tu, w.path, starts=starts
                     )
                     self._warn_target(w.path, decision, read_for, includer=True)
                     del unread[position]
                 else:
                     next_candidate[position] += 1
-            del tu  # released before the next candidate is parsed
+            # released before the next candidate is parsed, with what is made of it
+            del tu, starts
         for position, w in list(unread.items()):
             first = next(
                 (main for main in w.candidates if (w.database, main) in unknown), None
@@ -1207,15 +1211,17 @@ class SourceAnalyse:
                 self._warn_header_as_written(header.path, main, decision)
             return read
         self._warn_missing_builtin_header(main, tu, used)
+        # where each header starts, found once for every header read through the unit
+        starts = libclang_parser.starts_of(tu, [header.path for header, _ in waiting])
         for header, ranges in waiting:
             logger.debug(
                 f"codelinks: reading {header.path} through {main} and every entry "
                 f"that includes it"
             )
             read[header.position] = libclang_parser.extract_comments_outside(
-                tu, header.path, ranges
+                tu, header.path, ranges, starts
             )
-        del tu
+        del tu, starts
         return read
 
     def _read_alone(
