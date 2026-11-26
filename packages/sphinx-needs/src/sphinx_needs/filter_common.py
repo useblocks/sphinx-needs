@@ -151,10 +151,11 @@ def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
 
 
 #: What an unset ``needs_views_include_parts`` means: ``True`` through the 9.x series,
-#: each place whose result holds a need part (but needextract, and a needtable with
-#: ``:show_parts:`` whose matched parts are each listed under their need), and each
-#: needflow that will draw links to parts of its needs as edges to the parts' needs,
-#: reporting it (:func:`_report_parts_in_view`).
+#: each place whose result holds a need part (but needextract, a needtable with
+#: ``:show_parts:`` whose matched parts are each listed under their need, and a
+#: needflow with ``:show_parts:``), and each needflow that will draw links to parts of
+#: its needs as edges to the parts' needs (but one with ``:show_parts:``), reporting it
+#: (:func:`_report_parts_in_view`).
 #: From 10.0 unset means ``False``: this constant changes, and the report goes.
 _VIEWS_INCLUDE_PARTS_UNSET = True
 
@@ -217,7 +218,8 @@ def _report_parts_in_view(
     or cell, or ``:need_count:``, with its filter) and where it is written; never with
     the value set either way. needextract, which drops the parts it matches, does not
     call it, nor does a needflow with ``:show_parts:``, which draws the same whatever the
-    value. This is the whole report of the 9.x series: at 10.0 it goes, with its calls,
+    value but where its filter reads ``needs`` itself (which this report sees in no
+    view, as above). This is the whole report of the 9.x series: at 10.0 it goes, with its calls,
     its warning type and needflow's
     :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`.
 
@@ -290,7 +292,8 @@ def _views_include_parts_text(
             if view in ("needflow", "needgantt")
             else ("listing", "list")
         )
-        # only a needtable can ask for parts
+        # a needtable's own clause: it asks for parts with :show_parts: (a needflow,
+        # which can ask too, gains its own clause on the option below, in both forms)
         asks = (
             ", and a needtable lists a need's parts under it only with :show_parts:"
             if view == "needtable"

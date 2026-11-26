@@ -959,7 +959,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     show_parts: bool
     """Whether each need is drawn with every part it has inside it (``:show_parts:``),
-    the result then holding needs alone, whatever ``needs_views_include_parts`` says."""
+    the result then holding needs alone, whatever ``needs_views_include_parts`` says; a
+    filter that reads ``needs`` itself is still handed needs and parts under ``True``
+    and needs alone under ``False``, so what it selects can differ by value."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):

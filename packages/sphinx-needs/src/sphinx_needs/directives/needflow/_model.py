@@ -430,7 +430,10 @@ def build_graph(
     cap, so the cap counts needs, and a result of parts alone is empty. Every need drawn
     is drawn with every part it has (:func:`build_node_tree`), and a link to a part of a
     drawn need ends on the part (:func:`collect_edges`), so what it draws does not depend
-    on the value.
+    on the value, but where its filter reads ``needs`` itself (a filter string, filter
+    code or a ``:filter-func:``): that is handed needs and parts under ``True`` and needs
+    alone under ``False``, as in every view, so what it selects, and so draws, can
+    differ by value.
 
     :param app: The Sphinx application.
     :param attributes: The needflow's options.
@@ -475,7 +478,8 @@ def build_graph(
         # it draws to the parts' needs where its result holds needs alone (this
         # result's needs in the same order, where its filter tests each need on its
         # own), those of the needs its cap keeps of them (counted only while the value
-        # is unset). With the option what it draws does not depend on the value, and
+        # is unset). With the option what it draws does not depend on the value (but for
+        # a filter reading `needs` itself, which the report sees in no view), and
         # nothing is reported
         _report_parts_in_view(
             needs_config,
