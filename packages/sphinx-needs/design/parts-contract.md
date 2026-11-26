@@ -166,7 +166,7 @@ filter code and a filter function.
   nothing, and `id_parent == "X"` selects the need `X` alone, a need answering its own id
   as `id_parent`. A part is shown only where the view asks for it: a needtable's
   `:show_parts:` lists the parts of each need it lists, each once, under it, and a
-  needflow's draws every part of each need it draws inside it (section 11).
+  needflow's `:show_parts:` draws every part of each need it draws inside it (section 11).
 
 Every other filter is no view, and the value does not reach it: a filter that asks for
 parts (section 7), a derived field's rule, a function, a `needextend`, a warning check.
@@ -217,10 +217,10 @@ needflow labels its edges with it); a link naming the need whole is an edge to t
 need; one edge per link. A link to a part the need does not have, to a part of a need
 that does not exist, or to a part of a need the needflow does not draw is no edge. So
 what such a needflow draws is the same under every value of `views_include_parts`, but
-where its filter reads the needs it is handed itself (filter code, a filter function, or
-a filter string that reads them): those are the needs and their parts where the value is
-true and the needs alone where it is false, as for every view (section 9), so what it
-selects, and so draws, can differ by value.
+where its filter reads `needs` itself (filter code, a filter function, or a filter string
+that reads it): `needs` holds the needs and their parts where the value is true and the
+needs alone where it is false, as for every view (section 9), so what it selects, and so
+draws, can differ by value.
 Sphinx-Needs draws an edge ending on a part in the link type's `style_part`.
 
 ## 12. Not on this page yet
