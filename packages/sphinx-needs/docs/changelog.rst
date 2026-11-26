@@ -74,7 +74,7 @@ Improvements
   need to its own part, which no longer names the need's cluster as its tail (``dot`` warned on it, and the build
   did not show the warning). Separately, a link type whose ``style_part`` is empty draws a plain line in a PlantUML
   needflow, where it wrote ``-[]->``, a syntax error. The ``needs.views_include_parts`` report still counts a
-  needflow's links, not its edges. (:pr:`0000`)
+  needflow's links, not its edges. (:pr:`2588`)
 
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
   content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
