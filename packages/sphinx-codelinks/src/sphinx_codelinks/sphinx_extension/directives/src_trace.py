@@ -44,6 +44,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     files_fingerprint,
     header_units_store,
     is_unread,
+    pending_fingerprint,
     scope_store,
     source_pages_store,
 )
@@ -571,6 +572,7 @@ class SourceTracingDirective(SphinxDirective):
                 target=target,
                 fingerprint=found,
                 deferred=deferred,
+                pending=pending_fingerprint(src_analyse.pending),
             )
         )
 

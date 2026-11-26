@@ -16,6 +16,7 @@ from __future__ import annotations
 import enum
 import os
 import re
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -318,15 +319,40 @@ def find_include(
     ``-iquote`` directories; both forms then in the ``-I`` and ``-isystem``
     directories. The first existing file wins.
     """
-    directories: list[Path] = []
-    if not directive.angled:
-        directories += [including_file.parent, *path.quote]
-    directories += path.angled
-    for directory in directories:
+    for directory in _found_directories(directive, including_file, path):
         candidate = directory / directive.name
         if candidate.is_file():
             return Found(candidate, candidate.resolve())
     return None
+
+
+def _found_directories(
+    directive: IncludeDirective, including_file: Path, path: SearchPath
+) -> list[Path]:
+    """The directories a lookup of ``directive``'s name runs over, in order: the
+    including file's directory and the ``-iquote`` directories for a quoted name,
+    then the include path (:func:`find_include` resolves against this list)."""
+    directories: list[Path] = []
+    if not directive.angled:
+        directories += [including_file.parent, *path.quote]
+    directories += path.angled
+    return directories
+
+
+def lookup_directories(
+    directive: IncludeDirective, including_file: Path, path: SearchPath
+) -> list[Path]:
+    """Where the compiler would have found ``directive``'s name, in search order
+    (useblocks/sphinx-needs#2584): a quoted name in the including file's
+    directory, then ``-iquote``, then the include path -- an angled name too, a
+    failed angled lookup being retried as a quoted one; an ``#include_next``'s in
+    the directories after the one the including file was found in, the whole
+    lookup for a file found on none, as clang then searches from the start."""
+    if directive.next:
+        after = _include_next_directories(directive, including_file, path)
+        if after is not None:
+            return after
+    return [including_file.parent, *path.quote, *path.angled]
 
 
 def resolve_include(
@@ -350,6 +376,31 @@ def find_include_next(
     :func:`find_include` looks a name up (clang warns that it searches from the start:
     a quoted name in the file's own directory first)."""
     listed = [*path.quote, *path.angled] if not directive.angled else [*path.angled]
+    directories = _include_next_directories(
+        directive, including_file, path, listed=listed
+    )
+    if directories is None:
+        return find_include(directive, including_file, path)
+    for directory in directories:
+        candidate = directory / directive.name
+        if candidate.is_file() and (canonical := candidate.resolve()) != including_file:
+            return Found(candidate, canonical)
+    return None
+
+
+def _include_next_directories(
+    directive: IncludeDirective,
+    including_file: Path,
+    path: SearchPath,
+    *,
+    listed: Sequence[Path] | None = None,
+) -> list[Path] | None:
+    """The directories an ``#include_next`` continues in: those after the one
+    whose join with the directive's name is ``including_file`` (canonical), each
+    listed once as clang lists it. ``None`` when the including file sits on none
+    (clang then searches from the start, as a plain lookup does)."""
+    if listed is None:
+        listed = [*path.quote, *path.angled] if not directive.angled else path.angled
     directories: list[Path] = []
     resolved: set[Path] = set()
     for directory in listed:
@@ -367,12 +418,8 @@ def find_include_next(
         None,
     )
     if start is None:
-        return find_include(directive, including_file, path)
-    for directory in directories[start:]:
-        candidate = directory / directive.name
-        if candidate.is_file() and (canonical := candidate.resolve()) != including_file:
-            return Found(candidate, canonical)
-    return None
+        return None
+    return directories[start:]
 
 
 _FORCED_INCLUDE_FLAGS = (
@@ -436,3 +483,32 @@ def inclusion_index(flags: dict[Path, list[str]]) -> dict[Path, list[Path]]:
     for includers in index.values():
         includers.sort(key=_path_key)
     return index
+
+
+PENDING_PATH_CAP = 64
+"""The most candidate paths of unresolved includes one record keeps one by one
+(useblocks/sphinx-needs#2584); past it, :func:`pending_signature` keeps the
+directories' times instead, so an armada of generated headers cannot make a
+record grow without bound."""
+
+
+def pending_signature(candidates: Iterable[Path]) -> dict[Path, int | None]:
+    """The signature of the places a parse's unresolved includes would resolve
+    (useblocks/sphinx-needs#2584): each candidate path to its ``st_mtime_ns`` as
+    a file -- ``None`` while it holds none, a directory named like the include
+    counting for nothing as the compiler's lookup skips it. Past
+    :data:`PENDING_PATH_CAP` paths, the nearest existing directory of each to its
+    ``st_mtime_ns`` instead, so a file created under one (or the directory itself
+    appearing) is still seen."""
+    paths = {path.resolve() for path in candidates}
+    if len(paths) > PENDING_PATH_CAP:
+        watched: dict[Path, int | None] = {}
+        for directory in {path.parent for path in paths}:
+            while not directory.is_dir():
+                if directory.parent == directory:
+                    break
+                directory = directory.parent
+            if directory.is_dir():
+                watched[directory] = directory.stat().st_mtime_ns
+        return watched
+    return {path: path.stat().st_mtime_ns if path.is_file() else None for path in paths}

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from sphinx_codelinks.analyse.preproc import loader
+from sphinx_codelinks.analyse.preproc import compile_db, includer, loader
 from sphinx_codelinks.analyse.preproc.headers import (
     Contribution,
     SkippedSpan,
@@ -125,6 +125,63 @@ def main_file_inclusions(tu: Any, working_directory: Path) -> set[Path]:
             continue  # an include libclang could not find names no file
         out.add((working_directory / included).resolve())
     return out
+
+
+def _directive_at(
+    file: Path, line: int, cache: dict[Path, dict[int, includer.IncludeDirective]]
+) -> includer.IncludeDirective | None:
+    """The ``#include`` directive ``file`` carries on ``line``, scanned once per
+    file; ``None`` when the file cannot be read or the line holds none."""
+    if file not in cache:
+        try:
+            text = file.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            text = ""
+        cache[file] = {
+            directive.line: directive
+            for directive in includer.scan_include_directives(text, include_next=True)
+        }
+    return cache[file].get(line)
+
+
+def unresolved_include_paths(tu: Any, args: list[str]) -> dict[Path, int | None]:
+    """Where the parse's unresolved includes would resolve
+    (useblocks/sphinx-needs#2584): for every inclusion-directive cursor with no
+    included file -- all of them, clang keeps preprocessing after the first
+    "file not found" -- the directories of its lookup
+    (:func:`.includer.lookup_directories`) joined with the include's name. A
+    forced include (``-include``, ``-imacros``) names no including file; its
+    candidates start at the working directory ``args`` parses in. A parse that
+    could not resolve them read nothing there, so when a file appears at one the
+    parse must be made again.
+    """
+    cx = loader.load_clang_cindex()
+    working = compile_db.working_directory(args)
+    search = includer.compiler_search_path(args)
+    cache: dict[Path, dict[int, includer.IncludeDirective]] = {}
+    candidates: list[Path] = []
+    for cursor in tu.cursor.get_children():
+        if cursor.kind != cx.CursorKind.INCLUSION_DIRECTIVE:
+            continue
+        if loader.included_file(cursor) is not None:
+            continue
+        if cursor.location.file is None:
+            # a forced include, named on the command line: it has no including
+            # file, so the compiler's lookup starts at the working directory
+            including = working / "<command line>"
+            directive = includer.IncludeDirective(cursor.spelling, angled=False, line=0)
+        else:
+            including = (working / cursor.location.file.name).resolve()
+            directive = _directive_at(including, cursor.location.line, cache)
+            if directive is None:
+                directive = includer.IncludeDirective(
+                    cursor.spelling, angled=False, line=cursor.location.line
+                )
+        candidates += [
+            directory / directive.name
+            for directory in includer.lookup_directories(directive, including, search)
+        ]
+    return includer.pending_signature(candidates)
 
 
 def included_files(tu: Any, working_directory: Path) -> set[Path]:

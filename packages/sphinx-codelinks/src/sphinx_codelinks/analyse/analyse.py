@@ -386,6 +386,11 @@ class SourceAnalyse:
         entry tried as a source's includer, the files its unit included that are not
         system headers, and the database. An edit to one of them can change what is
         extracted."""
+        self.pending: dict[Path, int | None] = {}
+        """Where includes a parse could not resolve would resolve
+        (useblocks/sphinx-needs#2584): :func:`.preproc.includer.pending_signature`
+        pairs. A parse that could not resolve them read nothing there, so when a
+        file appears at one the parse must be made again."""
 
     @property
     def oneline_warnings(self) -> list[AnalyseWarning]:
@@ -696,6 +701,7 @@ class SourceAnalyse:
         def on_parse(tu: Any) -> None:
             if not decision.unknown:
                 self._warn_missing_builtin_header(path, tu, args)
+            self.pending.update(libclang_parser.unresolved_include_paths(tu, args))
             triples.append(target.triple_of(tu))
 
         comments = libclang_parser.extract_active_comments(
@@ -848,6 +854,7 @@ class SourceAnalyse:
                 self.dependencies.update(
                     libclang_parser.included_files(tu, working_directory)
                 )
+                self.pending.update(libclang_parser.unresolved_include_paths(tu, args))
             for position, w in list(unread.items()):
                 if w.database != database or next_candidate[position] >= len(
                     w.candidates
@@ -964,6 +971,8 @@ class SourceAnalyse:
                 # an edit to any of them can change what includes the header
                 self.dependencies.update((unit.database, unit.key.main))
                 self.dependencies.update(unit.record.contributions)
+                # and a file appearing where an include of it resolved nowhere
+                self.pending.update(unit.record.pending)
             canonical = header.path.absolute().resolve()
             includers = [
                 (unit, unit.record.contributions[canonical])
@@ -1096,6 +1105,7 @@ class SourceAnalyse:
         from sphinx_codelinks.analyse.preproc import (
             compile_db,
             headers,
+            includer,
             libclang_parser,
             loader,
             target,
@@ -1115,14 +1125,24 @@ class SourceAnalyse:
         def parse(attempt: list[str], _decision: "Decision") -> Any:
             return libclang_parser.parse_translation_unit(main, attempt)
 
-        def as_written(tu: Any, how: headers.Contribution) -> dict[Path, Any]:
+        pending_candidates: set[Path] = set()
+        unresolved: dict[Path, int | None] = {}
+
+        def as_written(
+            tu: Any, how: headers.Contribution, parsed_with: list[str]
+        ) -> dict[Path, Any]:
             if self._closure_memo is None:
                 self._closure_memo = headers.ClosureMemo()
-            files = headers.lexical_closure(main, entry_args, keep, self._closure_memo)
+            files = headers.lexical_closure(
+                main, entry_args, keep, self._closure_memo, pending_candidates
+            )
             if tu is not None:
-                working = compile_db.working_directory(args)
+                working = compile_db.working_directory(parsed_with)
                 files |= libclang_parser.project_included_files(tu, working, keep)
                 files.discard(main)
+                unresolved.update(
+                    libclang_parser.unresolved_include_paths(tu, parsed_with)
+                )
             return dict.fromkeys(files, how)
 
         triple: str | None = None
@@ -1132,7 +1152,7 @@ class SourceAnalyse:
                 tu = parse(args, decision)
             except translation_unit_load_error:
                 tu = None
-            contributions = as_written(tu, headers.UNKNOWN)
+            contributions = as_written(tu, headers.UNKNOWN, args)
         else:
             try:
                 tu, used, decision = target.parse_or_again(
@@ -1148,17 +1168,24 @@ class SourceAnalyse:
                     f"name the headers it reads as written"
                 )
                 contributions = as_written(
-                    None, headers.UNKNOWN if decision.unknown else headers.REFUSED
+                    None,
+                    headers.UNKNOWN if decision.unknown else headers.REFUSED,
+                    args,
                 )
             else:
                 if decision.unknown:
-                    contributions = as_written(tu, headers.UNKNOWN)
+                    contributions = as_written(tu, headers.UNKNOWN, used)
                 else:
                     triple = target.triple_of(tu)
                     contributions = libclang_parser.unit_contributions(
                         tu, compile_db.working_directory(used), main, keep
                     )
+                    unresolved.update(
+                        libclang_parser.unresolved_include_paths(tu, used)
+                    )
         del tu  # released before the next unit is parsed
+        pending = includer.pending_signature(pending_candidates)
+        pending.update(unresolved)
         return headers.UnitRecord(
             fingerprint=fingerprint,
             main_mtime=main_mtime,
@@ -1170,6 +1197,9 @@ class SourceAnalyse:
                 for path in contributions
                 if (mtime := headers.mtime_ns(path)) is not None
             },
+            pending=tuple(
+                sorted(pending.items(), key=lambda pair: os.fsencode(pair[0]))
+            ),
         )
 
     def _read_from(

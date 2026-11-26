@@ -64,6 +64,17 @@ Fixes
   Both engines apply the rule, so the libclang engine now skips a file it read with the
   invalid bytes replaced when they came after the first 2048. The new warning fails a ``-W``
   build until the file is saved as UTF-8 or the warning type suppressed.
+- 🐛 A C/C++ parse made before an included file existed stayed fresh when the file
+  appeared (`#2584 <https://github.com/useblocks/sphinx-needs/issues/2584>`__): an
+  ``#include`` libclang reports as ``'x' file not found`` left no trace in what a build
+  watches, so an incremental build read nothing again and the code the file's macros
+  decide (a ``#ifdef`` arm's markers) stayed hidden. A parse now records every include it
+  could not resolve -- each candidate path the compiler's lookup would have found the
+  name at, in search order (an ``#include_next``'s directories after the one the
+  including file was found in; a forced include's working directory first; past a cap on
+  their number, the directories' times) -- and the document tracing it, a config-only
+  project and a unit record each go stale the moment a file sits at one. A directory
+  named like the include does not count.
 
 .. _`release:2.2.0`:
 
