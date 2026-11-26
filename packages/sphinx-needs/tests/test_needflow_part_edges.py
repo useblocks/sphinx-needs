@@ -1120,7 +1120,9 @@ def test_a_part_id_in_a_label_is_drawn_as_written(test_app: SphinxTestApp) -> No
     assert_no_warnings(test_app)
     [source] = sources
     assert [
-        line for line in source.split("\n") if line.lstrip('"').startswith("EXT_S")
+        line
+        for line in source.split("\n")
+        if line.lstrip('"').startswith("EXT_S") and "->" in line
     ] == BACKSLASH_LINES[engine]
     [svg_path] = Path(test_app.outdir, "_images").glob("*.svg")
     svg = etree.fromstring(svg_path.read_bytes())

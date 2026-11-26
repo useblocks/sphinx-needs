@@ -274,7 +274,10 @@ class GraphEdge:
         the part ids the edge stands for, ``", "``-joined.
 
         Both are one label of two lines: the line break is the two characters ``\\n``,
-        which PlantUML and dot both read as one.
+        which PlantUML and dot both read as one. Each backslash of a part id is doubled,
+        which both read as one backslash, so the id is drawn as it is written (one ending
+        in a backslash would otherwise escape dot's closing quote). The link type's name
+        is written as it is, as it was before.
 
         :param labels: What the diagram labels its edges with.
         :return: The label, or ``None`` for an unlabelled edge.
@@ -290,7 +293,7 @@ class GraphEdge:
                 name = None
         if not self.part_ids:
             return name
-        parts = ", ".join(self.part_ids)
+        parts = ", ".join(part_id.replace("\\", "\\\\") for part_id in self.part_ids)
         return f"{name}\\n{parts}" if name else parts
 
 
