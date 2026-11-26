@@ -134,13 +134,19 @@ def included_files(tu: Any, working_directory: Path) -> set[Path]:
     A relative name (a file found through a relative include directory) is taken
     against ``working_directory``, as in :func:`main_file_inclusions`.
     """
-    cx = loader.load_clang_cindex()
+    entered = loader.inclusions(tu)
+    included = [inclusion.file for inclusion in entered if inclusion.stack]
+    starts = loader.entry_starts(tu, included, entered)
     out: set[Path] = set()
-    for inclusion in tu.get_includes():
-        file = inclusion.include
-        if file is None:
-            continue
-        if cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header:
+    for file in included:
+        # asked at the start of the file's (first) entry, as clang's characteristic of
+        # it can change within it (``#pragma GCC system_header``, a line marker): a
+        # file entered once has the start made, every other one looks it up
+        key = loader.file_id(file)
+        start = starts.get(key) if key is not None else None
+        if start is None:
+            start = loader.looked_up(tu, file, offset=0)
+        if start.is_in_system_header:
             continue
         out.add((working_directory / file.name).resolve())
     return out
@@ -245,8 +251,8 @@ def _file_extent(tu: Any, file_path: Path) -> Any:
     line_count = len(raw.decode("utf-8", errors="replace").splitlines())
     file = tu.get_file(str(file_path))
     return cx.SourceRange.from_locations(
-        cx.SourceLocation.from_position(tu, file, 1, 1),
-        cx.SourceLocation.from_position(tu, file, line_count + 1, 1),
+        loader.looked_up(tu, file, line=1),
+        loader.looked_up(tu, file, line=line_count + 1),
     )
 
 
@@ -291,6 +297,30 @@ def extract_included_active_comments(
     return _active_comments(tu, file_path, skipped)
 
 
+def _whole_file(tu: Any, file: Any, end_line: int) -> Any:
+    """The range of ``file`` in its first entry into ``tu``, from its start to line
+    ``end_line``, column 1.
+
+    For a file the unit entered once both ends are made from where its entry starts
+    (:func:`.loader.entry_starts`), the end at the offset clang gives the line
+    (:func:`.loader.line_offset`, over the bytes clang read), and checked to decode to
+    the file at that offset; any other file, or an end that does not decode so, is
+    looked up (:func:`.loader.looked_up`): the same range, without the lookup's walk of
+    the file's macro expansions (useblocks/ubcode#4982).
+    """
+    cx = loader.load_clang_cindex()
+    key = loader.file_id(file)
+    start = loader.entry_starts(tu, [file]).get(key) if key is not None else None
+    contents = loader.file_contents(tu, file) if start is not None else None
+    if start is not None and contents is not None:
+        end = loader.made_at(start, loader.line_offset(contents, end_line))
+        if end is not None:
+            return cx.SourceRange.from_locations(start, end)
+    return cx.SourceRange.from_locations(
+        loader.looked_up(tu, file, line=1), loader.looked_up(tu, file, line=end_line)
+    )
+
+
 def _active_comments(
     tu: Any, file_path: Path, skipped: list[tuple[int, int]]
 ) -> list[LibclangComment]:
@@ -306,10 +336,7 @@ def _active_comments(
     # a location in a file the unit includes is in its first inclusion
     # (``clang_getLocation``), the one whose skipped ranges ``skipped`` holds
     file = tu.get_file(str(file_path))
-    extent = cx.SourceRange.from_locations(
-        cx.SourceLocation.from_position(tu, file, 1, 1),
-        cx.SourceLocation.from_position(tu, file, line_count + 1, 1),
-    )
+    extent = _whole_file(tu, file, line_count + 1)
 
     out: list[LibclangComment] = []
     for tok in tu.get_tokens(extent=extent):
