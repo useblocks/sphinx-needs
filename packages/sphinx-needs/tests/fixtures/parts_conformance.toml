@@ -2384,7 +2384,6 @@ target = "REQ_1"
 name = "views-flow-one-part-link"
 section = "views"
 why = "with views_include_parts false a needflow draws a link to a part of a need it draws as an edge to the need naming the part"
-divergent = { ubcode = "the edge to the need names no part" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2412,7 +2411,6 @@ edges = [{ from = "SPEC_1", to = "REQ_1", type = "links", parts = ["zeta"] }]
 name = "views-flow-two-part-links-are-one-edge"
 section = "views"
 why = "the links of one need, of one link type, naming parts of one need are one edge to that need, naming the parts in the need's stored order"
-divergent = { ubcode = "the edge to the need names no part" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2440,7 +2438,6 @@ edges = [{ from = "SPEC_2", to = "REQ_1", type = "links", parts = ["zeta", "alph
 name = "views-flow-the-parts-in-the-needs-order"
 section = "views"
 why = "an edge names its parts in the need's stored order, not in the order its links write them nor by id"
-divergent = { ubcode = "the edge to the need names no part" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2468,7 +2465,6 @@ edges = [{ from = "SPEC_7", to = "REQ_1", type = "links", parts = ["zeta", "alph
 name = "views-flow-a-whole-link-is-its-own-edge"
 section = "views"
 why = "a link naming the need whole stays its own edge, naming no part, beside the edge for the links naming its parts"
-divergent = { ubcode = "the edge to the need names no part" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2499,7 +2495,6 @@ edges = [
 name = "views-flow-one-edge-per-link-type"
 section = "views"
 why = "each link type draws its own edge: two link types naming one part are two edges, each naming it"
-divergent = { ubcode = "the edge to the need names no part" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2564,7 +2559,6 @@ edges = []
 name = "views-flow-a-dead-part-is-named-by-no-edge"
 section = "views"
 why = "an edge names the live parts its links name: a link to a part the need does not have adds no part to it"
-divergent = { ubcode = "the edge to the need names no part" }
 config = '''
 [needs]
 views_include_parts = false
