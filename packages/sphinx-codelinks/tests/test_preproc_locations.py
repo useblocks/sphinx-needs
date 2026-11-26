@@ -342,12 +342,12 @@ def test_the_corpus_has_units_and_starts(tmp_path: Path) -> None:
 def _system_header_project(root: Path) -> Any:
     (root / "usr").mkdir()
     (root / "sys").mkdir()
+    # the line that makes the rest of the file a system header comes first, so
+    # every location in the file but its first bytes is in a system header
     (root / "usr" / "pragma.h").write_text(
-        "#define BEFORE 1\n#pragma GCC system_header\n#define AFTER 1\n"
+        "#pragma GCC system_header\n#define AFTER 1\n"
     )
-    (root / "usr" / "marker.h").write_text(
-        '#define BEFORE2 1\n# 7 "marker.h" 3\n#define AFTER2 1\n'
-    )
+    (root / "usr" / "marker.h").write_text('# 7 "marker.h" 3\n#define AFTER2 1\n')
     (root / "sys" / "s.h").write_text('#define S 1\n#include "sib.h"\n')
     (root / "sys" / "sib.h").write_text("#define SIB 1\n")
     (root / "main.c").write_text(
@@ -360,8 +360,8 @@ def _system_header_project(root: Path) -> Any:
 
 def test_a_system_header_is_told_at_the_start_of_its_entry(tmp_path: Path) -> None:
     """clang tells a system header by its entry's characteristic, unless a line in it
-    changes it (``#pragma GCC system_header``, a line marker with flag 3): an anchor
-    after such a line says "system", the file's start does not. So the answer is
+    changes it (``#pragma GCC system_header``, a line marker with flag 3): every
+    anchor after such a line says "system", the file's start does not. So the answer is
     asked at the made start, as the lookup at offset 0 asks it; a header found through
     ``-isystem``, and a quoted sibling of it, are system headers."""
     tu = _system_header_project(tmp_path)
