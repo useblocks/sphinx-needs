@@ -175,8 +175,16 @@ them as it sorts its rows, and :ref:`links_from_match` and a derived join take t
 
 **Presentation in needflow**
 
-Links to need_parts are shown as dotted line to the upper need inside :ref:`needflow` diagrams.
-They are also getting the part_id as link description.
+What a :ref:`needflow` draws for a link to a need part follows :ref:`needs_views_include_parts`
+(:ref:`needflow_need_parts`).
+With ``False``, the default from 10.0, a needflow draws needs alone, and a link to a part of a need it draws is an
+edge to that need in the link type's ``style_part``, dotted by default, labelled with the part's id:
+``impl_my_car_1``, linking ``my_car_1.1`` and ``my_car_1.2``, is one edge to ``my_car_1`` labelled ``1, 2``.
+With ``True``, and while it is unset through 9.x, a part the needflow's filter selects, of a need it also selects,
+is a node inside that need, and a link to it an edge to that node; a link to a part the filter does not select
+draws no edge.
+This documentation sets ``True``, and the filter below selects the two needs and none of their parts:
+the needflow draws the two needs, and no edge between them.
 
 .. syntax-example::
 

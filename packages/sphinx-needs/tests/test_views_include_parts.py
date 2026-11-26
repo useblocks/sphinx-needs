@@ -1038,9 +1038,10 @@ def test_a_needflow_reports_each_link_it_will_draw_to_a_parts_need(
 ) -> None:
     """One need linking two parts of a need the needflow shows, a part that need lacks
     and a part of a need it does not show, and a need linking its own part: unset
-    reports three links, each an edge the needflow gains under ``False`` (the last a
-    need's edge to itself), and the dead part address and the part of the need it does
-    not show none, as it draws none for them."""
+    reports three links, which the needflow draws under ``False`` as two edges (the two
+    links to parts of one need as one edge, and a need's edge to itself), and the dead
+    part address and the part of the need it does not show none, as it draws none for
+    them."""
     value = request.node.callspec.id
     diagrams = capture_diagrams(test_app)
     test_app.build()
@@ -1048,11 +1049,10 @@ def test_a_needflow_reports_each_link_it_will_draw_to_a_parts_need(
     gained = [
         ("REQ_S", "REQ_S", True),
         ("TEST_L", "REQ_A", True),
-        ("TEST_L", "REQ_A", True),
     ]
     assert edges(diagrams["linked-parts"]) == (gained if value == "false" else [])
     assert reports(test_app) == (
-        [_report(18, "needflow", 0, links=len(gained))] if value == "unset" else []
+        [_report(18, "needflow", 0, links=3)] if value == "unset" else []
     )
 
 

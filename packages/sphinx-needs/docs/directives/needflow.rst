@@ -700,3 +700,24 @@ common filters
 * :ref:`option_types`
 * :ref:`option_filter`
 
+.. _needflow_need_parts:
+
+Need parts
+----------
+
+What a needflow draws for a link to a :ref:`need part <need_part>` follows :ref:`needs_views_include_parts`.
+
+With ``False``, the default from 10.0, a needflow draws needs alone, and a link to a part of a need it draws is an
+edge to that need, in the link type's ``style_part`` (dotted by default), labelled with the part's id.
+The links of one need, of one link type, to parts of one need are one edge, labelled with the ids of those parts,
+each once, in the need's order of its parts (the order its content writes them, then the parts its record states),
+joined by a comma and a space: a need linking ``REQ_1.zeta`` and ``REQ_1.alpha``, where ``REQ_1`` writes ``zeta``
+first, has one edge to ``REQ_1`` labelled ``zeta, alpha``.
+A link to the need itself stays an edge of its own, unlabelled, and each link type draws its own edge.
+With :ref:`needflow_show_link_names`, the edge has one label of two lines: the link type's name, then the part ids.
+A link to a part the need does not have, to a part of a need that does not exist,
+or to a part of a need the needflow does not draw is no edge.
+
+With ``True``, and while it is unset through 9.x, a part the needflow's filter selects, of a need it also selects,
+is drawn as a node inside that need, and a link to it as an edge to that node; a link to a part the filter does not
+select draws no edge.

@@ -61,6 +61,21 @@ Improvements
   From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
   keep a project's views through that release.
 
+- ✨ **A needflow's edge to a need names the parts it links**: with :ref:`needs_views_include_parts` ``False``
+  (the default from 10.0) a :ref:`needflow` draws the links of one need, of one link type, to parts of one need it
+  draws as ONE edge to that need, in the link type's ``style_part``, labelled with the part ids in the need's order
+  of its parts, each once: ``SPEC_2``, linking ``REQ_1.zeta`` and ``REQ_1.alpha``, is one dotted edge to ``REQ_1``
+  labelled ``zeta, alpha``, where it was two unlabelled edges. A link to the need itself stays an edge of its own,
+  unlabelled; each link type draws its own edge; with :ref:`needflow_show_link_names` the label is the link type's
+  name and the part ids, on two lines (:ref:`needflow_need_parts`). An external need's part now links the part's
+  anchor, as ``:need:`` links it, where it linked the need's URL: its :ref:`needtable` row, a needtable cell naming
+  it, its node in a needflow and needuml's ``ref()`` of it. Under ``True`` and unset a needflow draws what it drew
+  but for two kinds of line: an external part's node, which links the part's anchor, and graphviz's edge from a
+  need to its own part, which no longer names the need's cluster as its tail (``dot`` warned on it, and the build
+  did not show the warning). Separately, a link type whose ``style_part`` is empty draws a plain line in a PlantUML
+  needflow, where it wrote ``-[]->``, a syntax error. The ``needs.views_include_parts`` report still counts a
+  needflow's links, not its edges. (:pr:`2588`)
+
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
   content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
   was dead (``needs.link_outgoing``, ``needs.link_ref``). The need now has them, after the parts its content

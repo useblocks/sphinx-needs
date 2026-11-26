@@ -378,11 +378,11 @@ def test_needtable_link_cell_reads_a_link_as_a_link_is_read(test_app):
         # the part ``1.p1`` of REQ_005, which it does not have (the need REQ_005.1
         # has no part ``p1`` either)
         "REQ_005.1.p1": (None, None),
-        # an external need's part links the need's page, as before; a part it does
-        # not have is dead
+        # an external need's part links the part's anchor, as `:need:` does; a part it
+        # does not have is dead
         "EXT_1": (ext_url, external),
-        "EXT_1.rp": (ext_url, external),
-        "EXT_1.a.b": (ext_url, external),
+        "EXT_1.rp": (f"{ext_url}.rp", external),
+        "EXT_1.a.b": (f"{ext_url}.a.b", external),
         "EXT_1.zz": (None, None),
     }
     assert incoming == {"SPEC_1": ("#SPEC_1", internal), "REQ_9.x": (None, None)}
