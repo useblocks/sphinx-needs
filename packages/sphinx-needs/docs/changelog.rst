@@ -37,8 +37,8 @@ Improvements
   whether the filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow` or :ref:`needgantt`, of a
   :ref:`needpie` line or a :ref:`needbar` cell (and of either chart's scope) and of :ref:`need_count` is tested on
   the :ref:`need parts <need_part>` beside the needs. ``True`` tests every need and every part, as every release so
-  far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's
-  ``:show_parts:``), a filter that tests each need on its own selects the needs it selects under ``True`` in the
+  far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's or a
+  needflow's ``:show_parts:``), a filter that tests each need on its own selects the needs it selects under ``True`` in the
   same order, ``is_part`` selects nothing, a needflow draws a link to a part of a need it shows as an edge to
   that need, in the link type's ``style_part`` (dotted by default), and filter code and a filter function are
   handed needs alone (a part they build themselves is dropped, unless :ref:`needs_allow_unsafe_filters`). Unset, it
@@ -79,10 +79,12 @@ Improvements
 - ✨ **A needflow draws each need's parts inside it**: with :ref:`needflow_show_parts` a :ref:`needflow` draws each
   need it draws with every :ref:`need part <need_part>` it has, inside it, in the need's order of its parts, whether
   a link names the part or not, and a link to a part as an edge to the part's node, in the link type's
-  ``style_part``. The needflow then draws needs alone: a part its filter selects is drawn only inside its need,
+  ``style_part``. Its result then holds needs alone: a part its filter selects is drawn only inside its need,
   ``:max_items:`` counts needs, and a filter that selects parts alone draws nothing. What it draws is the same
-  whatever :ref:`needs_views_include_parts` says, so it makes no ``needs.views_include_parts`` report, and the
-  report of a needflow without the option now names it. An upgraded project re-reads every document once, as the
+  whatever :ref:`needs_views_include_parts` says, but for a filter that reads ``needs`` itself (a filter string,
+  filter code or a filter function), which is handed needs and parts under ``True`` and needs alone under
+  ``False``, as in every view; it makes no ``needs.views_include_parts`` report, and the report of a needflow
+  without the option now names it. An upgraded project re-reads every document once, as the
   needflow's stored options gain a key. (:pr:`0000`)
 
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
