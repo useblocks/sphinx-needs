@@ -1775,7 +1775,9 @@ a content line of :ref:`needpie` and a cell of :ref:`needbar` (with the scope of
 * ``False``: the filter is tested on the needs alone, so ``is_part`` selects nothing, and a view shows a need's parts
   only where it asks: a needtable with :ref:`show_parts <needtable_show_parts>` lists the parts of each need it
   lists, under it, and a needflow with :ref:`show_parts <needflow_show_parts>` draws each need it draws with its
-  parts inside it, under every value. A filter that tests each need on its own selects the needs it selects under ``True``, in the same
+  parts inside it, under every value, though a filter that reads ``needs`` itself still selects by the value
+  (:ref:`needflow_show_parts`).
+  A filter that tests each need on its own selects the needs it selects under ``True``, in the same
   order. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
   type's ``style_part`` (dotted by default), labelled with the part's id: the links of one need, of one link type,
   to parts of one need are one edge, naming the parts in the need's order (:ref:`needflow_need_parts`).
@@ -1810,7 +1812,8 @@ decides:
 * each :ref:`needflow` that from 10.0 draws links to parts of its needs as edges to the parts' needs, where today it
   draws no edge for them or an edge to the part, saying how many: the links of the needs its ``max_items`` window
   keeps once it holds needs alone (with the parts its filter selects, in one report, where it selects any). A
-  needflow with :ref:`show_parts <needflow_show_parts>`, which draws the same whatever the value, is not reported.
+  needflow with :ref:`show_parts <needflow_show_parts>` is not reported: it draws the same whatever the value, but
+  where its filter reads ``needs`` itself, which the report sees in no view (below).
 
 Setting the value either way silences it (``True`` keeps the views as they are, ``False`` selects needs alone now),
 as does ``suppress_warnings = ["needs.views_include_parts"]``. :ref:`needextract`, which never shows a part, is not

@@ -671,7 +671,7 @@ so that a build does not have to be read page by page to find it;
 a project that caps deliberately can silence the warning with
 ``suppress_warnings = ["needs.max_items"]``.
 The limit counts the entries the filter returned, which are needs, and need parts alike where the filter tests
-them (:ref:`needs_views_include_parts`); with :ref:`needflow_show_parts`, needs alone.
+them (:ref:`needs_views_include_parts`); with :ref:`needflow_show_parts`, it counts the needs among them alone.
 Since the limit is applied before the diagram is built,
 a link to a dropped need is not drawn at all,
 and a need whose parent was dropped is drawn as a root instead of nested.
@@ -704,9 +704,15 @@ its parts (the order its content writes them, then the parts its record states),
 not.
 A link to a part drawn is an edge to the part's node, in the link type's ``style_part``, and a link to the need
 itself an edge to the need.
-The needflow then draws needs alone: a part its filter selects is drawn only inside its need, as every part of the
+Its result then holds needs alone: a part its filter selects is drawn only inside its need, as every part of the
 need is, and :ref:`needflow_max_items` counts needs.
-What it draws does not depend on :ref:`needs_views_include_parts` (:ref:`needflow_need_parts`).
+What it draws does not depend on :ref:`needs_views_include_parts` (:ref:`needflow_need_parts`), but for a filter
+that reads ``needs`` itself.
+A filter string that does, such as ``id in [n["id_parent"] for n in needs if n["is_part"]]``,
+:ref:`filter code <filter_code>` or a :ref:`filter function <filter_func>` is handed needs and parts under ``True``,
+and while the value is unset through 9.x, and needs alone under ``False``, as in every view, so what such a
+needflow selects, and so draws, can differ by value: the filter string above selects the needs that have parts
+under ``True``, each drawn with its parts, and no need under ``False``.
 
 .. syntax-example::
 
@@ -734,7 +740,8 @@ common filters
 Need parts
 ----------
 
-What a needflow draws for a link to a :ref:`need part <need_part>` follows :ref:`needs_views_include_parts`.
+Without :ref:`needflow_show_parts`, what a needflow draws for a link to a :ref:`need part <need_part>` follows
+:ref:`needs_views_include_parts`.
 
 With ``False``, the default from 10.0, a needflow draws needs alone, and a link to a part of a need it draws is an
 edge to that need, in the link type's ``style_part`` (dotted by default), labelled with the part's id.
@@ -751,8 +758,10 @@ With ``True``, and while it is unset through 9.x, a part the needflow's filter s
 is drawn as a node inside that need, and a link to it as an edge to that node; a link to a part the filter does not
 select draws no edge.
 
-With :ref:`needflow_show_parts`, under every value, a needflow draws needs alone, each with every part it has
-inside it, in its order of its parts, whatever its filter selects; a link to a part drawn is an edge to the part's
-node, labelled with no part id (with :ref:`needflow_show_link_names`, the link type's name alone).
+With :ref:`needflow_show_parts`, under every value, a needflow's result holds needs alone, and each need of the
+result is drawn with every part it has inside it, in its order of its parts, whatever the filter selects; a link to
+a part drawn is an edge to the part's node, labelled with no part id (with :ref:`needflow_show_link_names`, the
+link type's name alone).
 A link to a part the need does not have, to a part of a need that does not exist,
 or to a part of a need the needflow does not draw is no edge.
+What a filter that reads ``needs`` itself selects still follows the value (:ref:`needflow_show_parts`).
