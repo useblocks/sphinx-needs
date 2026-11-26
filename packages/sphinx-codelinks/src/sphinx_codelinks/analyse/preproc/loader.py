@@ -388,6 +388,19 @@ def entry_has(start: Any, size: int) -> bool:
     return _in_entry(start, size, at[0]) and not _in_entry(start, size + 1, at[0])
 
 
+def unchanged_since_parse(file: Any, path: Path) -> bool:
+    """Whether ``path``, the file ``file`` of a unit, still has the modification time,
+    in whole seconds, it had when the unit read it (``clang_getFileUniqueID``'s third
+    word). A file that cannot be stat'ed is taken as changed. A rewrite within the
+    second of the parse is not seen."""
+    key = file_id(file)
+    try:
+        mtime = os.stat(path).st_mtime_ns // 1_000_000_000
+    except OSError:
+        return False
+    return key is not None and key[2] == mtime
+
+
 def _empty_on_disk(file: Any) -> bool:
     """Whether ``file``, named by an absolute path, is an empty file on disk; ``False``
     for a relative name (relative to a working directory this does not know)."""
@@ -553,8 +566,8 @@ def entry_starts(
                 cx.conf.lib.clang_disposeSourceRangeList(ranges)
     # an empty file holds no location: it is looked up, which costs nothing there
     sought = {key for key, file in missing.items() if not _empty_on_disk(file)}
-    if sought:
-        _walk(tu, sought, missing, offer)
+    if sought and not _walk(tu, sought, missing, offer):
+        return {}
     return starts
 
 
@@ -567,14 +580,15 @@ def _walk(
     sought: set[tuple[int, int, int]],
     missing: dict[tuple[int, int, int], Any],
     offer: Any,
-) -> None:
+) -> bool:
     """Offer the location of the first top-level cursor (``clang_visitChildren`` of the
     unit: its preprocessing record and declarations) in each entry of a file, until
     every file in ``sought`` has a start (it leaves ``missing``).
 
     Each entry is decoded once (``clang_getFileLocation``): a cursor whose raw location
     falls in an entry already seen, ``[start, start + size]``, is passed over without a
-    call, as is a macro location.
+    call, as is a macro location. ``False`` when the walk failed: an exception inside
+    the callback, which stops it.
     """
     cx = load_clang_cindex()
     location_of = cx.conf.lib.clang_getCursorLocation
@@ -601,19 +615,22 @@ def _walk(
         offer(location)
         sought.intersection_update(missing.keys())
 
+    failed = [False]
+
     def visit(cursor: Any, _parent: Any, _data: Any) -> int:
-        visited[0] += 1
-        location = location_of(cursor)
-        raw = location.int_data
-        if raw & _MACRO_BIT or last[0] <= raw <= last[1]:
-            return _CONTINUE
-        i = bisect_right(begins, raw) - 1
-        if i >= 0 and raw <= ends[i]:
-            last[0], last[1] = begins[i], ends[i]
-            return _CONTINUE
         try:
+            visited[0] += 1
+            location = location_of(cursor)
+            raw = location.int_data
+            if raw & _MACRO_BIT or last[0] <= raw <= last[1]:
+                return _CONTINUE
+            i = bisect_right(begins, raw) - 1
+            if i >= 0 and raw <= ends[i]:
+                last[0], last[1] = begins[i], ends[i]
+                return _CONTINUE
             seen(location, raw)
-        except Exception:  # ctypes would print and swallow it: stop the walk
+        except Exception:  # ctypes would print and swallow it, per cursor: fail closed
+            failed[0] = True
             return _BREAK
         return _CONTINUE if sought else _BREAK
 
@@ -621,6 +638,7 @@ def _walk(
         tu.cursor, cx.callbacks["cursor_visit"](visit), None
     )
     _COSTS["cursors"] += visited[0]
+    return not failed[0]
 
 
 _LINE_BREAK = re.compile(rb"\r\n?|\n")

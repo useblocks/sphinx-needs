@@ -343,6 +343,7 @@ def _whole_file(
     end_line: int,
     starts: dict[tuple[int, int, int], Any] | None = None,
     contents: bytes | None = None,
+    path: Path | None = None,
 ) -> Any:
     """The range of ``file`` in its first entry into ``tu``, from its start to line
     ``end_line``, column 1.
@@ -350,29 +351,38 @@ def _whole_file(
     For a file the unit entered once both ends are made from where its entry starts
     (:func:`.loader.entry_starts`), the end at the offset clang gives the line
     (:func:`.loader.line_offset`) in the file's bytes, and checked to decode to the
-    file at that offset; any other file, or one whose entry does not hold exactly
-    those bytes' count (it changed since the parse), is looked up
-    (:func:`.loader.looked_up`): the same range, without the lookup's walk of the
-    file's macro expansions (useblocks/ubcode#4982).
+    file at that offset; any other file is looked up (:func:`.loader.looked_up`):
+    the same range, without the lookup's walk of the file's macro expansions
+    (useblocks/ubcode#4982). Bytes read from ``path`` stand for the bytes clang read
+    only while the file's modification time is the one clang saw and its entry holds
+    as many bytes (:func:`.loader.unchanged_since_parse`); a file changed since the
+    parse is looked up. A rewrite to as many bytes within the second of the parse
+    goes unseen: the race master has too, which slices the comments' text out of the
+    bytes read from ``path``.
 
     :param starts: the starts of the unit (:func:`unit_starts`, :func:`starts_of`),
         when the caller reads several files through it; else found for ``file`` alone.
-    :param contents: the file's bytes, as the caller read them; else clang's own
-        (``clang_getFileContents``, which walks every entry of the unit to find it).
+    :param contents: the file's bytes, as the caller read them from ``path``; else
+        clang's own (``clang_getFileContents``, which walks every entry of the unit to
+        find it).
+    :param path: where ``contents`` were read from.
     """
     cx = loader.load_clang_cindex()
     key = loader.file_id(file)
     if starts is None:
         starts = loader.entry_starts(tu, [file])
     start = starts.get(key) if key is not None else None
+    from_disk = contents is not None
     if start is not None and contents is None:
         contents = loader.file_contents(tu, file)
-    # bytes read from disk stand for the bytes clang read only when the entry holds
-    # exactly as many (a file changed since the parse is looked up)
     if (
         start is not None
         and contents is not None
         and loader.entry_has(start, len(contents))
+        and (
+            not from_disk
+            or (path is not None and loader.unchanged_since_parse(file, path))
+        )
     ):
         end = loader.made_at(start, loader.line_offset(contents, end_line))
         if end is not None:
@@ -403,7 +413,7 @@ def _active_comments(
     # a location in a file the unit includes is in its first inclusion
     # (``clang_getLocation``), the one whose skipped ranges ``skipped`` holds
     file = tu.get_file(str(file_path))
-    extent = _whole_file(tu, file, line_count + 1, starts, raw)
+    extent = _whole_file(tu, file, line_count + 1, starts, raw, file_path)
 
     out: list[LibclangComment] = []
     for tok in tu.get_tokens(extent=extent):
