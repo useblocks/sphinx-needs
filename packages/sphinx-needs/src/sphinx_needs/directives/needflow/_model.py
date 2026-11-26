@@ -275,9 +275,10 @@ class GraphEdge:
 
         Both are one label of two lines: the line break is the two characters ``\\n``,
         which PlantUML and dot both read as one. Each backslash of a part id is doubled,
-        which both read as one backslash, so the id is drawn as it is written (one ending
-        in a backslash would otherwise escape dot's closing quote). The link type's name
-        is written as it is, as it was before.
+        which both read as one backslash, so a backslash in the id is drawn as written
+        (an id ending in one would otherwise escape dot's closing quote). Nothing else of
+        an id is escaped here: PlantUML still reads its own markup in one, as it does in
+        the link type's name, which is written as it is, as it was before.
 
         :param labels: What the diagram labels its edges with.
         :return: The label, or ``None`` for an unlabelled edge.

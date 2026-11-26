@@ -105,8 +105,10 @@
 #     with `_back` added for its incoming links, in lower case: a field's text, or for a
 #     link column the LIST of what the cell lists, in order, each `to`, the
 #     address as shown, and `target`, the address it links (absent: shown as text, a dead
-#     link). An address a row or a cell links is compared by the fragment of the link, the
-#     text after its `#`: an external need's URL ends in it
+#     link). A `target` is compared with the fragment of the link, the text after its `#`
+#     (`""` for a link with none): the address as the linked page anchors it, which for
+#     an external need is what its URL names, its id without its source's `id_prefix` for
+#     the default URL
 #   - `flow` is the case's needflow, as a graph: `nodes`, the ids of what it draws, sorted
 #     by code point, and `edges`, a MULTISET of the edges it draws between two of them,
 #     each `from` and `to` (the ids it joins), `type` (its link type) and `parts`, the ids

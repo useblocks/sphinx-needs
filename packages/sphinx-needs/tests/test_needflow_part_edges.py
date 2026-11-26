@@ -1134,3 +1134,88 @@ def test_a_part_id_in_a_label_is_drawn_as_written(test_app: SphinxTestApp) -> No
     ]
     for part_id in BACKSLASH_IDS:
         assert part_id in texts, part_id
+
+
+#: A part id ending in a backslash, and one that is a double quote: the two characters an
+#: edge's label escapes (the model doubles a backslash, graphviz's writer escapes a quote),
+#: each of which loses the whole graphviz needflow when escaped once too few or once too
+#: many.
+ESCAPED_IDS = ["a\\", '"']
+
+ESCAPED_EXTERNAL = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "EXT_A": {
+                    "id": "EXT_A",
+                    "type": "req",
+                    "title": "Parts",
+                    "docname": "ext",
+                    "content": "",
+                    "parts": {
+                        part_id: {"id": part_id, "content": f"part {index}"}
+                        for index, part_id in enumerate(ESCAPED_IDS)
+                    },
+                },
+                **{
+                    f"EXT_S{index}": {
+                        "id": f"EXT_S{index}",
+                        "type": "spec",
+                        "title": f"Links part {index}",
+                        "docname": "ext",
+                        "content": "",
+                        "links": [f"EXT_A.{part_id}"],
+                    }
+                    for index, part_id in enumerate(ESCAPED_IDS)
+                },
+            }
+        }
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\n'
+                    "needs_external_needs = [\n"
+                    '    {"base_url": "http://example.org", "json_path": "external.json"},\n'
+                    "]\n"
+                    'needs_flow_engine = "graphviz"\n'
+                    'graphviz_output_format = "svg"\n' + VALUES["false"],
+                ),
+                (
+                    Path("index.rst"),
+                    f"Escaped\n=======\n\n.. needflow::\n{options}",
+                ),
+                (Path("external.json"), json.dumps(ESCAPED_EXTERNAL)),
+            ],
+        }
+        for options in ("", "   :show_link_names:\n")
+    ],
+    indirect=True,
+    ids=["plain", "names"],
+)
+def test_graphviz_draws_a_backslash_and_a_quote_with_and_without_link_names(
+    test_app: SphinxTestApp,
+) -> None:
+    """A part id ending in a backslash, and one that is a double quote, are each drawn as
+    written by graphviz, on a one-line label and on the two-line label of
+    ``:show_link_names:``, and the needflow renders: the escape holds for both labels,
+    and a quote is escaped once (by the writer), not twice."""
+    test_app.build()
+    assert_no_warnings(test_app)
+    [svg_path] = Path(test_app.outdir, "_images").glob("*.svg")
+    svg = etree.fromstring(svg_path.read_bytes())
+    texts = [
+        "".join(element.itertext()).strip()
+        for element in svg.iter("{http://www.w3.org/2000/svg}text")
+    ]
+    for part_id in ESCAPED_IDS:
+        assert part_id in texts, part_id

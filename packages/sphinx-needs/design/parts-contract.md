@@ -189,9 +189,9 @@ carry the order, so the corpus reads it from the stored need (`order.<ID>`).
 A needtable with `:show_parts:` lists each part of a need it lists once, under the need,
 in the need's stored order (section 10). A part's row lists the part's address, its id
 linking the part's anchor. For an external need's part: where the need's URL's fragment,
-the text after its `#`, is the need's id as its source wrote it (before the source's
-`id_prefix`), the part's link is that URL with `.<part>` added; otherwise it is the need's
-URL. Its other cells are its need's fields, no outgoing link (a part has none), and the
+the text after its `#`, is the need's id, whole or without the `id_prefix` of one of the
+project's external sources, the part's link is that URL with `.<part>` added; otherwise it
+is the need's URL. Its other cells are its need's fields, no outgoing link (a part has none), and the
 part's own back links. A cell naming a part links the part's anchor; a dead part link is
 its address, as text.
 
