@@ -216,7 +216,8 @@ def _report_parts_in_view(
     per build for a place, keyed by what it is (*view*: the directive, or a chart's line
     or cell, or ``:need_count:``, with its filter) and where it is written; never with
     the value set either way. needextract, which drops the parts it matches, does not
-    call it. This is the whole report of the 9.x series: at 10.0 it goes, with its calls,
+    call it, nor does a needflow with ``:show_parts:``, which draws the same whatever the
+    value. This is the whole report of the 9.x series: at 10.0 it goes, with its calls,
     its warning type and needflow's
     :func:`~sphinx_needs.directives.needflow._model.count_part_links_to_needs`.
 
@@ -258,7 +259,8 @@ def _views_include_parts_text(
     view: str, parts: int, links: int, /, *, counts: bool, show_parts: bool = False
 ) -> str:
     """The text of :func:`_report_parts_in_view`: what the place's filter selects, what
-    changes at 10.0 for its kind of view, and what to set."""
+    changes at 10.0 for its kind of view, and what to set; for a needflow, in both its
+    forms, also the option that keeps its parts whatever the value."""
     selects = f"{parts} need part{'' if parts == 1 else 's'}"
     keep = "Set needs_views_include_parts = True to keep"
     if links:
@@ -305,6 +307,13 @@ def _views_include_parts_text(
         text = (
             f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
             f"{keep} {keeping} them, or False to {now} needs only now"
+        )
+    if view == "needflow":
+        # the lasting way: true of a needflow that draws links to parts and of one whose
+        # filter selects parts alone (each need it draws, if any, opens with its parts)
+        text += (
+            "; or add :show_parts: to draw each need the needflow draws with its parts "
+            "inside it, whatever the value"
         )
     return f"{text}; or suppress needs.views_include_parts."
 

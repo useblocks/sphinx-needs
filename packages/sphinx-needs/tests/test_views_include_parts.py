@@ -853,6 +853,12 @@ def _report(
             f"{head}: from Sphinx-Needs 10.0 a view's filter selects needs only{asks}. "
             f"{set_} {verb[0]} them, or False to {verb[1]} needs only now"
         )
+    if what == "needflow":
+        # in both forms, the option that keeps its parts whatever the value
+        text += (
+            "; or add :show_parts: to draw each need the needflow draws with its parts "
+            "inside it, whatever the value"
+        )
     return (
         f"<srcdir>/{page}:{line}: WARNING: {text}; or suppress "
         "needs.views_include_parts. [needs.views_include_parts]"

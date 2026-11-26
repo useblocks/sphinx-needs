@@ -470,23 +470,26 @@ def build_graph(
             need for need in found_needs if isinstance(need, NeedItem)
         ]
         found_needs = needs_alone
-    # before the cap, as what its filter selects: the parts it lists; and the links it
-    # draws to the parts' needs where its result holds needs alone (this result's
-    # needs in the same order, where its filter tests each need on its own), those of
-    # the needs its cap keeps of them (counted only while the value is unset)
-    _report_parts_in_view(
-        needs_config,
-        found_needs,
-        "needflow",
-        location,
-        part_links=partial(
-            count_part_links_to_needs,
-            found_needs,
-            allowed_link_types,
-            attributes.get("max_items"),
+    if not show_parts:
+        # before the cap, as what its filter selects: the parts it lists; and the links
+        # it draws to the parts' needs where its result holds needs alone (this
+        # result's needs in the same order, where its filter tests each need on its
+        # own), those of the needs its cap keeps of them (counted only while the value
+        # is unset). With the option what it draws does not depend on the value, and
+        # nothing is reported
+        _report_parts_in_view(
             needs_config,
-        ),
-    )
+            found_needs,
+            "needflow",
+            location,
+            part_links=partial(
+                count_part_links_to_needs,
+                found_needs,
+                allowed_link_types,
+                attributes.get("max_items"),
+                needs_config,
+            ),
+        )
     # the cap is applied before any of the drawing data is derived,
     # so that dropped needs cannot be referenced by what is drawn
     found_needs, total_needs = apply_max_items(

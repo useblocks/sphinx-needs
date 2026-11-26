@@ -786,6 +786,14 @@ def _report(line: int, text: str) -> str:
     )
 
 
+#: What a needflow's report adds before its last clause: the option that keeps its parts
+#: whatever the value.
+SHOW_PARTS = (
+    "; or add :show_parts: to draw each need the needflow draws with its parts inside "
+    "it, whatever the value"
+)
+
+
 def _flow_report(line: int, parts: int, links: int) -> str:
     return _report(
         line,
@@ -793,7 +801,7 @@ def _flow_report(line: int, parts: int, links: int) -> str:
         f"it draws {links} links to need parts as edges to the parts' needs: a view's "
         "filter then selects needs only, and a needflow draws a link to a part of a "
         "need it shows as an edge to that need. Set needs_views_include_parts = True to "
-        "keep the needflow as it is, or False to draw needs only now",
+        "keep the needflow as it is, or False to draw needs only now" + SHOW_PARTS,
     )
 
 
@@ -837,7 +845,7 @@ def _unset_reports() -> list[str]:
             "to the parts' needs, which it draws no edge for now: a view's filter then "
             "selects needs only, and a needflow draws a link to a part of a need it "
             "shows as an edge to that need. Set needs_views_include_parts = True to "
-            "keep the needflow as it is, or False to draw those edges now",
+            "keep the needflow as it is, or False to draw those edges now" + SHOW_PARTS,
         )
         for line in (62, 68)
     ]
@@ -846,7 +854,7 @@ def _unset_reports() -> list[str]:
             line,
             "This needflow's filter selects 7 need parts: from Sphinx-Needs 10.0 a "
             "view's filter selects needs only. Set needs_views_include_parts = True to "
-            "keep drawing them, or False to draw needs only now",
+            "keep drawing them, or False to draw needs only now" + SHOW_PARTS,
         )
         for line in (74, 80)
     ]
