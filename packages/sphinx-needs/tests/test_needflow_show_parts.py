@@ -381,6 +381,7 @@ _PUML_NODE = re.compile(
 )
 _PUML_EDGE = re.compile(r"^(\S+) -(?:\[([^\]]*)\])?-> (\S+?)(?:: (.*)\\n)?$")
 _DOT_CLUSTER = re.compile(r'^\s*subgraph "cluster_([^"]+)" \{$')
+_DOT_CLUSTER_PARAM = re.compile(r"^\s*(href|color)=(.*);$")
 _DOT_NODE = re.compile(r'^\s*"([^"]+)" \[(label=.*)\];$')
 _DOT_EDGE = re.compile(r'^"([^"]+)" -> "([^"]+)" \[(.*)\];$')
 _DOT_LABEL = re.compile(r'label="((?:[^"\\]|\\.)*)"')
@@ -428,7 +429,15 @@ def drawn(source: str) -> Drawn:
     for line in source.split("\n// edge definitions\n", 1)[0].splitlines():
         if (match := _DOT_CLUSTER.match(line)) is not None:
             result.nodes.append(match[1])
+            result.links[match[1]] = result.colors[match[1]] = None
             stack.append([match[1], ""])
+        elif stack and (match := _DOT_CLUSTER_PARAM.match(line)) is not None:
+            # the need's own attributes, at the head of its cluster
+            key, value = match.groups()
+            if key == "href":
+                result.links[stack[-1][0]] = value.strip('"')
+            else:
+                result.colors[stack[-1][0]] = value.strip('"#')
         elif line.strip() == "};":
             stack.pop()
         elif line.strip() in ("// parts:", "// child needs:"):
@@ -696,7 +705,7 @@ def test_the_cap_counts_needs(built: dict[str, Build], value: str, engine: str) 
     assert "due to the max_items limit" not in whole
     assert shown(built, value, "capall", engine).containers == CONTAINERS
     capped = built[value].texts[f"shown/cap-{engine}"]
-    assert f"showing the first 4 of {NEEDS} needs" in capped
+    assert f"Showing the first 4 of {NEEDS} needs" in capped
     graph = shown(built, value, "cap", engine)
     needs = [node for node in graph.nodes if node in ALL_NEEDS]
     assert len(needs) == 4

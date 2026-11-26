@@ -306,9 +306,12 @@ def process_needflow_plantuml(
                 puml_node["uml"] += f"\n' Direction\n\n{direction}\n"
 
             # the entity names must be assigned for the whole diagram at once,
-            # so that ids sanitising to the same name stay distinct nodes
+            # so that ids sanitising to the same name stay distinct nodes; with
+            # `:show_parts:` from what is drawn, the parts drawn being the needs' own
             entity_names = make_entity_names(
-                need["id_complete"] for need in found_needs
+                graph.nodes
+                if current_needflow["show_parts"]
+                else (need["id_complete"] for need in found_needs)
             )
 
             puml_node["uml"] += "\n' Nodes definition \n\n"
