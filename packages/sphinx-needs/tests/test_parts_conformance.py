@@ -14,8 +14,8 @@ page is written), and four things are asserted:
   saying ``view = true``, over what a view's filter is tested on under the case's
   ``views_include_parts`` (read through the function every view takes its candidates
   from); and, in the section ``views``, the rows of the case's needtable as its page is
-  written, and the nodes and edges of its needflow as the model both engines draw from
-  gives them (``directives.needflow._model``, from the needflow's node in the stored
+  written, and the nodes, the parts drawn inside each need and the edges of its needflow
+  as the model both engines draw from gives them (``directives.needflow._model``, from the needflow's node in the stored
   doctree), never an engine's syntax;
 * a case marked ``divergent`` for sphinx-needs FAILS with exactly the problems recorded
   for it, fails as a second deviation with any others, and fails when it passes, so a fix
@@ -710,10 +710,15 @@ def _table_problems(
 
 def _read_flow(
     app: Any,
-) -> tuple[list[str], Counter[tuple[str, str, str, tuple[str, ...]]]]:
+) -> tuple[
+    list[str],
+    Counter[tuple[str, str, str, tuple[str, ...]]],
+    dict[str, list[str]],
+]:
     """What the case's needflow draws, from the model both engines draw from: built
     from the needflow's node in the stored doctree, through the functions a build
-    uses. Its drawn ids, sorted, and the edges between two of them."""
+    uses. Its drawn ids, sorted, the edges between two of them, and the parts drawn
+    inside each need, in the order drawn (:attr:`GraphNode.parts`), by need."""
     [node] = [
         node
         for node in app.env.get_doctree("index").findall()
@@ -733,18 +738,28 @@ def _read_flow(
         for edge in graph.edges
         if edge.source_drawn and edge.target_drawn
     )
-    return sorted(graph.nodes), edges
+    containers = {
+        node_id: [part.need["id"] for part in node.parts]
+        for node_id, node in graph.nodes.items()
+        if node.parts
+    }
+    return sorted(graph.nodes), edges, containers
 
 
 def _flow_problems(
     expected: Mapping[str, Any],
     nodes: list[str],
     edges: Counter[tuple[str, str, str, tuple[str, ...]]],
+    containers: Mapping[str, list[str]],
 ) -> list[str]:
-    """The problems with a case's ``flow``, against what :func:`_read_flow` read."""
+    """The problems with a case's ``flow``, against what :func:`_read_flow` read. Its
+    ``containers`` are compared exactly, each list in order; absent, no need may be
+    drawn with a part inside it."""
     problems = []
     if nodes != expected["nodes"]:
         problems.append(f"flow nodes {nodes}, expected {expected['nodes']}")
+    if (want := expected.get("containers", {})) != containers:
+        problems.append(f"flow containers {dict(containers)}, expected {want}")
     wanted = Counter(
         (edge["from"], edge["to"], edge["type"], tuple(edge["parts"]))
         for edge in expected["edges"]
