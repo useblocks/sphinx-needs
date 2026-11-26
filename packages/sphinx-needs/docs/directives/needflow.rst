@@ -671,7 +671,7 @@ so that a build does not have to be read page by page to find it;
 a project that caps deliberately can silence the warning with
 ``suppress_warnings = ["needs.max_items"]``.
 The limit counts the entries the filter returned, which are needs, and need parts alike where the filter tests
-them (:ref:`needs_views_include_parts`).
+them (:ref:`needs_views_include_parts`); with :ref:`needflow_show_parts`, needs alone.
 Since the limit is applied before the diagram is built,
 a link to a dropped need is not drawn at all,
 and a need whose parent was dropped is drawn as a root instead of nested.
@@ -691,6 +691,35 @@ Without the option, the diagram shows as many needs as that configuration allows
       :engine: graphviz
       :tags: flow_example
       :max_items: 2
+
+.. _needflow_show_parts:
+
+show_parts
+~~~~~~~~~~
+
+.. versionadded:: 9.4.0
+
+Draws each need of the needflow with every :ref:`need part <need_part>` it has, inside it, in the need's order of
+its parts (the order its content writes them, then the parts its record states), whether a link names the part or
+not.
+A link to a part drawn is an edge to the part's node, in the link type's ``style_part``, and a link to the need
+itself an edge to the need.
+The needflow then draws needs alone: a part its filter selects is drawn only inside its need, as every part of the
+need is, and :ref:`needflow_max_items` counts needs.
+What it draws does not depend on :ref:`needs_views_include_parts` (:ref:`needflow_need_parts`).
+
+.. syntax-example::
+
+   .. needflow::
+      :filter: id in ["my_car_1", "impl_my_car_1"]
+      :show_parts:
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :filter: id in ["my_car_1", "impl_my_car_1"]
+      :show_parts:
 
 common filters
 ~~~~~~~~~~~~~~
@@ -721,3 +750,9 @@ or to a part of a need the needflow does not draw is no edge.
 With ``True``, and while it is unset through 9.x, a part the needflow's filter selects, of a need it also selects,
 is drawn as a node inside that need, and a link to it as an edge to that node; a link to a part the filter does not
 select draws no edge.
+
+With :ref:`needflow_show_parts`, under every value, a needflow draws needs alone, each with every part it has
+inside it, in its order of its parts, whatever its filter selects; a link to a part drawn is an edge to the part's
+node, labelled with no part id (with :ref:`needflow_show_link_names`, the link type's name alone).
+A link to a part the need does not have, to a part of a need that does not exist,
+or to a part of a need the needflow does not draw is no edge.
