@@ -356,9 +356,9 @@ def _whole_file(
     (useblocks/ubcode#4982). Bytes read from ``path`` stand for the bytes clang read
     only while the file's modification time is the one clang saw and its entry holds
     as many bytes (:func:`.loader.unchanged_since_parse`); a file changed since the
-    parse is looked up. A rewrite to as many bytes within the second of the parse
-    goes unseen: the race master has too, which slices the comments' text out of the
-    bytes read from ``path``.
+    parse is looked up. One race is left: a rewrite to as many bytes within the same
+    second as the file's previous write goes unseen, and the range then ends where the
+    new bytes put the line, not where clang's bytes do, as a lookup would.
 
     :param starts: the starts of the unit (:func:`unit_starts`, :func:`starts_of`),
         when the caller reads several files through it; else found for ``file`` alone.
