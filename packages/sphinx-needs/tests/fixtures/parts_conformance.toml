@@ -2614,7 +2614,6 @@ edges = []
 name = "views-flow-show-parts-draws-every-part-in-order"
 section = "views"
 why = "a needflow with :show_parts: draws each need with every part it has inside it, in the need's stored order and not by id, one nobody links among them, and a link to a part ends on the part's node"
-divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2645,7 +2644,6 @@ edges = [{ from = "SPEC_1", to = "REQ_1.zeta", type = "links", parts = [] }]
 name = "views-flow-show-parts-does-not-follow-the-filter"
 section = "views"
 why = "with views_include_parts true a needflow with :show_parts: whose filter selects needs alone draws each need it draws with every part it has: the parts drawn are the need's, not the filter's"
-divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
 config = '''
 [needs]
 views_include_parts = true
@@ -2706,7 +2704,6 @@ edges = []
 name = "views-flow-show-parts-stated-and-external-parts"
 section = "views"
 why = "a needflow with :show_parts: draws an imported need with the part its content marks and then the part its record states, and an external need with its stated part, each a link's end"
-divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2740,7 +2737,6 @@ edges = [
 name = "views-flow-show-parts-a-whole-and-a-part-link"
 section = "views"
 why = "with :show_parts: a link naming the need whole is an edge to the need, and a link naming its part an edge to the part's node: two edges"
-divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
 config = '''
 [needs]
 views_include_parts = false
@@ -2773,7 +2769,6 @@ edges = [
 name = "views-flow-show-parts-no-edge-to-a-part-not-drawn"
 section = "views"
 why = "with :show_parts: a link to a part the need does not have, or to a part of a need the needflow does not draw, is no edge"
-divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
 config = '''
 [needs]
 views_include_parts = false
