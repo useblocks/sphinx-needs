@@ -10,6 +10,7 @@ lookups: how many a cold analysis makes, and where in the source a call may be w
 
 import ast
 import ctypes
+import os
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -619,33 +620,156 @@ def test_an_unreadable_entry_makes_no_start(tmp_path: Path) -> None:
         cx.SourceLocation.from_buffer_copy = copy
 
 
-@pytest.mark.parametrize("change", [b"// grown\n", b""])
-def test_a_file_changed_since_the_parse_is_looked_up(
-    change: bytes, tmp_path: Path
-) -> None:
-    """The end is made over the file's bytes as read from disk only when its entry
-    holds exactly as many; a file grown or shrunk since the parse is looked up, so its
-    comments are what the looked-up range gives."""
+def _read_both(tu: Any, path: Path) -> tuple[list[Any], list[Any]]:
+    """``path``'s comments as the engine reads them through ``tu`` (its start made
+    when it can) and as the lookup reads them (the range looked up)."""
     cx = loader.load_clang_cindex()
+    file = tu.get_file(str(path))
+    starts = loader.entry_starts(tu, [file])
+    assert starts, "the file has a start"
+    made = libclang_parser._active_comments(tu, path, [], starts)
+    whole = libclang_parser._whole_file
+
+    def looked(tu_: Any, file_: Any, line: int, *_rest: Any) -> Any:
+        return cx.SourceRange.from_locations(
+            cx.SourceLocation.from_position(tu_, file_, 1, 1),
+            cx.SourceLocation.from_position(tu_, file_, line, 1),
+        )
+
+    libclang_parser._whole_file = looked
+    try:
+        reference = libclang_parser._active_comments(tu, path, [])
+    finally:
+        libclang_parser._whole_file = whole
+
+    def key(comments: list[Any]) -> list[Any]:
+        return [(c.text, c.start_point.row, c.column) for c in comments]
+
+    return key(made), key(reference)
+
+
+def _parsed_then_rewritten(tmp_path: Path, before: bytes, after: bytes) -> Any:
+    """A unit that includes ``h.h`` parsed while it holds ``before``, then ``h.h``
+    rewritten to ``after``."""
     header = tmp_path / "h.h"
-    header.write_bytes(b"// one\nint h;\n// two\n")
+    header.write_bytes(before)
     (tmp_path / "main.c").write_text('#include "h.h"\n')
     tu = libclang_parser.parse_translation_unit(
         tmp_path / "main.c", [f"-working-directory={tmp_path}"]
     )
-    file = tu.get_file(str(header))
+    header.write_bytes(after)
+    return tu
+
+
+def test_a_file_whose_size_changed_since_the_parse_is_looked_up(tmp_path: Path) -> None:
+    """A file shrunk since the parse, its modification time put back, is told by its
+    size and looked up. Its bytes on disk (one line) would end the range two lines into
+    what clang read, where the looked-up range ends after the first: one more comment."""
+    before = b"int a;\n// one\n// two\n"
+    tu = _parsed_then_rewritten(tmp_path, before, b"x" * (len(before) - 3) + b"\n")
+    stamp = (tmp_path / "main.c").stat().st_mtime_ns
+    file = tu.get_file(str(tmp_path / "h.h"))
+    parsed = loader.file_id(file)
+    assert parsed is not None
+    os.utime(tmp_path / "h.h", ns=(stamp, parsed[2] * 10**9))
+    made, reference = _read_both(tu, tmp_path / "h.h")
+    assert len(reference) == 1
+    assert made == reference
+
+
+def test_a_same_size_rewrite_since_the_parse_is_looked_up(tmp_path: Path) -> None:
+    """A file rewritten to as many bytes since the parse is told by its modification
+    time and looked up: read over its new bytes, the range would end past a comment
+    the looked-up one leaves out."""
+    before = b"int s;\nint t;\n// @C, IMPL_C, impl\n"
+    after = b"int s; int t; // @C, IMPL_C, impl\n"
+    assert len(before) == len(after)
+    tu = _parsed_then_rewritten(tmp_path, before, after)
+    file = tu.get_file(str(tmp_path / "h.h"))
+    parsed = loader.file_id(file)
+    assert parsed is not None
+    later = (parsed[2] + 10) * 10**9
+    os.utime(tmp_path / "h.h", ns=(later, later))
+    made, reference = _read_both(tu, tmp_path / "h.h")
+    assert made == reference
+
+
+def test_an_unchanged_file_reads_its_made_range(tmp_path: Path) -> None:
+    """The guard above does not turn every read into a lookup: an unchanged file is
+    read over its made range, with no lookup, and reads as the lookup does."""
+    text = b"int s;\nint t;\n// @C, IMPL_C, impl\n"
+    tu = _parsed_then_rewritten(tmp_path, text, text)
+    file = tu.get_file(str(tmp_path / "h.h"))
+    parsed = loader.file_id(file)
+    assert parsed is not None
+    stamp = parsed[2] * 10**9
+    os.utime(tmp_path / "h.h", ns=(stamp, stamp))
     starts = loader.entry_starts(tu, [file])
-    start = starts[loader.file_id(file)]
-    assert loader.entry_has(start, len(header.read_bytes()))
-    # grown by a line, or shrunk to its first
-    before = header.read_bytes()
-    header.write_bytes(before + change if change else before[:7])
-    raw = header.read_bytes()
-    assert not loader.entry_has(start, len(raw))
-    line = len(raw.decode().splitlines()) + 1
-    made = libclang_parser._whole_file(tu, file, line, starts, raw)
-    reference = cx.SourceRange.from_locations(
-        cx.SourceLocation.from_position(tu, file, 1, 1),
-        cx.SourceLocation.from_position(tu, file, line, 1),
+    before = loader.slow_lookups()
+    libclang_parser._active_comments(tu, tmp_path / "h.h", [], starts)
+    assert loader.slow_lookups() == before
+    made, reference = _read_both(tu, tmp_path / "h.h")
+    assert made == reference != []
+
+
+def test_a_unity_unit_finds_its_starts_once(tmp_path: Path) -> None:
+    """The includer route reads every source a unity entry includes through that one
+    unit: its inclusions are listed once and its cursors walked at most once, for
+    ``included_files`` and every read alike."""
+    sources = {f"s{i}.cpp": f"// @S{i}, IMPL_S{i}, impl\nint s{i};\n" for i in range(4)}
+    _write(
+        tmp_path,
+        {**sources, "unity.cpp": "".join(f'#include "{name}"\n' for name in sources)},
     )
-    assert _comments(tu, made) == _comments(tu, reference)
+    db = _db(tmp_path, [{"file": "unity.cpp", "args": []}])
+    with _costs() as costs:
+        analyse = _run(tmp_path, list(sources), db)
+    assert len(analyse.oneline_needs) == len(sources)
+    assert costs["inclusions"] == 1
+    assert costs["walks"] <= 1
+
+
+def test_a_failing_walk_makes_no_start(tmp_path: Path, capfd: Any) -> None:
+    """An exception inside the walk's callback (where ctypes would print it and go on,
+    once per cursor left) stops the walk, and no start is made: every location is
+    looked up."""
+    cx = loader.load_clang_cindex()
+    (tmp_path / "leaf.h").write_text("int leaf;\n")
+    (tmp_path / "main.c").write_text('#include "leaf.h"\nint m;\n')
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "main.c", [f"-working-directory={tmp_path}"]
+    )
+    files = [i.file for i in loader.inclusions(tu)]
+    assert len(loader.entry_starts(tu, files)) == 2
+    location_of = cx.conf.lib.clang_getCursorLocation
+
+    def failing(*_args: Any) -> Any:
+        raise RuntimeError("a cursor that cannot be read")
+
+    capfd.readouterr()
+    cx.conf.lib.clang_getCursorLocation = failing
+    try:
+        assert loader.entry_starts(tu, files) == {}
+    finally:
+        cx.conf.lib.clang_getCursorLocation = location_of
+    assert "Exception ignored" not in capfd.readouterr().err
+
+
+def test_an_entry_ends_at_its_files_size(tmp_path: Path) -> None:
+    """``_entry_end`` finds an entry's last offset exactly, the file's size: for a file
+    followed by another entry and for the unit's last."""
+    sizes = {"first.h": b"int first;\n// one\n", "last.h": b"int last; /* end */"}
+    for name, text in sizes.items():
+        (tmp_path / name).write_bytes(text)
+    (tmp_path / "main.c").write_text('#include "first.h"\n#include "last.h"\n')
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "main.c", [f"-working-directory={tmp_path}"]
+    )
+    for name, text in sizes.items():
+        file = tu.get_file(str(tmp_path / name))
+        start = loader.entry_starts(tu, [file])[loader.file_id(file)]
+        at = loader._file_location(start)
+        assert at is not None
+        assert loader._entry_end(start, at[0], 0) == len(text), name
+        inside = loader.made_at(start, 5)
+        assert loader._entry_end(inside, at[0], 5) == len(text), name
