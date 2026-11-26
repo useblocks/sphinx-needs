@@ -85,7 +85,7 @@ Improvements
   filter code or a filter function), which is handed needs and parts under ``True`` and needs alone under
   ``False``, as in every view; it makes no ``needs.views_include_parts`` report, and the report of a needflow
   without the option now names it. An upgraded project re-reads every document once, as the
-  needflow's stored options gain a key. (:pr:`0000`)
+  needflow's stored options gain a key. (:pr:`2589`)
 
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
   content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
