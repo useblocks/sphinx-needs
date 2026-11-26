@@ -711,8 +711,8 @@ With ``False``, the default from 10.0, a needflow draws needs alone, and a link 
 edge to that need, in the link type's ``style_part`` (dotted by default), labelled with the part's id.
 The links of one need, of one link type, to parts of one need are one edge, labelled with the ids of those parts,
 each once, in the need's order of its parts (the order its content writes them, then the parts its record states),
-joined by a comma and a space: a need linking ``REQ_1.zeta`` and ``REQ_1.alpha``, where ``REQ_1`` writes ``zeta`` first, has one
-edge to ``REQ_1`` labelled ``zeta, alpha``.
+joined by a comma and a space: a need linking ``REQ_1.zeta`` and ``REQ_1.alpha``, where ``REQ_1`` writes ``zeta``
+first, has one edge to ``REQ_1`` labelled ``zeta, alpha``.
 A link to the need itself stays an edge of its own, unlabelled, and each link type draws its own edge.
 With :ref:`needflow_show_link_names`, the edge has one label of two lines: the link type's name, then the part ids.
 A link to a part the need does not have, to a part of a need that does not exist,
