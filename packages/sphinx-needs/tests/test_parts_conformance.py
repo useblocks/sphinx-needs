@@ -32,6 +32,7 @@ reads the needs again.
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
 import tomllib
@@ -62,7 +63,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 96
+EXPECTED_CASE_COUNT = 102
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -161,7 +162,7 @@ _EXPECT_KEYS = {"findings", "parts", "order", "dead", "back", "table", "flow"}
 #: The keys of a row of ``table``, and of an item of a link cell of one.
 _ROW_KEYS = {"row", "target", "cells"}
 _ITEM_KEYS = {"to", "target"}
-#: The keys of ``flow``, and of one of its edges.
+#: The keys of ``flow`` (``containers`` optional), and of one of its edges.
 _FLOW_KEYS = {"nodes", "edges"}
 _EDGE_KEYS = {"from", "to", "type", "parts"}
 _ENTRY_KEYS = {"filter", "expected", "include_parts", "view", "why"}
@@ -275,13 +276,31 @@ def test_every_case_has_a_complete_expectation() -> None:
                     assert isinstance(value, str), name
         if "flow" in expect:
             flow = expect["flow"]
-            assert set(flow) == _FLOW_KEYS, name
+            assert _FLOW_KEYS <= set(flow) <= {*_FLOW_KEYS, "containers"}, name
             assert flow["nodes"] == sorted(set(flow["nodes"])), name
             for edge in flow["edges"]:
                 assert set(edge) == _EDGE_KEYS, name
                 assert len(edge["parts"]) == len(set(edge["parts"])), name
-            # no case draws parts inside a need: a needflow over needs alone
-            assert needs["views_include_parts"] is False, name
+            # each part drawn inside a need is a node of it, by its address
+            containers = flow.get("containers", {})
+            for need_id, parts in containers.items():
+                assert parts and len(parts) == len(set(parts)), (name, need_id)
+                assert {need_id, *(f"{need_id}.{p}" for p in parts)} <= set(
+                    flow["nodes"]
+                ), (name, need_id)
+            # a needflow draws parts inside a need only with `:show_parts:`; every other
+            # one draws needs alone
+            if "show_parts" not in _flow_options(case["source"]):
+                assert needs["views_include_parts"] is False and not containers, name
+
+
+def _flow_options(source: str) -> list[str]:
+    """The names of the options of the needflow of a case's ``source``."""
+    lines = source.split(".. needflow::", 1)[1].splitlines()[1:]
+    return [
+        line.split(":")[1]
+        for line in itertools.takewhile(lambda line: line.startswith("   :"), lines)
+    ]
 
 
 def test_every_marker_names_a_known_tool() -> None:
@@ -814,9 +833,43 @@ _FLOW = {
 }
 
 
+#: The parts drawn inside each need, as :func:`_read_flow` reads them.
+_FLOW_CONTAINERS = {"REQ_1": ["zeta", "alpha"]}
+
+
 def test_the_runner_reads_faithful_views_as_one() -> None:
     assert _table_problems(_TABLE, _TABLE_ROWS) == []
-    assert _flow_problems(_FLOW, _FLOW_NODES, _FLOW_EDGES) == []
+    assert _flow_problems(_FLOW, _FLOW_NODES, _FLOW_EDGES, {}) == []
+    shown = {**_FLOW, "containers": {"REQ_1": ["zeta", "alpha"]}}
+    assert _flow_problems(shown, _FLOW_NODES, _FLOW_EDGES, _FLOW_CONTAINERS) == []
+
+
+@pytest.mark.parametrize(
+    "containers",
+    [
+        # a runner passing a container more than the case, or one fewer: a flow
+        # without `containers` says no need is drawn with a part inside it
+        {"REQ_1": ["zeta", "alpha"], "SPEC_1": ["p"]},
+        None,
+        # a part more, or a part fewer
+        {"REQ_1": ["zeta", "alpha", "mid"]},
+        {"REQ_1": ["zeta"]},
+        # two parts swapped: a container compared as a set
+        {"REQ_1": ["alpha", "zeta"]},
+    ],
+    ids=[
+        "a-container-more",
+        "a-container-fewer",
+        "a-part-more",
+        "a-part-fewer",
+        "two-parts-swapped",
+    ],
+)
+def test_the_runner_sees_every_difference_in_the_containers(
+    containers: dict[str, list[str]] | None,
+) -> None:
+    expected = _FLOW if containers is None else {**_FLOW, "containers": containers}
+    assert _flow_problems(expected, _FLOW_NODES, _FLOW_EDGES, _FLOW_CONTAINERS) != []
 
 
 @pytest.mark.parametrize(
@@ -917,7 +970,7 @@ def test_the_runner_sees_every_difference_in_a_table(table: list[Any]) -> None:
     ],
 )
 def test_the_runner_sees_every_difference_in_a_flow(edges: list[Any]) -> None:
-    assert _flow_problems({**_FLOW, "edges": edges}, _FLOW_NODES, _FLOW_EDGES) != []
+    assert _flow_problems({**_FLOW, "edges": edges}, _FLOW_NODES, _FLOW_EDGES, {}) != []
 
 
 @pytest.mark.parametrize(
@@ -926,7 +979,7 @@ def test_the_runner_sees_every_difference_in_a_flow(edges: list[Any]) -> None:
     ids=["a-node-fewer", "a-node-more"],
 )
 def test_the_runner_sees_a_node_more_or_less(nodes: list[str]) -> None:
-    assert _flow_problems({**_FLOW, "nodes": nodes}, _FLOW_NODES, _FLOW_EDGES) != []
+    assert _flow_problems({**_FLOW, "nodes": nodes}, _FLOW_NODES, _FLOW_EDGES, {}) != []
 
 
 @pytest.mark.parametrize(
