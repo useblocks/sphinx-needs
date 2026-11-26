@@ -137,16 +137,23 @@ def included_files(tu: Any, working_directory: Path) -> set[Path]:
     entered = loader.inclusions(tu)
     included = [inclusion.file for inclusion in entered if inclusion.stack]
     starts = loader.entry_starts(tu, included, entered)
+    # each file's answer, once: asked at the start of its (first) entry, as clang's
+    # characteristic of a file can change within it (``#pragma GCC system_header``, a
+    # line marker); a file entered once has the start made, every other one looks it up
+    system: dict[tuple[int, int, int], bool] = {}
     out: set[Path] = set()
     for file in included:
-        # asked at the start of the file's (first) entry, as clang's characteristic of
-        # it can change within it (``#pragma GCC system_header``, a line marker): a
-        # file entered once has the start made, every other one looks it up
         key = loader.file_id(file)
-        start = starts.get(key) if key is not None else None
-        if start is None:
-            start = loader.looked_up(tu, file, offset=0)
-        if start.is_in_system_header:
+        if key is not None and key in system:
+            in_system = system[key]
+        else:
+            start = starts.get(key) if key is not None else None
+            if start is None:
+                start = loader.looked_up(tu, file, offset=0)
+            in_system = bool(start.is_in_system_header)
+            if key is not None:
+                system[key] = in_system
+        if in_system:
             continue
         out.add((working_directory / file.name).resolve())
     return out
