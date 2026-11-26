@@ -1019,3 +1019,114 @@ def test_a_labelled_edge_renders(test_app: SphinxTestApp) -> None:
     assert "links outgoing" in texts
     assert "zeta, alpha" in texts
     assert not any("\\n" in text for text in texts)
+
+
+#: Part ids holding backslashes, as a record may state them: one ending in one, one that
+#: is one, the two characters ``\n``, and one ending in two.
+BACKSLASH_IDS = ["a\\", "\\", "\\n", "x\\\\"]
+
+BACKSLASH_EXTERNAL = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "EXT_A": {
+                    "id": "EXT_A",
+                    "type": "req",
+                    "title": "Parts whose ids hold backslashes",
+                    "docname": "ext",
+                    "content": "",
+                    "parts": {
+                        part_id: {"id": part_id, "content": f"part {index}"}
+                        for index, part_id in enumerate(BACKSLASH_IDS)
+                    },
+                },
+                **{
+                    f"EXT_S{index}": {
+                        "id": f"EXT_S{index}",
+                        "type": "spec",
+                        "title": f"Links part {index}",
+                        "docname": "ext",
+                        "content": "",
+                        "links": [f"EXT_A.{part_id}"],
+                    }
+                    for index, part_id in enumerate(BACKSLASH_IDS)
+                },
+            }
+        }
+    },
+}
+
+#: The edge each engine writes for each part, by engine: each backslash of the id
+#: doubled, which both read as one (PlantUML's label then ends in the ``\n`` it ends in
+#: for every label).
+BACKSLASH_LINES = {
+    "plantuml": [
+        r"EXT_S0 -[dotted]-> EXT_A: a\\\n",
+        r"EXT_S1 -[dotted]-> EXT_A: \\\n",
+        r"EXT_S2 -[dotted]-> EXT_A: \\n\n",
+        r"EXT_S3 -[dotted]-> EXT_A: x\\\\\n",
+    ],
+    "graphviz": [
+        r'"EXT_S0" -> "EXT_A" [label="a\\", style="dotted", arrowhead=vee];',
+        r'"EXT_S1" -> "EXT_A" [label="\\", style="dotted", arrowhead=vee];',
+        r'"EXT_S2" -> "EXT_A" [label="\\n", style="dotted", arrowhead=vee];',
+        r'"EXT_S3" -> "EXT_A" [label="x\\\\", style="dotted", arrowhead=vee];',
+    ],
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n'
+                    "needs_external_needs = [\n"
+                    '    {"base_url": "http://example.org", "json_path": "external.json"},\n'
+                    "]\n"
+                    f'needs_flow_engine = "{engine}"\n'
+                    'plantuml_output_format = "svg"\n'
+                    'graphviz_output_format = "svg"\n' + VALUES["false"],
+                ),
+                (Path("index.rst"), "Backslashes\n===========\n\n.. needflow::\n"),
+                (Path("external.json"), json.dumps(BACKSLASH_EXTERNAL)),
+            ],
+            "plantuml": engine == "plantuml",
+        }
+        for engine in ENGINES
+    ],
+    indirect=True,
+    ids=list(ENGINES),
+)
+def test_a_part_id_in_a_label_is_drawn_as_written(test_app: SphinxTestApp) -> None:
+    """A part id ending in a backslash would escape the label's closing quote, and dot
+    would draw no needflow at all; ``\\n`` would draw a line break. Each engine draws
+    each id as its record writes it, and the build warns of nothing."""
+    engine = test_app.config.needs_flow_engine
+    sources: list[str] = []
+
+    def collect(_app: Any, doctree: nodes.document, _docname: str) -> None:
+        for node in doctree.findall(NeedflowGraphiz):
+            sources.append(node["resolved_content"])
+        for node in doctree.findall(plantuml):
+            sources.append(node["uml"])
+
+    test_app.connect("doctree-resolved", collect, priority=900)
+    test_app.build()
+    assert_no_warnings(test_app)
+    [source] = sources
+    assert [
+        line for line in source.split("\n") if line.lstrip('"').startswith("EXT_S")
+    ] == BACKSLASH_LINES[engine]
+    [svg_path] = Path(test_app.outdir, "_images").glob("*.svg")
+    svg = etree.fromstring(svg_path.read_bytes())
+    texts = [
+        "".join(element.itertext()).strip()
+        for element in svg.iter("{http://www.w3.org/2000/svg}text")
+    ]
+    for part_id in BACKSLASH_IDS:
+        assert part_id in texts, part_id
