@@ -76,6 +76,15 @@ Improvements
   needflow, where it wrote ``-[]->``, a syntax error. The ``needs.views_include_parts`` report still counts a
   needflow's links, not its edges. (:pr:`2588`)
 
+- ✨ **A needflow draws each need's parts inside it**: with :ref:`needflow_show_parts` a :ref:`needflow` draws each
+  need it draws with every :ref:`need part <need_part>` it has, inside it, in the need's order of its parts, whether
+  a link names the part or not, and a link to a part as an edge to the part's node, in the link type's
+  ``style_part``. The needflow then draws needs alone: a part its filter selects is drawn only inside its need,
+  ``:max_items:`` counts needs, and a filter that selects parts alone draws nothing. What it draws is the same
+  whatever :ref:`needs_views_include_parts` says, so it makes no ``needs.views_include_parts`` report, and the
+  report of a needflow without the option now names it. An upgraded project re-reads every document once, as the
+  needflow's stored options gain a key. (:pr:`0000`)
+
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
   content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
   was dead (``needs.link_outgoing``, ``needs.link_ref``). The need now has them, after the parts its content
