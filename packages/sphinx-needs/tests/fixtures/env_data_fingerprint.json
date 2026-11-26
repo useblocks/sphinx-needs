@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 33,
+  "ENV_DATA_VERSION": 34,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
@@ -185,7 +185,8 @@
         "direction: Literal['down', 'up', 'right', 'left'] | None",
         "config_direction: Literal['down', 'up', 'right', 'left'] | None",
         "show_link_names_value: Literal['none', 'outgoing', 'incoming', 'type'] | None",
-        "show_legend_key: str"
+        "show_legend_key: str",
+        "show_parts: bool"
       ]
     },
     "sphinx_needs.data.NeedsGanttType": {
