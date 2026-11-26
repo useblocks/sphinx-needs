@@ -165,7 +165,8 @@ filter code and a filter function.
 - **False**: only needs are candidates. A part is not selected, `is_part` selects
   nothing, and `id_parent == "X"` selects the need `X` alone, a need answering its own id
   as `id_parent`. A part is shown only where the view asks for it: a needtable's
-  `:show_parts:` lists the parts of each need it lists, each once, under it.
+  `:show_parts:` lists the parts of each need it lists, each once, under it, and a
+  needflow's `:show_parts:` draws every part of each need it draws inside it (section 11).
 
 Every other filter is no view, and the value does not reach it: a filter that asks for
 parts (section 7), a derived field's rule, a function, a `needextend`, a warning check.
@@ -195,8 +196,8 @@ is the need's URL. Its other cells are its need's fields, no outgoing link (a pa
 part's own back links. A cell naming a part links the part's anchor; a dead part link is
 its address, as text.
 
-A needflow that draws needs alone (`views_include_parts` false) draws a link to a part of
-a need it draws as an edge to that need. The links of one need, of one link type, naming
+A needflow that draws needs alone (`views_include_parts` false), without `:show_parts:`,
+draws a link to a part of a need it draws as an edge to that need. The links of one need, of one link type, naming
 parts of one need are ONE edge, labelled with the ids of those parts: bare, in the need's
 stored order, each once, joined `, `. A link naming the need whole stays its own edge,
 unlabelled; each link type draws its own edge; a link to a part the need does not have, to
@@ -206,7 +207,21 @@ itself. Where the needflow labels its edges with the link type's name, the edge 
 need has one label of two lines: the name, then the part ids. Sphinx-Needs draws the edge
 in the link type's `style_part`.
 
-How a needflow draws a need's parts inside the need is not on this page yet.
+A needflow with `:show_parts:` selects needs alone, whatever `views_include_parts` says:
+a part its filter selects is not drawn for it, nor counted by its `max_items` cap, and
+its filter selecting parts alone draws nothing. Each need it draws is drawn with every
+part it has inside it, in the need's stored order, whether a link names the part or
+not. A link of a need it draws naming a part drawn is an edge
+ending on the part, whose label names no part (the link type's name alone, where the
+needflow labels its edges with it); a link naming the need whole is an edge to the
+need; one edge per link. A link to a part the need does not have, to a part of a need
+that does not exist, or to a part of a need the needflow does not draw is no edge. So
+what such a needflow draws is the same under every value of `views_include_parts`, but
+where its filter reads `needs` itself (filter code, a filter function, or a filter string
+that reads it): `needs` holds the needs and their parts where the value is true and the
+needs alone where it is false, as for every view (section 9), so what it selects, and so
+draws, can differ by value.
+Sphinx-Needs draws an edge ending on a part in the link type's `style_part`.
 
 ## 12. Not on this page yet
 
@@ -214,7 +229,8 @@ These are decided but not yet built in both tools; each joins this page and the 
 with the change that builds it. Two are open: whether a need id that holds a `.` is
 warned on or refused, and parts in a graph query schema.
 
-- How a needflow draws a need's parts inside the need.
-- A need id that holds a `.`.
+- A need id that holds a `.`. Where such an id is the address of a part of another need
+  a needflow with `:show_parts:` draws (`REQ_9.x` beside the part `x` of `REQ_9`), that
+  needflow holds two nodes of one id.
 - How a part is written in `needs.json` format 2.
 - Parts in a graph query schema.

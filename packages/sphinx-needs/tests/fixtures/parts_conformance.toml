@@ -110,12 +110,17 @@
 #     an external need is what its URL names, its id without its source's `id_prefix` for
 #     the default URL
 #   - `flow` is the case's needflow, as a graph: `nodes`, the ids of what it draws, sorted
-#     by code point, and `edges`, a MULTISET of the edges it draws between two of them,
-#     each `from` and `to` (the ids it joins), `type` (its link type) and `parts`, the ids
-#     of the parts its label names, in the label's order; `[]` says the edge is a whole
-#     link's. No case draws a need's parts inside it: every case with a `flow` writes
-#     `views_include_parts = false`, and a link to a part of a need the needflow draws is
-#     then an edge to that need
+#     by code point, a part's node as its address `<need>.<part>`; `containers`
+#     (optional), for each need drawn with parts inside it, the ids of those parts in the
+#     order drawn (absent: no need is drawn with a part inside it); and `edges`, a
+#     MULTISET of the edges it draws between two of them, each `from` and `to` (the ids it
+#     joins, a part's node as its address), `type` (its link type) and `parts`, the ids of
+#     the parts its label names, in the label's order; `[]` says its label names no part,
+#     as for an edge of a whole link and an edge ending on a part's node. The cases whose
+#     needflow has `:show_parts:` draw each need it draws with every part it has inside
+#     it, whatever `views_include_parts` says, and a link to a part drawn then ends on
+#     the part; every other case with a `flow` writes `views_include_parts = false`, and
+#     a link to a part of a need the needflow draws is then an edge to that need
 #   - `expected` -- every key of `[case.expect]` and every filter's `expected` -- is what the
 #     CONTRACT says. A case carrying `divergent` is one a tool answers otherwise: each key
 #     names a tool (`sphinx-needs`, `ubcode`), its value what that tool answers instead. A
@@ -153,7 +158,7 @@
 #     dead.<ID>        - optional; [the addresses of its dead links]
 #     back.<ADDRESS>   - optional; { <link type> = [the ids of its back links] }
 #     table            - optional; [the needtable's rows, in order] (the section `views`)
-#     flow             - optional; { nodes, edges }, the needflow (the section `views`)
+#     flow             - optional; { nodes, containers, edges }, the needflow (`views`)
 #   [[case.filters]]
 #     filter         - the filter string
 #     expected       - the ids it selects, sorted by code point
@@ -2609,6 +2614,205 @@ findings = []
 
 [case.expect.flow]
 nodes = ["SPEC_1"]
+edges = []
+
+[[case]]
+name = "views-flow-show-parts-draws-every-part-in-order"
+section = "views"
+why = "a needflow with :show_parts: draws each need with every part it has inside it, in the need's stored order and not by id, one nobody links among them, and a link to a part ends on the part's node"
+divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
+config = '''
+[needs]
+views_include_parts = false
+'''
+source = '''
+.. req:: Parts written out of id order
+   :id: REQ_1
+
+   First :np:`(zeta) the zeta text`, then :np:`(alpha) the alpha text`,
+   and :np:`(mid) a part nobody links`.
+
+.. spec:: One part link
+   :id: SPEC_1
+   :links: REQ_1.zeta
+
+.. needflow::
+   :show_parts:
+'''
+[case.expect]
+findings = []
+
+[case.expect.flow]
+nodes = ["REQ_1", "REQ_1.alpha", "REQ_1.mid", "REQ_1.zeta", "SPEC_1"]
+containers = { REQ_1 = ["zeta", "alpha", "mid"] }
+edges = [{ from = "SPEC_1", to = "REQ_1.zeta", type = "links", parts = [] }]
+
+[[case]]
+name = "views-flow-show-parts-does-not-follow-the-filter"
+section = "views"
+why = "with views_include_parts true a needflow with :show_parts: whose filter selects needs alone draws each need it draws with every part it has: the parts drawn are the need's, not the filter's"
+divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
+config = '''
+[needs]
+views_include_parts = true
+'''
+source = '''
+.. req:: Parts written out of id order
+   :id: REQ_1
+
+   First :np:`(zeta) the zeta text`, then :np:`(alpha) the alpha text`,
+   and :np:`(mid) a part nobody links`.
+
+.. spec:: One part link
+   :id: SPEC_1
+   :links: REQ_1.zeta
+
+.. needflow::
+   :show_parts:
+   :filter: id in ["REQ_1", "SPEC_1"]
+'''
+[case.expect]
+findings = []
+
+[case.expect.flow]
+nodes = ["REQ_1", "REQ_1.alpha", "REQ_1.mid", "REQ_1.zeta", "SPEC_1"]
+containers = { REQ_1 = ["zeta", "alpha", "mid"] }
+edges = [{ from = "SPEC_1", to = "REQ_1.zeta", type = "links", parts = [] }]
+
+[[case]]
+name = "views-flow-show-parts-draws-no-part-of-a-need-not-drawn"
+section = "views"
+why = "with views_include_parts true a needflow with :show_parts: whose filter selects parts and not their needs draws needs alone: no part's node and no edge to one"
+config = '''
+[needs]
+views_include_parts = true
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(zeta) the zeta text`
+
+.. spec:: One part link
+   :id: SPEC_1
+   :links: REQ_1.zeta
+
+.. needflow::
+   :show_parts:
+   :filter: type == "spec" or is_part
+'''
+[case.expect]
+findings = []
+
+[case.expect.flow]
+nodes = ["SPEC_1"]
+edges = []
+
+[[case]]
+name = "views-flow-show-parts-stated-and-external-parts"
+section = "views"
+why = "a needflow with :show_parts: draws an imported need with the part its content marks and then the part its record states, and an external need with its stated part, each a link's end"
+divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
+config = '''
+[needs]
+views_include_parts = false
+external_needs = [{ base_url = "http://example.org", json_path = "external.json" }]
+
+[needs.links.tests]
+'''
+source = '''
+.. needimport:: imported.json
+
+.. test:: Links the stated parts of an imported and an external need
+   :id: TEST_1
+   :tests: IMP_1.rp, EXT_1.rp
+
+.. needflow::
+   :show_parts:
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Marks :np:`(sc) content one`.", "parts": {"rp": {"id": "rp", "content": "a record part"}}}}}}}''', "external.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {"id": "EXT_1", "type": "req", "title": "External", "docname": "ext", "content": "", "parts": {"rp": {"id": "rp", "content": "an external record part"}}}}}}}''' }
+[case.expect]
+findings = []
+
+[case.expect.flow]
+nodes = ["EXT_1", "EXT_1.rp", "IMP_1", "IMP_1.rp", "IMP_1.sc", "TEST_1"]
+containers = { IMP_1 = ["sc", "rp"], EXT_1 = ["rp"] }
+edges = [
+  { from = "TEST_1", to = "EXT_1.rp", type = "tests", parts = [] },
+  { from = "TEST_1", to = "IMP_1.rp", type = "tests", parts = [] },
+]
+
+[[case]]
+name = "views-flow-show-parts-a-whole-and-a-part-link"
+section = "views"
+why = "with :show_parts: a link naming the need whole is an edge to the need, and a link naming its part an edge to the part's node: two edges"
+divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
+config = '''
+[needs]
+views_include_parts = false
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(zeta) the zeta text` and :np:`(alpha) the alpha text`
+
+.. spec:: A whole link and a part link
+   :id: SPEC_3
+   :links: REQ_1, REQ_1.alpha
+
+.. needflow::
+   :show_parts:
+'''
+[case.expect]
+findings = []
+
+[case.expect.flow]
+nodes = ["REQ_1", "REQ_1.alpha", "REQ_1.zeta", "SPEC_3"]
+containers = { REQ_1 = ["zeta", "alpha"] }
+edges = [
+  { from = "SPEC_3", to = "REQ_1", type = "links", parts = [] },
+  { from = "SPEC_3", to = "REQ_1.alpha", type = "links", parts = [] },
+]
+
+[[case]]
+name = "views-flow-show-parts-no-edge-to-a-part-not-drawn"
+section = "views"
+why = "with :show_parts: a link to a part the need does not have, or to a part of a need the needflow does not draw, is no edge"
+divergent = { ubcode = "the need's parts are not drawn: the link is an edge to the need" }
+config = '''
+[needs]
+views_include_parts = false
+'''
+source = '''
+.. req:: Parts
+   :id: REQ_1
+
+   :np:`(zeta) the zeta text`
+
+.. req:: A need the needflow does not draw
+   :id: REQ_2
+
+   :np:`(p) its part`
+
+.. spec:: A part the need does not have
+   :id: SPEC_4
+   :links: REQ_1.nope
+
+.. spec:: A part of a need not drawn
+   :id: SPEC_5
+   :links: REQ_2.p
+
+.. needflow::
+   :show_parts:
+   :filter: id in ["REQ_1", "SPEC_4", "SPEC_5"]
+'''
+[case.expect]
+findings = [{ class = "dead link" }]
+
+[case.expect.flow]
+nodes = ["REQ_1", "REQ_1.zeta", "SPEC_4", "SPEC_5"]
+containers = { REQ_1 = ["zeta"] }
 edges = []
 
 # --- derived ---------------------------------------------------------------------------

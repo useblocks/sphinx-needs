@@ -27,7 +27,7 @@ either of them draws -- and are called out at the point where they happen:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Container, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Literal
@@ -214,7 +214,8 @@ class GraphNode:
     """How the need is to be presented."""
 
     parts: list[GraphNode] = field(default_factory=list)
-    """The parts of the need that are part of the result, in the order of the need.
+    """The parts of the need drawn inside it, in the need's stored order: those of the
+    result, or with ``:show_parts:`` every part the need has.
 
     Empty for a need part: parts cannot have parts.
     """
@@ -303,10 +304,14 @@ class NeedflowGraph:
     """The complete graph of one needflow, ready to be emitted by any engine."""
 
     needs: list[NeedItem | NeedPartItem]
-    """All needs and need parts that passed the filter, after the ``max_items`` cap."""
+    """All needs and need parts that passed the filter, after the ``max_items`` cap.
+
+    With ``:show_parts:`` the needs alone: the parts drawn are each need's own
+    (:attr:`GraphNode.parts`), never the filter's."""
 
     total_needs: int
-    """How many needs passed the filter, before the ``max_items`` cap."""
+    """How many needs passed the filter, before the ``max_items`` cap (with
+    ``:show_parts:``, how many needs, its parts left out)."""
 
     roots: list[GraphNode]
     """The top level nodes, each carrying the nodes nested inside it."""
@@ -420,6 +425,16 @@ def build_graph(
     tree that both engines draw, each drawn need gets its presentation resolved, and the
     links between all needs of the result are collected.
 
+    With ``:show_parts:`` the result holds needs alone, whatever
+    ``needs_views_include_parts`` says: a part the filter selects is left out before the
+    cap, so the cap counts needs, and a result of parts alone is empty. Every need drawn
+    is drawn with every part it has (:func:`build_node_tree`), and a link to a part of a
+    drawn need ends on the part (:func:`collect_edges`), so what it draws does not depend
+    on the value, but where its filter reads ``needs`` itself (a filter string, filter
+    code or a ``:filter-func:``): that is handed needs and parts under ``True`` and needs
+    alone under ``False``, as in every view, so what it selects, and so draws, can
+    differ by value.
+
     :param app: The Sphinx application.
     :param attributes: The needflow's options.
     :param allowed_link_types: The link fields to draw, from :func:`resolve_link_types`.
@@ -451,23 +466,34 @@ def build_graph(
         origin="needflow",
         location=location,
     )
-    # before the cap, as what its filter selects: the parts it lists; and the links it
-    # draws to the parts' needs where its result holds needs alone (this result's
-    # needs in the same order, where its filter tests each need on its own), those of
-    # the needs its cap keeps of them (counted only while the value is unset)
-    _report_parts_in_view(
-        needs_config,
-        found_needs,
-        "needflow",
-        location,
-        part_links=partial(
-            count_part_links_to_needs,
-            found_needs,
-            allowed_link_types,
-            attributes.get("max_items"),
+    if show_parts := attributes["show_parts"]:
+        # the parts drawn are the needs' own: a part the filter selects is not drawn
+        # for it, nor counted by the cap
+        needs_alone: list[NeedItem | NeedPartItem] = [
+            need for need in found_needs if isinstance(need, NeedItem)
+        ]
+        found_needs = needs_alone
+    if not show_parts:
+        # before the cap, as what its filter selects: the parts it lists; and the links
+        # it draws to the parts' needs where its result holds needs alone (this
+        # result's needs in the same order, where its filter tests each need on its
+        # own), those of the needs its cap keeps of them (counted only while the value
+        # is unset). With the option what it draws does not depend on the value (but for
+        # a filter reading `needs` itself, which the report sees in no view), and
+        # nothing is reported
+        _report_parts_in_view(
             needs_config,
-        ),
-    )
+            found_needs,
+            "needflow",
+            location,
+            part_links=partial(
+                count_part_links_to_needs,
+                found_needs,
+                allowed_link_types,
+                attributes.get("max_items"),
+                needs_config,
+            ),
+        )
     # the cap is applied before any of the drawing data is derived,
     # so that dropped needs cannot be referenced by what is drawn
     found_needs, total_needs = apply_max_items(
@@ -495,13 +521,17 @@ def build_graph(
             config=needs_config,
             location=variant_location,
         ),
+        show_parts=show_parts,
     )
 
     edges = collect_edges(
         found_needs,
         allowed_link_types,
         drawn,
-        part_links_to_needs=not _views_include_parts(needs_config),
+        # with the option a link to a part of a drawn need ends on the part, whatever
+        # the value: nothing is re-pointed to the need
+        part_links_to_needs=not show_parts and not _views_include_parts(needs_config),
+        show_parts=show_parts,
     )
 
     # what the legend describes is what was drawn, so it is derived from the graph and
@@ -597,6 +627,8 @@ def build_node_tree(
     found_needs: list[NeedItem | NeedPartItem],
     presentation: Callable[[NeedItem | NeedPartItem], NodePresentation],
     /,
+    *,
+    show_parts: bool = False,
 ) -> tuple[list[GraphNode], dict[str, GraphNode]]:
     """Arrange the needs of a result into the tree of nodes that the engines draw.
 
@@ -606,6 +638,8 @@ def build_node_tree(
 
     :param found_needs: The needs and need parts that passed the filter.
     :param presentation: How to resolve the presentation of a single need.
+    :param show_parts: Whether each need is drawn with every part it has, in its stored
+        order (``:show_parts:``), rather than with the parts of the result.
     :return: The root nodes, and every drawn node by complete id.
     """
     found_by_id = {need["id_complete"]: need for need in found_needs}
@@ -617,7 +651,10 @@ def build_node_tree(
         if leaf:
             # a need part is never recursed into, by either engine
             return node
-        if need["is_need"]:
+        if show_parts and isinstance(need, NeedItem):
+            for part in need.iter_part_items():
+                node.parts.append(_build(part, leaf=True))
+        elif need["is_need"]:
             for part_id in need["parts"]:
                 if (part := found_by_id.get(f"{need['id']}.{part_id}")) is not None:
                     node.parts.append(_build(part, leaf=True))
@@ -693,10 +730,11 @@ def count_part_links_to_needs(
 def collect_edges(
     found_needs: list[NeedItem | NeedPartItem],
     allowed_link_types: list[LinkShape],
-    drawn: Container[str],
+    drawn: Collection[str],
     /,
     *,
     part_links_to_needs: bool = False,
+    show_parts: bool = False,
 ) -> list[GraphEdge]:
     """Collect every link between the needs of a result.
 
@@ -714,10 +752,16 @@ def collect_edges(
         one need are then ONE edge, where the first of them is, standing for those parts
         (:attr:`GraphEdge.part_ids`), each once, in the target need's stored order. A
         link naming the need whole stays its own edge.
+    :param show_parts: Whether each need is drawn with every part it has
+        (:func:`build_node_tree`): a link naming a part drawn then ends on it, as one
+        naming a part of the result does. A part not drawn (one the need lacks, or a
+        part of a need not drawn) is no edge.
     :return: The edges, in the order the engines emit them.
     """
     # a need and a need part are both identified by their complete id
     found_ids = {need["id_complete"] for need in found_needs}
+    if show_parts:
+        found_ids.update(drawn)
     found_by_id = _needs_by_id(found_needs) if part_links_to_needs else {}
     edges: list[GraphEdge] = []
     for need in found_needs:
