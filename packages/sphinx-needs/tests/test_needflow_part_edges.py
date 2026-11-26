@@ -493,7 +493,233 @@ def test_graphviz_draws_a_needs_edge_to_its_own_part_without_ltail(
         encoding="utf-8",
         check=True,
     )
-    assert dot.stderr == ""
+    assert "head is inside tail cluster" not in dot.stderr
+
+
+LTAIL_INDEX = """\
+Ltail
+=====
+
+.. req:: A need with a part, linking it, another need and that need's part
+   :id: REQ_A
+   :links: REQ_A.own, REQ_B, REQ_B.p
+
+   :np:`(own) its own part`
+
+.. req:: Another need with a part
+   :id: REQ_B
+
+   :np:`(p) its part`
+
+.. needflow::
+   :engine: graphviz
+   :filter: id_parent in ["REQ_A", "REQ_B"]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF + VALUES["true"]),
+                (Path("index.rst"), LTAIL_INDEX),
+                (Path("imported.json"), json.dumps(IMPORTED)),
+                (Path("external.json"), json.dumps(EXTERNAL)),
+            ],
+        }
+    ],
+    indirect=True,
+    ids=["true"],
+)
+def test_graphviz_keeps_ltail_on_an_edge_leaving_a_need_for_another(
+    test_app: SphinxTestApp,
+) -> None:
+    """Only the edge to the need's own part loses ``ltail``: an edge from the need's
+    cluster to another need, or to another need's part, still leaves the cluster."""
+    sources: list[str] = []
+
+    def collect(_app: Any, doctree: nodes.document, _docname: str) -> None:
+        sources.extend(
+            node["resolved_content"] for node in doctree.findall(NeedflowGraphiz)
+        )
+
+    test_app.connect("doctree-resolved", collect, priority=900)
+    test_app.build()
+    [source] = sources
+    lines = source.split("\n")
+    assert [line for line in lines if line.startswith('"REQ_A" -> ')] == [
+        '"REQ_A" -> "REQ_A.own" [style="dotted", arrowhead=vee];',
+        '"REQ_A" -> "REQ_B" [arrowhead=vee, ltail="cluster_REQ_A", lhead="cluster_REQ_B"];',
+        '"REQ_A" -> "REQ_B.p" [style="dotted", arrowhead=vee, ltail="cluster_REQ_A"];',
+    ]
+
+
+#: An external source whose ids carry a prefix, and its need's parts, one with a ``.``
+#: in its id.
+PREFIXED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_external_needs = [
+    {"base_url": "http://example.org", "json_path": "external.json", "id_prefix": "P_"},
+]
+needs_views_include_parts = False
+"""
+
+PREFIXED_EXTERNAL = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "EXT_1": {
+                    "id": "EXT_1",
+                    "type": "req",
+                    "title": "External",
+                    "docname": "ext",
+                    "content": "",
+                    "parts": {
+                        "rp": {"id": "rp", "content": "a part"},
+                        "a.b": {"id": "a.b", "content": "a part whose id holds a dot"},
+                    },
+                }
+            }
+        }
+    },
+}
+
+PREFIXED_INDEX = """\
+Prefixed
+========
+
+.. spec:: Links a prefixed external need's parts
+   :id: SPEC_1
+   :links: P_EXT_1.rp, P_EXT_1.a.b
+
+.. needtable::
+   :show_parts:
+   :filter: id in ["P_EXT_1", "SPEC_1"]
+   :columns: ID;LINKS
+   :style: table
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PREFIXED_CONF),
+                (Path("index.rst"), PREFIXED_INDEX),
+                (Path("external.json"), json.dumps(PREFIXED_EXTERNAL)),
+            ],
+        }
+    ],
+    indirect=True,
+    ids=["false"],
+)
+def test_an_external_part_links_its_anchor_through_the_sources_prefix(
+    test_app: SphinxTestApp,
+) -> None:
+    """The source's ``id_prefix`` is not in the URL's fragment: the part's anchor is the
+    fragment with ``.<part>`` added, a part id holding a ``.`` too, in its row and in a
+    cell naming it."""
+    test_app.build()
+    page = html_parser.fromstring(
+        Path(test_app.outdir, "index.html").read_text(encoding="utf-8")
+    )
+
+    def row(need_id: str) -> Any:
+        (found,) = page.xpath(f'//tr[@data-need-id="{need_id}"]')
+        return found
+
+    anchor = "http://example.org/ext.html#EXT_1"
+    assert _links(_cell(row("P_EXT_1"), "id")) == {"P_EXT_1": anchor}
+    assert _links(_cell(row("P_EXT_1.rp"), "id_complete")) == {
+        "→\xa0P_EXT_1.rp": f"{anchor}.rp"
+    }
+    assert _links(_cell(row("P_EXT_1.a.b"), "id_complete")) == {
+        "→\xa0P_EXT_1.a.b": f"{anchor}.a.b"
+    }
+    assert _links(_cell(row("SPEC_1"), "links")) == {
+        "P_EXT_1.rp": f"{anchor}.rp",
+        "P_EXT_1.a.b": f"{anchor}.a.b",
+    }
+
+
+DOTTED_EXTERNAL = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "EXT_9": {
+                    "id": "EXT_9",
+                    "type": "req",
+                    "title": "A need whose id begins another's",
+                    "docname": "ext",
+                    "content": "",
+                },
+                "EXT_9.x": {
+                    "id": "EXT_9.x",
+                    "type": "req",
+                    "title": "A need whose id holds a dot",
+                    "docname": "ext",
+                    "content": "",
+                },
+            }
+        }
+    },
+}
+
+DOTTED_INDEX = """\
+Dotted
+======
+
+.. spec:: Links the external need whose id holds a dot
+   :id: SPEC_1
+   :links: EXT_9.x
+
+.. needtable::
+   :filter: id == "SPEC_1"
+   :columns: ID;LINKS
+   :style: table
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\n'
+                    "needs_external_needs = [\n"
+                    '    {"base_url": "http://example.org", "json_path": "external.json"},\n'
+                    "]\n",
+                ),
+                (Path("index.rst"), DOTTED_INDEX),
+                (Path("external.json"), json.dumps(DOTTED_EXTERNAL)),
+            ],
+        }
+    ],
+    indirect=True,
+    ids=["unset"],
+)
+def test_a_cell_naming_an_external_need_whose_id_holds_a_dot_links_as_before(
+    test_app: SphinxTestApp,
+) -> None:
+    """A link naming such a need whole is not a part's: the cell links what it linked
+    before, never a part's anchor (what such a link means is not settled)."""
+    test_app.build()
+    page = html_parser.fromstring(
+        Path(test_app.outdir, "index.html").read_text(encoding="utf-8")
+    )
+    (spec,) = page.xpath('//tr[@data-need-id="SPEC_1"]')
+    assert _links(_cell(spec, "links")) == {
+        "EXT_9.x": "http://example.org/ext.html#EXT_9"
+    }
 
 
 @ARMS

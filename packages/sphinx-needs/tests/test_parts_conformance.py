@@ -859,6 +859,18 @@ def test_the_runner_reads_faithful_views_as_one() -> None:
             {**_TABLE[1], "cells": {"links": [{"to": "REQ_2", "target": "REQ_2"}]}},
             _TABLE[2],
         ],
+        # one passing a table that lists a row more than the case, or a row fewer
+        _TABLE[:2],
+        [*_TABLE, {"row": "REQ_3", "target": "REQ_3"}],
+        # one passing a cell that lists more than the case, its first items alike
+        [
+            *_TABLE[:2],
+            {
+                "row": "REQ_2",
+                "target": "REQ_2",
+                "cells": {"links": [{"to": "EXT_1.rp", "target": "EXT_1.rp"}]},
+            },
+        ],
     ],
     ids=[
         "rows-in-another-order",
@@ -866,6 +878,9 @@ def test_the_runner_reads_faithful_views_as_one() -> None:
         "a-cell-as-a-set",
         "a-dead-link-as-live",
         "a-part-row-with-its-needs-links",
+        "a-row-left-out",
+        "a-row-too-many",
+        "an-item-too-many",
     ],
 )
 def test_the_runner_sees_every_difference_in_a_table(table: list[Any]) -> None:
@@ -890,16 +905,28 @@ def test_the_runner_sees_every_difference_in_a_table(table: list[Any]) -> None:
                 "parts": ["zeta", "alpha"],
             },
         ],
+        # one reading the edges as a set: an edge drawn twice
+        [*_FLOW["edges"], _FLOW["edges"][0]],
     ],
     ids=[
         "an-edge-left-out",
         "parts-as-a-set",
         "a-whole-link-merged",
         "across-link-types",
+        "an-edge-twice",
     ],
 )
 def test_the_runner_sees_every_difference_in_a_flow(edges: list[Any]) -> None:
     assert _flow_problems({**_FLOW, "edges": edges}, _FLOW_NODES, _FLOW_EDGES) != []
+
+
+@pytest.mark.parametrize(
+    "nodes",
+    [["REQ_1"], ["REQ_1", "REQ_2", "SPEC_1"]],
+    ids=["a-node-fewer", "a-node-more"],
+)
+def test_the_runner_sees_a_node_more_or_less(nodes: list[str]) -> None:
+    assert _flow_problems({**_FLOW, "nodes": nodes}, _FLOW_NODES, _FLOW_EDGES) != []
 
 
 @pytest.mark.parametrize(
