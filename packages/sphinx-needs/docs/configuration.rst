@@ -1775,8 +1775,8 @@ a content line of :ref:`needpie` and a cell of :ref:`needbar` (with the scope of
 * ``False``: the filter is tested on the needs alone, so ``is_part`` selects nothing, and a view shows a need's parts
   only where it asks: a needtable with :ref:`show_parts <needtable_show_parts>` lists the parts of each need it
   lists, under it, and a needflow with :ref:`show_parts <needflow_show_parts>` draws each need it draws with its
-  parts inside it, under every value, though a filter that reads ``needs`` itself still selects by the value
-  (:ref:`needflow_show_parts`).
+  parts inside it, under every value, though what a filter that reads ``needs`` itself selects can still differ by
+  value (:ref:`needflow_show_parts`).
   A filter that tests each need on its own selects the needs it selects under ``True``, in the same
   order. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
   type's ``style_part`` (dotted by default), labelled with the part's id: the links of one need, of one link type,

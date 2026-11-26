@@ -11,10 +11,10 @@ a drawn need is an edge ending on the part's node, in the link type's ``style_pa
 labelled with no part id; a link naming the need whole is the edge to the need; a link to
 a part the need lacks, to a part of a need that does not exist, or to a part of a need
 the needflow does not draw is no edge, on both engines. So what it draws does not depend
-on the value, but where its filter reads ``needs`` itself (a filter string, filter code
-or a ``:filter-func:``), which is handed needs and parts under ``True`` and needs alone
-under ``False``: its source is the same under ``True``, unset and ``False``, and it makes
-no ``needs.views_include_parts`` report.
+on the value: its source is the same under ``True``, unset and ``False`` (but where its
+filter reads ``needs`` itself, as a filter string, filter code or a ``:filter-func:``
+can: that is handed needs and parts under ``True`` and needs alone under ``False``), and
+it makes no ``needs.views_include_parts`` report.
 
 A needflow without the option draws what it drew before, under each value; while the
 value is unset its report names the option.
@@ -986,9 +986,9 @@ def test_a_filter_reading_needs_itself_selects_by_the_value(
 ) -> None:
     """The exception to the equation, the selection's own rule: a filter that reads
     ``needs`` itself is handed needs and parts under ``True`` and unset, and needs
-    alone under ``False``, so what the needflow selects, and so draws, differs by
-    value. Under ``True`` and unset it selects the needs that have parts, each drawn
-    with its parts; under ``False`` no need."""
+    alone under ``False``, so what the needflow selects, and so draws, can differ by
+    value. Each filter here does: under ``True`` and unset it selects the needs that
+    have parts, each drawn with its parts; under ``False`` no need."""
     key = f"index/{form}-{engine}"
     sources = {value: build.sources[key] for value, build in reads_needs.items()}
     assert sources["true"] is not None

@@ -758,10 +758,10 @@ With ``True``, and while it is unset through 9.x, a part the needflow's filter s
 is drawn as a node inside that need, and a link to it as an edge to that node; a link to a part the filter does not
 select draws no edge.
 
-With :ref:`needflow_show_parts`, under every value, a needflow's result holds needs alone, and each need of the
-result is drawn with every part it has inside it, in its order of its parts, whatever the filter selects; a link to
+With :ref:`needflow_show_parts`, under every value, a needflow's result holds needs alone, and each need it draws
+is drawn with every part it has inside it, in its order of its parts, whatever the filter selects; a link to
 a part drawn is an edge to the part's node, labelled with no part id (with :ref:`needflow_show_link_names`, the
 link type's name alone).
 A link to a part the need does not have, to a part of a need that does not exist,
 or to a part of a need the needflow does not draw is no edge.
-What a filter that reads ``needs`` itself selects still follows the value (:ref:`needflow_show_parts`).
+What a filter that reads ``needs`` itself selects can still differ by value (:ref:`needflow_show_parts`).
