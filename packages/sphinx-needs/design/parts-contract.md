@@ -188,10 +188,12 @@ carry the order, so the corpus reads it from the stored need (`order.<ID>`).
 
 A needtable with `:show_parts:` lists each part of a need it lists once, under the need,
 in the need's stored order (section 10). A part's row lists the part's address, its id
-linking the part's anchor: for an external need's part, the need's URL with `.<part>` after
-the need's id where the URL ends in that id. Its other cells are its need's fields, no
-outgoing link (a part has none), and the part's own back links. A cell naming a part links
-the part's anchor; a dead part link is its address, as text.
+linking the part's anchor. For an external need's part: where the need's URL's fragment,
+the text after its `#`, is the need's id as its source wrote it (before the source's
+`id_prefix`), the part's link is that URL with `.<part>` added; otherwise it is the need's
+URL. Its other cells are its need's fields, no outgoing link (a part has none), and the
+part's own back links. A cell naming a part links the part's anchor; a dead part link is
+its address, as text.
 
 A needflow that draws needs alone (`views_include_parts` false) draws a link to a part of
 a need it draws as an edge to that need. The links of one need, of one link type, naming

@@ -101,9 +101,9 @@
 #   - `table` is the case's needtable: its rows in the order it lists them, each `row`,
 #     the address the row lists (a need's id, or `<need>.<part>`), and `target`, the
 #     address its id cell links (absent: the id is no link). `cells` (optional) names the
-#     cells the case compares, each by its column as `:columns:` writes it, in lower case
-#     (a field's name, or a link type's, `_back` added for its incoming links): a field's
-#     text, or for a link column the LIST of what the cell lists, in order, each `to`, the
+#     cells the case compares, each named by the field's name, or by the link type's name
+#     with `_back` added for its incoming links, in lower case: a field's text, or for a
+#     link column the LIST of what the cell lists, in order, each `to`, the
 #     address as shown, and `target`, the address it links (absent: shown as text, a dead
 #     link). An address a row or a cell links is compared by the fragment of the link, the
 #     text after its `#`: an external need's URL ends in it

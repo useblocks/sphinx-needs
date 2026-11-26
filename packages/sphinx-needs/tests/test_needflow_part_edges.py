@@ -10,9 +10,9 @@ edge in ``style``; each link type draws its own edge; a dead part link draws not
 names nothing. With ``:show_link_names:`` the label is the link type's name and the part
 ids, on two lines.
 
-Under ``True`` and unset a needflow draws what it drew but for two lines: an external
-need's part node links the part's anchor, and graphviz writes no ``ltail`` on a need's
-edge to a part inside it. A needtable's row and link cell of an external need's part, and
+Under ``True`` and unset a needflow draws what it drew but for two kinds of line: an
+external need's part node links the part's anchor, and graphviz writes no ``ltail`` on a
+need's edge to its own part, inside it. A needtable's row and link cell of an external need's part, and
 needuml's ``ref()`` of one, link the part's anchor too.
 
 One project, built with the value ``True``, ``False`` and unset; each view sits in a
@@ -408,9 +408,9 @@ BEFORE = json.loads(
 
 
 def _today(before: str) -> str:
-    """A source as written before, with the two lines that change today: the external
-    need's part node links the part's anchor, and graphviz writes no ``ltail`` on the
-    edge from a need to its own part inside it."""
+    """A source as written before, with the two kinds of line that change today: the
+    external need's part node links the part's anchor, and graphviz writes no ``ltail``
+    on the edge from a need to its own part inside it."""
     lines = []
     for line in before.split("\n"):
         if " as EXT_1.rp [[" in line or line.lstrip().startswith('"EXT_1.rp" ['):
@@ -461,11 +461,13 @@ def test_the_lines_named_are_the_lines_that_move() -> None:
     indirect=True,
     ids=["true", "unset"],
 )
-def test_true_and_unset_draw_what_they_drew_but_two_lines(
+def test_true_and_unset_draw_what_they_drew_but_two_kinds_of_line(
     test_app: SphinxTestApp,
 ) -> None:
     """Nothing is labelled and no node or edge moves: the part nodes are the parts the
-    filter selects, a link to a part ends on its node."""
+    filter selects, a link to a part ends on its node. Two kinds of line change
+    (:func:`_today`): an external part's node links the part's anchor, and graphviz's
+    edge from a need to its own part names no ``ltail``."""
     sources = capture(test_app)
     test_app.build()
     assert {name: sources[name] for name in BEFORE} == {
@@ -811,7 +813,7 @@ DEAD = [
 
 def _unset_reports() -> list[str]:
     """The reports while the value is unset, as before: a needflow's count is of the
-    LINKS it draws to the parts' needs under ``False`` (16 in ``flow``, drawn as 11
+    LINKS it draws to the parts' needs under ``False`` (16 in ``flow``, drawn as 12
     edges); each needflow is written once per engine."""
     reports = [
         _report(

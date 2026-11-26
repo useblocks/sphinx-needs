@@ -70,10 +70,11 @@ Improvements
   name and the part ids, on two lines (:ref:`needflow_need_parts`). An external need's part now links the part's
   anchor, as ``:need:`` links it, where it linked the need's URL: its :ref:`needtable` row, a needtable cell naming
   it, its node in a needflow and needuml's ``ref()`` of it. Under ``True`` and unset a needflow draws what it drew
-  but for two lines: that node's link, and graphviz's edge from a need to its own part, which no longer names the
-  need's cluster as its tail (``dot`` warned on it, and the build did not show the warning). A link type whose
-  ``style_part`` is empty draws a plain line in a PlantUML needflow, where it wrote ``-[]->``, a syntax error. The
-  ``needs.views_include_parts`` report still counts a needflow's links, not its edges. (:pr:`0000`)
+  but for two kinds of line: an external part's node, which links the part's anchor, and graphviz's edge from a
+  need to its own part, which no longer names the need's cluster as its tail (``dot`` warned on it, and the build
+  did not show the warning). Separately, a link type whose ``style_part`` is empty draws a plain line in a PlantUML
+  needflow, where it wrote ``-[]->``, a syntax error. The ``needs.views_include_parts`` report still counts a
+  needflow's links, not its edges. (:pr:`0000`)
 
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
   content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one
