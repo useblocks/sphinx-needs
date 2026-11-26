@@ -281,6 +281,8 @@ def test_every_case_has_a_complete_expectation() -> None:
             for edge in flow["edges"]:
                 assert set(edge) == _EDGE_KEYS, name
                 assert len(edge["parts"]) == len(set(edge["parts"])), name
+                # an edge joins two nodes the needflow draws
+                assert {edge["from"], edge["to"]} <= set(flow["nodes"]), (name, edge)
             # each part drawn inside a need is a node of it, by its address
             containers = flow.get("containers", {})
             for need_id, parts in containers.items():

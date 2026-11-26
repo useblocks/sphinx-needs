@@ -11,15 +11,19 @@ a drawn need is an edge ending on the part's node, in the link type's ``style_pa
 labelled with no part id; a link naming the need whole is the edge to the need; a link to
 a part the need lacks, to a part of a need that does not exist, or to a part of a need
 the needflow does not draw is no edge, on both engines. So what it draws does not depend
-on the value: its source is the same under ``True``, unset and ``False``, and it makes no
-``needs.views_include_parts`` report.
+on the value, but where its filter reads ``needs`` itself (a filter string, filter code
+or a ``:filter-func:``), which is handed needs and parts under ``True`` and needs alone
+under ``False``: its source is the same under ``True``, unset and ``False``, and it makes
+no ``needs.views_include_parts`` report.
 
 A needflow without the option draws what it drew before, under each value; while the
 value is unset its report names the option.
 
 One project, built once under each value (:func:`built`): ``plain.rst`` holds each
 needflow of :data:`FLOWS` without the option and ``shown.rst`` with it, each needflow in
-a container named after it and its engine.
+a container named after it and its engine. Two small projects of their own, each built
+once under each value too: a filter reading ``needs`` itself (:data:`READS_NEEDS`), and a
+child need with a part (:data:`CHILD_PARTS`).
 """
 
 from __future__ import annotations
@@ -293,10 +297,19 @@ class Build:
     """Each needflow node's ``show_parts``, as stored, by page and container."""
     needs: int
     """How many needs the project has."""
+    dot: str
+    """The ``dot`` the build is configured with (``graphviz_dot``)."""
 
 
-def build(srcdir: Path, value: str, events: Any = ()) -> Build:
-    """Build the project in *srcdir*, written for the arm *value*."""
+def build(
+    srcdir: Path,
+    value: str,
+    events: Any = (),
+    *,
+    pages: tuple[str, ...] = ("plain", "shown"),
+) -> Build:
+    """Build the project in *srcdir*, written for the arm *value*, reading the
+    containers and the needflow nodes of *pages*."""
     app = SphinxTestApp(
         "html",
         srcdir=srcdir,
@@ -313,7 +326,7 @@ def build(srcdir: Path, value: str, events: Any = ()) -> Build:
         app.build()
         texts: dict[str, str] = {}
         show_parts: dict[str, bool] = {}
-        for docname in ("plain", "shown"):
+        for docname in pages:
             page = html_parser.fromstring(
                 Path(app.outdir, f"{docname}.html").read_text(encoding="utf-8")
             )
@@ -335,6 +348,7 @@ def build(srcdir: Path, value: str, events: Any = ()) -> Build:
             texts=texts,
             show_parts=show_parts,
             needs=len(SphinxNeedsData(app.env).get_needs_view()),
+            dot=app.config.graphviz_dot,
         )
     finally:
         app.cleanup()
@@ -352,6 +366,39 @@ def built(
         srcdir = create_src_files_in_tmpdir(files(value), root)
         builds[value] = build(srcdir, value, test_app_events)
     yield builds
+
+
+def build_each_value(
+    tmp_path_factory: pytest.TempPathFactory,
+    events: Any,
+    name: str,
+    project: dict[str, str],
+) -> dict[str, Build]:
+    """A small project of its own, its needflows on ``index.rst``, built once under each
+    value: *project* is its files but ``conf.py``, which is *project*'s ``conf.py`` and
+    the line of the arm."""
+    builds = {}
+    for value in VALUES:
+        written = [
+            (Path(path), content + VALUES[value] if path == "conf.py" else content)
+            for path, content in project.items()
+        ]
+        srcdir = create_src_files_in_tmpdir(
+            written, tmp_path_factory.mktemp(f"{name}_{value}")
+        )
+        builds[value] = build(srcdir, value, events, pages=("index",))
+    return builds
+
+
+def needflows(names: list[str], options: dict[str, str]) -> str:
+    """A needflow with the option in a container named after each of *names* and its
+    engine, on each engine, written with the lines of *options* for its name."""
+    return "".join(
+        f"\n.. container:: {name}-{engine}\n\n   .. needflow::\n"
+        f"      :engine: {engine}\n      :show_parts:\n{options.get(name, '')}"
+        for name in names
+        for engine in ENGINES
+    )
 
 
 # --- reading a source --------------------------------------------------------------------
@@ -430,6 +477,9 @@ def drawn(source: str) -> Drawn:
         if (match := _DOT_CLUSTER.match(line)) is not None:
             result.nodes.append(match[1])
             result.links[match[1]] = result.colors[match[1]] = None
+            if stack:
+                # a need drawn as a cluster of its own, nested in its parent's
+                result.children.setdefault(stack[-1][0], []).append(match[1])
             stack.append([match[1], ""])
         elif stack and (match := _DOT_CLUSTER_PARAM.match(line)) is not None:
             # the need's own attributes, at the head of its cluster
@@ -779,26 +829,75 @@ def test_a_need_holds_its_parts_then_its_child_needs(
     assert graph.edges == [("REQ_5", "REQ_4.p4", "dotted", None)]
 
 
+#: A project of its own: a need nested in its parent, with a part a link names.
+CHILD_PARTS = {
+    "conf.py": 'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+    "index.rst": """\
+Child
+=====
+
+.. req:: A parent need
+   :id: REQ_P
+
+   .. req:: A child need with a part
+      :id: REQ_C
+
+      :np:`(c1) the child's part`
+
+.. spec:: Links the child's part
+   :id: SPEC_C
+   :links: REQ_C.c1
+"""
+    + needflows(["child"], {}),
+}
+
+
+@pytest.fixture(scope="module")
+def child_parts(
+    tmp_path_factory: pytest.TempPathFactory, test_app_events: Any
+) -> dict[str, Build]:
+    """:data:`CHILD_PARTS`, built once under each value."""
+    return build_each_value(
+        tmp_path_factory, test_app_events, "child_parts", CHILD_PARTS
+    )
+
+
+@ARMS
+@ON_ENGINES
+def test_a_child_need_is_drawn_with_its_parts_inside_it(
+    child_parts: dict[str, Build], value: str, engine: str
+) -> None:
+    """A need nested in its parent is a need it draws: its part is drawn inside it, and
+    the link to the part ends on the part's node."""
+    source = child_parts[value].sources[f"index/child-{engine}"]
+    assert source is not None
+    graph = drawn(source)
+    assert graph.children == {"REQ_P": ["REQ_C"]}
+    assert graph.containers == {"REQ_C": ["REQ_C.c1"]}
+    assert graph.edges == [("SPEC_C", "REQ_C.c1", "dotted", None)]
+
+
 @ARMS
 def test_graphviz_draws_a_needs_edge_to_its_own_part_without_ltail(
     built: dict[str, Build], value: str
 ) -> None:
     """The edge from ``REQ_2`` to its own part, inside its cluster: no ``ltail``, and
-    ``dot`` draws it without a warning."""
+    the ``dot`` the build is configured with does not warn that its head is inside the
+    tail's cluster."""
     source = built[value].sources["shown/all-graphviz"]
     assert source is not None
     assert '"REQ_2" -> "REQ_2.own" [style="dotted", arrowhead=vee];' in source.split(
         "\n"
     )
     dot = subprocess.run(
-        ["dot", "-Tsvg"],
+        [built[value].dot, "-Tsvg"],
         input=source,
         capture_output=True,
         text=True,
         encoding="utf-8",
         check=True,
     )
-    assert dot.stderr == ""
+    assert "head is inside tail cluster" not in dot.stderr
 
 
 @ON_ENGINES
@@ -807,9 +906,11 @@ def test_what_it_draws_does_not_depend_on_the_value(
     built: dict[str, Build], engine: str, name: str
 ) -> None:
     """With the option a needflow's source is the same under ``True``, unset and
-    ``False``, whatever it selects (filter code and a ``:filter-func:`` reading
-    ``needs`` themselves are handed needs and parts under ``True``, and needs alone
-    under ``False``: they are not here). So is what the page shows beside it."""
+    ``False``, whatever it selects, but for a filter that reads ``needs`` itself (a
+    filter string, filter code or a ``:filter-func:``), which is handed needs and parts
+    under ``True`` and needs alone under ``False``: none is here, and
+    :func:`test_a_filter_reading_needs_itself_selects_by_the_value` pins them. So is
+    what the page shows beside it."""
     key = f"shown/{name}-{engine}"
     sources = {value: build.sources[key] for value, build in built.items()}
     # a diagram is drawn, but where the result holds parts alone
@@ -819,6 +920,94 @@ def test_what_it_draws_does_not_depend_on_the_value(
     texts = {value: build.texts[key] for value, build in built.items()}
     assert texts["unset"] == texts["true"]
     assert texts["false"] == texts["true"]
+
+
+#: A project of its own: two needs with parts and one without, and a needflow with the
+#: option whose filter reads ``needs`` itself, in each of the three forms, each
+#: selecting the needs that have a part among the needs it is handed.
+READS_NEEDS = {
+    "conf.py": (
+        "import os\nimport sys\n\n"
+        "sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\n"
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n'
+    ),
+    "show_parts_funcs.py": """\
+def with_parts(needs, results, **kwargs):
+    owners = {need["id_parent"] for need in needs if need["is_part"]}
+    results.extend(need for need in needs if need["is_need"] and need["id"] in owners)
+""",
+    "index.rst": """\
+Reads needs
+===========
+
+.. req:: A need with two parts
+   :id: REQ_1
+
+   :np:`(zeta) the zeta text` and :np:`(alpha) the alpha text`.
+
+.. req:: A need with no part
+   :id: REQ_2
+
+.. req:: A need with one part
+   :id: REQ_3
+
+   :np:`(p3) the third need's part`
+"""
+    + needflows(
+        ["string", "code", "func"],
+        {
+            "string": (
+                '      :filter: id in [n["id_parent"] for n in needs if n["is_part"]]\n'
+            ),
+            "code": (
+                '\n      results = [n for n in needs if n["is_need"] and any('
+                'm["is_part"] and m["id_parent"] == n["id"] for m in needs)]\n'
+            ),
+            "func": "      :filter-func: show_parts_funcs.with_parts\n",
+        },
+    ),
+}
+
+
+@pytest.fixture(scope="module")
+def reads_needs(
+    tmp_path_factory: pytest.TempPathFactory, test_app_events: Any
+) -> dict[str, Build]:
+    """:data:`READS_NEEDS`, built once under each value."""
+    return build_each_value(
+        tmp_path_factory, test_app_events, "reads_needs", READS_NEEDS
+    )
+
+
+@ON_ENGINES
+@pytest.mark.parametrize("form", ["string", "code", "func"])
+def test_a_filter_reading_needs_itself_selects_by_the_value(
+    reads_needs: dict[str, Build], engine: str, form: str
+) -> None:
+    """The exception to the equation, the selection's own rule: a filter that reads
+    ``needs`` itself is handed needs and parts under ``True`` and unset, and needs
+    alone under ``False``, so what the needflow selects, and so draws, differs by
+    value. Under ``True`` and unset it selects the needs that have parts, each drawn
+    with its parts; under ``False`` no need."""
+    key = f"index/{form}-{engine}"
+    sources = {value: build.sources[key] for value, build in reads_needs.items()}
+    assert sources["true"] is not None
+    assert sources["unset"] == sources["true"]
+    assert sources["false"] != sources["true"]
+    graph = drawn(sources["true"])
+    assert graph.containers == {
+        "REQ_1": ["REQ_1.zeta", "REQ_1.alpha"],
+        "REQ_3": ["REQ_3.p3"],
+    }
+    assert sorted(graph.nodes) == [
+        "REQ_1",
+        "REQ_1.alpha",
+        "REQ_1.zeta",
+        "REQ_3",
+        "REQ_3.p3",
+    ]
+    assert sources["false"] is None
+    assert reads_needs["false"].texts[key] == "No needs passed the filters"
 
 
 #: The needflows whose filter selects, under ``True`` and without the option, every
