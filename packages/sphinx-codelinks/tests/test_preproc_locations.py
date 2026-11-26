@@ -10,6 +10,7 @@ lookups: how many a cold analysis makes, and where in the source a call may be w
 
 import ast
 import ctypes
+import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -118,6 +119,108 @@ def test_a_file_entered_twice_is_looked_up(tmp_path: Path) -> None:
     assert sorted(calls) == ["from_position"] * 5
     # each of them through the helper, which counts it
     assert loader.slow_lookups() - before == 5
+
+
+@contextmanager
+def _costs() -> Iterator[dict[str, int]]:
+    """What finding the starts costs inside: ``loader.inclusions`` calls, and the walks
+    of a unit's top-level cursors ``loader.entry_starts`` makes (the (d) anchors), with
+    the cursors each walk took. Counted from outside the engine, so a cost the engine
+    does not count is counted too."""
+    cx = loader.load_clang_cindex()
+    costs = {"inclusions": 0, "walks": 0, "cursors": 0, "children": 0}
+    inclusions = loader.inclusions
+    get_children = cx.Cursor.get_children
+
+    def counting_inclusions(*args: Any) -> Any:
+        costs["inclusions"] += 1
+        return inclusions(*args)
+
+    def counting_children(self: Any) -> Iterator[Any]:
+        children = list(get_children(self))
+        if sys._getframe(1).f_code.co_name != "entry_starts":
+            return iter(children)
+        costs["walks"] += 1
+        costs["children"] += len(children)
+
+        def taken() -> Iterator[Any]:
+            for child in children:
+                costs["cursors"] += 1
+                yield child
+
+        return taken()
+
+    loader.inclusions = counting_inclusions
+    cx.Cursor.get_children = counting_children
+    try:
+        yield costs
+    finally:
+        loader.inclusions = inclusions
+        cx.Cursor.get_children = get_children
+
+
+def test_a_unit_read_for_many_headers_finds_its_starts_once(tmp_path: Path) -> None:
+    """The header pass reads many headers through one reader unit: the unit's inclusions
+    are listed once, and its cursors walked at most once, for all of them, not once per
+    header read (a leaf header has no ``#include`` and no skipped range, so only the
+    walk anchors it)."""
+    leaves = {f"h{i}.h": f"// @H{i}, IMPL_H{i}, impl\nint h{i};\n" for i in range(6)}
+    _write(
+        tmp_path,
+        {**leaves, "main.cpp": "".join(f'#include "{name}"\n' for name in leaves)},
+    )
+    db = _db(tmp_path, [{"file": "main.cpp", "args": []}])
+    with _costs() as costs:
+        analyse = _run(tmp_path, list(leaves), db)
+    assert len(analyse.oneline_needs) == len(leaves)
+    assert costs["inclusions"] == 1
+    assert costs["walks"] <= 1
+
+
+def test_an_empty_file_costs_no_walk(tmp_path: Path) -> None:
+    """A file with no bytes has no location to anchor it, and its lookup walks no macro
+    expansion: when the only files without an anchor are empty, the cursors are not
+    walked."""
+    _write(
+        tmp_path,
+        {
+            "main.c": '#include "a.h"\n#include "empty.h"\nint m;\n',
+            "a.h": '#include "empty2.h"\nint a;\n',
+            "empty.h": "",
+            "empty2.h": "",
+        },
+    )
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "main.c", [f"-working-directory={tmp_path}"]
+    )
+    files = [inclusion.file for inclusion in loader.inclusions(tu)]
+    with _costs() as costs:
+        starts = loader.entry_starts(tu, files)
+    assert len(starts) == 2  # main.c (the unit's extent) and a.h (its #include)
+    assert costs["walks"] == 0
+
+
+def test_the_walk_stops_once_every_file_has_a_start(tmp_path: Path) -> None:
+    """The walk of the top-level cursors stops at the first cursor of the last file it
+    seeks: a leaf header included first is found long before the main file's 300
+    declarations."""
+    _write(
+        tmp_path,
+        {
+            "main.c": '#include "leaf.h"\n'
+            + "".join(f"int v{i};\n" for i in range(300)),
+            "leaf.h": "int leaf;\n",
+        },
+    )
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "main.c", [f"-working-directory={tmp_path}"]
+    )
+    leaf = tu.get_file(str(tmp_path / "leaf.h"))
+    with _costs() as costs:
+        starts = loader.entry_starts(tu, [leaf])
+    assert list(starts) == [loader.file_id(leaf)]
+    assert costs["walks"] == 1
+    assert costs["cursors"] < costs["children"] - 250
 
 
 def _lookup_sites() -> list[str]:
