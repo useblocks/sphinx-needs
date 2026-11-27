@@ -32,7 +32,7 @@ from sphinx_codelinks.analyse import analyse as analyse_module
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 
-from .test_need_id_refs import _build, _json, _project
+from .test_need_id_refs import _SHOWS_WARNING_TYPES, _build, _json, _project
 
 #: the note's code, which its message names last
 CODE = "[codelinks.preprocessor_no_includer]"
@@ -539,3 +539,176 @@ def test_an_environment_pickled_at_env_version_10_is_read_again(
         "loading pickled environment... failed: build environment version not current"
         in status
     )
+
+
+def test_a_header_looked_for_in_several_databases_is_noted_at_none(
+    tmp_path: Path, recorder: _Recorder
+) -> None:
+    """A header with no database of its own is looked for in every database the
+    analysis found; with two, its note is anchored at none of them (no location), says
+    no compilation-database entry includes it, and names it by its canonical path."""
+    root = tmp_path.resolve()
+    for board in ("a", "b"):
+        (root / board).mkdir()
+        (root / board / "main.c").write_text("int main(void) { return 0; }\n")
+        (root / board / "compile_commands.json").write_text(
+            json.dumps(
+                [
+                    {
+                        "directory": str(root / board),
+                        "file": "main.c",
+                        "arguments": ["clang", "-c", "main.c"],
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+    (root / "inc").mkdir()
+    (root / "inc" / "orphan.h").write_text(ORPHAN_HEADER, encoding="utf-8")
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[
+                root / "a" / "main.c",
+                root / "b" / "main.c",
+                root / "inc" / "orphan.h",
+            ],
+            src_dir=root,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(std="c11"),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+    assert [need.need["id"] for need in analyse.oneline_needs] == [
+        "O_BASE",
+        "O_X",
+        "O_ARM",
+    ]
+    ((message, location),) = recorder.notes
+    assert location is None
+    assert message.startswith(
+        "codelinks: 1 header that no compilation-database entry includes is read with "
+        "the `[preprocessor]` table, and 2 `#if` arms on a condition the table does not "
+        f"decide are read as written rather than left out: `{(root / 'inc' / 'orphan.h').as_posix()}`. "
+    )
+
+
+def test_the_note_names_five_headers_and_counts_the_rest(
+    tmp_path: Path, recorder: _Recorder
+) -> None:
+    """Seven headers no entry includes, one undecided arm each: the note names the
+    first five, by path, and counts the other two, and counts every arm."""
+    db = _orphan_project(tmp_path, ORPHAN_HEADER)
+    names = [f"h{n}.h" for n in range(1, 8)]
+    for name in names:
+        (tmp_path / name).write_text(
+            f"#pragma once\n#ifdef ONLY_{name[:2].upper()}\nint x;\n#endif\n",
+            encoding="utf-8",
+        )
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[tmp_path / name for name in names],
+            src_dir=tmp_path,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(compile_commands=db, std="c11"),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+    ((message, _),) = recorder.notes
+    assert message.startswith(
+        "codelinks: 7 headers that no entry of this compilation database includes are "
+        "read with the `[preprocessor]` table, and 7 `#if` arms on a condition the "
+        "table does not decide are read as written rather than left out: `h1.h`, "
+        "`h2.h`, `h3.h`, `h4.h`, `h5.h` and 2 more. "
+    )
+
+
+def test_a_header_is_noted_once_per_build(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """Two ``src-trace`` directives read the same header no entry includes (the
+    project's on ``index``, and one of its file on ``page1``): the build notes it once,
+    as ubCode does, not once per directive."""
+    files = dict(ORPHAN_PROJECT["files"])
+    files["src/quiet.h"] = "#pragma once\n#ifdef CONFIG_Q\nint q;\n#endif\n"
+    files["docs/page1.rst"] = (
+        "Page 1\n======\n\n.. src-trace::\n   :project: src\n   :file: quiet.h\n"
+    )
+    _project(tmp_path, toml_extra=ORPHAN_PROJECT["toml_extra"], files=files)
+    app = _build(tmp_path, make_app)
+
+    assert build_warnings(app) == []
+    status = strip_colors(app._status.getvalue())
+    assert status.count(CODE) == 1
+    assert "2 headers that no entry of this compilation database includes" in status
+
+
+#: two exclusive arms that implement one need, one per board
+BOARD_HEADER = (
+    "#pragma once\n"
+    "#ifdef BOARD_A\n// @Board impl, IMPL_SAME, impl\n"
+    "#else\n// @Board impl, IMPL_SAME, impl\n#endif\n"
+)
+
+
+@pytest.mark.parametrize("stated", [False, True], ids=["unstated", "stated"])
+def test_an_undecided_pair_of_arms_can_define_one_need_twice(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp], stated: bool
+) -> None:
+    """A marker in an arm read as written is a need like any other: the same id in two
+    exclusive arms on a macro the table does not state is now defined twice, a
+    ``codelinks.duplicate_need`` warning that fails a ``-W`` build. Stating the macro in
+    ``[preprocessor] defines`` decides the chain, and the warning goes."""
+    files = dict(ORPHAN_PROJECT["files"])
+    files["src/orphan.h"] = BOARD_HEADER
+    toml = ORPHAN_PROJECT["toml_extra"] + ('defines = ["BOARD_A"]\n' if stated else "")
+    _project(tmp_path, toml_extra=toml, files=files)
+    # (``warningiserror`` only where nothing warns: Sphinx 7 raises at the warning)
+    app = _build(tmp_path, make_app, warningiserror=stated)
+
+    assert "IMPL_SAME" in _json(app)["needs"]
+    if stated:
+        assert build_warnings(app) == []
+        assert app.statuscode == 0
+    else:
+        (warning,) = build_warnings(app)
+        assert warning.startswith(
+            "src/orphan.h:5: WARNING: one-line need 'IMPL_SAME' is already defined"
+        )
+        assert warning.endswith(
+            "(give the markers distinct ids)"
+            + (" [codelinks.duplicate_need]" if _SHOWS_WARNING_TYPES else "")
+        )
+
+
+@pytest.mark.skipif(
+    os.name == "nt", reason="a symbolic link needs privileges on Windows"
+)
+def test_the_note_names_canonical_paths(tmp_path: Path, recorder: _Recorder) -> None:
+    """The database and the header named through a symbolic link to their directory:
+    the note is anchored at the database's canonical path and names the header relative
+    to its canonical directory, as ubCode's does."""
+    real = (tmp_path / "real").resolve()
+    real.mkdir()
+    db = _orphan_project(real, ORPHAN_HEADER)
+    link = tmp_path / "link"
+    link.symlink_to(real, target_is_directory=True)
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[link / "orphan.h"],
+            src_dir=link,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(
+                compile_commands=link / "compile_commands.json", std="c11"
+            ),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+    ((message, location),) = recorder.notes
+    assert location == f"{db}:1"
+    assert "rather than left out: `orphan.h`. " in message
