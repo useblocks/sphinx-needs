@@ -499,7 +499,7 @@ def test_without_the_opt_in_a_draft_is_refused_exactly_as_before():
 
 @pytest.mark.parametrize("drafts", [(), ("2a2",)], ids=["without", "on-opt-in"])
 def test_a_2a1_file_is_refused_exactly_as_without_the_opt_in(drafts):
-    """ "2a2" replaces the draft "2a1": a "2a1" file is refused with the shared
+    """The draft "2a2" replaces "2a1": a "2a1" file is refused with the shared
     contract's code and message, whether "2a2" is asked for or not."""
     data = {**draft([{"id": "A", "type": "req"}]), "format_version": "2a1"}
     with pytest.raises(nx.ExchangeError) as info:
