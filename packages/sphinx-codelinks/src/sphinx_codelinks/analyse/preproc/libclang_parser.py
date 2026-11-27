@@ -127,23 +127,58 @@ def main_file_inclusions(tu: Any, working_directory: Path) -> set[Path]:
     return out
 
 
-def included_files(tu: Any, working_directory: Path) -> set[Path]:
+def included_files(
+    tu: Any,
+    working_directory: Path,
+    starts: dict[tuple[int, int, int], Any] | None = None,
+) -> set[Path]:
     """Every file the unit included, at any depth, that is not a system header,
     canonical: what the unit's preprocessing read besides its main file.
 
     A relative name (a file found through a relative include directory) is taken
     against ``working_directory``, as in :func:`main_file_inclusions`.
+
+    :param starts: :func:`unit_starts` of ``tu``, if the caller has them.
     """
-    cx = loader.load_clang_cindex()
+    included = [i.include for i in tu.get_includes() if i.include is not None]
+    if starts is None:
+        starts = loader.entry_starts(tu, included)
+    # each file's answer, once: asked at the start of its (first) entry, as clang's
+    # characteristic of a file can change within it (``#pragma GCC system_header``, a
+    # line marker); a file entered once has the start made, every other one looks it up
+    system: dict[tuple[int, int, int], bool] = {}
     out: set[Path] = set()
-    for inclusion in tu.get_includes():
-        file = inclusion.include
-        if file is None:
-            continue
-        if cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header:
+    for file in included:
+        key = loader.file_id(file)
+        if key is not None and key in system:
+            in_system = system[key]
+        else:
+            start = starts.get(key) if key is not None else None
+            if start is None:
+                start = loader.looked_up(tu, file, offset=0)
+            in_system = bool(start.is_in_system_header)
+            if key is not None:
+                system[key] = in_system
+        if in_system:
             continue
         out.add((working_directory / file.name).resolve())
     return out
+
+
+def unit_starts(tu: Any) -> dict[tuple[int, int, int], Any]:
+    """:func:`.loader.entry_starts` of every file ``tu`` includes, computed once for a
+    unit that is asked about many (:func:`included_files`) and reads several
+    (:func:`extract_included_active_comments`). Valid while ``tu`` lives."""
+    return loader.entry_starts(
+        tu, [i.include for i in tu.get_includes() if i.include is not None]
+    )
+
+
+def starts_of(tu: Any, paths: list[Path]) -> dict[tuple[int, int, int], Any]:
+    """:func:`.loader.entry_starts` of the files at ``paths``, which ``tu`` includes,
+    computed once for a unit that reads them all (:func:`extract_comments_outside`).
+    Valid while ``tu`` lives."""
+    return loader.entry_starts(tu, [tu.get_file(str(path)) for path in paths])
 
 
 def project_included_files(
@@ -245,26 +280,36 @@ def _file_extent(tu: Any, file_path: Path) -> Any:
     line_count = len(raw.decode("utf-8", errors="replace").splitlines())
     file = tu.get_file(str(file_path))
     return cx.SourceRange.from_locations(
-        cx.SourceLocation.from_position(tu, file, 1, 1),
-        cx.SourceLocation.from_position(tu, file, line_count + 1, 1),
+        loader.looked_up(tu, file, line=1),
+        loader.looked_up(tu, file, line=line_count + 1),
     )
 
 
 def extract_comments_outside(
-    tu: Any, file_path: Path, ranges: list[SkippedSpan]
+    tu: Any,
+    file_path: Path,
+    ranges: list[SkippedSpan],
+    starts: dict[tuple[int, int, int], Any] | None = None,
 ) -> list[LibclangComment]:
     """The comment tokens of ``file_path``, a header ``tu`` includes, outside
     ``ranges``: the ranges every unit that includes it skipped in its first inclusion
     (useblocks/ubcode#4866), by their lines, as
-    :func:`extract_included_active_comments` reads by its first inclusion's."""
+    :func:`extract_included_active_comments` reads by its first inclusion's.
+
+    :param starts: :func:`starts_of` ``tu`` for every file read through it.
+    """
     return _active_comments(
-        tu, file_path, [(span.start_line, span.end_line) for span in ranges]
+        tu, file_path, [(span.start_line, span.end_line) for span in ranges], starts
     )
 
 
 # @Read a source through a compile-database entry that includes it, IMPL_PREPROC_7, impl, [FE_PREPROC]
 def extract_included_active_comments(
-    tu: Any, file_path: Path, *, as_written: bool = False
+    tu: Any,
+    file_path: Path,
+    *,
+    as_written: bool = False,
+    starts: dict[tuple[int, int, int], Any] | None = None,
 ) -> list[LibclangComment]:
     """Return the ACTIVE comment tokens of ``file_path``, a file ``tu`` includes.
 
@@ -278,6 +323,7 @@ def extract_included_active_comments(
         (:func:`main_file_inclusions`).
     :param file_path: The included file.
     :param as_written: The includer's target is unknown: no range is skipped.
+    :param starts: :func:`unit_starts` of ``tu``, if the caller has them.
     """
     file = tu.get_file(str(file_path))
     skipped = (
@@ -288,13 +334,74 @@ def extract_included_active_comments(
             for sr in loader.get_first_inclusion_skipped_ranges(tu, file)
         ]
     )
-    return _active_comments(tu, file_path, skipped)
+    return _active_comments(tu, file_path, skipped, starts)
+
+
+def _whole_file(
+    tu: Any,
+    file: Any,
+    end_line: int,
+    starts: dict[tuple[int, int, int], Any] | None = None,
+    contents: bytes | None = None,
+    path: Path | None = None,
+) -> Any:
+    """The range of ``file`` in its first entry into ``tu``, from its start to line
+    ``end_line``, column 1.
+
+    For a file the unit entered once both ends are made from where its entry starts
+    (:func:`.loader.entry_starts`), the end at the offset clang gives the line
+    (:func:`.loader.line_offset`) in the file's bytes, and checked to decode to the
+    file at that offset; any other file is looked up (:func:`.loader.looked_up`):
+    the same range, without the lookup's walk of the file's macro expansions
+    (useblocks/ubcode#4982). Bytes read from ``path`` stand for the bytes clang read
+    only while the file's modification time is the one clang saw and its entry holds
+    as many bytes (:func:`.loader.unchanged_since_parse`); a file changed since the
+    parse is looked up. One race is left: a rewrite to as many bytes within the same
+    second as the file's previous write goes unseen, and the range then ends where the
+    new bytes put the line, not where clang's bytes do, as a lookup would.
+
+    :param starts: the starts of the unit (:func:`unit_starts`, :func:`starts_of`),
+        when the caller reads several files through it; else found for ``file`` alone.
+    :param contents: the file's bytes, as the caller read them from ``path``; else
+        clang's own (``clang_getFileContents``, which walks every entry of the unit to
+        find it).
+    :param path: where ``contents`` were read from.
+    """
+    cx = loader.load_clang_cindex()
+    key = loader.file_id(file)
+    if starts is None:
+        starts = loader.entry_starts(tu, [file])
+    start = starts.get(key) if key is not None else None
+    from_disk = contents is not None
+    if start is not None and contents is None:
+        contents = loader.file_contents(tu, file)
+    if (
+        start is not None
+        and contents is not None
+        and loader.entry_has(start, len(contents))
+        and (
+            not from_disk
+            or (path is not None and loader.unchanged_since_parse(file, path))
+        )
+    ):
+        end = loader.made_at(start, loader.line_offset(contents, end_line))
+        if end is not None:
+            return cx.SourceRange.from_locations(start, end)
+    return cx.SourceRange.from_locations(
+        loader.looked_up(tu, file, line=1), loader.looked_up(tu, file, line=end_line)
+    )
 
 
 def _active_comments(
-    tu: Any, file_path: Path, skipped: list[tuple[int, int]]
+    tu: Any,
+    file_path: Path,
+    skipped: list[tuple[int, int]],
+    starts: dict[tuple[int, int, int], Any] | None = None,
 ) -> list[LibclangComment]:
-    """One LibclangComment per comment token of ``file_path`` outside ``skipped``."""
+    """One LibclangComment per comment token of ``file_path`` outside ``skipped``.
+
+    :param starts: the unit's starts, if the caller has them (:func:`_whole_file`).
+    """
     cx = loader.load_clang_cindex()
     # Read the raw source bytes once. We derive the token extent from them
     # (lossily, so a non-UTF-8 byte can't raise and abort the run) AND slice each
@@ -306,10 +413,7 @@ def _active_comments(
     # a location in a file the unit includes is in its first inclusion
     # (``clang_getLocation``), the one whose skipped ranges ``skipped`` holds
     file = tu.get_file(str(file_path))
-    extent = cx.SourceRange.from_locations(
-        cx.SourceLocation.from_position(tu, file, 1, 1),
-        cx.SourceLocation.from_position(tu, file, line_count + 1, 1),
-    )
+    extent = _whole_file(tu, file, line_count + 1, starts, raw, file_path)
 
     out: list[LibclangComment] = []
     for tok in tu.get_tokens(extent=extent):
