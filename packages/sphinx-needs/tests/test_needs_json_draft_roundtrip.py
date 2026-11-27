@@ -640,8 +640,8 @@ Up
 .. req:: Parts out of id order
    :id: REQ_P
 
-   Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and
-   :np:`(mid) middle`.
+   Parts :np:`(zeta) last id first`, :np:`(alpha) first id second`,
+   :np:`(mid) middle` and :np:`(beta) fourth`.
 """
 
 
@@ -649,7 +649,8 @@ def test_the_parts_keep_their_order_through_a_draft_file(
     make_app: Any, tmp_path: Path
 ) -> None:
     """A need's parts, written out of id order, are read back in that order by both
-    routes, and a re-export writes them so."""
+    routes, and a re-export writes them so: four of them, so that no rule for a few
+    parts holds the order."""
     up, up_json = _build(
         make_app,
         _write(
@@ -658,7 +659,7 @@ def test_the_parts_keep_their_order_through_a_draft_file(
         ),
     )
     assert [w for w in build_warnings(up) if BETA not in w] == []
-    order = ["zeta", "alpha", "mid"]
+    order = ["zeta", "alpha", "mid", "beta"]
     assert [p["id"] for p in _records(up_json)["REQ_P"]["parts"]] == order
 
     files = _both_routes("up", up_json.read_text(encoding="utf-8"))
@@ -672,6 +673,7 @@ def test_the_parts_keep_their_order_through_a_draft_file(
         {"id": "zeta", "text": "last id first"},
         {"id": "alpha", "text": "first id second"},
         {"id": "mid", "text": "middle"},
+        {"id": "beta", "text": "fourth"},
     ]
 
 
@@ -772,6 +774,27 @@ def test_the_empty_part_stays_dead_through_the_draft(
     assert written["links"] == ["D_REQ_A", "D_REQ_A.", "D_REQ_A.p1"]
 
 
+def test_the_empty_part_under_a_condition_is_written_with_its_part(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``REQ_A.[status == "open"]`` is a link to the empty part under a condition: the
+    draft writes its empty part beside the condition, never the condition alone."""
+    index = EMPTY_PART_INDEX.replace(
+        ":links: REQ_A., REQ_A.p1, REQ_A", ':links: REQ_A.[status == "open"]'
+    )
+    assert index != EMPTY_PART_INDEX
+    _, up_json = _build(
+        make_app,
+        _write(
+            tmp_path / "up",
+            {"conf.py": UP_CONF.format(format="2a2"), "index.rst": index},
+        ),
+    )
+    assert _records(up_json)["REQ_L"]["links"]["links"] == [
+        {"id": "REQ_A", "part": "", "condition": 'status == "open"'}
+    ]
+
+
 def test_a_record_stating_an_empty_part_id_is_refused(
     make_app: Any, tmp_path: Path
 ) -> None:
@@ -840,7 +863,8 @@ def test_an_invalid_part_entry_is_one_warning_and_the_need_is_read(
 ) -> None:
     """A part entry of a wrong shape, and a later entry of an id already read, are each
     one warning naming the file and the entry's place, on both routes; the need is
-    read with its other parts, in the file's order."""
+    read with its other parts, in the file's order, and a re-export writes them in that
+    order: a need with no content, whose parts are all stated, is not sorted either."""
     document = {
         "format_version": "2a2",
         "project": {"name": "up"},
@@ -858,7 +882,9 @@ def test_an_invalid_part_entry_is_one_warning_and_the_need_is_read(
             }
         ],
     }
-    app, _ = _build(make_app, _write(tmp_path / "down", _both_routes("up", document)))
+    files = _both_routes("up", document)
+    files["conf.py"] += 'needs_json_format_version = "2a2"\n'
+    app, down_json = _build(make_app, _write(tmp_path / "down", files))
     invalid = (
         "the part at index 1 is not an object of a string 'id' and a string 'text'; "
         "it is not read (at needs.0.parts.1)"
@@ -879,3 +905,6 @@ def test_an_invalid_part_entry_is_one_warning_and_the_need_is_read(
     for need_id in ("D_P_1", "X_P_1"):
         parts = needs[need_id]["parts"]
         assert [(p, parts[p]["content"]) for p in parts] == [("b", "tb"), ("a", "ta")]
+    written = _records(down_json)["D_P_1"]
+    assert written["content"]["text"] == ""
+    assert written["parts"] == [{"id": "b", "text": "tb"}, {"id": "a", "text": "ta"}]

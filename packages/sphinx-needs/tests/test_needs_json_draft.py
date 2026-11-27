@@ -257,6 +257,48 @@ def test_the_parts_are_a_section_of_the_record(test_app: Any) -> None:
     assert sorted(set(records) - set(without)) == ["IMP_2", "REQ_1", "REQ_5"]
 
 
+#: The page that shows an example of the draft
+BUILDERS_PAGE = Path(__file__).parents[1] / "docs" / "builders.rst"
+
+
+def _docs_example() -> dict[str, Any]:
+    """The example document of the draft's section of the builders page: the first
+    ``json`` code block after its label, whose body is indented by four spaces."""
+    text = BUILDERS_PAGE.read_text(encoding="utf-8")
+    section = text[text.index(".. _needs_builder_format_draft:") :]
+    lines = section[section.index(".. code-block:: json") :].splitlines()[2:]
+    body: list[str] = []
+    for line in lines:
+        if line and not line.startswith("    "):
+            break
+        body.append(line[4:])
+    return json.loads("\n".join(body))
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
+)
+def test_the_docs_example_is_a_record_this_project_writes(test_app: Any) -> None:
+    """The example of the builders page is the envelope and a record this project
+    writes, abridged as the page says: of a need's link types, the example shows some,
+    and the others hold no link. ``creator`` and ``created`` vary by build."""
+    app = test_app
+    app.build()
+
+    example = _docs_example()
+    data = _needs_json(app)
+    assert list(example) == list(data)
+    for key in ("format_version", "project"):
+        assert example[key] == data[key], key
+    (shown,) = example["needs"]
+    written = _records(app)[shown["id"]]
+    assert list(shown) == list(written)
+    left_out = set(written["links"]) - set(shown["links"])
+    assert [name for name in sorted(left_out) if written["links"][name]] == []
+    abridged = {**written, "links": {k: written["links"][k] for k in shown["links"]}}
+    assert shown == abridged
+
+
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
 )
@@ -483,6 +525,27 @@ def test_the_replaced_draft_names_its_successor_and_writes_v1(
         data = _needs_json(app)
         assert "format_version" not in data
         assert "REQ_001" in data["versions"][""]["needs"]
+    finally:
+        app.cleanup()
+
+
+def test_the_replaced_draft_is_reported_once_by_a_build_of_several_writers(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A build that writes a needs.json and the per-id files reports ``"2a1"`` once,
+    not once per writer."""
+    srcdir = _option_project(
+        tmp_path,
+        'needs_json_format_version = "2a1"\n'
+        "needs_build_json = True\nneeds_build_json_per_id = True\n",
+    )
+    app = make_app("html", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        assert build_warnings(app) == [REPLACED]
+        assert "format_version" not in _needs_json(app)
+        per_id = _read(Path(app.outdir, "needs_id", "REQ_001.json"))
+        assert "format_version" not in per_id
     finally:
         app.cleanup()
 
