@@ -746,7 +746,9 @@ limitations.
   database and no entry includes it. This is the fallback applied to a header no entry of
   the database includes (headers never appear in a database: one an entry includes is read
   through every entry that includes it, see :ref:`preprocessor_headers`) and to all files
-  when no database is found.
+  when no database is found. Of a header no entry includes, only the branches these
+  defines (and ``target``) decide are left out, every other one read as written; see
+  :ref:`preprocessor_no_includer`.
 - ``includes`` (``list[str]``) - ``-I`` include directories used together with
   ``defines`` on the fallback path.
 - ``resource_dir`` (``str``) - A clang resource directory, passed to every parse as
@@ -766,8 +768,10 @@ limitations.
   (the explicit one, or the one found upward) that names its own ``--target``, or whose
   compiler's name carries one (``arm-none-eabi-gcc``), is read for that target, never for
   this setting; the setting also applies to headers no entry includes and to files no
-  entry applies to (a header an entry includes is read for that entry's target).
-  Spaces around it are ignored. If omitted or empty (``""``), those files are read for
+  entry applies to (a header an entry includes is read for that entry's target). Of a
+  header no entry includes, it decides only the target's identity (architecture,
+  operating system, byte order, and whether a data-model macro is defined), and only when
+  set; name the build's effective triple. Spaces around it are ignored. If omitted or empty (``""``), those files are read for
   the machine the analysis runs on; a triple the loaded libclang does not model is not
   used, and a file that would take it is read as written, every ``#if`` branch kept; see
   :ref:`preprocessor_target`.

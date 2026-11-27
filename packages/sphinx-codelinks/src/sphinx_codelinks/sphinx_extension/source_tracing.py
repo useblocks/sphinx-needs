@@ -173,8 +173,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # read through every entry that includes it (useblocks/ubcode#4866), so the
         # records an environment at 9 holds for such headers were extracted with the
         # `[preprocessor]` defines alone, and the environment holds what each entry
-        # contributes to the headers it includes
-        "env_version": 10,
+        # contributes to the headers it includes; 11: a header no entry includes leaves
+        # out only the arms its `[preprocessor]` table decides (useblocks/ubcode#4866,
+        # slice 2), so the records an environment at 10 holds for an unchanged such
+        # header lack the arms read now
+        "env_version": 11,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

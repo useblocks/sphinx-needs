@@ -770,3 +770,113 @@ header_wrapped_in_an_ifndef_nothing_defines_libclang:
   # the arm the first skipped: what decides is whether a later entry compiles some of
   # the file, so this unit reads it as written: IMPL_H10_BASE, IMPL_H10_ONE,
   # IMPL_H10_TWO, IMPL_H10_NEVER.
+
+header_no_entry_includes_reads_undecided_arms_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      int main(void) { return 0; }
+  compile_commands:
+    - file: main.c
+      arguments: ["arm-none-eabi-gcc", "-DCONFIG_X=1", "-c", "main.c"]
+  source: |
+    #pragma once
+    // @Orphan Base, IMPL_O1_BASE, impl, [REQ]
+    #ifdef CONFIG_X
+    // @Orphan Config X, IMPL_O1_X, impl, [REQ]
+    #endif
+    #if defined(__arm__)
+    // @Orphan Arm, IMPL_O1_ARM, impl, [REQ]
+    #endif
+  # No entry includes case.h, so it is read with the [preprocessor] table, which states
+  # neither CONFIG_X (the entry's -D) nor a target (the entry's arm-none-eabi): neither
+  # condition is decided, so both arms are read as written rather than left out
+  # (useblocks/ubcode#4866, slice 2): IMPL_O1_BASE, IMPL_O1_X, IMPL_O1_ARM.
+
+header_no_entry_includes_cuts_a_chain_at_its_undecided_arm_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      int main(void) { return 0; }
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-c", "main.c"]
+  source: |
+    #pragma once
+    #if 0
+    // @Orphan Zero, IMPL_O2_ZERO, impl, [REQ]
+    #elif defined(UNSTATED)
+    // @Orphan Unstated, IMPL_O2_UNSTATED, impl, [REQ]
+    #else
+    // @Orphan Else, IMPL_O2_ELSE, impl, [REQ]
+    #endif
+  # No entry includes case.h. Its parse skips the #if 0 and #elif arms in one range;
+  # the #if 0 arm is decided (a constant) and stays left out, the range is cut before
+  # the #elif, whose UNSTATED nothing states, and that arm and every later one of the
+  # chain are read: IMPL_O2_UNSTATED, IMPL_O2_ELSE.
+
+header_no_entry_includes_own_define_decides_nothing_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: ["STATED=1"]
+  extract: [oneline]
+  files:
+    main.c: |
+      int main(void) { return 0; }
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-c", "main.c"]
+  source: |
+    #pragma once
+    #define LOCAL 0
+    #if LOCAL
+    // @Orphan Local On, IMPL_O3_LOCAL_ON, impl, [REQ]
+    #else
+    // @Orphan Local Off, IMPL_O3_LOCAL_OFF, impl, [REQ]
+    #endif
+    #if STATED
+    // @Orphan Stated On, IMPL_O3_STATED_ON, impl, [REQ]
+    #else
+    // @Orphan Stated Off, IMPL_O3_STATED_OFF, impl, [REQ]
+    #endif
+  # No entry includes case.h. LOCAL is the header's own #define, which decides nothing
+  # (a condition may read it before or after the definition), so both of its arms are
+  # read; STATED is stated in defines and decides its chain: IMPL_O3_LOCAL_ON,
+  # IMPL_O3_LOCAL_OFF, IMPL_O3_STATED_ON.
+
+header_no_entry_includes_stated_target_decides_its_identity_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  target: x86_64-unknown-linux-gnu
+  files:
+    main.c: |
+      int main(void) { return 0; }
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-c", "main.c"]
+  source: |
+    #pragma once
+    #if defined(__arm__)
+    // @Orphan Arm, IMPL_O4_ARM, impl, [REQ]
+    #else
+    // @Orphan Not Arm, IMPL_O4_NOT_ARM, impl, [REQ]
+    #endif
+    #ifdef __ZEPHYR__
+    // @Orphan Zephyr, IMPL_O4_ZEPHYR, impl, [REQ]
+    #endif
+  # No entry includes case.h; the target setting states x86_64-unknown-linux-gnu. That
+  # decides __arm__, a macro of the target's identity, so its arm stays left out; a
+  # macro a build defines (__ZEPHYR__) is no target's, and its arm is read:
+  # IMPL_O4_NOT_ARM, IMPL_O4_ZEPHYR.

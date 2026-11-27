@@ -489,7 +489,10 @@ def test_a_header_with_an_entry_of_its_own_keeps_its_read(tmp_path: Path) -> Non
 
 def test_a_header_no_entry_includes_keeps_the_defines(tmp_path: Path) -> None:
     """No entry includes the header (``no_includer``): it is read with the
-    ``[preprocessor]`` defines, as before."""
+    ``[preprocessor]`` defines, leaving out only the arms they decide
+    (useblocks/ubcode#4866, slice 2): ``ONE`` is the entry's alone and ``NEVER_SET``
+    nobody's, neither stated, so both of their arms are read (``test_preproc_orphan.py``
+    has the rule)."""
     _write(tmp_path, {"a.c": "int a;\n", "case.h": HEADER})
     db = _db(tmp_path, [{"file": "a.c", "args": ["-DONE"]}])
     analyse = SourceAnalyse(
@@ -505,7 +508,7 @@ def test_a_header_no_entry_includes_keeps_the_defines(tmp_path: Path) -> None:
     analyse.git_remote_url = None
     analyse.git_commit_rev = None
     analyse.run(log_summary=False)
-    assert _ids(analyse) == {"IMPL_BASE", "IMPL_TWO"}
+    assert _ids(analyse) == {"IMPL_BASE", "IMPL_ONE", "IMPL_TWO", "IMPL_NEVER"}
 
 
 def test_an_unknown_target_unit_contributes_its_host_and_lexical_closure(

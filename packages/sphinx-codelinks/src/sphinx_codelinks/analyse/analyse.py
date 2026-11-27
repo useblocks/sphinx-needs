@@ -73,6 +73,9 @@ _KIND_RANK: dict[MarkedContentType, int] = {
 # ``preprocessor_parse_refused`` warning names them (:meth:`SourceAnalyse._warn_parse_refused`).
 _DATABASE = "the compilation database"
 _TABLE = "the `[preprocessor]` table"
+_NO_INCLUDER = "preprocessor_no_includer"
+"""The code of the note about the headers no entry includes, ubCode's finding's
+(:meth:`SourceAnalyse._note_undecided`)."""
 
 
 def _is_word_char(char: str) -> bool:
@@ -141,6 +144,19 @@ def _char_column(src: bytes, byte_offset: int) -> int:
     """The column, in characters, of ``byte_offset`` in the UTF-8 ``src``."""
     line_start = src.rfind(b"\n", 0, byte_offset) + 1
     return len(src[line_start:byte_offset].decode("utf-8", errors="replace"))
+
+
+def _shown_relative(path: Path, database: Path | None) -> str:
+    """``path`` as a note names it (both canonical): relative to the directory of
+    ``database``, climbing out of it with ``..`` where it must, ``/``-separated; as
+    given when there is no database, or no relative path (another drive)."""
+    if database is None:
+        return path.as_posix()
+    try:
+        relative = os.path.relpath(path, database.parent)
+    except ValueError:
+        return path.as_posix()
+    return Path(relative).as_posix()
 
 
 def _count(n: int, noun: str) -> str:
@@ -257,17 +273,21 @@ class AnalyseWarning:
 
 @dataclass
 class BuiltinHeaderWarnings:
-    """What the libclang engine has already warned about clang's builtin headers.
+    """What the libclang engine has already warned about clang's builtin headers, and
+    the headers no compilation-database entry includes it has already noted.
 
-    One object shared by several analyses makes each warning once across all of them:
-    the CLI shares one across its projects, a Sphinx build one across its directives
-    and its scan of config-only projects.
+    One object shared by several analyses makes each warning, and names each header in
+    a note, once across all of them: the CLI shares one across its projects, a Sphinx
+    build one across its directives and its scan of config-only projects.
     """
 
     files: set[Path] = field(default_factory=set)
     """The parsed files already warned about a builtin header they could not find."""
     unavailable: bool = False
     """Whether the shipped builtin headers were warned to be unavailable."""
+    no_includer: set[Path] = field(default_factory=set)
+    """The headers no entry includes already named in a ``preprocessor_no_includer``
+    note, canonical (:meth:`SourceAnalyse._note_undecided`)."""
 
 
 @dataclass(frozen=True)
@@ -679,17 +699,23 @@ class SourceAnalyse:
         )
 
     def _read_active(
-        self, path: Path, args: list[str], decision: "Decision"
-    ) -> tuple[list["LibclangComment"], str]:
-        """The active comments of ``path`` parsed with ``args`` for ``decision``, and the
-        triple libclang parsed it for; warns about a builtin header the parse did not
-        find. A file whose target is unknown is read as written
+        self, path: Path, args: list[str], decision: "Decision", *, orphan: bool
+    ) -> tuple[list["LibclangComment"], str, int]:
+        """The active comments of ``path`` parsed with ``args`` for ``decision``, the
+        triple libclang parsed it for, and how many of its arms are read as written for
+        a condition the configuration does not decide; warns about a builtin header the
+        parse did not find. A file whose target is unknown is read as written
         (:attr:`.preproc.target.Decision.unknown`): every comment is kept, and no
-        builtin header changes which arms are read.
+        builtin header changes which arms are read. A header no compilation-database
+        entry includes (``orphan``) leaves out only the arms its configuration decides
+        (:mod:`.preproc.decided`, useblocks/ubcode#4866 slice 2: a stated target's
+        macros decide only when the ``target`` setting states it); every other file,
+        every arm its parse skips.
 
         :raises clang.cindex.TranslationUnitLoadError: libclang could not load it.
         """
         from sphinx_codelinks.analyse.preproc import libclang_parser, target
+        from sphinx_codelinks.analyse.preproc.decided import Stated
 
         triples: list[str] = []
 
@@ -698,10 +724,18 @@ class SourceAnalyse:
                 self._warn_missing_builtin_header(path, tu, args)
             triples.append(target.triple_of(tu))
 
+        if orphan:
+            stated = Stated.of(
+                args, target=decision.source is target.TargetSource.setting
+            )
+            comments, undecided = libclang_parser.extract_decided_comments(
+                path, args, stated, on_parse=on_parse, as_written=decision.unknown
+            )
+            return comments, triples[0], undecided
         comments = libclang_parser.extract_active_comments(
             path, args, on_parse=on_parse, as_written=decision.unknown
         )
-        return comments, triples[0]
+        return comments, triples[0], 0
 
     def _warn_target(
         self, path: Path, decision: "Decision", read_for: str, *, includer: bool
@@ -932,7 +966,10 @@ class SourceAnalyse:
 
         Its units are the entries of its own database, or of every database the
         analysis found when it has none, whose contributions include it. With none,
-        it is read with the ``[preprocessor]`` defines, as before (``no_includer``).
+        it is read with the ``[preprocessor]`` defines (``no_includer``): when a
+        database applies, leaving out only the arms they decide
+        (:mod:`.preproc.decided`, useblocks/ubcode#4866 slice 2), noted per database
+        (:meth:`_note_undecided`); with no database at all, as every other file is.
         Else it leaves out only the ranges every one of them skipped
         (:func:`.preproc.headers.union_of_arms`), read from its reader: of the units
         whose target is known, the one that includes the most project files, the
@@ -956,6 +993,9 @@ class SourceAnalyse:
         read: dict[int, list[LibclangComment]] = {}
         readers: dict[UnitKey, tuple[_Unit, list[tuple[_Header, list[SkippedSpan]]]]]
         readers = {}
+        # the headers no entry includes read with arms on an undecided condition, and
+        # how many, by the database their note is anchored at (``None``: several)
+        undecided: dict[Path | None, dict[Path, int]] = {}
         for header in headers:
             databases = [header.database] if header.database is not None else found
             in_scope: list[_Unit] = []
@@ -977,11 +1017,20 @@ class SourceAnalyse:
             if not includers:
                 logger.debug(
                     f"codelinks: no compilation-database entry includes {header.path} "
-                    f"(no_includer); reading it with the configured defines"
+                    f"(no_includer); reading it with the configured defines, leaving "
+                    f"out only the arms they decide"
                 )
-                read[header.position] = self._read_alone(
-                    header.path, *self._defines_args(), from_entry=False
+                # the rule is for a header the entries of a database could include:
+                # with none, the defines are the build's own configuration
+                read[header.position], arms = self._read_alone(
+                    header.path,
+                    *self._defines_args(),
+                    from_entry=False,
+                    orphan=bool(databases),
                 )
+                if arms:
+                    anchor = databases[0] if len(databases) == 1 else None
+                    undecided.setdefault(anchor, {})[header.path] = arms
                 continue
             ranges = union_of_arms(each for _, each in includers)
             known = [unit for unit, _ in includers if unit.record.triple is not None]
@@ -1009,7 +1058,60 @@ class SourceAnalyse:
             self._warn_header_as_written(header.path, first.key.main, decision)
         for reader, waiting in readers.values():
             read.update(self._read_from(reader, waiting))
+        self._note_undecided(undecided)
         return read
+
+    def _note_undecided(self, undecided: dict[Path | None, dict[Path, int]]) -> None:
+        """Note, once per compilation database, the headers no entry of it includes
+        whose arms on a condition the ``[preprocessor]`` table does not decide are read
+        as written (``undecided``: by database, each header and how many arms;
+        ``None`` for headers looked for in several), naming them relative to the
+        database's directory, at most five, and counting the arms
+        (useblocks/ubcode#4866, slice 2; ubCode's ``preprocessor_no_includer``).
+
+        At information level, not a warning: nothing is hidden (it can over-report,
+        never hide), so a ``-W`` build does not fail on it. It is anchored at the
+        database's first line, canonical, or at nothing when the headers were looked
+        for in several databases. A header is named once across the analyses that
+        share :attr:`builtin_header_warnings` (once per build, as ubCode's note is:
+        once per reading chunk under ``-j N``); a note whose every header was named
+        already is not made again.
+        """
+        noted = self.builtin_header_warnings.no_includer
+        for anchor, by_path in undecided.items():
+            database = anchor.resolve() if anchor is not None else None
+            headers = {
+                canonical: arms
+                for path, arms in by_path.items()
+                if (canonical := path.resolve()) not in noted
+            }
+            if not headers:
+                continue
+            noted.update(headers)
+            count = len(headers)
+            arms = sum(headers.values())
+            shown = [
+                f"`{_shown_relative(path, database)}`" for path in sorted(headers)[:5]
+            ]
+            named = ", ".join(shown)
+            if count > 5:
+                named += f" and {count - 5} more"
+            whose = (
+                "that no entry of this compilation database includes"
+                if database is not None
+                else "that no compilation-database entry includes"
+            )
+            verb, them = ("is", "it") if count == 1 else ("are", "them")
+            arms_verb = "is" if arms == 1 else "are"
+            logger.info(
+                f"codelinks: {_count(count, 'header')} {whose} {verb} read with "
+                f"{_TABLE}, and {_count(arms, '`#if` arm')} on a condition the table "
+                f"does not decide {arms_verb} read as written rather than left out: "
+                f"{named}. To leave out what the build leaves out, state the macros in "
+                f"`[preprocessor] defines` and the target in `target`, or include "
+                f"{them} from an entry's file. [codelinks.{_NO_INCLUDER}]",
+                location=f"{database}:1" if database is not None else None,
+            )
 
     def _warn_header_as_written(
         self, path: Path, includer: Path, decision: "Decision"
@@ -1231,12 +1333,20 @@ class SourceAnalyse:
         decision: "Decision",
         *,
         from_entry: bool,
-    ) -> list["LibclangComment"]:
+        orphan: bool = False,
+    ) -> tuple[list["LibclangComment"], int]:
         """The comments of ``src_path``, parsed as its own translation unit with
         ``entry_args`` (its own compilation-database entry's when ``from_entry``, else
         the ``defines`` path's) for ``decision``, made again while refused; read as
         written without libclang when every parse is refused. Warns as the read
-        decides."""
+        decides.
+
+        :param orphan: ``src_path`` is a header no compilation-database entry includes,
+            which leaves out only the arms its configuration decides
+            (:meth:`_read_active`).
+        :return: The comments, and how many arms are read as written for a condition
+            the configuration does not decide (0 for any read but an orphan's).
+        """
         from sphinx_codelinks.analyse.preproc import loader, target
 
         # Resolve the exception via the loader (never a direct ``import
@@ -1247,11 +1357,11 @@ class SourceAnalyse:
         )
         args = self._with_builtin_headers(entry_args)
         try:
-            (comments, read_for), _, decision = target.parse_or_again(
+            (comments, read_for, undecided), _, decision = target.parse_or_again(
                 args,
                 decision,
                 lambda attempt, attempt_decision, path=src_path: self._read_active(
-                    path, attempt, attempt_decision
+                    path, attempt, attempt_decision, orphan=orphan
                 ),
                 translation_unit_load_error,
             )
@@ -1273,9 +1383,9 @@ class SourceAnalyse:
                     whose=("its compilation-database entry" if from_entry else _TABLE),
                     fix_in=_DATABASE if from_entry else _TABLE,
                 )
-            return self._read_without_libclang(src_path)
+            return self._read_without_libclang(src_path), 0
         self._warn_target(src_path, decision, read_for, includer=False)
-        return comments
+        return comments, undecided
 
     # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
     def create_src_objects_libclang(self) -> None:
@@ -1306,7 +1416,7 @@ class SourceAnalyse:
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
             entry_args, decision, from_entry = resolved
-            read[position] = self._read_alone(
+            read[position], _ = self._read_alone(
                 src_path, entry_args, decision, from_entry=from_entry
             )
         read.update(self._read_through_includers(waiting))

@@ -70,6 +70,26 @@ Fixes
   took about two minutes, on every build that read it. Nothing extracted changes. A file
   entered more than once, and every file of a unit that loaded a precompiled header, is
   looked up as before (the twin of useblocks/ubcode#4982).
+- 🐛 A C/C++ header no ``compile_commands.json`` entry includes no longer hides the branches
+  its build may compile (:ref:`preprocessor_no_includer`). It is still parsed with the
+  ``[analyse.preprocessor]`` ``defines``, ``includes`` and ``target``, but of the ``#if``
+  branches that parse skips, only one whose whole chain they decide is left out: a branch on
+  a macro ``defines`` states, on a literal, on ``__has_include`` of a header name, or, with
+  ``target`` set, on the target's architecture, operating system or byte order (and on
+  whether a data-model macro such as ``__LP64__`` is defined). Every other branch is read
+  as written: one on a macro the entries pass (``#ifdef CONFIG_X``), on a target with no
+  ``target`` set (``#if defined(__arm__)``), on the compiler (``__GNUC__``), on a macro the
+  header defines itself, or on another flag (``__thumb__``). A build, or a
+  ``codelinks analyse`` run, prints one information line per compilation database naming
+  such headers (``codelinks.preprocessor_no_includer``), which does not fail a ``-W``
+  build; it names each header once per build. More markers can be extracted from such
+  headers than before, those of branches the build does not compile among them, and they
+  are checked as any other: the same id in two exclusive branches (``#ifdef BOARD_A`` …
+  ``#else`` …) is now a ``codelinks.duplicate_need`` warning, which fails a ``-W`` build
+  that passed. To leave such branches out, state the macros in ``defines`` and the
+  build's target in ``target`` (or give the markers distinct ids). ubCode reads the same
+  branches (the twin of useblocks/ubcode#4866). The first build after upgrading reads
+  every document again.
 
 .. _`release:2.2.0`:
 
