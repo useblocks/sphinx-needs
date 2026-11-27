@@ -1,11 +1,13 @@
 import json
 import shutil
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
+from sphinx_codelinks import logger as codelinks_logger
 from sphinx_codelinks.config import OneLineCommentStyle
 
 # The workspace's shared test layer, `packages/sphinx-needs-testkit`, which carries the
@@ -44,6 +46,25 @@ ONELINE_COMMENT_STYLE = OneLineCommentStyle(
 )
 
 ONELINE_COMMENT_STYLE_DEFAULT = OneLineCommentStyle()
+
+
+@pytest.fixture(autouse=True)
+def _codelinks_logging_backend() -> Iterator[None]:
+    """Each test leaves the analysis layer's logging as a fresh process has it: the
+    plain-library backend (:func:`sphinx_codelinks.logger.reset`).
+
+    A Sphinx build selects the Sphinx backend (``configure_sphinx`` at setup) and
+    leaves it selected, process-wide; ``sphinx.util.logging`` likewise leaves the last
+    app's handlers on the ``sphinx`` logger. So an analysis run directly by a later test
+    in the same process (an xdist worker) logged its warnings into the last app's
+    handlers, and on Sphinx 7, after an app built with ``warningiserror``, the
+    ``WarningIsErrorFilter`` raised a ``SphinxWarning`` at the first one (a
+    ``codelinks.git_root`` warning for a ``tmp_path`` outside any repository): a
+    failure that depended on which tests shared the worker. Sphinx 8 and later defer
+    ``-W`` to the end of the build, so the leak raised nothing there.
+    """
+    yield
+    codelinks_logger.reset()
 
 
 @pytest.fixture(scope="session")
