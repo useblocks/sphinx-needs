@@ -685,6 +685,16 @@ records = { A = { parts = { dup = { id = "dup", content = "first" }, other = { i
 part_order = { A = ["dup", "other"] }
 
 [[case]]
+name = "part-ids-are-compared-as-written"
+why = "two ids are one id only when they are the same string, with no case folding, no trimming and no normalisation: P, p, a with a leading space, a, and an e-acute composed and decomposed are six parts, in the section's order, with no finding"
+layer = "document"
+json = '''{"format_version": "2a2", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "parts": [{"id": "P", "text": "upper"}, {"id": "p", "text": "lower"}, {"id": " a", "text": "spaced"}, {"id": "a", "text": "plain"}, {"id": "\u00e9", "text": "composed"}, {"id": "e\u0301", "text": "decomposed"}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { parts = { P = { id = "P", content = "upper" }, p = { id = "p", content = "lower" }, " a" = { id = " a", content = "spaced" }, a = { id = "a", content = "plain" }, "\u00e9" = { id = "\u00e9", content = "composed" }, "e\u0301" = { id = "e\u0301", content = "decomposed" } } } }
+part_order = { A = ["P", "p", " a", "a", "\u00e9", "e\u0301"] }
+
+[[case]]
 name = "parts-that-are-not-an-array-are-not-read"
 why = "a parts that is not an array (the object 2a1 wrote under content, a string, a number) is reported and not read; the rest of the record is"
 layer = "document"
@@ -694,6 +704,17 @@ diagnostics = [{ code = "parts_not_a_list", path = "needs.0.parts" }, { code = "
 keys = ["A", "B", "C"]
 records = { A = { content = "x" }, B = { title = "b" } }
 unset = { A = ["parts"], B = ["parts"], C = ["parts"] }
+
+[[case]]
+name = "parts-that-are-null-are-not-read"
+why = "a parts of null is not an array, as any other value that is not one: it is reported and not read, and the rest of the record is"
+layer = "document"
+json = '''{"format_version": "2a2", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"title": "a"}, "parts": null}]}'''
+[case.expect]
+diagnostics = [{ code = "parts_not_a_list", path = "needs.0.parts" }]
+keys = ["A"]
+records = { A = { title = "a" } }
+unset = { A = ["parts"] }
 
 [[case]]
 name = "an-invalid-part-entry-is-dropped"

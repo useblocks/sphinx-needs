@@ -26,7 +26,7 @@ Unreleased
   re-exported, ``PARTS_NOT_A_LIST``, ``PART_INVALID`` and ``DUPLICATE_PART_ID``; no public
   name carried ``2a1``. The contract is ``design/v2a2-draft.md`` (was ``v2a1-draft.md``)
   and the corpus ``tests/fixtures/needs_json_2a2_draft_conformance.toml`` (was
-  ``needs_json_2a1_draft_conformance.toml``), 90 cases (was 78); the shared reading corpus
+  ``needs_json_2a1_draft_conformance.toml``), 92 cases (was 78); the shared reading corpus
   is unchanged.
 
 - **``namespace_prefix``: the text that joins an id to a namespace.**

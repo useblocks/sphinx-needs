@@ -316,7 +316,8 @@ Enforced by: corpus: `a-record-is-projected-to-the-format-1-shape`,
 `fields-that-are-not-an-object-are-not-read`, `a-link-type-replaces-a-field-of-its-name`,
 `links-that-are-not-an-object-are-not-read`, `a-record-without-content-has-no-content-key`,
 `content-without-a-doctype-has-no-doctype-key`, `a-content-object-without-text-has-no-content-key`,
-`content-parts-are-not-read`, `content-that-is-not-an-object-is-not-read`, `the-legacy-description-is-not-the-content-in-a-draft`,
+`content-parts-are-not-read`, `content-that-is-not-an-object-is-not-read`,
+`parts-are-projected-as-format-1-writes-them`, `the-legacy-description-is-not-the-content-in-a-draft`,
 `a-record-without-a-placement-has-no-docname`, `a-record-without-a-source-has-no-docname`,
 `an-include-chain-has-its-placement-last`,
 `of-several-hops-with-a-document-the-last-is-the-placement`,
@@ -355,20 +356,26 @@ no `parts` for a need without parts (never `[]`), and sorts nothing.
 1. **The order is the section's.** The projection (§3.2) lists the parts in the order of
    the entries read; a reader never sorts them.
    Enforced by: corpus: `parts-keep-the-order-the-file-gives-them`,
-   `parts-are-projected-as-format-1-writes-them`.
-2. A `parts` that is not an array — `"2a1"`'s object of part id to text among them — is
+   `an-invalid-part-entry-is-dropped`;
+   `test_reader.py::test_the_parts_are_projected_in_the_section_s_order`.
+2. A `parts` that is not an array — `"2a1"`'s object of part id to text among them, and
+   `null`, which is not an array like any other value that is not one — is
    not read (`parts_not_a_list`, path `needs.<index>.parts`): the record has no `parts`
    key, and the rest of it is read. An empty array is no parts: no key and no finding.
    Enforced by: corpus: `parts-that-are-not-an-array-are-not-read`,
-   `an-empty-parts-array-gives-no-parts-key`, `a-record-without-parts-has-no-parts-key`.
+   `parts-that-are-null-are-not-read`,
+   `an-empty-parts-array-gives-no-parts-key`, `a-record-without-parts-has-no-parts-key`;
+   `test_reader.py::test_a_null_parts_is_not_an_array`.
 3. An entry that is not an object, or whose `id` or `text` is absent or not a string, is
    dropped (`part_invalid`, path `needs.<index>.parts.<position>`): the other entries and
    the record are read, nothing is turned into text, and a dropped entry claims no id.
    Enforced by: corpus: `an-invalid-part-entry-is-dropped`.
 4. **Of two entries with one id the first is read**, at its place, and each later one
    skipped (`duplicate_part_id`, path `needs.<index>.parts.<position>.id`) — as a need
-   keeps the first part of an id.
-   Enforced by: corpus: `the-first-part-of-an-id-is-read`.
+   keeps the first part of an id. Two ids are one id only when they are the same string:
+   no case folding, no trimming, no normalisation.
+   Enforced by: corpus: `the-first-part-of-an-id-is-read`,
+   `part-ids-are-compared-as-written`; `test_reader.py::test_part_ids_are_compared_as_written`.
 5. An entry whose `id` is the empty string is well shaped, and projected as any other
    (under the key `""`), with no finding here: a part id cannot be empty, and the reading
    project refuses the need, as it refuses a format-1 record that states an empty part id
