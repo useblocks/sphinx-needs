@@ -747,8 +747,8 @@ def test_the_parts_are_projected_in_the_section_s_order():
 
 def test_part_ids_are_compared_as_written():
     """Two ids are one id only when they are the same string: no case folding, no
-    trimming, so ``P``, ``p``, `` a`` and ``a`` are four parts, in the file's order,
-    with no finding."""
+    trimming at either end, so ``P``, ``p``, `` a``, ``a`` and ``a `` are five parts,
+    in the file's order, with no finding."""
     data = draft(
         [
             {
@@ -759,12 +759,13 @@ def test_part_ids_are_compared_as_written():
                     {"id": "p", "text": "lower"},
                     {"id": " a", "text": "spaced"},
                     {"id": "a", "text": "plain"},
+                    {"id": "a ", "text": "trailing"},
                 ],
             }
         ]
     )
     (only,) = read_draft(data).records()
-    assert list(only.fields["parts"]) == ["P", "p", " a", "a"]
+    assert list(only.fields["parts"]) == ["P", "p", " a", "a", "a "]
     assert only.diagnostics == ()
 
 
