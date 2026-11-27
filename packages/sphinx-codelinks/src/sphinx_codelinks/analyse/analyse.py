@@ -147,13 +147,13 @@ def _char_column(src: bytes, byte_offset: int) -> int:
 
 
 def _shown_relative(path: Path, database: Path | None) -> str:
-    """``path`` as a note names it: relative to the directory of ``database``,
-    climbing out of it with ``..`` where it must, ``/``-separated; as given when there
-    is no database, or no relative path (another drive)."""
+    """``path`` as a note names it (both canonical): relative to the directory of
+    ``database``, climbing out of it with ``..`` where it must, ``/``-separated; as
+    given when there is no database, or no relative path (another drive)."""
     if database is None:
         return path.as_posix()
     try:
-        relative = os.path.relpath(path.absolute(), database.absolute().parent)
+        relative = os.path.relpath(path, database.parent)
     except ValueError:
         return path.as_posix()
     return Path(relative).as_posix()
@@ -273,17 +273,21 @@ class AnalyseWarning:
 
 @dataclass
 class BuiltinHeaderWarnings:
-    """What the libclang engine has already warned about clang's builtin headers.
+    """What the libclang engine has already warned about clang's builtin headers, and
+    the headers no compilation-database entry includes it has already noted.
 
-    One object shared by several analyses makes each warning once across all of them:
-    the CLI shares one across its projects, a Sphinx build one across its directives
-    and its scan of config-only projects.
+    One object shared by several analyses makes each warning, and names each header in
+    a note, once across all of them: the CLI shares one across its projects, a Sphinx
+    build one across its directives and its scan of config-only projects.
     """
 
     files: set[Path] = field(default_factory=set)
     """The parsed files already warned about a builtin header they could not find."""
     unavailable: bool = False
     """Whether the shipped builtin headers were warned to be unavailable."""
+    no_includer: set[Path] = field(default_factory=set)
+    """The headers no entry includes already named in a ``preprocessor_no_includer``
+    note, canonical (:meth:`SourceAnalyse._note_undecided`)."""
 
 
 @dataclass(frozen=True)
@@ -1067,10 +1071,23 @@ class SourceAnalyse:
 
         At information level, not a warning: nothing is hidden (it can over-report,
         never hide), so a ``-W`` build does not fail on it. It is anchored at the
-        database's first line, or at nothing when the headers were looked for in
-        several databases.
+        database's first line, canonical, or at nothing when the headers were looked
+        for in several databases. A header is named once across the analyses that
+        share :attr:`builtin_header_warnings` (once per build, as ubCode's note is:
+        once per reading chunk under ``-j N``); a note whose every header was named
+        already is not made again.
         """
-        for database, headers in undecided.items():
+        noted = self.builtin_header_warnings.no_includer
+        for anchor, by_path in undecided.items():
+            database = anchor.resolve() if anchor is not None else None
+            headers = {
+                canonical: arms
+                for path, arms in by_path.items()
+                if (canonical := path.resolve()) not in noted
+            }
+            if not headers:
+                continue
+            noted.update(headers)
             count = len(headers)
             arms = sum(headers.values())
             shown = [
