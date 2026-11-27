@@ -503,10 +503,28 @@ jobs:
           cache-suffix: docs-reports
           # no `python-version`, so this runs on the root `.python-version`
           cache-python: true
+      - name: Name the graphviz .deb cache
+        # the graphviz .debs from the actions cache, not the live Ubuntu mirrors: the same
+        # script and cache as `prepare-cell`'s "Install graphviz (linux)" step, which says why
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - name: Install graphviz
         # three `needflow` directives across two pages need `dot`; PlantUML needs a JDK,
         # which every Linux runner image already has
-        run: sudo apt-get install graphviz
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh install
+      - name: Save the graphviz .debs
+        if: steps.graphviz-debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
       - name: Point PLANTUML_JAR at the vendored jar
         # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first.
         # The capture shape is the workspace's ONE shape and is fenced as such by
@@ -806,8 +824,26 @@ jobs:
     # headline use case -- mounting `bazel-bin` outputs -- still works.
     steps:
       - uses: actions/checkout@v7
+      - name: Name the graphviz .deb cache
+        # the graphviz .debs from the actions cache, not the live Ubuntu mirrors: the same
+        # script and cache as `prepare-cell`'s "Install graphviz (linux)" step, which says why
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - name: Install graphviz
-        run: sudo apt-get install graphviz
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh install
+      - name: Save the graphviz .debs
+        if: steps.graphviz-debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
@@ -847,8 +883,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Name the graphviz .deb cache
+        # the graphviz .debs from the actions cache, not the live Ubuntu mirrors: the same
+        # script and cache as `prepare-cell`'s "Install graphviz (linux)" step, which says why
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - name: Install graphviz
-        run: sudo apt-get install graphviz
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh install
+      - name: Save the graphviz .debs
+        if: steps.graphviz-debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
@@ -880,8 +934,26 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
+      - name: Name the graphviz .deb cache
+        # the graphviz .debs from the actions cache, not the live Ubuntu mirrors: the same
+        # script and cache as `prepare-cell`'s "Install graphviz (linux)" step, which says why
+        id: graphviz-key
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh key
+      - name: Restore the graphviz .debs
+        id: graphviz-debs
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
+          restore-keys: ${{ steps.graphviz-key.outputs.restore-prefix }}
       - name: Install graphviz
-        run: sudo apt-get install graphviz
+        run: bash .github/actions/prepare-cell/graphviz-linux.sh install
+      - name: Save the graphviz .debs
+        if: steps.graphviz-debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-debs
+          key: ${{ steps.graphviz-key.outputs.key }}
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
