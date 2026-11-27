@@ -64,6 +64,12 @@ Fixes
   Both engines apply the rule, so the libclang engine now skips a file it read with the
   invalid bytes replaced when they came after the first 2048. The new warning fails a ``-W``
   build until the file is saved as UTF-8 or the warning type suppressed.
+- 🐛 The libclang engine no longer spends minutes on one macro-heavy header: reading a file
+  its translation unit entered once, or telling whether an included file is a system
+  header, no longer asks libclang for a location lookup, which for Zephyr's ``ctf_top.h``
+  took about two minutes, on every build that read it. Nothing extracted changes. A file
+  entered more than once, and every file of a unit that loaded a precompiled header, is
+  looked up as before (the twin of useblocks/ubcode#4982).
 
 .. _`release:2.2.0`:
 
