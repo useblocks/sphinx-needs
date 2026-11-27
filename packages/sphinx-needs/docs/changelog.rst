@@ -158,7 +158,7 @@ Improvements
   unknown value now: a project that sets it gets one ``needs.config`` warning, which names ``"2a2"``, and a
   ``needs.json`` of format 1, until it sets ``"2a2"``. ``ENV_DATA_VERSION`` is 35, was 34, so that a page whose
   ``needimport`` read a "2a1" file reads it again: the first build after upgrading reads every document again.
-  See :ref:`needs_builder_format_draft`. (:pr:`TBD`)
+  See :ref:`needs_builder_format_draft`. (:pr:`2594`)
 
 Bug fixes
 .........
