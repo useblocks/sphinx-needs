@@ -17,8 +17,9 @@ arms.
 
 A header leaves out only what every unit that includes it skipped
 (:func:`union_of_arms`: the intersection of their skipped ranges, the union of the arms
-they compile), read from one of them, its **reader**. A header no unit includes keeps
-its read with the ``[preprocessor]`` defines.
+they compile), read from one of them, its **reader**. A header no unit includes is read
+with the ``[preprocessor]`` defines, leaving out only the arms they decide
+(:mod:`.decided`, useblocks/ubcode#4866 slice 2).
 
 Nothing here needs libclang (what a parse contributes is
 :func:`.libclang_parser.unit_contributions`), so the records the Sphinx environment

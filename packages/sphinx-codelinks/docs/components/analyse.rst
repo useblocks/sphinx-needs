@@ -1316,10 +1316,12 @@ When an entry is read for its target without the ``-mcpu=``, ``-march=``, ``-mtu
 the same ``codelinks.preprocessor_target_unknown`` warning as that entry's source, worded
 for its includer: those flags decide branches it leaves out.
 
-A header **no entry includes** keeps its **standalone** parse, using the ``defines`` and
-``includes`` you configure, for the ``target`` setting; so does every file when no
-database is found. Include guards resolve correctly, and ``#ifdef`` branches are evaluated
-against your ``defines``.
+A header **no entry includes** is parsed **standalone**, using the ``defines`` and
+``includes`` you configure, for the ``target`` setting, and leaves out only the branches
+that configuration decides (:ref:`preprocessor_no_includer`). Every file when no database
+is found is parsed the same way, every branch its parse skips left out: there the
+``defines`` are the build's own configuration. Include guards resolve correctly, and
+``#ifdef`` branches are evaluated against your ``defines``.
 
 The files a header's read depends on -- the database, the source of every entry and the
 project files each includes -- are dependencies of the ``src-trace`` directive's document,
@@ -1329,15 +1331,18 @@ only when its source or a project file it includes changes (or its flags, the lo
 libclang or the database do).
 
 .. note:: A header no entry includes sees only the global ``defines`` — **not** the
-   per-file ``-D`` flags from ``compile_commands.json``. To extract a particular
-   variant's needs from such headers, mirror that variant into ``defines``. Treat one
+   per-file ``-D`` flags from ``compile_commands.json``. A branch on a macro ``defines``
+   does not state is read whatever the build does with it; to leave out what a
+   particular variant leaves out, mirror that variant into ``defines``. Treat one
    analysis run as **one variant**: set ``defines`` to the variant you want, and both
    sources and headers evaluate their conditions consistently.
 
 What can still hide code in a header:
 
-- a header no entry includes is read with the ``defines`` alone, as above: a branch they
-  do not decide the way the build does is left out;
+- a header no entry includes is read with the ``defines`` and ``target`` you configure:
+  a branch on a macro ``defines`` states with another value than the build's, or on the
+  target's identity when ``target`` is not the build's effective triple, is left out as
+  they decide it, and so is one on a target macro another header ``#undef``\ s;
 - an include guard undefined between two inclusions (``#undef FOO_H`` and an
   ``#include`` again) leaves a second entry that compiles the body again; the header is
   read as written then, but a header given both by ``-include`` and ``#include`` is
@@ -1372,6 +1377,63 @@ The flags an entry whose branches no parse decides is read for, each joined
   entry's ``directory`` first, then on the include path; never ``-include-pch`` or
   another ``-include-*`` or ``--include-*`` flag.
 
+.. _preprocessor_no_includer:
+
+A header no entry includes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Its parse is not the build's: the build may compile it with a ``-D`` the ``defines`` do
+not state, or for a target the ``target`` setting does not name. So of the branches its
+parse skips, only one whose whole ``#if`` chain the configuration **decides** is left out,
+and every other branch is read as written, markers and all. A chain is decided up to its
+first condition that is not, and an ``#elif`` or ``#else`` after a branch decided and
+taken is decided too. A condition is decided when every name it reads is:
+
+- a macro ``defines`` states (``-D``), whose value is decided in turn: ``"A=B"`` with
+  ``B`` unstated leaves ``#if A`` undecided, while ``#ifdef A`` and ``defined(A)`` read only
+  that ``A`` is defined;
+- with the ``target`` setting stated, a macro of the target's **identity**: its
+  architecture, operating system, object format and byte order (``__arm__``,
+  ``__x86_64__``, ``__linux__``, ``_WIN32``, ``__ELF__``, ``__BYTE_ORDER__``), which GCC and
+  clang set alike for one effective triple whatever the other flags, and the
+  **definedness** alone of the data model (``#ifdef __LP64__`` is decided,
+  ``#if __SIZEOF_LONG__ == 8`` is not). Without the setting the target is a guess (the
+  machine the analysis runs on), and none of them decides;
+- a literal (``#if 0``, ``#if (2 + 3) * 4 > 30``), and ``__has_include`` of a header name
+  (``<a.h>``, ``"a.h"``): the ``includes`` you configure say what is found. Of a macro
+  (``__has_include(CFG_HDR)``), as the macro is.
+
+Never decided: a macro the header itself ``#define``\ s or ``#undef``\ s (``defines``
+or not); a macro a build passes (``__ZEPHYR__``, ``_DEBUG``, ``NDEBUG``); the compiler's
+identity (``__clang__``, ``__GNUC__``: libclang is clang, the build's compiler may not be,
+and clang's own ``__LITTLE_ENDIAN__`` and ``__ILP32__`` with it); what another flag
+decides (``__thumb__``, ``__ARM_ARCH``, ``__OPTIMIZE__``); the language
+(``__cplusplus``, ``__STDC_VERSION__``); clang's other ``__has_*`` tests; and a condition
+the scan cannot read (a string). The directives are read from the header's text, through
+line splices, comments, string literals and the ``%:`` digraph.
+
+When such a header has a branch read for a condition the configuration does not decide,
+the build (or ``codelinks analyse``) prints one information line per compilation
+database, at its first line, naming the headers (at most five, relative to the
+database's directory) and counting the branches:
+
+.. code-block:: text
+
+   build/compile_commands.json:1: codelinks: 1 header that no entry of this compilation
+   database includes is read with the `[preprocessor]` table, and 2 `#if` arms on a
+   condition the table does not decide are read as written rather than left out:
+   `../src/orphan.h`. To leave out what the build leaves out, state the macros in
+   `[preprocessor] defines` and the target in `target`, or include it from an entry's
+   file. [codelinks.preprocessor_no_includer]
+
+It is not a warning: it can over-report, never hide, so a ``-W`` build does not fail on
+it, and it needs no ``suppress_warnings``. To read such a header as the build does, state
+the macros in ``defines`` and the build's **effective** triple in ``target`` (a ``-m32``,
+``-mx32``, ``-mbig-endian``, ``-EB``, ``-EL`` or ``-mabi=`` changes it), or include the
+header from a file the database compiles. The rule and its two lists of target macros
+are ubCode's (its ``codelinks.preprocessor_no_includer`` finding), so the two read the
+same branches.
+
 Example
 ~~~~~~~
 
@@ -1392,8 +1454,10 @@ Example
    #endif
 
 When no entry includes it, with ``defines = ["VARIANT_A"]`` both ``IMPL_BASE`` and
-``IMPL_VAR_A`` are extracted, and with ``defines = []`` only ``IMPL_BASE`` is extracted —
-the ``#ifdef VARIANT_A`` block is inactive, so its need is dropped. When an entry built
+``IMPL_VAR_A`` are extracted, and with ``defines = []`` both are extracted too: nothing
+states ``VARIANT_A``, so its ``#ifdef`` block is read, and the information line names the
+header. With no compilation database at all, ``defines = []`` extracts only ``IMPL_BASE``
+— the ``#ifdef VARIANT_A`` block is inactive, so its need is dropped. When an entry built
 with ``-DVARIANT_A`` includes it, ``IMPL_VAR_A`` is extracted whatever ``defines`` says. The include guard (``#ifndef FEATURE_HPP``) is always
 active when the header is parsed on its own, so ``IMPL_BASE`` is never suppressed by it,
 even when one of the header's own includes includes it back.
@@ -1487,7 +1551,9 @@ where a marker your build compiles is missing:
 - **headers**: a header no entry includes, and a file no entry applies to, is read for the
   ``target`` setting, else the machine the analysis runs on (a header an entry includes is
   read for the target and flags of every entry that includes it,
-  :ref:`preprocessor_headers`);
+  :ref:`preprocessor_headers`); of a header no entry includes, a branch on a target macro
+  is left out only when ``target`` is set and the macro is one of the target's identity
+  (:ref:`preprocessor_no_includer`);
 - **response files** (``@args.rsp``): libclang does not read them, so a ``--target``,
   ``-mcpu`` or ``-D`` inside one is not read;
 - **the type macros**: clang's ``arm-none-eabi`` makes ``__INT32_TYPE__`` an ``int``,

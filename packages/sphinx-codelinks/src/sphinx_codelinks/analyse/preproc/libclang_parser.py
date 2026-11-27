@@ -100,6 +100,7 @@ def extract_active_comments(
     return _active_comments(tu, file_path, skipped)
 
 
+# @Read a header no entry includes for what its configuration decides, IMPL_PREPROC_8, impl, [FE_PREPROC]
 def extract_decided_comments(
     file_path: Path,
     args: list[str],
