@@ -16,8 +16,9 @@ which this repository holds canonically and ubCode is to vendor.
 
 Audience: implementers of a second reader, and anyone changing this package.
 
-Status: describes the implementation as it is (version 1.1.0). When behaviour changes, this
-document, the corpus and the tests change in the same commit. Every rule names what
+Status: describes the implementation as it is (version 1.2.0, and the changes its changelog
+lists as unreleased). When behaviour changes, this document, the corpus and the tests
+change in the same commit. Every rule names what
 enforces it: "corpus: `name`" is the conformance case of that name, run by
 `tests/test_conformance.py::test_case` (and, from a file, `::test_case_read_from_a_file`);
 `test_reader.py::…` is a unit test, for what the corpus cannot state (messages, bytes,
@@ -101,10 +102,11 @@ object identity). A rule marked **(not pinned)** has neither.
    or a negative number; any number written with a fraction or an exponent, even `1.0` or
    `1e0`; `true`; `null`. It is checked before anything else in the envelope, so a file of
    a later format that has no `versions` is refused for its format, not for the envelope
-   it lacks. No writer writes the key yet. (On opt-in only, the reader also reads the
-   draft `"2a1"`, an experimental format with a contract and a corpus of its own:
-   [`v2a1-draft.md`](v2a1-draft.md). Without the opt-in, which this contract's corpus
-   never asks for, `"2a1"` is refused as above.)
+   it lacks. No format-1 writer writes the key yet. (On opt-in only, the reader also reads
+   the draft `"2a2"`, an experimental format with a contract and a corpus of its own:
+   [`v2a2-draft.md`](v2a2-draft.md). Without the opt-in, which this contract's corpus
+   never asks for, `"2a2"` is refused as above; `"2a1"`, the draft it replaces, is
+   refused with or without it.)
    Enforced by: corpus: `format-version-1`, `format-version-absent-is-1`,
    `format-version-above-1-is-refused`, `format-version-a-pre-release-is-refused`,
    `format-version-a-release-candidate-is-refused`,

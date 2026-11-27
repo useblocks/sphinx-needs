@@ -328,12 +328,12 @@ def _needs_json(app: Any) -> bytes:
     )
 
 
-@pytest.mark.parametrize("format_version", ["1", "2a1"])
+@pytest.mark.parametrize("format_version", ["1", "2a2"])
 def test_needs_json_is_the_same_bytes_either_way(
     format_version: str, make_app: Any, tmp_path: Path
 ) -> None:
     """A project holding namespaced ids writes the same needs.json, format 1 and the
-    draft ``"2a1"`` alike, with the switch on and off: the values reach no file."""
+    draft ``"2a2"`` alike, with the switch on and off: the values reach no file."""
     written = []
     for switch in (True, False):
         srcdir = tmp_path / f"src_{switch}"

@@ -143,6 +143,23 @@ Improvements
   silence it sees it again, and a ``-W`` build then fails: list ``needs.unknown_part_keys``. Which parts a need
   keeps is unchanged. (:pr:`2586`)
 
+- ✨ **needs.json draft "2a2" (experimental), replacing "2a1"**: with :ref:`needs_json_format_version`
+  ``= "2a2"``, a need's :ref:`parts <need_part>` are a section of its record, ``"parts": [{"id": "zeta",
+  "text": "last id first"}, {"id": "alpha", "text": "first id second"}]``, beside its ``content`` and in the
+  order the need holds them -- the parts its content marks in the order written, then the parts it states (its
+  record's, or those it was given) in the order given --
+  where "2a1" wrote them as ``content.parts``, which a file written without its content lost. Leaving out the
+  ``content`` (:ref:`needs_json_exclude_fields`) keeps the parts, with their texts; naming ``parts`` leaves out the
+  section alone; a need without parts has no ``parts``. A link to the empty part, ``REQ_1.``, stays the dead link it
+  is through a draft file: written ``{"id": "REQ_1", "part": ""}``, read back as ``REQ_1.`` and reported again,
+  where a 2a1 file turned it into a live link to ``REQ_1``. :ref:`needimport` and :ref:`needs_external_needs` read
+  "2a2" and refuse a "2a1" file, with the warning they give every format they do not read; a part entry of a wrong
+  shape, or a second entry of one id, is one warning, and the need is read without it. The value ``"2a1"`` is an
+  unknown value now: a project that sets it gets one ``needs.config`` warning, which names ``"2a2"``, and a
+  ``needs.json`` of format 1, until it sets ``"2a2"``. ``ENV_DATA_VERSION`` is 35, was 34, so that a page whose
+  ``needimport`` read a "2a1" file reads it again: the first build after upgrading reads every document again.
+  See :ref:`needs_builder_format_draft`. (:pr:`2594`)
+
 Bug fixes
 .........
 
@@ -454,7 +471,7 @@ Improvements
   builder obey the option; :ref:`needs_json_exclude_fields`, :ref:`needs_builder_filter`,
   :ref:`needs_reproducible_json` and :ref:`needs_json_include_link_conditions` apply, while
   :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with a warning. The format is
-  :ref:`needs_builder_format_2a1`.
+  :ref:`needs_builder_format_draft`.
 
   :ref:`needimport` and :ref:`needs_external_needs` read a 2a1 file, and an imported or external need keeps the
   source its record carries before the hops of this build, so re-exporting it writes them all: the source travels

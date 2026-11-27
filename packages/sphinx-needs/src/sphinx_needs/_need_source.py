@@ -9,7 +9,7 @@ than a hop kind; an external need has none). The legacy location keys of a need 
 ``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
 the hops plus a few stored legacy facts, and are unchanged. The hop types are
 re-exported from :mod:`sphinx_needs.api`. Until the final ``needs.json`` format version
-2 carries them (the draft ``"2a1"`` writes them, and does not end that), a 9.x
+2 carries them (the drafts of it write them, and do not end that), a 9.x
 minor release only adds to them (an optional field, a hop kind); a rename, a removal or
 a change of an existing field's meaning or type waits for 10.0, because published
 sibling extensions construct them (see :ref:`api_public`).
@@ -74,7 +74,7 @@ class NeedSourcePhysical:
     """Where a hop's text physically is: a file under a named root, or a URL.
 
     **Provisional** until the final ``needs.json`` format version 2 carries it (the
-    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    drafts of it do not end that): additions only through 9.x (new optional fields;
     a rename, a removal or a change of an existing field's meaning or type waits for
     10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
@@ -100,7 +100,7 @@ class NeedSourceSemantic:
     """One entry of a hop's semantic location: a section, a domain object, a service.
 
     **Provisional** until the final ``needs.json`` format version 2 carries it (the
-    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    drafts of it do not end that): additions only through 9.x (new optional fields;
     a rename, a removal or a change of an existing field's meaning or type waits for
     10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
@@ -150,7 +150,7 @@ class NeedSourceHop:
     (docutils 0.21 logs it).
 
     **Provisional** until the final ``needs.json`` format version 2 carries it (the
-    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    drafts of it do not end that): additions only through 9.x (new optional fields;
     a rename, a removal or a change of an existing field's meaning or type waits for
     10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
@@ -161,8 +161,8 @@ class NeedSourceHop:
     open: a minor release may add a kind."""
     origin: str | None = None
     """The project the hop belongs to: ``None`` for a hop of this build; on a hop read
-    from a ``needs.json`` of the experimental format 2a1 (a need's ``upstream``), the name
-    of the project that wrote it, as the file gives it -- or, where the file names no
+    from a ``needs.json`` of the experimental draft of format 2 (a need's
+    ``upstream``), the name of the project that wrote it, as the file gives it -- or, where the file names no
     project, the file as the reader names it (its path relative to the source
     directory, a needimport's file or an external source's ``json_path`` alike, or its
     URL as written). A key into a registry of origins (a repository, a test run)
@@ -199,7 +199,7 @@ class NeedSourceHop:
 def upstream_hops(
     hops: Iterable[Mapping[str, Any]], *, origin: str
 ) -> tuple[NeedSourceHop, ...]:
-    """The hops of a record of a ``needs.json`` of the draft format 2a1 (its ``source``,
+    """The hops of a record of a ``needs.json`` of the draft of format 2 (its ``source``,
     as ub-needs-exchange hands it on: plain objects, their shape validated), as the
     need's ``upstream``, innermost first.
 
@@ -244,7 +244,7 @@ def _upstream_hop(hop: Mapping[str, Any], origin: str) -> NeedSourceHop:
 
 
 def writing_project(document: Mapping[str, Any]) -> str | None:
-    """The name of the project that wrote a ``needs.json`` of the draft format 2a1, from
+    """The name of the project that wrote a ``needs.json`` of the draft of format 2, from
     its envelope (``project.name``), or ``None`` where it names none."""
     project = document.get("project")
     name = project.get("name") if isinstance(project, Mapping) else None

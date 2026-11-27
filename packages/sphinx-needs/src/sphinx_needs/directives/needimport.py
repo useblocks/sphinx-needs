@@ -24,7 +24,7 @@ from sphinx_needs._need_source import (
     upstream_hops,
     writing_project,
 )
-from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
+from sphinx_needs._needsfile_draft import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.api.need import _in_restricted_parse
 from sphinx_needs.config import NeedsSphinxConfig
@@ -176,7 +176,7 @@ class NeedimportDirective(SphinxDirective):
             read = partial(exchange.load, correct_need_import_path)
 
         try:
-            # a draft 2a1 file is read too: reading it is harmless, only writing one is
+            # a draft file is read too: reading it is harmless, only writing one is
             # behind needs_json_format_version
             selected = read().select_version(version, drafts=READ_DRAFTS)
         except exchange.ExchangeError as err:
@@ -199,7 +199,7 @@ class NeedimportDirective(SphinxDirective):
 
         # note this is not exactly NeedsInfoType, because the export removes/adds some keys
         all_needs: dict[str, dict[str, Any]] = {r.key: r.fields for r in records}
-        # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
+        # a draft record's hops, the need's upstream: a hop with no origin is the writing
         # project's, else the file's as this directive names it
         origin = writing_project(selected.data) or source_label
         upstream = {r.key: r.source for r in records}

@@ -112,7 +112,7 @@ creation, so they cannot go stale. Read-only attributes expose them: `id_ns` (te
 
 A key of the need's mapping (a `_computed` key, a `NeedsCoreFields` entry) would have
 been a root filter name, a `needs_schema` property, a `needs.json` key and a reserved field
-name at once. None of those is wanted: `needs.json` format 1 and the draft `"2a1"` are
+name at once. None of those is wanted: `needs.json` format 1 and its draft `"2a2"` are
 byte-identical with the switch on and off, and the names `ns`, `local_id`, `id_ns` and
 `id_local` stay free for a project's fields. `ENV_DATA_VERSION` 28 records the two slots.
 

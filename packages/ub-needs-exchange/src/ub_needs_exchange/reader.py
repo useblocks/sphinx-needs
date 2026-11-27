@@ -18,10 +18,11 @@ selecting a version (4), a record -- the key is its id, the legacy ``description
 a reader that prefixes them follows (11). The corpus
 ``tests/fixtures/needs_json_reading_conformance.toml`` pins them.
 
-On opt-in, it also reads a DRAFT of the next format, ``"2a1"`` (``select_version(...,
-drafts=("2a1",))``): an experimental format, which may change or be removed in any
-release while it is a draft. Its rules are ``design/v2a1-draft.md``, and its own corpus
-``tests/fixtures/needs_json_2a1_draft_conformance.toml``.
+On opt-in, it also reads a DRAFT of the next format, ``"2a2"`` (``select_version(...,
+drafts=("2a2",))``): an experimental format, which may change or be removed in any
+release while it is a draft, and which replaces the draft ``"2a1"`` (a ``"2a1"`` file is
+refused as every later format is). Its rules are ``design/v2a2-draft.md``, and its own
+corpus ``tests/fixtures/needs_json_2a2_draft_conformance.toml``.
 """
 
 from __future__ import annotations
@@ -39,6 +40,7 @@ __all__ = (
     "DEFAULTS_REMOVED_WITHOUT_SCHEMA",
     "DRAFT_HAS_VERSIONS",
     "DUPLICATE_ID",
+    "DUPLICATE_PART_ID",
     "FIELDS_NOT_OBJECT",
     "FIELD_RESERVED",
     "FORMAT_VERSION",
@@ -53,6 +55,8 @@ __all__ = (
     "LINK_INVALID",
     "NEEDS_MISSING",
     "NOT_AN_OBJECT",
+    "PARTS_NOT_A_LIST",
+    "PART_INVALID",
     "PROJECT_INVALID",
     "RECORD_NOT_OBJECT",
     "SOURCE_NOT_A_LIST",
@@ -94,10 +98,10 @@ CURRENT_VERSION_MISSING = "current_version_missing"
 VERSION_NOT_FOUND = "version_not_found"
 """The version asked for (requested, or the current one) is not a key of ``versions``."""
 NEEDS_MISSING = "needs_missing"
-"""The selected version has no ``needs`` object; in a ``"2a1"`` draft, the document's
+"""The selected version has no ``needs`` object; in a ``"2a2"`` draft, the document's
 ``needs`` is absent or not an array."""
 DRAFT_HAS_VERSIONS = "draft_has_versions"
-"""A ``"2a1"`` draft has a ``versions`` or a ``current_version`` key: a draft has none,
+"""A ``"2a2"`` draft has a ``versions`` or a ``current_version`` key: a draft has none,
 and a reader of format 1 that does not check ``format_version`` would read one that kept
 them as format 1."""
 
@@ -110,7 +114,7 @@ DEFAULTS_REMOVED_WITHOUT_SCHEMA = "defaults_removed_without_schema"
 """The version was written without its default values, and carries no ``needs_schema``
 to restore them from."""
 
-# the codes of a Diagnostic of a ``"2a1"`` draft (``design/v2a1-draft.md``), besides
+# the codes of a Diagnostic of a ``"2a2"`` draft (``design/v2a2-draft.md``), besides
 # ``record_not_object``
 PROJECT_INVALID = "project_invalid"
 """The draft's ``project`` is absent or not an object, or its ``name`` or ``version`` is
@@ -141,9 +145,18 @@ SOURCE_NOT_A_LIST = "source_not_a_list"
 HOP_INVALID = "hop_invalid"
 """A hop of a draft's ``source`` is not an object, has no string ``kind``, or has a known
 key of the wrong type; that hop is not read."""
+PARTS_NOT_A_LIST = "parts_not_a_list"
+"""A draft's record has a ``parts`` that is not an array; its parts are not read."""
+PART_INVALID = "part_invalid"
+"""An entry of a draft's record's ``parts`` is not an object, or its ``id`` or ``text`` is
+absent or not a string; that entry is not read."""
+DUPLICATE_PART_ID = "duplicate_part_id"
+"""An entry of a draft's record's ``parts`` has the ``id`` of an earlier one; the first is
+read, this one skipped."""
 
-#: The drafts of a later format this reader reads, each only when asked to.
-_DRAFTS = frozenset({"2a1"})
+#: The drafts of a later format this reader reads, each only when asked to: ``"2a2"``,
+#: which replaces ``"2a1"``.
+_DRAFTS = frozenset({"2a2"})
 
 #: The keys of a draft's projected record that come from the record itself, its
 #: ``content`` or its placement, and never from its ``fields``.
@@ -199,7 +212,7 @@ class Record:
     """What was found in this record."""
     source: tuple[Mapping[str, Any], ...] = ()
     """The record's hops, innermost first, each as the file has it (the document's own
-    object): a ``"2a1"`` draft's ``source``, less any hop that is not valid. Empty for
+    object): a ``"2a2"`` draft's ``source``, less any hop that is not valid. Empty for
     a record of format 1, which has none. Experimental, as the draft is."""
 
 
@@ -216,11 +229,11 @@ class Version:
     stripped defaults with no schema to restore them."""
     format_version: int | str = FORMAT_VERSION
     """The format the version is read as: :data:`FORMAT_VERSION`, or a draft such as
-    ``"2a1"``, whose :attr:`data` is the whole document (it has no ``versions``)."""
+    ``"2a2"``, whose :attr:`data` is the whole document (it has no ``versions``)."""
 
     def schema_defaults(self) -> dict[str, Any]:
         """The ``default`` of each property of the version's ``needs_schema``; none for a
-        ``"2a1"`` draft, which carries no schema."""
+        ``"2a2"`` draft, which carries no schema."""
         if self.format_version != FORMAT_VERSION:
             return {}
         schema = self.data.get("needs_schema")
@@ -245,8 +258,8 @@ class Version:
         (Copying them costs more than reading the file: about a second for a needs.json
         of twenty thousand needs.)
 
-        A ``"2a1"`` draft's records are projected to the shape a format-1 record has,
-        and carry their hops in :attr:`Record.source` (``design/v2a1-draft.md``); it has
+        A ``"2a2"`` draft's records are projected to the shape a format-1 record has,
+        and carry their hops in :attr:`Record.source` (``design/v2a2-draft.md``); it has
         no schema and no legacy keys, so ``apply_schema_defaults`` changes nothing there.
 
         :param apply_schema_defaults: Merge the ``needs_schema`` defaults under each
@@ -297,14 +310,16 @@ class Document:
         sections 3 and 4).
 
         :param drafts: The drafts of a later format to read as well, of which there is
-            one, ``"2a1"`` (``design/v2a1-draft.md``). Without it, a ``"2a1"`` file is
-            refused as any later format is. **Experimental**: a draft, and this
+            one, ``"2a2"`` (``design/v2a2-draft.md``). Without it, a ``"2a2"`` file is
+            refused as any later format is, and a file of the draft it replaces,
+            ``"2a1"``, is refused either way. **Experimental**: a draft, and this
             parameter, may change or be removed in any release while the format is a
-            draft. A ``"2a1"`` document has one version, which ``None`` selects, and a
+            draft. A ``"2a2"`` document has one version, which ``None`` selects, and a
             name asked for selects it only when it is the document's
             ``project.version``.
-        :raises ValueError: If ``drafts`` names a draft this reader does not know (a
-            string is a collection of its characters, so ``"2a1"`` is one too).
+        :raises ValueError: If ``drafts`` names a draft this reader does not know --
+            ``"2a1"`` among them -- (a string is a collection of its characters, so
+            ``"2a2"`` is one too).
         :raises ExchangeError: If ``format_version`` is not a format version or names
             one other than :data:`FORMAT_VERSION` or a draft asked for, ``versions`` is
             missing, no version is requested and ``current_version`` names none, the
@@ -376,7 +391,7 @@ class Document:
 def _select_draft(
     data: Mapping[str, Any], requested: str | None, draft: str
 ) -> Version:
-    """The one version of a ``"2a1"`` draft (``design/v2a1-draft.md`` section 2)."""
+    """The one version of a ``"2a2"`` draft (``design/v2a2-draft.md`` section 2)."""
     for key in ("versions", "current_version"):
         if key in data:
             raise ExchangeError(
@@ -427,7 +442,7 @@ def _draft_kept(
     needs: list[Any],
 ) -> tuple[list[tuple[int, str, Mapping[str, Any]]], list[Diagnostic]]:
     """The records of a draft that are read, each with its index, and a finding for each
-    that is skipped (``design/v2a1-draft.md`` section 3.1)."""
+    that is skipped (``design/v2a2-draft.md`` section 3.1)."""
     kept: list[tuple[int, str, Mapping[str, Any]]] = []
     skipped: list[Diagnostic] = []
     seen: dict[str, int] = {}
@@ -475,7 +490,7 @@ def _draft_kept(
 
 def _draft_records(needs: list[Any]) -> list[Record]:
     """A draft's records, each projected to the shape a format-1 record has
-    (``design/v2a1-draft.md`` section 3)."""
+    (``design/v2a2-draft.md`` section 3)."""
     return [
         _draft_record(index, need_id, value)
         for index, need_id, value in _draft_kept(needs)[0]
@@ -527,22 +542,25 @@ def _draft_record(index: int, need_id: str, value: Mapping[str, Any]) -> Record:
                 projected["content"] = content["text"]
             if "doctype" in content:
                 projected["doctype"] = content["doctype"]
-            if "parts" in content:
-                parts = content["parts"]
-                projected["parts"] = (
-                    {
-                        part_id: {"id": part_id, "content": text}
-                        for part_id, text in parts.items()
-                    }
-                    if isinstance(parts, Mapping)
-                    else parts
-                )
+            # any other key of content is ignored: "2a1"'s ``parts`` among them
         else:
             diagnostics.append(
                 Diagnostic(
                     CONTENT_NOT_OBJECT,
                     _path(where, "content"),
                     "'content' is not an object; the need's content is not read",
+                )
+            )
+    if "parts" in value:
+        if isinstance(value["parts"], list):
+            if parts := _draft_parts(value["parts"], where, diagnostics):
+                projected["parts"] = parts
+        else:
+            diagnostics.append(
+                Diagnostic(
+                    PARTS_NOT_A_LIST,
+                    _path(where, "parts"),
+                    "'parts' is not an array; the need's parts are not read",
                 )
             )
     hops: tuple[Mapping[str, Any], ...] = ()
@@ -590,6 +608,45 @@ def _placement_keys(placement: Mapping[str, Any]) -> dict[str, Any]:
         "section_name": sections[0] if sections else None,
         "signature": signature,
     }
+
+
+def _draft_parts(
+    entries: list[Any], where: str, diagnostics: list[Diagnostic]
+) -> dict[str, dict[str, str]]:
+    """A record's parts section as format 1 writes a need's parts, ``{id: {"id": id,
+    "content": text}}``, in the section's order (``design/v2a2-draft.md`` section 3.4):
+    an invalid entry dropped, and of two entries with one id the first read. An empty
+    id is a well-shaped entry, for the reading project to refuse."""
+    parts: dict[str, dict[str, str]] = {}
+    first: dict[str, int] = {}
+    for position, entry in enumerate(entries):
+        at = _path(where, "parts", str(position))
+        if not (
+            isinstance(entry, Mapping)
+            and isinstance(part_id := entry.get("id"), str)
+            and isinstance(text := entry.get("text"), str)
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    PART_INVALID,
+                    at,
+                    f"the part at index {position} is not an object of a string 'id' "
+                    "and a string 'text'; it is not read",
+                )
+            )
+        elif part_id in first:
+            diagnostics.append(
+                Diagnostic(
+                    DUPLICATE_PART_ID,
+                    _path(at, "id"),
+                    f"the part at index {position} has the id {part_id!r} of the part "
+                    f"at index {first[part_id]}; the first is read, this one skipped",
+                )
+            )
+        else:
+            first[part_id] = position
+            parts[part_id] = {"id": part_id, "content": text}
+    return parts
 
 
 def _draft_links(
@@ -644,12 +701,13 @@ def _draft_links(
 def _link_string(need_id: str, part: str | None, condition: str | None) -> str:
     """A link as format 1 writes it: sphinx-needs' ``NeedLink.to_link_string``.
 
-    The part follows a ``.`` when it is not empty, and the condition is in brackets one
-    deeper than the longest run of ``]`` in it, after one space when it starts with
-    ``[`` (after any spaces) and ends with ``]``, so that the string reads back as the
-    same link.
+    The part follows a ``.`` where there is one -- the empty part too, ``B.``, which
+    names no part a need can have, as format 1 writes it --, and the condition is in
+    brackets one deeper than the longest run of ``]`` in it, after one space when it
+    starts with ``[`` (after any spaces) and ends with ``]``, so that the string reads
+    back as the same link.
     """
-    base = f"{need_id}.{part}" if part else need_id
+    base = need_id if part is None else f"{need_id}.{part}"
     if condition is None:
         return base
     depth = 1 + max((len(run) for run in re.findall(r"\]+", condition)), default=0)
@@ -683,7 +741,7 @@ def _is_line(value: Any) -> bool:
 
 
 def _hop_problem(hop: Any) -> str | None:
-    """What is wrong with a hop's shape, or ``None`` (``design/v2a1-draft.md``
+    """What is wrong with a hop's shape, or ``None`` (``design/v2a2-draft.md``
     section 4). Keys it does not know are not checked."""
     if not isinstance(hop, Mapping):
         return "is not an object"
