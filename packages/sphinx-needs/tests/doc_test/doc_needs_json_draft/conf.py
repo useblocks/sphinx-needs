@@ -14,7 +14,7 @@ extensions = ["sphinx_needs", "sphinx.ext.autodoc", "jsondraft_service"]
 # the included files are read through their hosts only
 exclude_patterns = ["frag/**", "_build"]
 
-needs_json_format_version = "2a1"
+needs_json_format_version = "2a2"
 needs_types = {
     "req": {"title": "Requirement", "prefix": "R_"},
     "spec": {
@@ -25,5 +25,11 @@ needs_types = {
 }
 needs_fields = {"asil": {"default": "QM", "nullable": True}}
 needs_links = {
-    "implements": {"incoming": "is implemented by", "outgoing": "implements"}
+    # its link to the empty part (``REQ_5.``) is a dead link this project allows, so
+    # that every build of it stays free of warnings
+    "implements": {
+        "incoming": "is implemented by",
+        "outgoing": "implements",
+        "allow_dead_links": True,
+    }
 }

@@ -1,11 +1,13 @@
-"""The draft needs.json format "2a1" (experimental): what the builders write under
-``needs_json_format_version = "2a1"``, and that nothing moves without it.
+"""The draft needs.json format "2a2" (experimental): what the builders write under
+``needs_json_format_version = "2a2"``, and that nothing moves without it.
 
 The project (``doc_test/doc_needs_json_draft``) has a need with a part, a link to that
-part and one under a condition, a nested need (``parent_needs``), a need in a nested
-include, a ``needimport`` of a v1 file, a need in an autodoc docstring, a need a local
-service generates, a link type of the project's own, and a field one need type alone
-declares.
+part and one under a condition, a need whose parts are written out of id order, a link
+to the empty part (``REQ_5.``, a dead link its link type allows) and one to a part of
+that need, a nested need (``parent_needs``), a need in a nested include, a
+``needimport`` of a v1 file (one of its needs states parts beside the one its content
+marks), a need in an autodoc docstring, a need a local service generates, a link type of
+the project's own, and a field one need type alone declares.
 """
 
 from __future__ import annotations
@@ -26,9 +28,12 @@ from sphinx_needs_testkit import build_warnings
 PROJECT = "doc_test/doc_needs_json_draft"
 
 BETA = (
-    'WARNING: needs.json format "2a1" is experimental: a file written in it may not '
+    'WARNING: needs.json format "2a2" is experimental: a file written in it may not '
     "be readable by the next release of sphinx-needs [needs.beta]"
 )
+
+#: The keys of a record, in their order: ``parts`` only where the need has parts
+KEYS = ["id", "type", "fields", "links", "content", "parts", "source"]
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -53,27 +58,28 @@ def _config_warnings(app: Any) -> list[str]:
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
 )
-def test_the_needs_builder_writes_2a1(test_app: Any, snapshot: Any) -> None:
+def test_the_needs_builder_writes_the_draft(test_app: Any, snapshot: Any) -> None:
     """The envelope and every record: ``id``, ``type``, the need type's fields (core
     authored ones among them; ``collapse`` and ``hide`` excluded by default, as in
     v1), its links (a bare id, or an object where a part or a condition is given; no
-    back links), its content (with its parts) and its source hops, innermost first,
-    with ``None`` left out. No ``versions``, no schema, no computed key, no legacy
-    location key, no ``type_*``, ``external_css``, ``arch`` or rendering instruction."""
+    back links), its content, its parts (where it has any) and its source hops,
+    innermost first, with ``None`` left out. No ``versions``, no schema, no computed
+    key, no legacy location key, no ``type_*``, ``external_css``, ``arch`` or rendering
+    instruction."""
     app = test_app
     app.build()
 
     assert build_warnings(app) == [BETA]
     data = _needs_json(app)
     assert list(data) == ["format_version", "project", "creator", "created", "needs"]
-    assert data["format_version"] == "2a1"
+    assert data["format_version"] == "2a2"
     assert data["project"] == {"name": "up", "version": "1.0"}
     assert data["creator"] == {"program": "sphinx_needs", "version": __version__}
     assert [record["id"] for record in data["needs"]] == sorted(
         record["id"] for record in data["needs"]
     )
     for record in data["needs"]:
-        assert list(record) == ["id", "type", "fields", "links", "content", "source"]
+        assert list(record) == [k for k in KEYS if k != "parts" or k in record]
     # a hop's keys in the order of its fields, a field the hop does not hold left out
     code, page = _records(app)["REQ_DOC"]["source"]
     assert list(code) == ["kind", "physical", "semantic", "language"]
@@ -106,9 +112,9 @@ def test_the_file_reads_back_without_a_finding(test_app: Any) -> None:
     app.build()
 
     version = exchange.load(Path(app.outdir, "needs.json")).select_version(
-        None, drafts=("2a1",)
+        None, drafts=("2a2",)
     )
-    assert version.format_version == "2a1"
+    assert version.format_version == "2a2"
     assert version.name == "1.0"
     assert list(version.diagnostics) == []
     records = version.records()
@@ -123,7 +129,7 @@ def test_the_file_reads_back_without_a_finding(test_app: Any) -> None:
     indirect=True,
 )
 def test_what_a_record_leaves_out(test_app: Any) -> None:
-    """The keys a 2a1 record has no place for, by name, on every record."""
+    """The keys a draft record has no place for, by name, on every record."""
     app = test_app
     app.build()
 
@@ -219,9 +225,57 @@ def test_a_null_value_is_left_out(test_app: Any) -> None:
 
 
 @pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
+)
+def test_the_parts_are_a_section_of_the_record(test_app: Any) -> None:
+    """A need's parts are the record's ``parts``, beside its ``content`` and not in it:
+    one ``{id, text}`` per part, in the order the need holds them -- the parts its
+    content marks in the order written (``REQ_5``: ``zeta`` first), then the parts its
+    record stated, in the order given (``IMP_2``: its content's ``zc``, whose text the
+    content gives, then the stated ``aa``) -- never sorted. A need without parts has no
+    ``parts`` key, not an empty one."""
+    app = test_app
+    app.build()
+
+    records = _records(app)
+    assert records["REQ_5"]["parts"] == [
+        {"id": "zeta", "text": "last id first"},
+        {"id": "alpha", "text": "first id second"},
+        {"id": "mid", "text": "middle"},
+    ]
+    assert records["IMP_2"]["parts"] == [
+        {"id": "zc", "text": "content zc"},
+        {"id": "aa", "text": "stated aa"},
+    ]
+    assert records["REQ_1"]["parts"] == [{"id": "p1", "text": "the part"}]
+    for record in records.values():
+        assert "parts" not in record["content"], record["id"]
+    without = [r["id"] for r in records.values() if "parts" not in r]
+    assert "REQ_2" in without
+    assert "SPEC_2" in without
+    # every record with parts is one of the three, and every other has none
+    assert sorted(set(records) - set(without)) == ["IMP_2", "REQ_1", "REQ_5"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
+)
+def test_a_link_to_the_empty_part_is_written_with_its_part(test_app: Any) -> None:
+    """``REQ_5.`` names the empty part, which no need can have: it is written as the
+    link it is, ``{"id": "REQ_5", "part": ""}``, never as a link to ``REQ_5``."""
+    app = test_app
+    app.build()
+
+    assert _records(app)["SPEC_2"]["links"]["implements"] == [
+        {"id": "REQ_5", "part": ""},
+        {"id": "REQ_5", "part": "alpha"},
+    ]
+
+
+@pytest.mark.parametrize(
     "test_app", [{"buildername": "needs_id", "srcdir": PROJECT}], indirect=True
 )
-def test_the_per_id_builder_writes_one_2a1_document_per_need(
+def test_the_per_id_builder_writes_one_draft_document_per_need(
     test_app: Any, snapshot: Any
 ) -> None:
     """One document per need, ``needs: [record]``, its record the one the needs
@@ -234,7 +288,7 @@ def test_the_per_id_builder_writes_one_2a1_document_per_need(
     documents = {path.name: _read(path) for path in sorted(folder.iterdir())}
     assert sorted(documents) == snapshot
     for name, document in documents.items():
-        assert document["format_version"] == "2a1"
+        assert document["format_version"] == "2a2"
         assert "versions" not in document
         assert len(document["needs"]) == 1
         assert f"{document['needs'][0]['id']}.json" == name
@@ -274,11 +328,11 @@ def test_the_default_writes_v1(test_app: Any) -> None:
     assert Path(app.outdir, "needs.json").read_bytes() == default
 
 
-@pytest.mark.parametrize("value", [2, "2", " 1", "01", "2a2", True, 1.0])
+@pytest.mark.parametrize("value", [2, "2", " 1", "01", "2a3", "2A2", True, 1.0])
 def test_an_unknown_value_warns_and_writes_v1(
     value: object, make_app: Any, tmp_path: Path
 ) -> None:
-    """Any value but ``1``, ``"1"`` and ``"2a1"`` is one ``needs.config`` warning, and
+    """Any value but ``1``, ``"1"`` and ``"2a2"`` is one ``needs.config`` warning, and
     the file is v1: the text ``"1"`` is read as ``1``, exactly, not as a number."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
@@ -290,7 +344,7 @@ def test_an_unknown_value_warns_and_writes_v1(
     try:
         app.build()
         assert _config_warnings(app) == [
-            f"WARNING: needs_json_format_version must be 1 or '2a1', not {value!r}; "
+            f"WARNING: needs_json_format_version must be 1 or '2a2', not {value!r}; "
             "writing format version 1 [needs.config]"
         ]
         data = _needs_json(app)
@@ -307,7 +361,7 @@ def test_the_option_is_read_from_ubproject_toml(make_app: Any, tmp_path: Path) -
     (srcdir / "conf.py").write_text(
         'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n'
     )
-    (srcdir / "ubproject.toml").write_text('[needs]\njson_format_version = "2a1"\n')
+    (srcdir / "ubproject.toml").write_text('[needs]\njson_format_version = "2a2"\n')
     (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
     app = make_app("needs", srcdir=srcdir, freshenv=True)
     try:
@@ -343,8 +397,8 @@ def _option_project(tmp_path: Path, conf: str = "", toml: str | None = None) -> 
 
 @pytest.mark.parametrize(
     ("override", "written", "warnings"),
-    [("2a1", "2a1", [BETA]), ("1", 1, [])],
-    ids=["2a1", "1"],
+    [("2a2", "2a2", [BETA]), ("1", 1, [])],
+    ids=["2a2", "1"],
 )
 def test_the_option_is_read_from_the_command_line(
     override: str,
@@ -353,7 +407,7 @@ def test_the_option_is_read_from_the_command_line(
     make_app: Any,
     tmp_path: Path,
 ) -> None:
-    """``-D needs_json_format_version=2a1`` writes a 2a1 file and ``=1`` a v1 one:
+    """``-D needs_json_format_version=2a2`` writes a draft file and ``=1`` a v1 one:
     the text is passed through, not converted as an integer is (#2530)."""
     srcdir = _option_project(tmp_path)
     app = make_app(
@@ -389,10 +443,46 @@ def test_an_unknown_command_line_value_warns_and_writes_v1(
     try:
         app.build()
         assert build_warnings(app) == [
-            "WARNING: needs_json_format_version must be 1 or '2a1', not '3'; "
+            "WARNING: needs_json_format_version must be 1 or '2a2', not '3'; "
             "writing format version 1 [needs.config]"
         ]
         assert "format_version" not in _needs_json(app)
+    finally:
+        app.cleanup()
+
+
+#: The one warning the value of the draft "2a2" replaced gives, wherever it is set
+REPLACED = (
+    "WARNING: needs_json_format_version must be 1 or '2a2', not '2a1': the draft "
+    '"2a1" is replaced by "2a2", which this release writes; writing format version 1 '
+    "[needs.config]"
+)
+
+
+@pytest.mark.parametrize(
+    ("conf", "toml", "override"),
+    [
+        ('needs_json_format_version = "2a1"\n', None, None),
+        ("", '"2a1"', None),
+        ("", None, "2a1"),
+    ],
+    ids=["conf.py", "ubproject.toml", "-D"],
+)
+def test_the_replaced_draft_names_its_successor_and_writes_v1(
+    conf: str, toml: str | None, override: str | None, make_app: Any, tmp_path: Path
+) -> None:
+    """``"2a1"``, the draft ``"2a2"`` replaces, is an unknown value: one
+    ``needs.config`` warning, which names ``"2a2"``, and a v1 file -- set in
+    ``conf.py``, in ``ubproject.toml`` or by ``-D``."""
+    srcdir = _option_project(tmp_path, conf, toml)
+    overrides = {} if override is None else {"needs_json_format_version": override}
+    app = make_app("needs", srcdir=srcdir, freshenv=True, confoverrides=overrides)
+    try:
+        app.build()
+        assert build_warnings(app) == [REPLACED]
+        data = _needs_json(app)
+        assert "format_version" not in data
+        assert "REQ_001" in data["versions"][""]["needs"]
     finally:
         app.cleanup()
 
@@ -488,11 +578,11 @@ def _build_twice(
 @pytest.mark.parametrize(
     ("first", "second", "written", "reread"),
     [
-        (None, "2a1", "2a1", ["index"]),
-        ("2a1", None, 1, ["index"]),
+        (None, "2a2", "2a2", ["index"]),
+        ("2a2", None, 1, ["index"]),
         (None, None, 1, []),
     ],
-    ids=["unset-then-2a1", "2a1-then-unset", "unset-then-unset"],
+    ids=["unset-then-2a2", "2a2-then-unset", "unset-then-unset"],
 )
 def test_a_changed_value_rereads_and_rewrites_the_file(
     first: str | None,
@@ -571,13 +661,13 @@ def test_one_beta_warning_per_build(test_app: Any) -> None:
     app.build()
 
     assert [w for w in build_warnings(app) if "[needs.beta]" in w] == [BETA]
-    assert _needs_json(app)["format_version"] == "2a1"
+    assert _needs_json(app)["format_version"] == "2a2"
     per_id = _read(Path(app.outdir, "needs_id", "REQ_1.json"))
-    assert per_id["format_version"] == "2a1"
+    assert per_id["format_version"] == "2a2"
     assert per_id["needs"] == [_records(app)["REQ_1"]]
 
 
-# --- the v1 options under 2a1 ----------------------------------------------------------
+# --- the v1 options under the draft -----------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -597,7 +687,7 @@ def test_remove_defaults_is_ignored_with_a_warning(test_app: Any) -> None:
 
     assert _config_warnings(app) == [
         "WARNING: needs_json_remove_defaults is ignored under "
-        'needs_json_format_version "2a1": a 2a1 file writes every default, and '
+        'needs_json_format_version "2a2": a 2a2 file writes every default, and '
         "carries no schema to restore one from [needs.config]"
     ]
     records = _records(app)
@@ -635,20 +725,29 @@ def test_remove_defaults_is_ignored_with_a_warning(test_app: Any) -> None:
 )
 def test_exclude_fields_is_honoured(test_app: Any) -> None:
     """A field's or a link type's name leaves it out, ``content`` the content and
-    ``source`` the hop list; a legacy location name has no 2a1 key, and warns once
+    ``source`` the hop list; a legacy location name has no draft key, and warns once
     (``lineno_content`` among the defaults is written by neither format, and does
-    not). ``collapse`` and ``hide`` are written once the list leaves them out."""
+    not). ``collapse`` and ``hide`` are written once the list leaves them out. The
+    parts are not the content's: they are written, with their texts, where the
+    content is left out."""
     app = test_app
     app.build()
 
     assert _config_warnings(app) == [
         "WARNING: needs_json_exclude_fields names 'docname', 'lineno', 'sections', "
         "'section_name', 'signature', 'external_url', 'is_import', 'is_external', which "
-        'have no key under needs_json_format_version "2a1": they are read from the '
+        'have no key under needs_json_format_version "2a2": they are read from the '
         "need's source; exclude 'source' to leave the source out [needs.config]"
     ]
-    for record in _records(app).values():
-        assert list(record) == ["id", "type", "fields", "links"]
+    records = _records(app)
+    assert records["REQ_5"]["parts"] == [
+        {"id": "zeta", "text": "last id first"},
+        {"id": "alpha", "text": "first id second"},
+        {"id": "mid", "text": "middle"},
+    ]
+    for record in records.values():
+        parts = ["parts"] if record["id"] in {"IMP_2", "REQ_1", "REQ_5"} else []
+        assert list(record) == ["id", "type", "fields", "links", *parts]
         assert "asil" not in record["fields"]
         assert "implements" not in record["links"]
         assert record["fields"]["collapse"] is False
@@ -656,25 +755,49 @@ def test_exclude_fields_is_honoured(test_app: Any) -> None:
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("excluded", "content", "keys"),
     [
-        {
-            "buildername": "needs",
-            "srcdir": PROJECT,
-            "confoverrides": {"needs_json_exclude_fields": ["doctype", "parts"]},
-        }
+        (
+            ["doctype"],
+            {"text": "A body with :np:`(p1) the part`."},
+            ["id", "type", "fields", "links", "content", "parts", "source"],
+        ),
+        (
+            ["parts"],
+            {"text": "A body with :np:`(p1) the part`.", "doctype": ".rst"},
+            ["id", "type", "fields", "links", "content", "source"],
+        ),
     ],
-    indirect=True,
+    ids=["doctype", "parts"],
 )
-def test_exclude_fields_reaches_into_the_content(test_app: Any) -> None:
-    """``doctype`` and ``parts``, keys of v1, are the content's keys of 2a1."""
-    app = test_app
-    app.build()
+def test_exclude_fields_names_the_doctype_or_the_parts(
+    excluded: list[str],
+    content: dict[str, str],
+    keys: list[str],
+    make_app: Any,
+    tmp_path: Path,
+) -> None:
+    """``doctype``, a key of v1, is the content's key in the draft; ``parts`` is the
+    record's, and naming it leaves out the parts section alone."""
+    import shutil
 
-    assert _config_warnings(app) == []
-    assert _records(app)["REQ_1"]["content"] == {
-        "text": "A body with :np:`(p1) the part`."
-    }
+    srcdir = tmp_path / "src"
+    shutil.copytree(Path(__file__).parent / PROJECT, srcdir)
+    app = make_app(
+        "needs",
+        srcdir=srcdir,
+        freshenv=True,
+        confoverrides={"needs_json_exclude_fields": excluded},
+    )
+    try:
+        app.build()
+        assert _config_warnings(app) == []
+        records = _records(app)
+        assert records["REQ_1"]["content"] == content
+        assert list(records["REQ_1"]) == keys
+        assert ("parts" in records["REQ_5"]) is (excluded != ["parts"])
+    finally:
+        app.cleanup()
 
 
 @pytest.mark.parametrize(
@@ -760,7 +883,7 @@ def test_reproducible_json_drops_created(test_app: Any) -> None:
     indirect=True,
 )
 def test_needs_file_is_ignored_with_a_warning(test_app: Any) -> None:
-    """``needs_file`` only accumulates the ``versions`` a 2a1 file does not have."""
+    """``needs_file`` only accumulates the ``versions`` a draft file does not have."""
     app = test_app
     Path(app.srcdir, "old.json").write_text(
         json.dumps(
@@ -774,8 +897,8 @@ def test_needs_file_is_ignored_with_a_warning(test_app: Any) -> None:
     app.build()
 
     assert _config_warnings(app) == [
-        'WARNING: needs_file is ignored under needs_json_format_version "2a1": a '
-        "2a1 file has no versions to accumulate [needs.config]"
+        'WARNING: needs_file is ignored under needs_json_format_version "2a2": a '
+        "2a2 file has no versions to accumulate [needs.config]"
     ]
     data = _needs_json(app)
     assert "versions" not in data
@@ -785,7 +908,7 @@ def test_needs_file_is_ignored_with_a_warning(test_app: Any) -> None:
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": PROJECT}], indirect=True
 )
-def test_a_build_that_writes_no_2a1_file_is_not_warned(test_app: Any) -> None:
+def test_a_build_that_writes_no_draft_file_is_not_warned(test_app: Any) -> None:
     """The option set, and no needs.json written: no warning, so a ``-W`` build of
     another format passes."""
     app = test_app
@@ -834,7 +957,7 @@ def test_an_unnamed_project_writes_no_name(make_app: Any, tmp_path: Path) -> Non
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(
-        'extensions = ["sphinx_needs"]\nneeds_json_format_version = "2a1"\n'
+        'extensions = ["sphinx_needs"]\nneeds_json_format_version = "2a2"\n'
     )
     (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
     app = make_app("needs", srcdir=srcdir, freshenv=True)
@@ -848,7 +971,7 @@ def test_an_unnamed_project_writes_no_name(make_app: Any, tmp_path: Path) -> Non
 def test_a_needs_file_without_versions_is_one_warning(
     make_app: Any, tmp_path: Path
 ) -> None:
-    """Under format 1, a ``needs_file`` with no ``versions`` -- a 2a1 file, or no
+    """Under format 1, a ``needs_file`` with no ``versions`` -- a draft file, or no
     needs.json at all -- is one warning, and a new file is written (it raised a
     ``KeyError``)."""
     srcdir = tmp_path / "src"
@@ -858,7 +981,7 @@ def test_a_needs_file_without_versions_is_one_warning(
     )
     (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
     (srcdir / "old.json").write_text(
-        json.dumps({"format_version": "2a1", "project": {"name": "x"}, "needs": []})
+        json.dumps({"format_version": "2a2", "project": {"name": "x"}, "needs": []})
     )
     app = make_app("needs", srcdir=srcdir, freshenv=True)
     try:
@@ -884,7 +1007,7 @@ def test_excluding_a_field_named_source_says_the_source_goes_too(
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(
         'extensions = ["sphinx_needs"]\n'
-        'needs_json_format_version = "2a1"\n'
+        'needs_json_format_version = "2a2"\n'
         'needs_fields = {"source": {"nullable": True}}\n'
         'needs_json_exclude_fields = ["source"]\n'
     )
@@ -896,7 +1019,7 @@ def test_excluding_a_field_named_source_says_the_source_goes_too(
         app.build()
         assert _config_warnings(app) == [
             "WARNING: needs_json_exclude_fields names 'source', which is both a field "
-            'of the project and, under needs_json_format_version "2a1", the need\'s '
+            'of the project and, under needs_json_format_version "2a2", the need\'s '
             "source: both are left out [needs.config]"
         ]
         (record,) = _needs_json(app)["needs"]

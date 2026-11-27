@@ -32,10 +32,10 @@ extensions = ["sphinx_needs"]
 needs_build_json_per_id = True
 """
 
-CONF_2A1 = """\
+CONF_DRAFT = """\
 extensions = ["sphinx_needs"]
 needs_build_json_per_id = True
-needs_json_format_version = "2a1"
+needs_json_format_version = "2a2"
 """
 
 
@@ -73,12 +73,12 @@ def test_format_1_file_names(test_app: SphinxTestApp):
     [
         {
             "buildername": "html",
-            "files": [(Path("conf.py"), CONF_2A1), (Path("index.rst"), INDEX)],
+            "files": [(Path("conf.py"), CONF_DRAFT), (Path("index.rst"), INDEX)],
         }
     ],
     indirect=True,
 )
-def test_format_2a1_file_names(test_app: SphinxTestApp):
+def test_draft_file_names(test_app: SphinxTestApp):
     app = test_app
     app.build()
 
