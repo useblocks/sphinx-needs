@@ -833,3 +833,49 @@ def test_a_2a1_file_is_refused(make_app: Any, tmp_path: Path) -> None:
         "[needs.external_needs]"
     ]
     assert list(SphinxNeedsData(app.env).get_needs_view()) == []
+
+
+def test_an_invalid_part_entry_is_one_warning_and_the_need_is_read(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A part entry of a wrong shape, and a later entry of an id already read, are each
+    one warning naming the file and the entry's place, on both routes; the need is
+    read with its other parts, in the file's order."""
+    document = {
+        "format_version": "2a2",
+        "project": {"name": "up"},
+        "needs": [
+            {
+                "id": "P_1",
+                "type": "req",
+                "fields": {"title": "parts"},
+                "parts": [
+                    {"id": "b", "text": "tb"},
+                    {"id": "x", "text": 1},
+                    {"id": "a", "text": "ta"},
+                    {"id": "b", "text": "again"},
+                ],
+            }
+        ],
+    }
+    app, _ = _build(make_app, _write(tmp_path / "down", _both_routes("up", document)))
+    invalid = (
+        "the part at index 1 is not an object of a string 'id' and a string 'text'; "
+        "it is not read (at needs.0.parts.1)"
+    )
+    duplicate = (
+        "the part at index 3 has the id 'b' of the part at index 0; the first is "
+        "read, this one skipped (at needs.0.parts.3.id)"
+    )
+    assert _warnings(app, "needimport") == [
+        f"Needs import file <srcdir>/up.json: {message} [needs.needimport]"
+        for message in (invalid, duplicate)
+    ]
+    assert _warnings(app, "external_needs") == [
+        f"External needs source 'up.json': {message} [needs.external_needs]"
+        for message in (invalid, duplicate)
+    ]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    for need_id in ("D_P_1", "X_P_1"):
+        parts = needs[need_id]["parts"]
+        assert [(p, parts[p]["content"]) for p in parts] == [("b", "tb"), ("a", "ta")]

@@ -183,7 +183,9 @@ need's parts from it: the block of stated parts, needextract, a needtable's `:sh
 rows, needlist and needflow. Two do not: a needtable whose filter selects parts sorts them as
 it sorts its rows, and `links_from_match` and a derived join take them in part-id order. The
 `needs.json` Sphinx-Needs writes (format 1) lists a need's parts sorted by id and cannot
-carry the order, so the corpus reads it from the stored need (`order.<ID>`).
+carry the order, so the corpus reads it from the stored need (`order.<ID>`). The
+experimental draft of format 2 (`"2a2"`) carries it: its `parts` section lists a need's
+parts in this order.
 
 ## 11. What a view lists and draws (corpus: `views`)
 

@@ -32,7 +32,7 @@ tests/
 ├── test_reader.py        # what the corpus cannot state: messages, bytes, files, aliasing
 ├── test_conformance.py   # runs the corpus and pins its case count
 ├── test_imports.py       # the stdlib-only fence
-├── test_draft_conformance.py       # runs the draft "2a1"'s own corpus, pins its count
+├── test_draft_conformance.py       # runs the draft's own corpus, pins its count
 ├── test_need_id_conformance.py     # runs the need-id corpus, its laws, pins its counts
 ├── test_need_id.py       # what that corpus cannot state: messages, types
 ├── test_need_id_fence.py # no other module spells `::`
@@ -42,7 +42,7 @@ tests/
     └── need_id_conformance.toml               # the need-id grammar (SHARED: ubCode vendors it)
 docs/changelog.rst        # the sphinx-mounts convention: an `Unreleased` section
 design/exchange-contract.md
-design/v2a2-draft.md      # the draft "2a1", read on opt-in (experimental)
+design/v2a2-draft.md      # the draft "2a2", read on opt-in (experimental)
 ```
 
 There is no documentation site and no command line: the package has consumers, not users.

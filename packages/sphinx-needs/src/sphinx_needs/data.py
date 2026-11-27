@@ -42,14 +42,14 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 34
+ENV_DATA_VERSION: Final = 35
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
 ``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
 change of what the stored values mean, or of what is rendered from them (versions 8, 10
-to 12, 15, 17, 19 to 25, 27, 29, 30 and 32), leaves the shape as it was, so that test
+to 12, 15, 17, 19 to 25, 27, 29, 30, 32 and 35), leaves the shape as it was, so that test
 cannot see it, and the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
@@ -257,6 +257,15 @@ Version 34 adds ``show_parts`` to :class:`NeedsFlowType`, the attributes of ever
 node stored in a doctree. A needflow is drawn from the doctree when its page is written,
 so an unbumped rebuild over an existing ``_build`` would hand the drawing a node pickled
 without the key, and end with a ``KeyError`` rather than re-reading the document.
+
+Version 35 changes what the needs a ``needimport`` stores mean: the directive reads the
+draft ``needs.json`` format ``"2a2"`` and refuses a ``"2a1"`` file, where version 34 read
+``"2a1"`` and refused ``"2a2"``, and a draft's link to the empty part (``{"id": "B",
+"part": ""}``) is the dead link ``B.``, where version 34 read it as a live link to ``B``.
+A needimport's file is read when its page is, and the shape is unchanged, so without the
+bump an upgraded build would keep, on the pages whose sources and files did not change,
+the needs of a ``"2a1"`` file it no longer reads, no need of a ``"2a2"`` file, and the
+live link.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

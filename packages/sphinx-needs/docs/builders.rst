@@ -166,18 +166,24 @@ See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, :r
         }
     }
 
-.. _needs_builder_format_2a1:
+.. _needs_builder_format_draft:
 
-needs.json format 2a1 (draft)
+needs.json format 2a2 (draft)
 +++++++++++++++++++++++++++++
 
 .. versionadded:: 9.3.0
 
+   The draft ``"2a1"``.
+
+.. versionchanged:: 9.4.0
+
+   The draft ``"2a2"``, which replaces ``"2a1"``.
+
 .. attention:: **Experimental**: a file in this format is readable only by the release that wrote it.
 
-With :ref:`needs_json_format_version` set to ``"2a1"``, the builders write the first draft of format version 2.
+With :ref:`needs_json_format_version` set to ``"2a2"``, the builders write the second draft of format version 2.
 Each build that writes one says, in one ``needs.beta`` warning, that the format is experimental.
-It is specified in the `needs.json 2a1 draft contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/v2a2-draft.md>`__
+It is specified in the `needs.json 2a2 draft contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/v2a2-draft.md>`__
 of the ``ub-needs-exchange`` library. In short:
 
 - the document says what it is with a ``format_version``, and has no ``versions``: one file is one snapshot of a
@@ -187,7 +193,12 @@ of the ``ub-needs-exchange`` library. In short:
   typed empty such as ``[]`` too, since the reading project's default may differ and the file carries no schema --
   but for a field whose value is ``null``, which is left out: a reader reads a missing field as unset, and applies
   its own default, as it does to a ``null``), ``links`` (a bare id, or ``{"id", "part", "condition"}`` where a
-  part or a condition is given; no back links), ``content`` (its text, ``doctype`` and parts) and ``source``;
+  part or a condition is given; no back links), ``content`` (its text and ``doctype``), ``parts`` and ``source``;
+- ``parts`` lists the need's :ref:`parts <need_part>`, each its ``id`` and its ``text``, in the order the need holds
+  them: the parts its content marks, in the order written, then those its record stated, in the order given. It is
+  the record's, not the content's, so a file written without the content keeps it; a need without parts has none;
+- a link to the empty part, ``REQ_1.``, which names no part a need can have, is written
+  ``{"id": "REQ_1", "part": ""}`` and read back as the dead link ``REQ_1.`` it is;
 - ``source`` is the list of places the need's text came through, innermost first: the lines of its directive in the
   file it is written in, each file it was included through, the needs.json it was imported from, the docstring or
   the service it came from, and the page it is placed on, with the sections it is in. Where a hop has no ``origin``,
@@ -202,24 +213,29 @@ An abridged example (a real record carries every link type of its need type, ``[
 .. code-block:: json
 
     {
-      "format_version": "2a1",
+      "format_version": "2a2",
       "project": {"name": "up", "version": "1.0"},
-      "creator": {"program": "sphinx_needs", "version": "9.3.0"},
-      "created": "2026-11-05T21:04:13.381102",
+      "creator": {"program": "sphinx_needs", "version": "9.4.0"},
+      "created": "2026-11-27T13:04:13.381102",
       "needs": [
         {
-          "id": "REQ_2",
+          "id": "REQ_5",
           "type": "req",
-          "fields": {"title": "The second", "tags": [], "constraints": [], "asil": "QM"},
-          "links": {
-            "links": [{"id": "REQ_1", "part": "p1"}, {"id": "REQ_3", "condition": "status == \"open\""}],
-            "parent_needs": []
+          "fields": {"title": "Parts out of id order", "tags": [], "constraints": [], "asil": "QM"},
+          "links": {"links": [], "parent_needs": []},
+          "content": {
+            "text": "Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and\n:np:`(mid) middle`.",
+            "doctype": ".rst"
           },
-          "content": {"text": "Links to a part and, under a condition, to a need.", "doctype": ".rst"},
+          "parts": [
+            {"id": "zeta", "text": "last id first"},
+            {"id": "alpha", "text": "first id second"},
+            {"id": "mid", "text": "middle"}
+          ],
           "source": [
             {
               "kind": "page",
-              "physical": {"root": "srcdir", "path": "index.rst", "start_line": 22, "end_line": 26},
+              "physical": {"root": "srcdir", "path": "index.rst", "start_line": 35, "end_line": 39},
               "semantic": [{"kind": "section", "name": "Up"}, {"kind": "section", "name": "Requirements"}],
               "document": "index",
               "language": ".rst"
@@ -229,7 +245,7 @@ An abridged example (a real record carries every link type of its need type, ``[
       ]
     }
 
-:ref:`needimport` and :ref:`needs_external_needs` read a 2a1 file as they read a file of format 1, whatever
+:ref:`needimport` and :ref:`needs_external_needs` read a 2a2 file as they read a file of format 1, whatever
 :ref:`needs_json_format_version` says, and keep each need's source: the hops its record carries come before the
 ones this build adds (the needs.json it was read from, the page of the ``needimport``), and a re-export writes them
 all, in that order, so a need's source grows with each project it passes through. A hop the file gives no ``origin``
@@ -242,7 +258,13 @@ answers about where it is from -- ``docname``, ``lineno``, ``sections``, ``secti
 format-1 file answers: the hops of the other project are kept, not read. An external need's ``external_url`` is
 built from the page its record places it on.
 
-A record of a 2a1 file is not a record of format 1, though, and what is read of the record itself differs: a
+A need's parts are read in the file's order, as format 1's are read: a ``needimport`` takes the parts its content
+marks and keeps the record's others after them, an external need takes the record's. A part entry that is not an
+object of a string ``id`` and a string ``text`` is not read, and a later entry of an id already read is skipped:
+each is one warning, naming the file and the entry's place (``needs.0.parts.1``), and the need is read without it.
+A record that states a part whose id is empty is refused, as in format 1.
+
+A record of a 2a2 file is not a record of format 1, though, and what is read of the record itself differs: a
 ``needimport`` ``:filter:`` and an external source's ``target_url`` template see its ``id``, ``type``, every
 field and link type, ``content``, ``doctype`` and ``parts``, and, from the page it is placed on, ``docname``,
 ``sections``, ``section_name`` and ``signature``. They do not see ``lineno``, ``lineno_content``,
@@ -250,14 +272,17 @@ field and link type, ``content``, ``doctype`` and ``parts``, and, from the page 
 back links, or any other computed key (``is_need``, ``parent_need``, ``constraints_passed``, ...): a filter over
 one of them fails, and a template renders it empty.
 
-Older readers do not read it. Sphinx-Needs 9.1.0 and 9.2.0 refuse the file with one warning per reader, which names
-the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only;
-Sphinx-Needs 9.0.0 refuses it with one warning per reader that its ``'versions' is missing or not an object``; ubCode
-0.39.0 and earlier refuse it in the same way, and ubCode 0.40.0 reads it. Sphinx-Needs 8.5.0 aborts the build on it:
-external needs with ``NeedsExternalException: No version defined``, a ``needimport`` with ``CorruptedNeedsFile: Key
-'current_version' missing or corrupted``.
+A file of the first draft, ``"2a1"``, is not read any more: both readers refuse it with one warning each, which
+names the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only (it
+reads the draft ``"2a2"`` too). Write it again with ``"2a2"``.
 
-The page :ref:`needs_permalink_file` installs reads a ``needs.json`` of format 1 only: with a 2a1 file it does
+Older readers do not read a 2a2 file. Sphinx-Needs 9.1.0 to 9.3.0 refuse it with one warning per reader, which
+names the file and says that it is of format version ``"2a2"`` and that the reader reads format version 1 only;
+Sphinx-Needs 9.0.0 refuses it with one warning per reader that its ``'versions' is missing or not an object``.
+Sphinx-Needs 8.5.0 aborts the build on it: external needs with ``NeedsExternalException: No version defined``, a
+``needimport`` with ``CorruptedNeedsFile: Key 'current_version' missing or corrupted``.
+
+The page :ref:`needs_permalink_file` installs reads a ``needs.json`` of format 1 only: with a 2a2 file it does
 not redirect (:issue:`2531`).
 
 .. _needumls_builder:
