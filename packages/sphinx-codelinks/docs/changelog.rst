@@ -82,11 +82,14 @@ Fixes
   header defines itself, or on another flag (``__thumb__``). A build, or a
   ``codelinks analyse`` run, prints one information line per compilation database naming
   such headers (``codelinks.preprocessor_no_includer``), which does not fail a ``-W``
-  build. More markers can be extracted from such headers than before, those of branches
-  the build does not compile among them; to leave those out, state the macros in
-  ``defines`` and the build's target in ``target``. ubCode reads the same branches (the
-  twin of useblocks/ubcode#4866). The first build after upgrading reads every document
-  again.
+  build; it names each header once per build. More markers can be extracted from such
+  headers than before, those of branches the build does not compile among them, and they
+  are checked as any other: the same id in two exclusive branches (``#ifdef BOARD_A`` …
+  ``#else`` …) is now a ``codelinks.duplicate_need`` warning, which fails a ``-W`` build
+  that passed. To leave such branches out, state the macros in ``defines`` and the
+  build's target in ``target`` (or give the markers distinct ids). ubCode reads the same
+  branches (the twin of useblocks/ubcode#4866). The first build after upgrading reads
+  every document again.
 
 .. _`release:2.2.0`:
 

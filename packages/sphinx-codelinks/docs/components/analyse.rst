@@ -1415,7 +1415,10 @@ line splices, comments, string literals and the ``%:`` digraph.
 When such a header has a branch read for a condition the configuration does not decide,
 the build (or ``codelinks analyse``) prints one information line per compilation
 database, at its first line, naming the headers (at most five, relative to the
-database's directory) and counting the branches:
+database's directory, both canonical) and counting the branches. A header is named once
+per build, however many ``src-trace`` directives read it (once per reading chunk under
+``-j N``); a header looked for in several databases (it has none of its own) is noted
+without a location, by its full path:
 
 .. code-block:: text
 
@@ -1427,7 +1430,14 @@ database's directory) and counting the branches:
    file. [codelinks.preprocessor_no_includer]
 
 It is not a warning: it can over-report, never hide, so a ``-W`` build does not fail on
-it, and it needs no ``suppress_warnings``. To read such a header as the build does, state
+it, and it needs no ``suppress_warnings``. **The markers in a branch read so can**: each is
+a need like any other, checked like any other. The same id in two exclusive branches
+(``#ifdef BOARD_A`` … ``#else`` …, one requirement implemented per board) is now created
+twice, and the second is a ``codelinks.duplicate_need`` warning, which fails a ``-W``
+build; so is a marker there whose id the project's ``needs_id_regex`` refuses. To remove
+it, state the macro in ``defines`` (``defines = ["BOARD_A"]``), or the target in
+``target`` for a branch on the target, so the chain is decided and one branch is left
+out again; or give the markers distinct ids. To read such a header as the build does, state
 the macros in ``defines`` and the build's **effective** triple in ``target`` (a ``-m32``,
 ``-mx32``, ``-mbig-endian``, ``-EB``, ``-EL`` or ``-mabi=`` changes it), or include the
 header from a file the database compiles. The rule and its two lists of target macros
