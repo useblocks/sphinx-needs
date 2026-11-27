@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 33
+ENV_DATA_VERSION: Final = 34
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -252,6 +252,11 @@ one line (each run of white space holding a line break, LF, VT, FF, CR, NEL, LS 
 one space), and shows them in a block after its content. A part pickled by version 32
 has no ``origin``, and the documents whose sources did not change would keep their needs
 without the parts their records state.
+
+Version 34 adds ``show_parts`` to :class:`NeedsFlowType`, the attributes of every needflow
+node stored in a doctree. A needflow is drawn from the doctree when its page is written,
+so an unbumped rebuild over an existing ``_build`` would hand the drawing a node pickled
+without the key, and end with a ``KeyError`` rather than re-reading the document.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -951,6 +956,12 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     Whether a legend is shown at all is the ``show_legend`` flag of
     :class:`NeedsFilteredDiagramBaseType`; this only says which one."""
+
+    show_parts: bool
+    """Whether each need is drawn with every part it has inside it (``:show_parts:``),
+    the result then holding needs alone, whatever ``needs_views_include_parts`` says; a
+    filter that reads ``needs`` itself is still handed needs and parts under ``True``
+    and needs alone under ``False``, so what it selects can differ by value."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):

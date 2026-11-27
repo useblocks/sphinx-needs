@@ -77,6 +77,7 @@ class NeedflowDirective(FilterBase):
         "show_link_names": show_link_names_option,
         "config": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
+        "show_parts": directives.flag,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
         "width": directives.unchanged,
@@ -239,6 +240,7 @@ class NeedflowDirective(FilterBase):
             # from an explicitly empty value, i.e. a deliberately undescribed diagram
             "alt": self.options.get("alt"),
             "max_items": self.options.get("max_items"),
+            "show_parts": self.options.get("show_parts", False) is None,
             **self.collect_filter_attributes(),
         }
 

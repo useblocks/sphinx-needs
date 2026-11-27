@@ -1368,7 +1368,8 @@ Each configured link can define:
   A need type may narrow it for its needs, see :ref:`needs_types_fields`.
   *New in version 9.1.0.*
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
-- ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
+- ``style_part`` (optional): Same as ``style``, for a link to a :ref:`need part <need_part>`: the edge to the part's
+  node, or the edge to the part's need in a needflow that draws needs alone (:ref:`needflow_need_parts`).
   See :ref:`links_style`.
 - ``style_start`` (optional): See :ref:`needflow_style_start`.
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
@@ -1773,14 +1774,19 @@ a content line of :ref:`needpie` and a cell of :ref:`needbar` (with the scope of
   of its own: a row, a line, a node inside its need, a gantt element, a count of one.
 * ``False``: the filter is tested on the needs alone, so ``is_part`` selects nothing, and a view shows a need's parts
   only where it asks: a needtable with :ref:`show_parts <needtable_show_parts>` lists the parts of each need it
-  lists, under it. A filter that tests each need on its own selects the needs it selects under ``True``, in the same
+  lists, under it, and a needflow with :ref:`show_parts <needflow_show_parts>` draws each need it draws with its
+  parts inside it, under every value, though what a filter that reads ``needs`` itself selects can still differ by
+  value (:ref:`needflow_show_parts`).
+  A filter that tests each need on its own selects the needs it selects under ``True``, in the same
   order. A :ref:`needflow` draws a link to a part of a need it shows as an edge to that need, in the link
-  type's ``style_part`` (dotted by default). Filter code and a filter function are handed needs alone, and their
+  type's ``style_part`` (dotted by default), labelled with the part's id: the links of one need, of one link type,
+  to parts of one need are one edge, naming the parts in the need's order (:ref:`needflow_need_parts`).
+  Filter code and a filter function are handed needs alone, and their
   result is matched to them, so a part the code builds itself is dropped (kept with
   :ref:`needs_allow_unsafe_filters`).
 
 **Unset (the default), it is** ``True`` **in 9.x, and** ``False`` **from 10.0**: from 10.0 a view lists needs, not
-need parts, unless it asks (only a needtable can, with ``:show_parts:``). Set it either way to keep a project's views
+need parts, unless it asks (a needtable and a needflow can, each with ``:show_parts:``). Set it either way to keep a project's views
 through that release:
 
 .. code-block:: python
@@ -1805,7 +1811,9 @@ decides:
   not reported.
 * each :ref:`needflow` that from 10.0 draws links to parts of its needs as edges to the parts' needs, where today it
   draws no edge for them or an edge to the part, saying how many: the links of the needs its ``max_items`` window
-  keeps once it holds needs alone (with the parts its filter selects, in one report, where it selects any).
+  keeps once it holds needs alone (with the parts its filter selects, in one report, where it selects any). A
+  needflow with :ref:`show_parts <needflow_show_parts>` is not reported: it draws the same whatever the value, but
+  where its filter reads ``needs`` itself, which the report sees in no view (below).
 
 Setting the value either way silences it (``True`` keeps the views as they are, ``False`` selects needs alone now),
 as does ``suppress_warnings = ["needs.views_include_parts"]``. :ref:`needextract`, which never shows a part, is not
@@ -4824,7 +4832,8 @@ Each configured link should define:
   See :ref:`allow_dead_links` for details. Default: False.
 - ``target_types`` (optional): The need types the links may point to, as for :ref:`needs_links`.
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
-- ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
+- ``style_part`` (optional): Same as ``style``, for a link to a :ref:`need part <need_part>`: the edge to the part's
+  node, or the edge to the part's need in a needflow that draws needs alone (:ref:`needflow_need_parts`).
   See :ref:`links_style`.
 
 The back links of a link type are named ``<option>_back``, and one whose back links would have the name of a field

@@ -37,8 +37,8 @@ Improvements
   whether the filter of a :ref:`needtable`, :ref:`needlist`, :ref:`needflow` or :ref:`needgantt`, of a
   :ref:`needpie` line or a :ref:`needbar` cell (and of either chart's scope) and of :ref:`need_count` is tested on
   the :ref:`need parts <need_part>` beside the needs. ``True`` tests every need and every part, as every release so
-  far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's
-  ``:show_parts:``), a filter that tests each need on its own selects the needs it selects under ``True`` in the
+  far has; ``False`` tests the needs alone, so a view shows a need's parts only where it asks (a needtable's or a
+  needflow's ``:show_parts:``), a filter that tests each need on its own selects the needs it selects under ``True`` in the
   same order, ``is_part`` selects nothing, a needflow draws a link to a part of a need it shows as an edge to
   that need, in the link type's ``style_part`` (dotted by default), and filter code and a filter function are
   handed needs alone (a part they build themselves is dropped, unless :ref:`needs_allow_unsafe_filters`). Unset, it
@@ -60,6 +60,32 @@ Improvements
   and ``needs.json`` do not read the value; changing it re-reads no document.
   From 10.0 a view lists needs, not need parts, unless it asks: set ``needs_views_include_parts`` either way to
   keep a project's views through that release.
+
+- ✨ **A needflow's edge to a need names the parts it links**: with :ref:`needs_views_include_parts` ``False``
+  (the default from 10.0) a :ref:`needflow` draws the links of one need, of one link type, to parts of one need it
+  draws as ONE edge to that need, in the link type's ``style_part``, labelled with the part ids in the need's order
+  of its parts, each once: ``SPEC_2``, linking ``REQ_1.zeta`` and ``REQ_1.alpha``, is one dotted edge to ``REQ_1``
+  labelled ``zeta, alpha``, where it was two unlabelled edges. A link to the need itself stays an edge of its own,
+  unlabelled; each link type draws its own edge; with :ref:`needflow_show_link_names` the label is the link type's
+  name and the part ids, on two lines (:ref:`needflow_need_parts`). An external need's part now links the part's
+  anchor, as ``:need:`` links it, where it linked the need's URL: its :ref:`needtable` row, a needtable cell naming
+  it, its node in a needflow and needuml's ``ref()`` of it. Under ``True`` and unset a needflow draws what it drew
+  but for two kinds of line: an external part's node, which links the part's anchor, and graphviz's edge from a
+  need to its own part, which no longer names the need's cluster as its tail (``dot`` warned on it, and the build
+  did not show the warning). Separately, a link type whose ``style_part`` is empty draws a plain line in a PlantUML
+  needflow, where it wrote ``-[]->``, a syntax error. The ``needs.views_include_parts`` report still counts a
+  needflow's links, not its edges. (:pr:`2588`)
+
+- ✨ **A needflow draws each need's parts inside it**: with :ref:`needflow_show_parts` a :ref:`needflow` draws each
+  need it draws with every :ref:`need part <need_part>` it has, inside it, in the need's order of its parts, whether
+  a link names the part or not, and a link to a part as an edge to the part's node, in the link type's
+  ``style_part``. Its result then holds needs alone: a part its filter selects is drawn only inside its need,
+  ``:max_items:`` counts needs, and a filter that selects parts alone draws nothing. What it draws is the same
+  whatever :ref:`needs_views_include_parts` says, but for a filter that reads ``needs`` itself (a filter string,
+  filter code or a filter function), which is handed needs and parts under ``True`` and needs alone under
+  ``False``, as in every view; it makes no ``needs.views_include_parts`` report, and the report of a needflow
+  without the option now names it. An upgraded project re-reads every document once, as the
+  needflow's stored options gain a key. (:pr:`2589`)
 
 - ✨ **An imported need keeps the parts its record states**: a :ref:`needimport` record's ``parts`` that its
   content does not mark with a :ref:`need_part` role were dropped, and every link and ``:need:`` reference to one

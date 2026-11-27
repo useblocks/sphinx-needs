@@ -268,11 +268,9 @@ def row_col_maker(
 
                     if make_ref:
                         if need_info["is_external"]:
-                            assert need_info["external_url"] is not None, (
-                                "external_url must be set for external needs"
-                            )
+                            # a part's row links the part's anchor
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(
-                                need_info["external_url"], fromdocname
+                                external_item_url(need_info, needs_config), fromdocname
                             )
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
@@ -297,8 +295,17 @@ def row_col_maker(
                             assert temp_need["external_url"] is not None, (
                                 "external_url must be set for external needs"
                             )
+                            external_url = temp_need["external_url"]
+                            if link.part is not None and datum not in all_needs:
+                                # a link to a part links the part's anchor
+                                external_url = external_part_url(
+                                    external_url,
+                                    temp_need["id"],
+                                    link.part,
+                                    id_prefixes=_external_source_prefixes(needs_config),
+                                )
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(
-                                temp_need["external_url"], fromdocname
+                                external_url, fromdocname
                             )
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
@@ -571,6 +578,42 @@ def external_part_url(
         if not prefix or prefix in id_prefixes:
             return f"{base}#{fragment}.{part_id}"
     return external_url
+
+
+def external_item_url(
+    need: NeedItem | NeedPartItem, config: NeedsSphinxConfig, /
+) -> str:
+    """The URL an external need, or a part of one, links to.
+
+    A need's is its ``external_url``; a part's is the part's anchor where that URL
+    names one (:func:`external_part_url`), as ``:need:`` and a card's outgoing links
+    write it, and the need's URL otherwise.
+
+    :param need: An external need, or a part of one.
+    :param config: The project's configuration, for its external sources' prefixes.
+    :return: The URL to link the need or part to.
+    """
+    url = need["external_url"]
+    assert url is not None, "external_url must be set for external needs"
+    if not need["is_part"]:
+        return url
+    need_id = need["id_parent"]
+    return external_part_url(
+        url,
+        need_id,
+        # `id_complete` is `<need id>.<part id>` (a needtable's copy rewrites `id`)
+        need["id_complete"][len(need_id) + 1 :],
+        id_prefixes=_external_source_prefixes(config),
+    )
+
+
+def _external_source_prefixes(config: NeedsSphinxConfig, /) -> set[str]:
+    """The prefix of each external source of the project, as a part's URL is computed
+    from them (:func:`external_part_url`)."""
+    # imported here: the loader's module imports the API, which imports this one
+    from sphinx_needs.external_needs import external_source_prefixes
+
+    return external_source_prefixes(config)
 
 
 class FilterFunc(Protocol):

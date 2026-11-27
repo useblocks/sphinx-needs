@@ -13,7 +13,10 @@ page is written), and four things are asserted:
   ``clean``), and what each filter selects over needs and parts, or, for an entry
   saying ``view = true``, over what a view's filter is tested on under the case's
   ``views_include_parts`` (read through the function every view takes its candidates
-  from);
+  from); and, in the section ``views``, the rows of the case's needtable as its page is
+  written, and the nodes, the parts drawn inside each need and the edges of its needflow
+  as the model both engines draw from gives them (``directives.needflow._model``, from the needflow's node in the stored
+  doctree), never an engine's syntax;
 * a case marked ``divergent`` for sphinx-needs FAILS with exactly the problems recorded
   for it, fails as a second deviation with any others, and fails when it passes, so a fix
   cannot leave its marker behind;
@@ -29,6 +32,7 @@ reads the needs again.
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
 import tomllib
@@ -38,10 +42,16 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from lxml import html as html_parser
 
 from sphinx_needs import filter_common
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.needflow import _model as needflow_model
+from sphinx_needs.directives.needflow._directive import (
+    NeedflowGraphiz,
+    NeedflowPlantuml,
+)
 from sphinx_needs.filter_common import filter_needs_parts
 from sphinx_needs.ubquery import try_build_simple_predicate
 from sphinx_needs_testkit import build_warnings
@@ -53,7 +63,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "parts_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 81
+EXPECTED_CASE_COUNT = 102
 
 #: The sections, in the order the corpus gives them.
 SECTIONS = (
@@ -65,13 +75,12 @@ SECTIONS = (
     "links",
     "answers",
     "selection",
+    "views",
     "derived",
 )
 
-#: The list of sections the header gives in its "Sections, in this order" sentence,
-#: which was written before ``selection`` was; the header places ``selection`` in a
-#: sentence of its own, as the file's existing lines are not changed.
-LISTED_SECTIONS = tuple(section for section in SECTIONS if section != "selection")
+#: The sentence of the header placing ``selection``, written before ``selection`` joined
+#: the header's list of sections, and true still.
 SELECTION_PLACED = (
     "`selection`, what a view's filter selects, sits between `answers` and `derived`."
 )
@@ -149,7 +158,13 @@ _CASE_KEYS = {
     "expect",
     "filters",
 }
-_EXPECT_KEYS = {"findings", "parts", "order", "dead", "back"}
+_EXPECT_KEYS = {"findings", "parts", "order", "dead", "back", "table", "flow"}
+#: The keys of a row of ``table``, and of an item of a link cell of one.
+_ROW_KEYS = {"row", "target", "cells"}
+_ITEM_KEYS = {"to", "target"}
+#: The keys of ``flow`` (``containers`` optional), and of one of its edges.
+_FLOW_KEYS = {"nodes", "edges"}
+_EDGE_KEYS = {"from", "to", "type", "parts"}
 _ENTRY_KEYS = {"filter", "expected", "include_parts", "view", "why"}
 
 #: A record's code: the ``[needs.<code>]`` that ends it.
@@ -210,7 +225,8 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert set(finding) == {"class"}, name
             assert finding["class"] in CLASSES.values(), name
         assert any(
-            expect.get(key) for key in ("parts", "order", "dead", "back")
+            expect.get(key)
+            for key in ("parts", "order", "dead", "back", "table", "flow")
         ) or case.get("filters"), name
         for need_id, parts in expect.get("parts", {}).items():
             assert isinstance(parts, dict), (name, need_id)
@@ -241,9 +257,52 @@ def test_every_case_has_a_complete_expectation() -> None:
         # a view's entries are the section `selection`'s, and its case writes the key
         # they are read under, never leaving it to a default that changes
         assert (case["section"] == "selection") == bool(views), name
-        if views:
-            needs = tomllib.loads(case["config"])["needs"]
+        # what a view lists and draws is the section `views`'s, under the key it writes
+        shown = {key for key in ("table", "flow") if key in expect}
+        assert (case["section"] == "views") == bool(shown), name
+        needs = tomllib.loads(case["config"])["needs"]
+        if views or shown:
             assert isinstance(needs.get("views_include_parts"), bool), name
+        for row in expect.get("table", []):
+            assert set(row) <= _ROW_KEYS and isinstance(row["row"], str), name
+            assert isinstance(row.get("target", ""), str), name
+            for value in row.get("cells", {}).values():
+                if isinstance(value, list):
+                    assert all(
+                        set(item) <= _ITEM_KEYS and isinstance(item["to"], str)
+                        for item in value
+                    ), name
+                else:
+                    assert isinstance(value, str), name
+        if "flow" in expect:
+            flow = expect["flow"]
+            assert _FLOW_KEYS <= set(flow) <= {*_FLOW_KEYS, "containers"}, name
+            assert flow["nodes"] == sorted(set(flow["nodes"])), name
+            for edge in flow["edges"]:
+                assert set(edge) == _EDGE_KEYS, name
+                assert len(edge["parts"]) == len(set(edge["parts"])), name
+                # an edge joins two nodes the needflow draws
+                assert {edge["from"], edge["to"]} <= set(flow["nodes"]), (name, edge)
+            # each part drawn inside a need is a node of it, by its address
+            containers = flow.get("containers", {})
+            for need_id, parts in containers.items():
+                assert parts and len(parts) == len(set(parts)), (name, need_id)
+                assert {need_id, *(f"{need_id}.{p}" for p in parts)} <= set(
+                    flow["nodes"]
+                ), (name, need_id)
+            # a needflow draws parts inside a need only with `:show_parts:`; every other
+            # one draws needs alone
+            if "show_parts" not in _flow_options(case["source"]):
+                assert needs["views_include_parts"] is False and not containers, name
+
+
+def _flow_options(source: str) -> list[str]:
+    """The names of the options of the needflow of a case's ``source``."""
+    lines = source.split(".. needflow::", 1)[1].splitlines()[1:]
+    return [
+        line.split(":")[1]
+        for line in itertools.takewhile(lambda line: line.startswith("   :"), lines)
+    ]
 
 
 def test_every_marker_names_a_known_tool() -> None:
@@ -288,11 +347,8 @@ def test_the_header_lists_every_class_and_section() -> None:
     assert {code: cls for cls, code in rows} == CLASSES
     assert len(rows) == len(CLASSES)
     prose = " ".join(line.removeprefix("#").strip() for line in header.splitlines())
-    assert f"Sections, in this order: {', '.join(LISTED_SECTIONS)}." in prose
+    assert f"Sections, in this order: {', '.join(SECTIONS)}." in prose
     assert SELECTION_PLACED in prose
-    placed = list(LISTED_SECTIONS)
-    placed.insert(placed.index("answers") + 1, "selection")
-    assert tuple(placed) == SECTIONS
     for tool in TOOLS:
         assert f"`{tool}`" in prose
 
@@ -592,6 +648,357 @@ def _check_filters(app: Any, case: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _fragment(href: str | None) -> str | None:
+    """The address a link names: the text after the ``#`` of its URL."""
+    return None if href is None else href.partition("#")[2]
+
+
+def _read_table(page: Any) -> list[dict[str, Any]]:
+    """The rows of the needtable of a written page, each its address, the fragment its
+    id cell links (``None``: no link), and each of its cells by column, as text and as
+    the list of what it lists, each item its text and the fragment it links."""
+    rows = []
+    for tr in page.xpath("//tr[@data-need-id]"):
+        target = None
+        cells: dict[str, dict[str, Any]] = {}
+        for td in tr.xpath("./td"):
+            [key] = [
+                name.removeprefix("needs_")
+                for name in td.get("class", "").split()
+                if name.startswith("needs_")
+            ]
+            text = " ".join(td.text_content().split())
+            if key in ("id", "id_complete"):
+                links = td.xpath(".//a")
+                target = _fragment(links[0].get("href")) if links else None
+                continue
+            anchors = {
+                a.text_content(): _fragment(a.get("href")) for a in td.xpath(".//a")
+            }
+            items = [
+                {
+                    "to": shown,
+                    **({"target": anchors[shown]} if shown in anchors else {}),
+                }
+                for shown in (text.split("; ") if text else [])
+            ]
+            cells[key] = {"text": text, "items": items}
+        rows.append({"row": tr.get("data-need-id"), "target": target, "cells": cells})
+    return rows
+
+
+def _table_problems(
+    expected: list[Mapping[str, Any]], rows: list[dict[str, Any]]
+) -> list[str]:
+    """The problems with a case's ``table``, against the rows :func:`_read_table` read."""
+    listed = [row["row"] for row in rows]
+    if listed != [row["row"] for row in expected]:
+        return [f"table rows {listed}, expected {[row['row'] for row in expected]}"]
+    problems = []
+    for want, row in zip(expected, rows, strict=True):
+        if row["target"] != want.get("target"):
+            problems.append(
+                f"{row['row']}: id links {row['target']!r}, expected {want.get('target')!r}"
+            )
+        for key, value in want.get("cells", {}).items():
+            if (cell := row["cells"].get(key)) is None:
+                problems.append(f"{row['row']}: no cell {key!r}")
+                continue
+            got = cell["items"] if isinstance(value, list) else cell["text"]
+            if got != value:
+                problems.append(f"{row['row']}: {key} {got!r}, expected {value!r}")
+    return problems
+
+
+def _read_flow(
+    app: Any,
+) -> tuple[
+    list[str],
+    Counter[tuple[str, str, str, tuple[str, ...]]],
+    dict[str, list[str]],
+]:
+    """What the case's needflow draws, from the model both engines draw from: built
+    from the needflow's node in the stored doctree, through the functions a build
+    uses. Its drawn ids, sorted, the edges between two of them, and the parts drawn
+    inside each need, in the order drawn (:attr:`GraphNode.parts`), by need."""
+    [node] = [
+        node
+        for node in app.env.get_doctree("index").findall()
+        if isinstance(node, NeedflowPlantuml | NeedflowGraphiz)
+    ]
+    link_types = needflow_model.resolve_link_types(
+        node.attributes,
+        schema=SphinxNeedsData(app.env).get_schema(),
+        config=NeedsSphinxConfig(app.config),
+        location=node,
+    )
+    graph = needflow_model.build_graph(
+        app, node.attributes, link_types, location=node, variant_location=node
+    )
+    edges = Counter(
+        (edge.source_id, edge.target_id, edge.link_type.name, edge.part_ids)
+        for edge in graph.edges
+        if edge.source_drawn and edge.target_drawn
+    )
+    containers = {
+        node_id: [part.need["id"] for part in node.parts]
+        for node_id, node in graph.nodes.items()
+        if node.parts
+    }
+    return sorted(graph.nodes), edges, containers
+
+
+def _flow_problems(
+    expected: Mapping[str, Any],
+    nodes: list[str],
+    edges: Counter[tuple[str, str, str, tuple[str, ...]]],
+    containers: Mapping[str, list[str]],
+) -> list[str]:
+    """The problems with a case's ``flow``, against what :func:`_read_flow` read. Its
+    ``containers`` are compared exactly, each list in order; absent, no need may be
+    drawn with a part inside it."""
+    problems = []
+    if nodes != expected["nodes"]:
+        problems.append(f"flow nodes {nodes}, expected {expected['nodes']}")
+    if (want := expected.get("containers", {})) != containers:
+        problems.append(f"flow containers {dict(containers)}, expected {want}")
+    wanted = Counter(
+        (edge["from"], edge["to"], edge["type"], tuple(edge["parts"]))
+        for edge in expected["edges"]
+    )
+    if edges != wanted:
+        problems.append(
+            f"flow edges {sorted(edges.elements())}, expected {sorted(wanted.elements())}"
+        )
+    return problems
+
+
+def _check_views(app: Any, case: Mapping[str, Any]) -> list[str]:
+    """The problems with what a case's needtable lists and its needflow draws."""
+    problems: list[str] = []
+    if "table" in case["expect"]:
+        page = html_parser.fromstring(
+            Path(app.outdir, "index.html").read_text(encoding="utf-8")
+        )
+        problems += _table_problems(case["expect"]["table"], _read_table(page))
+    if "flow" in case["expect"]:
+        problems += _flow_problems(case["expect"]["flow"], *_read_flow(app))
+    return problems
+
+
+#: A needtable as :func:`_read_table` reads it: a need with one part, linking another
+#: need, and that need, linking a part of an external need and a part the first need
+#: does not have.
+_TABLE_ROWS = [
+    {
+        "row": "REQ_1",
+        "target": "REQ_1",
+        "cells": {
+            "status": {"text": "open", "items": [{"to": "open"}]},
+            "links": {"text": "REQ_2", "items": [{"to": "REQ_2", "target": "REQ_2"}]},
+        },
+    },
+    {
+        "row": "REQ_1.p1",
+        "target": "REQ_1.p1",
+        "cells": {
+            "status": {"text": "open", "items": [{"to": "open"}]},
+            "links": {"text": "", "items": []},
+        },
+    },
+    {
+        "row": "REQ_2",
+        "target": "REQ_2",
+        "cells": {
+            "status": {"text": "", "items": []},
+            "links": {
+                "text": "EXT_1.rp; REQ_1.nope",
+                "items": [
+                    {"to": "EXT_1.rp", "target": "EXT_1.rp"},
+                    {"to": "REQ_1.nope"},
+                ],
+            },
+        },
+    },
+]
+_TABLE = [
+    {"row": "REQ_1", "target": "REQ_1", "cells": {"status": "open"}},
+    {"row": "REQ_1.p1", "target": "REQ_1.p1", "cells": {"links": []}},
+    {
+        "row": "REQ_2",
+        "target": "REQ_2",
+        "cells": {
+            "links": [{"to": "EXT_1.rp", "target": "EXT_1.rp"}, {"to": "REQ_1.nope"}]
+        },
+    },
+]
+_FLOW_NODES = ["REQ_1", "SPEC_1"]
+_FLOW_EDGES = Counter(
+    [
+        ("SPEC_1", "REQ_1", "links", ()),
+        ("SPEC_1", "REQ_1", "links", ("zeta", "alpha")),
+        ("SPEC_1", "REQ_1", "tests", ("zeta",)),
+    ]
+)
+_FLOW = {
+    "nodes": ["REQ_1", "SPEC_1"],
+    "edges": [
+        {"from": "SPEC_1", "to": "REQ_1", "type": "tests", "parts": ["zeta"]},
+        {"from": "SPEC_1", "to": "REQ_1", "type": "links", "parts": []},
+        {"from": "SPEC_1", "to": "REQ_1", "type": "links", "parts": ["zeta", "alpha"]},
+    ],
+}
+
+
+#: The parts drawn inside each need, as :func:`_read_flow` reads them.
+_FLOW_CONTAINERS = {"REQ_1": ["zeta", "alpha"]}
+
+
+def test_the_runner_reads_faithful_views_as_one() -> None:
+    assert _table_problems(_TABLE, _TABLE_ROWS) == []
+    assert _flow_problems(_FLOW, _FLOW_NODES, _FLOW_EDGES, {}) == []
+    shown = {**_FLOW, "containers": {"REQ_1": ["zeta", "alpha"]}}
+    assert _flow_problems(shown, _FLOW_NODES, _FLOW_EDGES, _FLOW_CONTAINERS) == []
+
+
+@pytest.mark.parametrize(
+    "containers",
+    [
+        # a runner passing a container more than the case, or one fewer: a flow
+        # without `containers` says no need is drawn with a part inside it
+        {"REQ_1": ["zeta", "alpha"], "SPEC_1": ["p"]},
+        None,
+        # a part more, or a part fewer
+        {"REQ_1": ["zeta", "alpha", "mid"]},
+        {"REQ_1": ["zeta"]},
+        # two parts swapped: a container compared as a set
+        {"REQ_1": ["alpha", "zeta"]},
+    ],
+    ids=[
+        "a-container-more",
+        "a-container-fewer",
+        "a-part-more",
+        "a-part-fewer",
+        "two-parts-swapped",
+    ],
+)
+def test_the_runner_sees_every_difference_in_the_containers(
+    containers: dict[str, list[str]] | None,
+) -> None:
+    expected = _FLOW if containers is None else {**_FLOW, "containers": containers}
+    assert _flow_problems(expected, _FLOW_NODES, _FLOW_EDGES, _FLOW_CONTAINERS) != []
+
+
+@pytest.mark.parametrize(
+    "table",
+    [
+        # a runner reading the rows in another order
+        [_TABLE[1], _TABLE[0], _TABLE[2]],
+        # one taking a part row's link to be its need's
+        [_TABLE[0], {**_TABLE[1], "target": "REQ_1"}, _TABLE[2]],
+        # one reading a link cell as a set, or a dead link as live
+        [
+            *_TABLE[:2],
+            {
+                "row": "REQ_2",
+                "target": "REQ_2",
+                "cells": {
+                    "links": [
+                        {"to": "REQ_1.nope"},
+                        {"to": "EXT_1.rp", "target": "EXT_1.rp"},
+                    ]
+                },
+            },
+        ],
+        [
+            *_TABLE[:2],
+            {
+                "row": "REQ_2",
+                "target": "REQ_2",
+                "cells": {
+                    "links": [
+                        {"to": "EXT_1.rp", "target": "EXT_1.rp"},
+                        {"to": "REQ_1.nope", "target": "REQ_1.nope"},
+                    ]
+                },
+            },
+        ],
+        # one giving a part row its need's links
+        [
+            _TABLE[0],
+            {**_TABLE[1], "cells": {"links": [{"to": "REQ_2", "target": "REQ_2"}]}},
+            _TABLE[2],
+        ],
+        # one passing a table that lists a row more than the case, or a row fewer
+        _TABLE[:2],
+        [*_TABLE, {"row": "REQ_3", "target": "REQ_3"}],
+        # one passing a cell that lists more than the case, its first items alike
+        [
+            *_TABLE[:2],
+            {
+                "row": "REQ_2",
+                "target": "REQ_2",
+                "cells": {"links": [{"to": "EXT_1.rp", "target": "EXT_1.rp"}]},
+            },
+        ],
+    ],
+    ids=[
+        "rows-in-another-order",
+        "a-part-row-linking-its-need",
+        "a-cell-as-a-set",
+        "a-dead-link-as-live",
+        "a-part-row-with-its-needs-links",
+        "a-row-left-out",
+        "a-row-too-many",
+        "an-item-too-many",
+    ],
+)
+def test_the_runner_sees_every_difference_in_a_table(table: list[Any]) -> None:
+    assert _table_problems(table, _TABLE_ROWS) != []
+
+
+@pytest.mark.parametrize(
+    "edges",
+    [
+        # a runner leaving an edge out, or reading the parts as a set
+        _FLOW["edges"][:2],
+        [*_FLOW["edges"][:2], {**_FLOW["edges"][2], "parts": ["alpha", "zeta"]}],
+        # one merging the whole link into the part edge
+        [_FLOW["edges"][0], {**_FLOW["edges"][2]}],
+        # one grouping across link types
+        [
+            {"from": "SPEC_1", "to": "REQ_1", "type": "links", "parts": []},
+            {
+                "from": "SPEC_1",
+                "to": "REQ_1",
+                "type": "links",
+                "parts": ["zeta", "alpha"],
+            },
+        ],
+        # one reading the edges as a set: an edge drawn twice
+        [*_FLOW["edges"], _FLOW["edges"][0]],
+    ],
+    ids=[
+        "an-edge-left-out",
+        "parts-as-a-set",
+        "a-whole-link-merged",
+        "across-link-types",
+        "an-edge-twice",
+    ],
+)
+def test_the_runner_sees_every_difference_in_a_flow(edges: list[Any]) -> None:
+    assert _flow_problems({**_FLOW, "edges": edges}, _FLOW_NODES, _FLOW_EDGES, {}) != []
+
+
+@pytest.mark.parametrize(
+    "nodes",
+    [["REQ_1"], ["REQ_1", "REQ_2", "SPEC_1"]],
+    ids=["a-node-fewer", "a-node-more"],
+)
+def test_the_runner_sees_a_node_more_or_less(nodes: list[str]) -> None:
+    assert _flow_problems({**_FLOW, "nodes": nodes}, _FLOW_NODES, _FLOW_EDGES, {}) != []
+
+
 @pytest.mark.parametrize(
     "test_app,case",
     [_html(p) for p in params(CASES, files=_files, skip=uninstalled_extension)],
@@ -605,7 +1012,11 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     # the findings first: reading the needs again after the build re-runs their
     # post-processing, and with it the reports of their links
     warnings = build_warnings(app)
-    problems = _check(case, needs, warnings) + _check_filters(app, case)
+    problems = (
+        _check(case, needs, warnings)
+        + _check_filters(app, case)
+        + _check_views(app, case)
+    )
     marker = case.get("divergent", {}).get(THIS_TOOL)
     if marker is None:
         assert problems == [], f"{case['name']}: {case['why']}"

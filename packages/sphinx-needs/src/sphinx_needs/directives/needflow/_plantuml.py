@@ -306,9 +306,12 @@ def process_needflow_plantuml(
                 puml_node["uml"] += f"\n' Direction\n\n{direction}\n"
 
             # the entity names must be assigned for the whole diagram at once,
-            # so that ids sanitising to the same name stay distinct nodes
+            # so that ids sanitising to the same name stay distinct nodes; with
+            # `:show_parts:` from what is drawn, the parts drawn being the needs' own
             entity_names = make_entity_names(
-                need["id_complete"] for need in found_needs
+                graph.nodes
+                if current_needflow["show_parts"]
+                else (need["id_complete"] for need in found_needs)
             )
 
             puml_node["uml"] += "\n' Nodes definition \n\n"
@@ -432,8 +435,9 @@ def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) ->
         else:
             comment = ""
 
-        # If source or target of link is a need_part, a specific style is needed
-        link_style = f"[{edge.style}]" if (edge.is_part or edge.style) else ""
+        # a part edge has a style of its own (`style_part`); an empty style is no
+        # brackets at all, `-[]->` being a syntax error
+        link_style = f"[{edge.style}]" if edge.style else ""
 
         source = get_entity_name(entity_names, edge.source_id)
         target = get_entity_name(entity_names, edge.target_id)
