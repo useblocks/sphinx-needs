@@ -23,8 +23,8 @@ the record beside its content, in the need's order, kept where the content is le
 Its executable half is this package's own corpus,
 [`tests/fixtures/needs_json_2a2_draft_conformance.toml`](../tests/fixtures/needs_json_2a2_draft_conformance.toml),
 run by `tests/test_draft_conformance.py`; "corpus: `name`" below is a case of it, and
-`test_reader.py::…` a unit test. It is not the shared reading corpus, which ubCode
-vendors: it becomes one ubCode can vendor once the shape settles.
+`test_reader.py::…` a unit test. It is not the shared reading corpus: it is this
+package's own, and ubCode vendors a copy of it, which follows each draft.
 
 Status: describes the implementation as it is (ub-needs-exchange, unreleased: 1.2.0
 read `"2a1"`).
@@ -215,8 +215,9 @@ Enforced by: corpus: `a-field-left-out-is-unset-and-a-null-is-read-as-null`;
 `test_reader.py::test_a_null_value_of_a_draft_is_read`.
 
 Besides which of two records with one id is read (§3.1) and the order of a record's
-parts (§3.4), the order of the records and of keys carries no meaning. sphinx-needs writes the records in the order of their ids, the
-envelope's keys and a record's in the order of the examples above, and a hop's in the
+parts (§3.4), the order of the records and of keys carries no meaning. sphinx-needs
+writes the records in the order of their ids, the envelope's keys and a record's in the
+order of the examples above, and a hop's in the
 order of its `NeedSourceHop` fields (`kind`, `origin`, `physical`, `semantic`,
 `document`, `language`), so that a file reads the same from build to build.
 
@@ -248,7 +249,7 @@ format 1's records reads it unchanged. `Record.fields` is a new object of:
 2. **every key of `fields`**: core and project fields in one name space — except the
    nine keys the projection owns, `id`, `type`, `content`, `doctype`, `parts`, `docname`,
    `sections`, `section_name` and `signature`, which come only from the record itself,
-   its `content` and its placement: such a key of `fields` is not read, and each is reported (`field_reserved`,
+   its `content`, its `parts` and its placement: such a key of `fields` is not read, and each is reported (`field_reserved`,
    path `needs.<index>.fields.<key>`). A `fields` that is not an object is not read
    (`fields_not_object`, path `needs.<index>.fields`).
 3. **every link type of `links`**, each a list of format-1 link strings (§5). A `links`
@@ -474,7 +475,7 @@ ones it reuses:
 
 | code | when |
 |---|---|
-| `format_version_unsupported` | the draft is not asked for (§1), as for every later format |
+| `format_version_unsupported` | the draft is not asked for, or the file is of the draft `"2a1"` it replaces (§1), as for every later format |
 | `draft_has_versions` | the draft has `versions` or `current_version` (§2.1) |
 | `version_not_found` | the version asked for is not the draft's `project.version` (§2.4) |
 | `needs_missing` | `needs` is absent or not an array (§2.2) |
