@@ -1,16 +1,24 @@
-# needs.json format "2a1" — a draft, read on opt-in
+# needs.json format "2a2" — a draft, read on opt-in
 
-This document is the specification of the **draft** needs.json format `"2a1"` as this
-package reads it: the envelope, the record, the hop and the link shapes, how a record is
-projected to the shape a format-1 record has, and the findings reported on the way.
+This document is the specification of the **draft** needs.json format `"2a2"` as this
+package reads it: the envelope, the record, its parts, the hop and the link shapes, how a
+record is projected to the shape a format-1 record has, and the findings reported on the
+way.
 
-**Experimental.** `"2a1"` is the first alpha of the next format (format 2). It may change,
+**Experimental.** `"2a2"` is the second alpha of the next format (format 2). It may change,
 or be removed, in any release while it is a draft, and a file of it is **readable only by
-the release that wrote it**: nothing promises that a later release reads a `"2a1"` file,
+the release that wrote it**: nothing promises that a later release reads a `"2a2"` file,
 or that a reader of a later draft does. A reader reads it only when asked to (§1); without
-that, a `"2a1"` file is refused exactly as the shared contract refuses every later format
+that, a `"2a2"` file is refused exactly as the shared contract refuses every later format
 ([`exchange-contract.md`](exchange-contract.md) §3.1), so the shared contract and its
 corpus are unchanged by it.
+
+**It replaces the first alpha, `"2a1"`**, which ub-needs-exchange 1.2.0 read: this reader
+reads `"2a2"` and no other draft, and a `"2a1"` file is refused as every later format is
+(§1). Two things changed from `"2a1"`, and nothing else: a need's parts are a section of
+the record beside its content, in the need's order, kept where the content is left out
+(§3.4), and a link to the empty part is spelled `B.`, the dead link it is (§5.1), where
+`"2a1"` read it as a link to the need.
 
 Its executable half is this package's own corpus,
 [`tests/fixtures/needs_json_2a2_draft_conformance.toml`](../tests/fixtures/needs_json_2a2_draft_conformance.toml),
@@ -18,7 +26,8 @@ run by `tests/test_draft_conformance.py`; "corpus: `name`" below is a case of it
 `test_reader.py::…` a unit test. It is not the shared reading corpus, which ubCode
 vendors: it becomes one ubCode can vendor once the shape settles.
 
-Status: describes the implementation as it is (ub-needs-exchange, unreleased).
+Status: describes the implementation as it is (ub-needs-exchange, unreleased: 1.2.0
+read `"2a1"`).
 
 ## Why a format 2
 
@@ -50,7 +59,7 @@ for the first of these, and falls short of the others:
 
 ## Design goals
 
-For format 2 as a whole; §§1–7 are how far the first draft goes.
+For format 2 as a whole; §§1–7 are how far this draft goes.
 
 1. **Provenance across hops.** Every need records where its text came from, as a list of
    hops, innermost first: the place it is written, each file it was included through,
@@ -72,8 +81,9 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
    specification and its corpus. A reader of format 1 refuses a later format with its own
    message rather than read it wrongly ([`exchange-contract.md`](exchange-contract.md)
    §3.1).
-7. **Drafts before a promise.** The format evolves through drafts (`"2a1"`, `"2b1"`, …)
-   readable only by the release that wrote them, then a final `2` that is kept readable.
+7. **Drafts before a promise.** The format evolves through drafts (`"2a1"`, `"2a2"`,
+   `"2b1"`, …) readable only by the release that wrote them, each replacing the one before
+   it, then a final `2` that is kept readable.
 
 ### What this draft leaves for later ones
 
@@ -86,52 +96,63 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
   returns with that block.
 - **An origins table** in the envelope (each upstream project's name, URL patterns,
   revision and roots), so URLs are composed on read rather than stored per need.
-- **Parts**: where they live (here they are `content.parts`, a map of part id to text, as
-  format 1 has them less the back links), where each came from (a span of the content, or
-  stated by the record), and how a reader treats a part its content does not mark.
+- **Where a part came from.** A part is an id and its text (§3.4); the key `anchor` of a
+  part entry is reserved for a later draft (a span of the content), and a reader ignores
+  it. Its absence says nothing: a part its content marks need not have a place in the
+  content's text (one written in an included file has none), so a part without an anchor
+  is not thereby a part the record states. No other marker of a part's origin is
+  written either, and how a reader treats a part its content does not mark is the
+  reading tool's (sphinx-needs and ubCode keep it as a stated part).
+- **The content's markup** (`doctype` stays as format 1 has it), and the **fields a view
+  renders a need by** (layout, style, collapse and the like are fields, as in format 1).
+- **Link properties**: a link is an id, a part and a condition (§5), nothing more.
 - **Extend records** (what a `needextend` changed, with its own source), **columns** in a
   hop's region, and **hops for items of other systems** (an issue tracker, a
   requirements tool).
 
 ## 1. The opt-in — `Document.select_version(requested, *, drafts=())`
 
-1. `drafts` names the drafts the call reads, besides format 1. There is one: `"2a1"`. A
+1. `drafts` names the drafts the call reads, besides format 1. There is one: `"2a2"`. A
    file whose `format_version` is a draft asked for is read as this document says; any
    other file is read, or refused, exactly as without `drafts` — a format-1 file as the
    shared contract says, any other later format refused (`format_version_unsupported`),
-   `"2b1"` and `2` included.
+   `"2a1"`, `"2b1"` and `2` included.
    Enforced by: corpus: `a-draft-is-read-on-opt-in`,
-   `the-opt-in-reads-only-the-draft-it-names`, `the-opt-in-reads-no-later-integer-format`,
-   `a-format-1-file-is-read-as-before-on-opt-in`; `test_reader.py::test_drafts_is_any_collection`.
-2. Without `"2a1"` in `drafts`, a `"2a1"` file is refused with the shared contract's code
-   and message.
-   Enforced by: corpus: `without-the-opt-in-a-draft-is-refused`; the shared corpus's
+   `the-opt-in-reads-only-the-draft-it-names`, `a-2a1-file-is-refused-on-opt-in`,
+   `the-opt-in-reads-no-later-integer-format`,
+   `a-format-1-file-is-read-as-before-on-opt-in`; `test_reader.py::test_drafts_is_any_collection`,
+   `…::test_a_2a1_file_is_refused_exactly_as_without_the_opt_in`.
+2. Without `"2a2"` in `drafts`, a `"2a2"` file is refused with the shared contract's code
+   and message, and so is a `"2a1"` file.
+   Enforced by: corpus: `without-the-opt-in-a-draft-is-refused`,
+   `a-2a1-file-is-refused-without-the-opt-in`; the shared corpus's
    `format-version-a-pre-release-is-refused` and
    `format-version-is-checked-whatever-version-is-asked-for`;
    `test_reader.py::test_without_the_opt_in_a_draft_is_refused_exactly_as_before`;
-   `test_draft_conformance.py::test_the_shared_corpus_keeps_2a1_refused`.
+   `test_draft_conformance.py::test_the_shared_corpus_keeps_a_draft_refused`.
 3. A `drafts` entry naming a draft this reader does not know is a programming error, not a
-   finding about a file: `ValueError`, before the file is looked at. A string is a
-   collection of its characters, so `drafts="2a1"` is one too.
+   finding about a file: `ValueError`, before the file is looked at — `"2a1"` among them,
+   alone or beside `"2a2"`. A string is a collection of its characters, so `drafts="2a2"`
+   is one too.
    Enforced by: `test_reader.py::test_an_unknown_draft_is_a_programming_error`.
 
 ## 2. The envelope
 
 ```json
 {
-  "format_version": "2a1",
+  "format_version": "2a2",
   "project": {"name": "up", "version": "1.0"},
-  "creator": {"program": "sphinx_needs", "version": "9.3.0"},
+  "creator": {"program": "sphinx_needs", "version": "9.4.0"},
   "created": "2026-11-05T00:00:00",
   "needs": [{"id": "REQ_1", "type": "req", "fields": {"title": "…"}}]
 }
 ```
 
 1. **No `versions` and no `current_version`.** A draft has one version, the document
-   itself. A `"2a1"` file that has either key, whatever its value, is refused
+   itself. A `"2a2"` file that has either key, whatever its value, is refused
    (`draft_has_versions`): a reader of format 1 that does not check `format_version` —
    sphinx-needs 9.0.0 with ub-needs-exchange 1.0.0 is one — reads such a file as format 1,
-   silently, so no `"2a1"` file carries them.
+   silently, so no `"2a2"` file carries them.
    Enforced by: corpus: `a-draft-with-versions-is-refused`,
    `a-draft-with-a-current-version-is-refused`,
    `versions-are-checked-before-the-draft-s-needs`.
@@ -167,7 +188,7 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
    `draft_has_versions`, `version_not_found`, `needs_missing`.
    Enforced by: corpus: `versions-are-checked-before-the-draft-s-needs`,
    `the-version-asked-for-is-checked-before-the-draft-s-needs`.
-7. `Version.format_version` is `"2a1"` for a draft's version (`1` for every other), and
+7. `Version.format_version` is `"2a2"` for a draft's version (`1` for every other), and
    `Version.data` is the whole document.
    Enforced by: `test_reader.py::test_a_draft_version_is_marked_as_one`.
 
@@ -179,7 +200,8 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
   "type": "req",
   "fields": {"title": "First", "status": "open", "tags": [], "asil": "B"},
   "links": {"links": ["REQ_2", {"id": "REQ_3", "part": "p1"}], "parent_needs": []},
-  "content": {"text": "…", "doctype": ".rst", "parts": {"p1": "the part"}},
+  "content": {"text": "…", "doctype": ".rst"},
+  "parts": [{"id": "p1", "text": "the part"}],
   "source": [{"kind": "page", "document": "index", "semantic": [{"kind": "section", "name": "Up"}]}]
 }
 ```
@@ -192,8 +214,8 @@ too). A reader still reads a `null` a writer did not leave out, as `null`.
 Enforced by: corpus: `a-field-left-out-is-unset-and-a-null-is-read-as-null`;
 `test_reader.py::test_a_null_value_of_a_draft_is_read`.
 
-Besides which of two records with one id is read (§3.1), the order of the records and of
-keys carries no meaning. sphinx-needs writes the records in the order of their ids, the
+Besides which of two records with one id is read (§3.1) and the order of a record's
+parts (§3.4), the order of the records and of keys carries no meaning. sphinx-needs writes the records in the order of their ids, the
 envelope's keys and a record's in the order of the examples above, and a hop's in the
 order of its `NeedSourceHop` fields (`kind`, `origin`, `physical`, `semantic`,
 `document`, `language`), so that a file reads the same from build to build.
@@ -232,19 +254,20 @@ format 1's records reads it unchanged. `Record.fields` is a new object of:
 3. **every link type of `links`**, each a list of format-1 link strings (§5). A `links`
    that is not an object is not read (`links_not_object`, path `needs.<index>.links`).
    A link type replaces a field of its name.
-4. from **`content`**, an object: `content` = its `text`, `doctype` = its `doctype`, and
-   `parts` = `{<part id>: {"id": <part id>, "content": <text>}}` from its `parts` (a
-   `{<part id>: <text>}` object) — each only where the key is there, so a `content`
-   without `text` gives no `content` key. A `content` that is
-   not an object is not read (`content_not_object`, path `needs.<index>.content`). The
-   values are not checked here (as format 1's are not), and a `parts` that is not an
-   object is handed on as it is, for the reading project to refuse as it refuses a
-   format-1 record's.
-   The `parts` shape is the one format 1 writes, less the back links a draft does not
+4. from **`content`**, an object: `content` = its `text` and `doctype` = its `doctype` —
+   each only where the key is there, so a `content` without `text` gives no `content` key.
+   A `content` that is not an object is not read (`content_not_object`, path
+   `needs.<index>.content`). The values are not checked here (as format 1's are not). Any
+   other key of `content` is ignored, with no finding — `parts` among them, where `"2a1"`
+   wrote a need's parts: a `"2a2"` record's parts are its own section.
+5. from **`parts`**, the record's section (§3.4): `parts` = `{<part id>: {"id": <part
+   id>, "content": <text>}}`, one key per entry read, in the section's order — whether
+   the record has a `content` or not. A record with no `parts`, or an empty one, has no
+   `parts` key. The shape is the one format 1 writes, less the back links a draft does not
    carry: sphinx-needs' own suite pins it in
    `packages/sphinx-needs/tests/__snapshots__/test_need_parts/test_doc_need_parts[test_app0][output_needs].json`
    (`SP_TOO_001`'s `parts`).
-5. from **the placement** — the last valid hop (§4) with a `document` — `docname` = its
+6. from **the placement** — the last valid hop (§4) with a `document` — `docname` = its
    `document` and `sections` = the `name` of each of its `semantic` entries of kind
    `section`, **innermost first**: a hop's `semantic` is outermost first, and format 1's
    `sections` innermost first (sphinx-needs' `project_legacy` in `_need_source.py`, the
@@ -283,7 +306,8 @@ A reader that filters or renders over a record's keys (sphinx-needs' `needimport
 `:filter:`, an external source's `target_url`) finds them absent in a draft's record.
 
 Each record's `fields` is a new object; its values are the document's own (the shared
-contract's §6.6), except the link lists and `parts`, which the projection builds.
+contract's §6.6), except the link lists and `parts`, which the projection builds — `parts`
+and each of its part objects new.
 
 Enforced by: corpus: `a-record-is-projected-to-the-format-1-shape`,
 `a-record-with-only-an-id-is-read`, `the-type-is-handed-on-as-written`,
@@ -291,8 +315,7 @@ Enforced by: corpus: `a-record-is-projected-to-the-format-1-shape`,
 `fields-that-are-not-an-object-are-not-read`, `a-link-type-replaces-a-field-of-its-name`,
 `links-that-are-not-an-object-are-not-read`, `a-record-without-content-has-no-content-key`,
 `content-without-a-doctype-has-no-doctype-key`, `a-content-object-without-text-has-no-content-key`,
-`parts-are-projected-as-format-1-writes-them`, `parts-that-are-not-an-object-are-handed-on-as-they-are`,
-`content-that-is-not-an-object-is-not-read`, `the-legacy-description-is-not-the-content-in-a-draft`,
+`content-parts-are-not-read`, `content-that-is-not-an-object-is-not-read`, `the-legacy-description-is-not-the-content-in-a-draft`,
 `a-record-without-a-placement-has-no-docname`, `a-record-without-a-source-has-no-docname`,
 `an-include-chain-has-its-placement-last`,
 `of-several-hops-with-a-document-the-last-is-the-placement`,
@@ -315,6 +338,50 @@ Enforced by: corpus: `a-source-that-is-not-an-array-is-not-read`, every case sta
 `source`; `test_reader.py::test_hops_are_the_document_s_own_objects`,
 `…::test_a_format_1_record_has_no_source`.
 
+### 3.4 The parts — `parts`
+
+```json
+"parts": [{"id": "zeta", "text": "last id first"}, {"id": "alpha", "text": "first id second"}]
+```
+
+A key of the record beside `content` — not under it, and not the content's: a record
+whose content a writer leaves out keeps its parts, with their texts. An array of the
+need's parts, **in the need's order** (sphinx-needs': the parts its content marks in the
+order written, then the parts the need states, in the order given), each an object of a
+string `id` and a string `text`, the part's text as the need holds it. A writer writes
+no `parts` for a need without parts (never `[]`), and sorts nothing.
+
+1. **The order is the section's.** The projection (§3.2) lists the parts in the order of
+   the entries read; a reader never sorts them.
+   Enforced by: corpus: `parts-keep-the-order-the-file-gives-them`,
+   `parts-are-projected-as-format-1-writes-them`.
+2. A `parts` that is not an array — `"2a1"`'s object of part id to text among them — is
+   not read (`parts_not_a_list`, path `needs.<index>.parts`): the record has no `parts`
+   key, and the rest of it is read. An empty array is no parts: no key and no finding.
+   Enforced by: corpus: `parts-that-are-not-an-array-are-not-read`,
+   `an-empty-parts-array-gives-no-parts-key`, `a-record-without-parts-has-no-parts-key`.
+3. An entry that is not an object, or whose `id` or `text` is absent or not a string, is
+   dropped (`part_invalid`, path `needs.<index>.parts.<position>`): the other entries and
+   the record are read, nothing is turned into text, and a dropped entry claims no id.
+   Enforced by: corpus: `an-invalid-part-entry-is-dropped`.
+4. **Of two entries with one id the first is read**, at its place, and each later one
+   skipped (`duplicate_part_id`, path `needs.<index>.parts.<position>.id`) — as a need
+   keeps the first part of an id.
+   Enforced by: corpus: `the-first-part-of-an-id-is-read`.
+5. An entry whose `id` is the empty string is well shaped, and projected as any other
+   (under the key `""`), with no finding here: a part id cannot be empty, and the reading
+   project refuses the need, as it refuses a format-1 record that states an empty part id
+   (sphinx-needs: `Part must have a non-empty string ID: ''`, the need not imported).
+   Enforced by: corpus: `an-empty-part-id-is-handed-on`; sphinx-needs'
+   `tests/test_needs_json_draft_roundtrip.py`, on both routes.
+6. Any other key of an entry is ignored, with no finding — `anchor`, which a later draft
+   may give a part, among them.
+   Enforced by: corpus: `unknown-keys-of-a-part-are-ignored`.
+7. A record's `parts` do not depend on its `content`: a record with `parts` and no
+   `content` has the `parts` key and no `content` key, as a format-1 record written
+   without its content has.
+   Enforced by: corpus: `parts-are-read-without-content`.
+
 ## 4. A hop
 
 ```json
@@ -331,7 +398,7 @@ need it read appends its own hops after the ones it read, and copies those as it
 them — so what survives a re-export is what that writer holds: sphinx-needs holds a hop
 as its `NeedSourceHop`, and a re-export by it writes only the keys the table below
 names, so a hop key another writer added (§4.2) does not survive a sphinx-needs
-re-export (in 2a1).
+re-export (in 2a2).
 
 | key | shape |
 |---|---|
@@ -367,9 +434,13 @@ part or a condition only as an object, and a string is a bare id only when it ha
 neither character.
 
 1. The projection spells each entry as format 1 writes a link (sphinx-needs'
-   `NeedLink.to_link_string`): a string as it is written, unchanged; an object as its `id`, then `.part` when
-   the part is not empty, then the condition, when there is one, in brackets one deeper
-   than the longest run of `]` in it — `B`, `B.p1`, `B[c]`, `B.p1[c]`, `B[[tags[0] == 'x']]`.
+   `NeedLink.to_link_string`): a string as it is written, unchanged; an object as its `id`,
+   then `.part` where it has a `part`, then the condition, when there is one, in brackets
+   one deeper than the longest run of `]` in it — `B`, `B.p1`, `B[c]`, `B.p1[c]`,
+   `B[[tags[0] == 'x']]`. **The empty part is a part**: `{"id": "B", "part": ""}` is `B.`,
+   and with a condition `B.[c]` — a link to a part no need can have, which the reading
+   project reads as the dead link it is, as it reads format 1's `B.` (`"2a1"` spelled it
+   `B`, a link to the need).
    A condition that starts with `[` (after any spaces) and ends with `]` is spelled with
    one space after the opening brackets, which the reader drops — `B[[ [x] == a[0]]]`.
    That string reads back as the same link in sphinx-needs, with one exception format 1
@@ -383,7 +454,7 @@ neither character.
    `a-link-with-a-condition-is-spelled-in-brackets`, `a-link-with-a-part-and-a-condition`,
    `a-condition-with-brackets-is-bracketed-one-deeper`, `a-condition-that-ends-in-a-bracket`,
    `a-condition-that-starts-and-ends-with-a-bracket-is-spelled-with-a-space`,
-   `an-empty-part-is-no-part`,
+   `an-empty-part-is-the-empty-part`, `an-empty-part-with-a-condition`,
    `link-spellings-keep-their-order-in-one-link-type`;
    `test_reader.py::test_a_link_object_is_spelled_as_sphinx_needs_writes_it`,
    `…::test_a_link_object_reads_back_as_the_same_link` (both where sphinx-needs is
@@ -424,11 +495,14 @@ The findings (`Diagnostic.code`):
 | `content_not_object` | `needs.<i>.content` | the record | §3.2 |
 | `source_not_a_list` | `needs.<i>.source` | the record | §3.3 |
 | `hop_invalid` | `needs.<i>.source.<j>` | the record | §4.1 |
+| `parts_not_a_list` | `needs.<i>.parts` | the record | §3.4.2 |
+| `part_invalid` | `needs.<i>.parts.<j>` | the record | §3.4.3 |
+| `duplicate_part_id` | `needs.<i>.parts.<j>.id` | the record | §3.4.4 |
 
 Paths are the shared contract's (§8.3), an array's position written as its index.
 Enforced by: corpus: `every-finding-of-a-draft-is-reported`;
-`test_reader.py::test_a_draft_is_refused`, `…::test_the_draft_findings_messages` (the
-messages, which are not the contract).
+`test_reader.py::test_a_draft_is_refused`, `…::test_the_draft_findings_messages`,
+`…::test_the_draft_parts_findings_messages` (the messages, which are not the contract).
 
 ## 7. What the package does not decide
 

@@ -467,14 +467,14 @@ def test_a_default_is_one_object_in_every_record():
 
 
 # ------------------------------------------------------------------------------------
-# the draft "2a1", on opt-in (design/v2a2-draft.md; its corpus is
+# the draft "2a2", on opt-in (design/v2a2-draft.md; its corpus is
 # tests/fixtures/needs_json_2a2_draft_conformance.toml)
 
 
 def draft(needs: Any, **envelope_keys: Any) -> dict[str, Any]:
-    """A "2a1" document."""
+    """A "2a2" document."""
     return {
-        "format_version": "2a1",
+        "format_version": "2a2",
         "project": {"name": "up", "version": "1.0"},
         "creator": {"program": "sphinx_needs", "version": "9.3.0"},
         "needs": needs,
@@ -483,7 +483,7 @@ def draft(needs: Any, **envelope_keys: Any) -> dict[str, Any]:
 
 
 def read_draft(data: dict[str, Any], requested: str | None = None) -> nx.Version:
-    return nx.parse(json.dumps(data)).select_version(requested, drafts=("2a1",))
+    return nx.parse(json.dumps(data)).select_version(requested, drafts=("2a2",))
 
 
 def test_without_the_opt_in_a_draft_is_refused_exactly_as_before():
@@ -493,6 +493,19 @@ def test_without_the_opt_in_a_draft_is_refused_exactly_as_before():
         doc.select_version(None)
     assert (info.value.code, info.value.message) == (
         "format_version_unsupported",
+        'the file is of format version "2a2"; this reader reads format version 1 only',
+    )
+
+
+@pytest.mark.parametrize("drafts", [(), ("2a2",)], ids=["without", "on-opt-in"])
+def test_a_2a1_file_is_refused_exactly_as_without_the_opt_in(drafts):
+    """ "2a2" replaces the draft "2a1": a "2a1" file is refused with the shared
+    contract's code and message, whether "2a2" is asked for or not."""
+    data = {**draft([{"id": "A", "type": "req"}]), "format_version": "2a1"}
+    with pytest.raises(nx.ExchangeError) as info:
+        nx.parse(json.dumps(data)).select_version(None, drafts=drafts)
+    assert (info.value.code, info.value.message) == (
+        "format_version_unsupported",
         'the file is of format version "2a1"; this reader reads format version 1 only',
     )
 
@@ -500,9 +513,9 @@ def test_without_the_opt_in_a_draft_is_refused_exactly_as_before():
 @pytest.mark.parametrize(
     "drafts",
     [
-        pytest.param(("2a1",), id="tuple"),
-        pytest.param(["2a1"], id="list"),
-        pytest.param(frozenset({"2a1"}), id="frozenset"),
+        pytest.param(("2a2",), id="tuple"),
+        pytest.param(["2a2"], id="list"),
+        pytest.param(frozenset({"2a2"}), id="frozenset"),
     ],
 )
 def test_drafts_is_any_collection(drafts):
@@ -516,7 +529,7 @@ def test_an_unhashable_format_version_is_invalid_whatever_the_drafts(stated):
     ``format_version_invalid`` under a hashing ``drafts`` too, never a ``TypeError``."""
     data = {"format_version": stated, **envelope({"A": record("A")})}
     with pytest.raises(nx.ExchangeError) as info:
-        nx.parse(json.dumps(data)).select_version(None, drafts=frozenset({"2a1"}))
+        nx.parse(json.dumps(data)).select_version(None, drafts=frozenset({"2a2"}))
     assert info.value.code == "format_version_invalid"
 
 
@@ -524,8 +537,10 @@ def test_an_unhashable_format_version_is_invalid_whatever_the_drafts(stated):
     "drafts",
     [
         pytest.param(("2b1",), id="another-pre-release"),
-        pytest.param(("2a1", "2"), id="a-later-format"),
-        pytest.param("2a1", id="a-string-is-its-characters"),
+        pytest.param(("2a1",), id="the-replaced-draft"),
+        pytest.param(("2a2", "2a1"), id="the-replaced-draft-beside-2a2"),
+        pytest.param(("2a2", "2"), id="a-later-format"),
+        pytest.param("2a2", id="a-string-is-its-characters"),
     ],
 )
 def test_an_unknown_draft_is_a_programming_error(drafts):
@@ -543,7 +558,7 @@ def test_an_unknown_draft_is_a_programming_error(drafts):
             draft([], versions={}),
             None,
             "draft_has_versions",
-            "the file is of format version \"2a1\", which has no 'versions'; a file "
+            "the file is of format version \"2a2\", which has no 'versions'; a file "
             "that has one is not read",
             id="versions",
         ),
@@ -551,7 +566,7 @@ def test_an_unknown_draft_is_a_programming_error(drafts):
             draft([], current_version="1.0"),
             None,
             "draft_has_versions",
-            "the file is of format version \"2a1\", which has no 'current_version'; a "
+            "the file is of format version \"2a2\", which has no 'current_version'; a "
             "file that has one is not read",
             id="current_version",
         ),
@@ -586,7 +601,7 @@ def test_a_draft_is_refused(data, requested, code, message):
 
 def test_a_draft_version_is_marked_as_one():
     version = read_draft(draft([]))
-    assert (version.name, version.format_version) == ("1.0", "2a1")
+    assert (version.name, version.format_version) == ("1.0", "2a2")
     assert version.data["project"] == {"name": "up", "version": "1.0"}
     plain = nx.parse(json.dumps(envelope({}))).select_version(None)
     assert plain.format_version == nx.FORMAT_VERSION == 1
@@ -595,7 +610,7 @@ def test_a_draft_version_is_marked_as_one():
 def test_a_format_1_record_has_no_source():
     (only,) = (
         nx.parse(json.dumps(envelope({"A": record("A")})))
-        .select_version(None, drafts=("2a1",))
+        .select_version(None, drafts=("2a2",))
         .records()
     )
     assert only.source == ()
@@ -624,7 +639,7 @@ def test_hops_are_the_document_s_own_objects():
     hops = [{"kind": "page", "document": "index"}, {"kind": 1}, {"kind": "file"}]
     data = draft([{"id": "A", "type": "req", "source": hops}])
     doc = nx.parse(json.dumps(data))
-    (only,) = doc.select_version(None, drafts=("2a1",)).records()
+    (only,) = doc.select_version(None, drafts=("2a2",)).records()
     own = doc.data["needs"][0]["source"]
     assert len(only.source) == 2
     assert only.source[0] is own[0]
@@ -633,14 +648,25 @@ def test_hops_are_the_document_s_own_objects():
 
 def test_a_draft_s_records_do_not_alter_the_document():
     data = draft(
-        [{"id": "A", "type": "req", "fields": {"title": "t"}, "links": {"l": ["B"]}}]
+        [
+            {
+                "id": "A",
+                "type": "req",
+                "fields": {"title": "t"},
+                "links": {"l": ["B"]},
+                "parts": [{"id": "p", "text": "t"}],
+            }
+        ]
     )
     doc = nx.parse(json.dumps(data))
-    (only,) = doc.select_version(None, drafts=("2a1",)).records()
+    (only,) = doc.select_version(None, drafts=("2a2",)).records()
     only.fields["title"] = "changed"
     only.fields["l"].append("C")
+    only.fields["parts"]["p"]["content"] = "changed"
+    only.fields["parts"]["q"] = {"id": "q", "content": "added"}
     assert doc.data["needs"][0]["fields"] == {"title": "t"}
     assert doc.data["needs"][0]["links"] == {"l": ["B"]}
+    assert doc.data["needs"][0]["parts"] == [{"id": "p", "text": "t"}]
 
 
 def test_the_draft_findings_messages():
@@ -666,6 +692,39 @@ def test_the_draft_findings_messages():
     ]
 
 
+def test_the_draft_parts_findings_messages():
+    data = draft(
+        [
+            {"id": "A", "type": "req", "parts": {"p": "t"}},
+            {
+                "id": "B",
+                "type": "req",
+                "parts": [
+                    {"id": "p", "text": "t"},
+                    {"id": "q", "text": 1},
+                    {"id": "p", "text": "u"},
+                ],
+            },
+        ]
+    )
+    first, second = read_draft(data).records()
+    assert [(d.code, d.message) for d in first.diagnostics] == [
+        ("parts_not_a_list", "'parts' is not an array; the need's parts are not read")
+    ]
+    assert [(d.code, d.message) for d in second.diagnostics] == [
+        (
+            "part_invalid",
+            "the part at index 1 is not an object of a string 'id' and a string "
+            "'text'; it is not read",
+        ),
+        (
+            "duplicate_part_id",
+            "the part at index 2 has the id 'p' of the part at index 0; the first is "
+            "read, this one skipped",
+        ),
+    ]
+
+
 LINKS = [
     {"id": "B"},
     {"id": "B", "part": "p1"},
@@ -677,6 +736,9 @@ LINKS = [
     {"id": "B", "part": "p", "condition": "status in ['open']"},
     {"id": "B", "condition": "[1] == y"},
     {"id": "B", "part": "p", "condition": "[x] == a[0]"},
+    # the empty part, which names no part a need can have: spelled ``B.``, a dead link
+    {"id": "B", "part": ""},
+    {"id": "B", "part": "", "condition": "c"},
 ]
 
 

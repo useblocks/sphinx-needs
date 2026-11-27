@@ -1,13 +1,13 @@
-"""The reader of the draft format "2a1", held to its own conformance corpus.
+"""The reader of the draft format "2a2", held to its own conformance corpus.
 
 ``tests/fixtures/needs_json_2a2_draft_conformance.toml`` is the executable half of
 ``design/v2a2-draft.md``. It is NOT the shared reading corpus, which ubCode vendors and
-where "2a1" stays refused (``test_conformance.py`` runs that one): the draft is
+where every draft stays refused (``test_conformance.py`` runs that one): the draft is
 experimental, and its corpus is this package's own until the shape settles. Two things
 are asserted, as for the shared corpus:
 
 * every case's outcome -- a refusal with its code, or the version, the records, their
-  hops and the findings;
+  hops, the order of their parts and the findings;
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage.
 
@@ -36,7 +36,7 @@ CORPUS_PATH = (
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message.
-EXPECTED_CASE_COUNT = 78
+EXPECTED_CASE_COUNT = 90
 
 #: The keys a case may carry, and those its ``[case.options]`` and ``[case.expect]``
 #: may: the header defines each. A key outside them is a case this runner would
@@ -53,10 +53,11 @@ EXPECT_KEYS = {
     "absent",
     "unset",
     "nulls",
+    "part_order",
 }
 
 #: The drafts a case is read with when its ``options`` name none.
-DEFAULT_DRAFTS = ("2a1",)
+DEFAULT_DRAFTS = ("2a2",)
 
 
 def _corpus() -> list[dict[str, Any]]:
@@ -92,7 +93,7 @@ def test_every_case_is_well_formed() -> None:
         expect = case["expect"]
         assert set(expect) <= EXPECT_KEYS, name
         # an empty list of names would pass whatever the record holds
-        for key in ("unset", "nulls"):
+        for key in ("unset", "nulls", "part_order"):
             assert all(expect.get(key, {}).values()), f"{name}: an empty {key} list"
         if "error" in expect:
             assert set(expect) == {"error"}, name
@@ -109,9 +110,9 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "EXPERIMENTAL" in header
 
 
-def test_the_shared_corpus_keeps_2a1_refused() -> None:
-    """The positive control of the opt-in: the shared corpus still pins a "2a1" file as
-    refused, so the draft is read here only because this runner asks for it."""
+def test_the_shared_corpus_keeps_a_draft_refused() -> None:
+    """The positive control of the opt-in: the shared corpus still pins a file of a
+    draft as refused, so a draft is read here only because this runner asks for it."""
     shared = Path(__file__).parent / "fixtures" / "needs_json_reading_conformance.toml"
     with shared.open("rb") as handle:
         cases = {case["name"]: case for case in tomllib.load(handle)["case"]}
@@ -170,6 +171,10 @@ def _outcome(case: dict[str, Any], text: str | Path) -> None:
     for key, names in expect.get("unset", {}).items():
         assert key in by_key, f"no record {key!r} was read"
         assert sorted(set(names) & set(by_key[key].fields)) == []
+    for key, ids in expect.get("part_order", {}).items():
+        assert key in by_key, f"no record {key!r} was read"
+        # a dict's order is the order the projection gave it; TOML's value is not
+        assert list(by_key[key].fields["parts"]) == ids
     for key, names in expect.get("nulls", {}).items():
         assert key in by_key, f"no record {key!r} was read"
         fields = by_key[key].fields
