@@ -43,6 +43,7 @@ tests/
 docs/changelog.rst        # the sphinx-mounts convention: an `Unreleased` section
 design/exchange-contract.md
 design/v2a2-draft.md      # the draft "2a2", read on opt-in (experimental)
+design/v2a1-draft.md      # a stub at the replaced draft's old path, kept for the links of released docs
 ```
 
 There is no documentation site and no command line: the package has consumers, not users.
