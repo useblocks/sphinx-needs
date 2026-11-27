@@ -725,6 +725,59 @@ def test_the_draft_parts_findings_messages():
     ]
 
 
+def test_the_parts_are_projected_in_the_section_s_order():
+    """The projected ``parts`` keep the section's order, never sorted: pinned here as
+    well as by the corpus's ``part_order``, with no runner in between."""
+    data = draft(
+        [
+            {
+                "id": "A",
+                "type": "req",
+                "parts": [
+                    {"id": "zeta", "text": "last id first"},
+                    {"id": "alpha", "text": "first id second"},
+                    {"id": "mid", "text": "middle"},
+                ],
+            }
+        ]
+    )
+    (only,) = read_draft(data).records()
+    assert list(only.fields["parts"]) == ["zeta", "alpha", "mid"]
+
+
+def test_part_ids_are_compared_as_written():
+    """Two ids are one id only when they are the same string: no case folding, no
+    trimming, so ``P``, ``p``, `` a`` and ``a`` are four parts, in the file's order,
+    with no finding."""
+    data = draft(
+        [
+            {
+                "id": "A",
+                "type": "req",
+                "parts": [
+                    {"id": "P", "text": "upper"},
+                    {"id": "p", "text": "lower"},
+                    {"id": " a", "text": "spaced"},
+                    {"id": "a", "text": "plain"},
+                ],
+            }
+        ]
+    )
+    (only,) = read_draft(data).records()
+    assert list(only.fields["parts"]) == ["P", "p", " a", "a"]
+    assert only.diagnostics == ()
+
+
+def test_a_null_parts_is_not_an_array():
+    """``"parts": null`` is not an array, as any other value that is not one: one
+    ``parts_not_a_list`` finding, and no ``parts``."""
+    (only,) = read_draft(draft([{"id": "A", "type": "req", "parts": None}])).records()
+    assert [(d.code, d.path) for d in only.diagnostics] == [
+        ("parts_not_a_list", "needs.0.parts")
+    ]
+    assert "parts" not in only.fields
+
+
 LINKS = [
     {"id": "B"},
     {"id": "B", "part": "p1"},
