@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795787566431,
+  "lastUpdate": 1795798194355,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -31836,6 +31836,48 @@ window.BENCHMARK_DATA = {
             "value": 193.148518,
             "unit": "MB",
             "extra": "Commit: 47ab6fba1c36d3119342866844ea8437fedba97e\nBranch: master\nTime: 2026-11-27T14:51:04+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f63bf8eaf88998d286545b5e8516e6231cd84bd0",
+          "message": "✨ needs.json draft \"2a2\": a need's parts get a section of their own, and a link to the empty part stays dead (experimental) (#2594)\n\nA project that tries the experimental draft of needs.json format 2 now\ngets every need's parts as a section of its record, in the order the\nneed holds them, and keeps them when it writes the file without content;\nand a link written to `REQ_1.` stays the dead link it is when another\nproject imports it, where the draft turned it into a live link to\n`REQ_1`.\n\nTwo format changes, and nothing else.\n\n**1. A need's parts are a section of its record.** `parts` is beside\n`content` and no longer under it: one `{id, text}` per part, the parts\nits content marks in the order written and then the parts it states (its\nrecord's, or those it was given) in the order given, never sorted. A\nneed without parts has no `parts`; leaving out `content`\n(`needs_json_exclude_fields`) keeps the parts, and naming `parts` leaves\nout the section alone.\n\nFor this need:\n\n```rst\n.. req:: Parts out of id order\n   :id: REQ_5\n\n   Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and\n   :np:`(mid) middle`.\n```\n\n\"2a2\" writes this record:\n\n```json\n{\n  \"id\": \"REQ_5\",\n  \"type\": \"req\",\n  \"fields\": {\"title\": \"Parts out of id order\", \"tags\": [], \"constraints\": []},\n  \"links\": {\"links\": [], \"parent_needs\": []},\n  \"content\": {\n    \"text\": \"Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and\\n:np:`(mid) middle`.\",\n    \"doctype\": \".rst\"\n  },\n  \"parts\": [\n    {\"id\": \"zeta\", \"text\": \"last id first\"},\n    {\"id\": \"alpha\", \"text\": \"first id second\"},\n    {\"id\": \"mid\", \"text\": \"middle\"}\n  ],\n  \"source\": [\n    {\n      \"kind\": \"page\",\n      \"physical\": {\"root\": \"srcdir\", \"path\": \"index.rst\", \"start_line\": 4, \"end_line\": 8},\n      \"semantic\": [{\"kind\": \"section\", \"name\": \"Up\"}],\n      \"document\": \"index\",\n      \"language\": \".rst\"\n    }\n  ]\n}\n```\n\nwhere \"2a1\" wrote the parts inside the content, as an object keyed by\npart id:\n\n```json\n{\n  \"content\": {\n    \"text\": \"Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and\\n:np:`(mid) middle`.\",\n    \"doctype\": \".rst\",\n    \"parts\": {\"zeta\": \"last id first\", \"alpha\": \"first id second\", \"mid\": \"middle\"}\n  }\n}\n```\n\nThe builders page shows a record of this shape, and a test holds that\npage's example to the record the test project writes.\n\n**2. A link to the empty part stays dead.** `REQ_5.` names no part a\nneed can have. It is written with its empty part and read back as\n`REQ_5.`, as format 1 reads it, and reported as a dead link again. For a\nneed with `:links: REQ_5, REQ_5.alpha, REQ_5.` the record holds:\n\n```json\n{\n  \"links\": {\n    \"links\": [\"REQ_5\", {\"id\": \"REQ_5\", \"part\": \"\"}, {\"id\": \"REQ_5\", \"part\": \"alpha\"}],\n    \"parent_needs\": []\n  }\n}\n```\n\n\"2a2\" replaces \"2a1\": it is written and read alone. `needimport` and\n`needs_external_needs` refuse a \"2a1\" file with the warning they give\nevery format they do not read. A project that set\n`needs_json_format_version = \"2a1\"` gets one `needs.config` warning\nnaming \"2a2\" (once per build, however many needs.json files it writes),\nand a format-1 needs.json, until it sets \"2a2\".\n\nReading a draft file: a part entry of a wrong shape, or a second entry\nof one id, is one warning naming the file and the entry, and the need is\nread without it; part ids are compared as written (no case folding, no\ntrimming, no normalisation); `\"parts\": null` is not an array, and one\nwarning; a record stating an empty part id is refused, as in format 1.\n\nub-needs-exchange: `select_version(drafts=(\"2a2\",))` reads the new\ndraft; `drafts=(\"2a1\",)` is an unknown draft; three new finding codes,\n`parts_not_a_list`, `part_invalid`, `duplicate_part_id`. The contract\nmoves to `design/v2a2-draft.md` and the corpus to\n`tests/fixtures/needs_json_2a2_draft_conformance.toml` (92 cases); the\nshared reading corpus and the parts corpus are unchanged. A stub stays\nat `design/v2a1-draft.md`, the path the released 9.3.0 docs link: it\npoints to `v2a2-draft.md` and to the contract of \"2a1\" as released, at\nthe tag `ub-needs-exchange-v1.2.0`. Every other file that named \"2a1\"\ngot a draft-neutral name, so the next draft renames only its contract\nand its corpus.\n\n`ENV_DATA_VERSION` is 35, was 34: a page whose `needimport` read a \"2a1\"\nfile kept that answer over an unbumped rebuild (measured), so the first\nbuild after upgrading reads every document again.\n\nRelease note: a Sphinx-Needs release with this change needs\n`ub-needs-exchange` released first (its next minor). Master needs that\nalready: it imports `namespace_prefix`, which the published\nub-needs-exchange 1.2.0 lacks, so a build against 1.2.0 stops at the\nimport. This change adds a second reason: Sphinx-Needs asks the reader\nfor the draft \"2a2\" on EVERY `needimport` and external read, and the\n1.2.0 reader answers `ValueError: unknown drafts ['2a2']: this reader\nknows ['2a1']` there, a format-1 file included. This pull request\nchanges no version, floor or lock.\n\nTests: the draft's corpus (92 cases, each from text and from a file) and\nreader tests (the parts' order with no runner between, ids compared as\nwritten at both ends, a null `parts`); a test that every relative link\nbetween the files of `design/` leads to a file, the stub's among them;\nSphinx-Needs' writer tests and snapshot (parts order and place — four\nparts, and a need whose parts are all stated —, no `parts` without\nparts, content excluded, parts excluded, the empty part alone and under\na condition, the builders page's example), and on both reading routes\nthe order kept, the dead `ID.` from format 1 through the draft back to\nformat 1, an empty part id refused, a \"2a1\" file refused; the \"2a1\"\nconfiguration value in `conf.py`, `ubproject.toml` and `-D`, reported\nonce by a build of several writers.",
+          "timestamp": "2026-11-27T17:48:45+01:00",
+          "tree_id": "65683c04067308734374c5ee5b48f3d4dde91c76",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f63bf8eaf88998d286545b5e8516e6231cd84bd0"
+        },
+        "date": 1795798193584,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.04001902199999563,
+            "unit": "s",
+            "extra": "Commit: f63bf8eaf88998d286545b5e8516e6231cd84bd0\nBranch: master\nTime: 2026-11-27T17:48:45+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 8.351320114000004,
+            "unit": "s",
+            "extra": "Commit: f63bf8eaf88998d286545b5e8516e6231cd84bd0\nBranch: master\nTime: 2026-11-27T17:48:45+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 191.974495,
+            "unit": "MB",
+            "extra": "Commit: f63bf8eaf88998d286545b5e8516e6231cd84bd0\nBranch: master\nTime: 2026-11-27T17:48:45+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
