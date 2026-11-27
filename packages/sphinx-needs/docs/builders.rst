@@ -195,7 +195,8 @@ of the ``ub-needs-exchange`` library. In short:
   its own default, as it does to a ``null``), ``links`` (a bare id, or ``{"id", "part", "condition"}`` where a
   part or a condition is given; no back links), ``content`` (its text and ``doctype``), ``parts`` and ``source``;
 - ``parts`` lists the need's :ref:`parts <need_part>`, each its ``id`` and its ``text``, in the order the need holds
-  them: the parts its content marks, in the order written, then those its record stated, in the order given. It is
+  them: the parts its content marks, in the order written, then the parts it states (its record's, or those it was
+  given), in the order given. It is
   the record's, not the content's, so a file written without the content keeps it; a need without parts has none;
 - a link to the empty part, ``REQ_1.``, which names no part a need can have, is written
   ``{"id": "REQ_1", "part": ""}`` and read back as the dead link ``REQ_1.`` it is;

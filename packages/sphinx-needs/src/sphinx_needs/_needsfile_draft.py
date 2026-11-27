@@ -21,8 +21,9 @@ record is ``{id, type, fields, links, content, parts?, source}``:
   ``{id, part?, condition?}`` where a part or a condition is given; no back links;
 - ``content``: ``{text, doctype}``;
 - ``parts``: where the need has parts, a list of ``{id, text}``, in the order the need
-  holds them (the parts its content marks in the order written, then those its record
-  stated): the record's, not the content's, so excluding ``content`` keeps it;
+  holds them (the parts its content marks in the order written, then the parts it
+  states -- its record's, or those it was given -- in the order given): the record's,
+  not the content's, so excluding ``content`` keeps it;
 - ``source``: the need's hops, innermost first -- those it was read with from another
   project's draft file (its ``upstream``, their origins filled), then this build's -- each
   as :class:`~sphinx_needs._need_source.NeedSourceHop` holds it, with ``None`` left out

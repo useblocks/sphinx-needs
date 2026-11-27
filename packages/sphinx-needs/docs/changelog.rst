@@ -146,7 +146,8 @@ Improvements
 - ✨ **needs.json draft "2a2" (experimental), replacing "2a1"**: with :ref:`needs_json_format_version`
   ``= "2a2"``, a need's :ref:`parts <need_part>` are a section of its record, ``"parts": [{"id": "zeta",
   "text": "last id first"}, {"id": "alpha", "text": "first id second"}]``, beside its ``content`` and in the
-  order the need holds them -- the parts its content marks in the order written, then those its record stated --
+  order the need holds them -- the parts its content marks in the order written, then the parts it states (its
+  record's, or those it was given) in the order given --
   where "2a1" wrote them as ``content.parts``, which a file written without its content lost. Leaving out the
   ``content`` (:ref:`needs_json_exclude_fields`) keeps the parts, with their texts; naming ``parts`` leaves out the
   section alone; a need without parts has no ``parts``. A link to the empty part, ``REQ_1.``, stays the dead link it
