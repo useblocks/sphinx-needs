@@ -189,8 +189,9 @@ class _SphinxBackend:
     def debug(self, name: str, msg: str, _location: str | None, /) -> None:
         sphinx_logging.getLogger(name).verbose(msg)
 
-    def info(self, name: str, msg: str, _location: str | None, /) -> None:
-        sphinx_logging.getLogger(name).info(msg)
+    def info(self, name: str, msg: str, location: str | None, /) -> None:
+        # an information line, never a warning: a `-W` build does not fail on it
+        sphinx_logging.getLogger(name).info(msg, location=location)
 
     def warning(
         self, name: str, msg: str, subtype: str, location: str | None, /

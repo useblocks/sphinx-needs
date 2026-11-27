@@ -15,6 +15,7 @@ import pytest
 
 pytest.importorskip("clang.cindex")
 
+from sphinx_codelinks.analyse.preproc import libclang_parser, loader
 from sphinx_codelinks.analyse.preproc.decided import (
     TARGET_DEFINEDNESS,
     TARGET_IDENTITY,
@@ -24,8 +25,6 @@ from sphinx_codelinks.analyse.preproc.decided import (
     directives,
     names,
 )
-
-from sphinx_codelinks.analyse.preproc import libclang_parser, loader
 from sphinx_codelinks.analyse.preproc.headers import SkippedSpan
 
 

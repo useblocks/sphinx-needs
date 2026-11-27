@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from sphinx_codelinks.analyse.preproc import loader
+from sphinx_codelinks.analyse.preproc.decided import Stated, decided_ranges
 from sphinx_codelinks.analyse.preproc.headers import (
     Contribution,
     SkippedSpan,
@@ -97,6 +98,47 @@ def extract_active_comments(
         [] if as_written else _main_file_skipped(loader.get_all_skipped_ranges(tu))
     )
     return _active_comments(tu, file_path, skipped)
+
+
+def extract_decided_comments(
+    file_path: Path,
+    args: list[str],
+    stated: Stated,
+    on_parse: Callable[[Any], None] | None = None,
+    *,
+    as_written: bool = False,
+) -> tuple[list[LibclangComment], int]:
+    """:func:`extract_active_comments` for a header no compilation-database entry
+    includes, parsed with the ``[preprocessor]`` table's ``args`` (useblocks/ubcode#4866,
+    slice 2): of the ranges its own pass skipped, only those the configuration
+    ``stated`` decides are left out (:func:`.decided.decided_ranges`), every other arm
+    read as written. A stated target's macros are read from the parse first.
+
+    :return: The comments, and how many arms are read as written for a condition the
+        configuration does not decide (0 when ``as_written``: nothing is left out).
+    """
+    tu = parse_translation_unit(file_path, args)
+    if on_parse is not None:
+        on_parse(tu)
+    if as_written:
+        return _active_comments(tu, file_path, []), 0
+    if stated.target:
+        cx = loader.load_clang_cindex()
+        stated.macros(
+            (cursor.spelling, cursor.location.file is not None)
+            for cursor in tu.cursor.get_children()
+            if cursor.kind == cx.CursorKind.MACRO_DEFINITION
+        )
+    skipped = [
+        SkippedSpan(sr.start_offset, sr.end_offset, sr.start_line, sr.end_line)
+        for sr in loader.get_all_skipped_ranges(tu)
+        if sr.from_main_file
+    ]
+    kept, undecided = decided_ranges(file_path.read_bytes(), skipped, stated)
+    comments = _active_comments(
+        tu, file_path, [(span.start_line, span.end_line) for span in kept]
+    )
+    return comments, undecided
 
 
 def main_file_inclusions(tu: Any, working_directory: Path) -> set[Path]:
