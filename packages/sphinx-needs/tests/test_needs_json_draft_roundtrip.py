@@ -1,13 +1,18 @@
-"""Reading the draft needs.json "2a1" back (experimental): ``needimport`` and external
+"""Reading the draft needs.json "2a2" back (experimental): ``needimport`` and external
 needs keep each record's source hops, as the need's ``upstream``.
 
-Three projects in a chain: ``up`` writes a 2a1 file (a page need with a part, a link to
+Three projects in a chain: ``up`` writes a draft file (a page need with a part, a link to
 that part, a need in a nested include); ``down`` imports it (``needimport``, ids ``D_``)
-and loads it as external needs (ids ``X_``), and writes its own 2a1 file; ``down2``
+and loads it as external needs (ids ``X_``), and writes its own draft file; ``down2``
 imports that. A hop with no ``origin`` in a file is the writing project's: it is filled
 with the envelope's ``project.name`` on read, and an origin a file states is never
 changed. Nothing a need of this build answers moves: its legacy location keys and its
 ``c.source`` facets are those of the same need imported from the format-1 file.
+
+Then, on both routes: a need's parts keep their order through a draft file, a link to
+the empty part (``REQ_A.``) stays the dead link it is from format 1 through the draft back
+to format 1, a record stating an empty part id is refused as in format 1, and a file of
+the draft ``"2a1"``, which ``"2a2"`` replaces, is refused.
 """
 
 from __future__ import annotations
@@ -20,7 +25,7 @@ from typing import Any
 import pytest
 
 from sphinx_needs import _source_facets as facets
-from sphinx_needs._needsfile_v2a1 import AUTHORED_CORE, hop_to_json
+from sphinx_needs._needsfile_draft import AUTHORED_CORE, hop_to_json
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs_testkit import build_warnings
@@ -75,7 +80,7 @@ project = "down"
 version = "2.0"
 extensions = ["sphinx_needs"]
 exclude_patterns = ["_build"]
-needs_json_format_version = "2a1"
+needs_json_format_version = "2a2"
 # a default of its own: a value the upstream leaves unset reads as it
 needs_fields = {"asil": {"nullable": True, "default": "QM"}}
 needs_external_needs = [
@@ -95,7 +100,7 @@ DOWN2_CONF = """\
 project = "down2"
 extensions = ["sphinx_needs"]
 exclude_patterns = ["_build"]
-needs_json_format_version = "2a1"
+needs_json_format_version = "2a2"
 needs_fields = {"asil": {"nullable": True}}
 """
 
@@ -154,7 +159,7 @@ def _facts(need: Any) -> dict[str, Any]:
         "symbol": facets.symbol_of(source),
         "hops": [hop_to_json(hop) for hop in source.hops],
         # every field value, a field the upstream left unset (``null`` in format 1,
-        # absent in 2a1) read as this project's default alike
+        # absent in the draft) read as this project's default alike
         "fields": {
             **{name: need[name] for name in AUTHORED_CORE},
             **dict(need.iter_extra_items()),
@@ -164,10 +169,10 @@ def _facts(need: Any) -> dict[str, Any]:
 
 @pytest.fixture
 def chain(make_app: Any, tmp_path: Path) -> dict[str, Any]:
-    """Build up (2a1, and format 1 beside it), down (from each), and down2."""
+    """Build up (the draft, and format 1 beside it), down (from each), and down2."""
     up, up_json = _build(
         make_app,
-        _write(tmp_path / "up", {"conf.py": UP_CONF.format(format="2a1"), **UP_FILES}),
+        _write(tmp_path / "up", {"conf.py": UP_CONF.format(format="2a2"), **UP_FILES}),
     )
     assert [w for w in build_warnings(up) if BETA not in w] == []
     _, up_v1_json = _build(
@@ -179,7 +184,7 @@ def chain(make_app: Any, tmp_path: Path) -> dict[str, Any]:
     shutil.copy(up_json, down_src / "up.json")
     down, down_json = _build(make_app, down_src)
     down_v1_src = _write(
-        tmp_path / "down_v1", {**down_files, "conf.py": DOWN_CONF.replace('"2a1"', "1")}
+        tmp_path / "down_v1", {**down_files, "conf.py": DOWN_CONF.replace('"2a2"', "1")}
     )
     shutil.copy(up_v1_json, down_v1_src / "up.json")
     down_v1, _ = _build(make_app, down_v1_src)
@@ -263,7 +268,7 @@ def test_what_a_need_answers_is_a_format_1_import_s(
     assert read["asil"] == ("B" if need_id.endswith("_REQ_1") else "QM")
 
 
-def test_an_external_need_of_a_2a1_file(chain: dict[str, Any]) -> None:
+def test_an_external_need_of_a_draft_file(chain: dict[str, Any]) -> None:
     """External, with no page of this build; its URL from the docname projected from
     its placement; its part, which its record's content carries, a link target."""
     needs = SphinxNeedsData(chain["down_app"].env).get_needs_view()
@@ -283,7 +288,7 @@ def test_an_external_need_of_a_2a1_file(chain: dict[str, Any]) -> None:
 
 
 ANONYMOUS = {
-    "format_version": "2a1",
+    "format_version": "2a2",
     "needs": [
         {
             "id": "ANON_1",
@@ -332,7 +337,7 @@ LINKS_CONF = """\
 project = "{project}"
 extensions = ["sphinx_needs"]
 exclude_patterns = ["_build"]
-needs_json_format_version = "2a1"
+needs_json_format_version = "2a2"
 needs_links = {{
     "refs": {{"incoming": "is referenced by", "outgoing": "refs", "parse_conditions": False}}
 }}
@@ -358,7 +363,7 @@ Links
    :refs: REQ_B, REQ_A.p1
 """
 
-#: REQ_L's links as a 2a1 record spells them: a bare id only for a link with neither a
+#: REQ_L's links as a draft record spells them: a bare id only for a link with neither a
 #: part nor a condition
 SPELLED = {
     "links": [
@@ -436,12 +441,12 @@ def test_every_link_spelling_round_trips(make_app: Any, tmp_path: Path) -> None:
 def _import_one(
     make_app: Any, srcdir: Path, document: dict[str, Any], argument: str | None = None
 ) -> tuple[Any, NeedItemSource]:
-    """``needimport`` the 2a1 ``document`` (``data/anon.json``, or ``argument``) and
+    """``needimport`` the draft ``document`` (``data/anon.json``, or ``argument``) and
     return the app and the one need's source."""
     (srcdir / "data").mkdir(parents=True)
     (srcdir / "data" / "anon.json").write_text(json.dumps(document))
     (srcdir / "conf.py").write_text(
-        'extensions = ["sphinx_needs"]\nneeds_json_format_version = "2a1"\n'
+        'extensions = ["sphinx_needs"]\nneeds_json_format_version = "2a2"\n'
     )
     (srcdir / "index.rst").write_text(
         f"Anon\n====\n\n.. needimport:: {argument or 'data/anon.json'}\n"
@@ -479,7 +484,7 @@ def test_hop_keys_this_build_does_not_know_are_dropped_on_re_export(
     """A key of a hop, of its ``physical`` or of a ``semantic`` entry that sphinx-needs
     does not model is read without error, and not written again."""
     document = {
-        "format_version": "2a1",
+        "format_version": "2a2",
         "project": {"name": "other"},
         "needs": [
             {
@@ -523,7 +528,7 @@ def test_an_unnamed_writer_is_named_by_its_file_downstream(
         tmp_path / "unnamed",
         {
             "conf.py": 'extensions = ["sphinx_needs"]\n'
-            'needs_json_format_version = "2a1"\n',
+            'needs_json_format_version = "2a2"\n',
             "index.rst": "Up\n==\n\n.. req:: a\n   :id: REQ_001\n",
         },
     )
@@ -546,7 +551,7 @@ def test_an_unnamed_writer_is_named_by_its_file_downstream(
 def test_a_filter_over_section_name_imports_alike(
     chain: dict[str, Any], file: str, make_app: Any, tmp_path: Path
 ) -> None:
-    """A ``needimport`` ``:filter:`` over ``section_name`` (which a 2a1 record's
+    """A ``needimport`` ``:filter:`` over ``section_name`` (which a draft record's
     projection gives from its placement) imports the same needs from either file."""
     srcdir = _write(
         tmp_path / "filtered",
@@ -601,3 +606,305 @@ def test_an_external_file_is_named_as_a_needimport_names_it(
     source = SphinxNeedsData(app.env).get_needs_view()["X_ANON_1"].source
     assert isinstance(source, NeedItemSource)
     assert [hop.origin for hop in source.upstream] == [origin, "named"]
+
+
+def _warnings(app: Any, kind: str) -> list[str]:
+    """The messages of ``app``'s ``needs.<kind>`` warnings, without their location."""
+    return [
+        w.split("WARNING: ", 1)[1]
+        for w in build_warnings(app)
+        if f"[needs.{kind}]" in w
+    ]
+
+
+def _both_routes(name: str, document: dict[str, Any] | str) -> dict[str, str]:
+    """A project reading ``document`` (``<name>.json``) by ``needimport`` (ids ``D_``)
+    and as an external source (ids ``X_``), writing format 1."""
+    text = document if isinstance(document, str) else json.dumps(document)
+    return {
+        "conf.py": 'project = "down"\nextensions = ["sphinx_needs"]\n'
+        'exclude_patterns = ["_build"]\n'
+        "needs_external_needs = [\n"
+        f'    {{"base_url": "http://up.example", "json_path": "{name}.json", '
+        '"id_prefix": "X_"}\n'
+        "]\n",
+        "index.rst": f"Down\n====\n\n.. needimport:: {name}.json\n   :id_prefix: D_\n",
+        f"{name}.json": text,
+    }
+
+
+PARTS_INDEX = """\
+Up
+==
+
+.. req:: Parts out of id order
+   :id: REQ_P
+
+   Parts :np:`(zeta) last id first`, :np:`(alpha) first id second`,
+   :np:`(mid) middle` and :np:`(beta) fourth`.
+"""
+
+
+def test_the_parts_keep_their_order_through_a_draft_file(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A need's parts, written out of id order, are read back in that order by both
+    routes, and a re-export writes them so: four of them, so that no rule for a few
+    parts holds the order."""
+    up, up_json = _build(
+        make_app,
+        _write(
+            tmp_path / "up",
+            {"conf.py": UP_CONF.format(format="2a2"), "index.rst": PARTS_INDEX},
+        ),
+    )
+    assert [w for w in build_warnings(up) if BETA not in w] == []
+    order = ["zeta", "alpha", "mid", "beta"]
+    assert [p["id"] for p in _records(up_json)["REQ_P"]["parts"]] == order
+
+    files = _both_routes("up", up_json.read_text(encoding="utf-8"))
+    files["conf.py"] += 'needs_json_format_version = "2a2"\n'
+    down, down_json = _build(make_app, _write(tmp_path / "down", files))
+    assert [w for w in build_warnings(down) if BETA not in w] == []
+    needs = SphinxNeedsData(down.env).get_needs_view()
+    for need_id in ("D_REQ_P", "X_REQ_P"):
+        assert list(needs[need_id]["parts"]) == order, need_id
+    assert _records(down_json)["D_REQ_P"]["parts"] == [
+        {"id": "zeta", "text": "last id first"},
+        {"id": "alpha", "text": "first id second"},
+        {"id": "mid", "text": "middle"},
+        {"id": "beta", "text": "fourth"},
+    ]
+
+
+EMPTY_PART_INDEX = """\
+Up
+==
+
+.. req:: A
+   :id: REQ_A
+
+   With :np:`(p1) a part`.
+
+.. req:: Linking
+   :id: REQ_L
+   :links: REQ_A., REQ_A.p1, REQ_A
+"""
+
+
+def test_the_empty_part_stays_dead_through_the_draft(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``REQ_A.`` names the empty part, which no need has: a dead link, reported where
+    it is written. Read from format 1 into a project that writes the draft (which
+    writes it ``{"id": "REQ_A", "part": ""}``), and read from that draft by
+    ``needimport`` and as an external source into a project that writes format 1, it is
+    the same dead link at every step, reported there as it was at the start -- never a
+    link to ``REQ_A``, merged with the live one."""
+    up, up_json = _build(
+        make_app,
+        _write(
+            tmp_path / "up",
+            {"conf.py": UP_CONF.format(format=1), "index.rst": EMPTY_PART_INDEX},
+        ),
+    )
+    dead = "Need 'REQ_L' has unknown outgoing link 'REQ_A.' in field 'links'"
+    assert _warnings(up, "link_outgoing") == [f"{dead} [needs.link_outgoing]"]
+
+    mid_src = _write(
+        tmp_path / "mid",
+        {
+            "conf.py": 'project = "mid"\nextensions = ["sphinx_needs"]\n'
+            'exclude_patterns = ["_build"]\n'
+            'needs_json_format_version = "2a2"\n',
+            "index.rst": "Mid\n===\n\n.. needimport:: up.json\n",
+        },
+    )
+    shutil.copy(up_json, mid_src / "up.json")
+    mid, mid_json = _build(make_app, mid_src)
+    assert _warnings(mid, "link_outgoing") == [f"{dead} [needs.link_outgoing]"]
+    assert _records(mid_json)["REQ_L"]["links"]["links"] == [
+        "REQ_A",
+        {"id": "REQ_A", "part": ""},
+        {"id": "REQ_A", "part": "p1"},
+    ]
+
+    down, down_json = _build(
+        make_app,
+        _write(
+            tmp_path / "down",
+            _both_routes("mid", mid_json.read_text(encoding="utf-8")),
+        ),
+    )
+    start, _ = _build(
+        make_app,
+        _write(
+            tmp_path / "down_v1",
+            _both_routes("mid", up_json.read_text(encoding="utf-8")),
+        ),
+    )
+
+    def dead(app: Any) -> list[str]:
+        return [w for w in build_warnings(app) if "link_outgoing]" in w]
+
+    # reported as the same needs read from up's format-1 file are, on both routes
+    # (read before the needs view, whose post-processing would report them again)
+    assert dead(down) == dead(start)
+    assert _warnings(down, "link_outgoing") == [
+        "Need 'D_REQ_L' has unknown outgoing link 'D_REQ_A.' in field 'links' "
+        "[needs.link_outgoing]"
+    ]
+    assert _warnings(down, "external_link_outgoing") == [
+        "http://up.example/index.html#REQ_L: Need 'X_REQ_L' has unknown outgoing link "
+        "'X_REQ_A.' in field 'links' [needs.external_link_outgoing]"
+    ]
+    needs = SphinxNeedsData(down.env).get_needs_view()
+    for prefix in ("D_", "X_"):
+        need = needs[f"{prefix}REQ_L"]
+        assert [
+            (link.id, link.part) for link in need.get_links("links", as_str=False)
+        ] == [
+            (f"{prefix}REQ_A", None),
+            (f"{prefix}REQ_A", ""),
+            (f"{prefix}REQ_A", "p1"),
+        ], prefix
+        assert need["has_dead_links"] is True, prefix
+    data = json.loads(down_json.read_text(encoding="utf-8"))
+    written = data["versions"][data["current_version"]]["needs"]["D_REQ_L"]
+    assert written["links"] == ["D_REQ_A", "D_REQ_A.", "D_REQ_A.p1"]
+
+
+def test_the_empty_part_under_a_condition_is_written_with_its_part(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``REQ_A.[status == "open"]`` is a link to the empty part under a condition: the
+    draft writes its empty part beside the condition, never the condition alone."""
+    index = EMPTY_PART_INDEX.replace(
+        ":links: REQ_A., REQ_A.p1, REQ_A", ':links: REQ_A.[status == "open"]'
+    )
+    assert index != EMPTY_PART_INDEX
+    _, up_json = _build(
+        make_app,
+        _write(
+            tmp_path / "up",
+            {"conf.py": UP_CONF.format(format="2a2"), "index.rst": index},
+        ),
+    )
+    assert _records(up_json)["REQ_L"]["links"]["links"] == [
+        {"id": "REQ_A", "part": "", "condition": 'status == "open"'}
+    ]
+
+
+def test_a_record_stating_an_empty_part_id_is_refused(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A part entry whose id is empty is handed on by the reader, and the need is
+    refused on both routes, as a format-1 record stating an empty part id is; the
+    file's other needs are read."""
+    document = {
+        "format_version": "2a2",
+        "project": {"name": "up"},
+        "needs": [
+            {
+                "id": "E_1",
+                "type": "req",
+                "fields": {"title": "empty part id"},
+                "parts": [{"id": "", "text": "no id"}, {"id": "p", "text": "t"}],
+            },
+            {"id": "OK_1", "type": "req", "fields": {"title": "fine"}},
+        ],
+    }
+    app, _ = _build(make_app, _write(tmp_path / "down", _both_routes("up", document)))
+    assert _warnings(app, "import_need") == [
+        "Need 'D_E_1' could not be imported: Part must have a non-empty string ID: '' "
+        "[needs.import_need]"
+    ]
+    assert _warnings(app, "load_external_need") == [
+        "External need 'X_E_1' in 'up.json' could not be added: Part must have a "
+        "non-empty string ID: '' [needs.load_external_need]"
+    ]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert sorted(needs) == ["D_OK_1", "X_OK_1"]
+
+
+def test_a_2a1_file_is_refused(make_app: Any, tmp_path: Path) -> None:
+    """``"2a2"`` replaces the draft ``"2a1"``: a ``"2a1"`` file is refused by both
+    routes, each with the warning it gives every format it does not read, and no need
+    of it is read."""
+    document = {
+        "format_version": "2a1",
+        "project": {"name": "up", "version": "1.0"},
+        "needs": [
+            {
+                "id": "REQ_1",
+                "type": "req",
+                "fields": {"title": "t"},
+                "content": {"text": "x", "parts": {"p1": "the part"}},
+            }
+        ],
+    }
+    app, _ = _build(make_app, _write(tmp_path / "down", _both_routes("old", document)))
+    refused = (
+        'the file is of format version "2a1"; this reader reads format version 1 only'
+    )
+    assert _warnings(app, "needimport") == [
+        f"Could not load needs import file <srcdir>/old.json: {refused} "
+        "[needs.needimport]"
+    ]
+    assert _warnings(app, "external_needs") == [
+        f"Could not load external needs from 'old.json': {refused} "
+        "[needs.external_needs]"
+    ]
+    assert list(SphinxNeedsData(app.env).get_needs_view()) == []
+
+
+def test_an_invalid_part_entry_is_one_warning_and_the_need_is_read(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A part entry of a wrong shape, and a later entry of an id already read, are each
+    one warning naming the file and the entry's place, on both routes; the need is
+    read with its other parts, in the file's order, and a re-export writes them in that
+    order: a need with no content, whose parts are all stated, is not sorted either."""
+    document = {
+        "format_version": "2a2",
+        "project": {"name": "up"},
+        "needs": [
+            {
+                "id": "P_1",
+                "type": "req",
+                "fields": {"title": "parts"},
+                "parts": [
+                    {"id": "b", "text": "tb"},
+                    {"id": "x", "text": 1},
+                    {"id": "a", "text": "ta"},
+                    {"id": "b", "text": "again"},
+                ],
+            }
+        ],
+    }
+    files = _both_routes("up", document)
+    files["conf.py"] += 'needs_json_format_version = "2a2"\n'
+    app, down_json = _build(make_app, _write(tmp_path / "down", files))
+    invalid = (
+        "the part at index 1 is not an object of a string 'id' and a string 'text'; "
+        "it is not read (at needs.0.parts.1)"
+    )
+    duplicate = (
+        "the part at index 3 has the id 'b' of the part at index 0; the first is "
+        "read, this one skipped (at needs.0.parts.3.id)"
+    )
+    assert _warnings(app, "needimport") == [
+        f"Needs import file <srcdir>/up.json: {message} [needs.needimport]"
+        for message in (invalid, duplicate)
+    ]
+    assert _warnings(app, "external_needs") == [
+        f"External needs source 'up.json': {message} [needs.external_needs]"
+        for message in (invalid, duplicate)
+    ]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    for need_id in ("D_P_1", "X_P_1"):
+        parts = needs[need_id]["parts"]
+        assert [(p, parts[p]["content"]) for p in parts] == [("b", "tb"), ("a", "ta")]
+    written = _records(down_json)["D_P_1"]
+    assert written["content"]["text"] == ""
+    assert written["parts"] == [{"id": "b", "text": "tb"}, {"id": "a", "text": "ta"}]

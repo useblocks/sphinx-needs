@@ -1748,7 +1748,7 @@ class NeedsSphinxConfig:
         metadata={"rebuild": "env", "types": (int, str), "override_as_text": True},
     )
     """The format version of the ``needs.json`` the needs builders write: ``1`` (the
-    default; the text ``"1"`` too, which is what ``-D`` gives), or ``"2a1"``, the
+    default; the text ``"1"`` too, which is what ``-D`` gives), or ``"2a2"``, the
     experimental draft of version 2."""
     build_needumls: str = field(
         default="", metadata={"rebuild": "html", "types": (str,)}

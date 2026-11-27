@@ -5,16 +5,16 @@ import sys
 # them from its own copy of the project
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
-sys.modules.pop("json2a1_module", None)
-sys.modules.pop("json2a1_service", None)
+sys.modules.pop("jsondraft_module", None)
+sys.modules.pop("jsondraft_service", None)
 
 project = "up"
 version = "1.0"
-extensions = ["sphinx_needs", "sphinx.ext.autodoc", "json2a1_service"]
+extensions = ["sphinx_needs", "sphinx.ext.autodoc", "jsondraft_service"]
 # the included files are read through their hosts only
 exclude_patterns = ["frag/**", "_build"]
 
-needs_json_format_version = "2a1"
+needs_json_format_version = "2a2"
 needs_types = {
     "req": {"title": "Requirement", "prefix": "R_"},
     "spec": {
@@ -25,5 +25,11 @@ needs_types = {
 }
 needs_fields = {"asil": {"default": "QM", "nullable": True}}
 needs_links = {
-    "implements": {"incoming": "is implemented by", "outgoing": "implements"}
+    # its link to the empty part (``REQ_5.``) is a dead link this project allows, so
+    # that every build of it stays free of warnings
+    "implements": {
+        "incoming": "is implemented by",
+        "outgoing": "implements",
+        "allow_dead_links": True,
+    }
 }

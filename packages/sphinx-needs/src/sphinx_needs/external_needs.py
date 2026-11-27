@@ -17,7 +17,7 @@ from sphinx_needs._need_source import (
     upstream_hops,
     writing_project,
 )
-from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
+from sphinx_needs._needsfile_draft import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, del_need
 from sphinx_needs.api.need import _create_from_record, _record_params
 from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
@@ -81,7 +81,7 @@ def load_external_needs(
         source_str = source.get("json_url", "") or source.get("json_path", "")
         try:
             document = _read_source(app, source)
-            # a draft 2a1 file is read too: reading it is harmless, only writing one is
+            # a draft file is read too: reading it is harmless, only writing one is
             # behind needs_json_format_version
             selected = document.select_version(
                 source.get("version") or None, drafts=READ_DRAFTS
@@ -125,7 +125,7 @@ def load_external_needs(
                 namespaced=needs_config.namespaced_ids,
                 location=None,
             )
-        # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
+        # a draft record's hops, the need's upstream: a hop with no origin is the writing
         # project's, else the file's as a needimport names it
         origin = writing_project(selected.data) or _source_label(app, source)
         upstream = {r.key: r.source for r in records}

@@ -32,6 +32,12 @@ Requirements
    .. req:: Nested
       :id: REQ_4
 
+.. req:: Parts out of id order
+   :id: REQ_5
+
+   Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and
+   :np:`(mid) middle`.
+
 Specifications
 --------------
 
@@ -39,3 +45,7 @@ Specifications
    :id: SPEC_1
    :verdict: pass
    :implements: REQ_2
+
+.. spec:: Links to the empty part
+   :id: SPEC_2
+   :implements: REQ_5., REQ_5.alpha

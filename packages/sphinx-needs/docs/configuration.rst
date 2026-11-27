@@ -3739,55 +3739,62 @@ needs_json_format_version
 
 .. versionadded:: 9.3.0
 
+.. versionchanged:: 9.4.0
+
+   ``"2a2"`` replaces ``"2a1"``: a need's parts are a section of its record, in the need's order, and a link to
+   the empty part stays the dead link it is. ``"2a1"`` is an unknown value now.
+
 The format the ``needs.json`` files are written in: by the :ref:`needs builder <needs_builder>`, by
 :ref:`needs_build_json`, and by the :ref:`needs_id builder <needs_id_builder>` and :ref:`needs_build_json_per_id`.
 
 - ``1`` (the default): the format described in :ref:`needs_builder_format`, unchanged.
-- ``"2a1"``: the first draft of format version 2, :ref:`needs_builder_format_2a1`. Each need carries
+- ``"2a2"``: the second draft of format version 2, :ref:`needs_builder_format_draft`. Each need carries
   the places its text came through -- the file and the lines of its directive, the files it was
   included through, the needs.json it was imported from, the docstring it was written in -- and
-  keeps them when another project imports it.
+  keeps them when another project imports it; and its parts, in the order the need holds them.
 
 Set it in ``conf.py``, in ``ubproject.toml``, or on the command line, where
-``sphinx-build -D needs_json_format_version=2a1`` writes a ``"2a1"`` file for one build; a build whose value differs
+``sphinx-build -D needs_json_format_version=2a2`` writes a ``"2a2"`` file for one build; a build whose value differs
 from the previous build's reads the project again. The text ``"1"``, which is what
 ``-D needs_json_format_version=1`` gives, is format 1 too (as a value it differs from the unset integer, so a
 build that sets it after one that left the option unset reads the project again); any other value is reported as a
-``needs.config`` warning, and the file is written in format 1.
+``needs.config`` warning, and the file is written in format 1. That includes ``"2a1"``, the first draft, which
+``"2a2"`` replaces: its warning names ``"2a2"``, and the file is written in format 1 until the project sets
+``"2a2"``.
 
 .. attention:: **Experimental.**
 
-   A ``"2a1"`` file is readable only by the release of Sphinx-Needs that wrote it: the draft may
+   A ``"2a2"`` file is readable only by the release of Sphinx-Needs that wrote it: the draft may
    change, or be replaced by the next one, in any release. Each build that writes such a file says
    so in one ``needs.beta`` warning (silence it with ``suppress_warnings = ["needs.beta"]``); a build
-   that writes no ``needs.json`` is not warned. Sphinx-Needs 9.0.0 to 9.2.0 refuse such a file with
-   a warning, as ubCode 0.39.0 does, and Sphinx-Needs 8.5.0 aborts the build on it (see
-   :ref:`needs_builder_format_2a1`); ubCode 0.40.0 reads it, as Sphinx-Needs 9.3.0 does. Use it to
-   try the format, not for a file another project relies on.
+   that writes no ``needs.json`` is not warned. Sphinx-Needs 9.0.0 to 9.3.0 refuse such a file with
+   a warning, as ubCode 0.40.0 does, and Sphinx-Needs 8.5.0 aborts the build on it (see
+   :ref:`needs_builder_format_draft`). Use it to try the format, not for a file another project relies on.
 
-Of the other ``needs.json`` options, under ``"2a1"``:
+Of the other ``needs.json`` options, under ``"2a2"``:
 
 - :ref:`needs_json_exclude_fields` leaves out a field or a link type it names, the ``content``
-  (``doctype`` and ``parts`` its keys), and ``source``, the need's source; a key of format 1 that
-  the source carries in ``"2a1"`` -- ``docname``, ``lineno``, ``sections``, ``section_name``,
+  (``doctype`` its key), ``parts``, the need's parts (which leaving out the ``content`` keeps), and
+  ``source``, the need's source; a key of format 1 that
+  the source carries in ``"2a2"`` -- ``docname``, ``lineno``, ``sections``, ``section_name``,
   ``signature``, ``external_url``, ``is_import``, ``is_external`` -- is reported, once, as having
   no key of its own (exclude ``source`` instead);
 - :ref:`needs_builder_filter`, :ref:`needs_reproducible_json` and
   :ref:`needs_json_include_link_conditions` work as in format 1;
 - :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with one warning: a
-  ``"2a1"`` file writes every default (and leaves out a ``null``) and carries no schema, and has no
+  ``"2a2"`` file writes every default (and leaves out a ``null``) and carries no schema, and has no
   versions to accumulate.
 
 Default: :need_config_default:`json_format_version`
 
 .. code-block:: python
 
-   needs_json_format_version = "2a1"
+   needs_json_format_version = "2a2"
 
 .. code-block:: toml
 
    [needs]
-   json_format_version = "2a1"
+   json_format_version = "2a2"
 
 .. _`needs_reproducible_json`:
 

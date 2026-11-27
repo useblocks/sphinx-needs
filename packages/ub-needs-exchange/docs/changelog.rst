@@ -6,6 +6,29 @@ Changelog
 Unreleased
 ----------
 
+- **The needs.json draft "2a2" replaces "2a1" (experimental).**
+  ``select_version(..., drafts=("2a2",))`` reads the draft ``"2a2"``, which is ``"2a1"``
+  with two changes. A need's parts are a section of the record beside its content,
+  ``"parts": [{"id": "zeta", "text": "…"}, {"id": "alpha", "text": "…"}]``, projected to
+  format 1's ``parts`` in the section's order and read whether the record has a content
+  or not; ``content.parts`` is no longer read. An entry that is not an object of a string
+  ``id`` and a string ``text`` is dropped (``part_invalid``, path
+  ``needs.<i>.parts.<j>``), a later entry of an id read is skipped
+  (``duplicate_part_id``, path ``needs.<i>.parts.<j>.id``), a ``parts`` that is not an
+  array is not read (``parts_not_a_list``, path ``needs.<i>.parts``), each a finding of
+  the record, which is read; an entry whose id is empty is handed on, for the reading
+  project to refuse the need; an unknown key of an entry (``anchor`` among them) is
+  ignored. And a link to the empty part, ``{"id": "B", "part": ""}``, is spelled ``B.``,
+  as format 1 writes it, where it was spelled ``B``, a link to the need (changed output).
+  A ``"2a1"`` file is refused as every later format is (``format_version_unsupported``),
+  and ``drafts=("2a1",)`` names a draft this reader does not know (``ValueError``): the
+  draft's API is experimental, and nothing is aliased. Three constants are new and
+  re-exported, ``PARTS_NOT_A_LIST``, ``PART_INVALID`` and ``DUPLICATE_PART_ID``; no public
+  name carried ``2a1``. The contract is ``design/v2a2-draft.md`` (was ``v2a1-draft.md``)
+  and the corpus ``tests/fixtures/needs_json_2a2_draft_conformance.toml`` (was
+  ``needs_json_2a1_draft_conformance.toml``), 92 cases (was 78); the shared reading corpus
+  is unchanged.
+
 - **``namespace_prefix``: the text that joins an id to a namespace.**
   ``namespace_prefix(["SUP"])`` is ``"SUP::"`` (and ``""`` for the empty namespace), so a
   caller that puts a namespace in front of ids -- every id of a file, say -- never spells

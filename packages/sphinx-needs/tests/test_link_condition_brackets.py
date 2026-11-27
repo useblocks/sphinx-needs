@@ -1,5 +1,5 @@
 """A link condition holding brackets travels: authored, written to needs.json, and read
-back by ``needimport`` and as external needs, in format 1 and in the draft "2a1".
+back by ``needimport`` and as external needs, in format 1 and in the draft "2a2".
 
 A condition that ends in ``]`` (``"x" == tags[0]``) is the case the writer spelled but
 the reader could not read: the authored need was refused, and an imported one lost the
@@ -99,7 +99,7 @@ def _prefixed(
     return [(prefix + id_, part, condition) for id_, part, condition in links]
 
 
-@pytest.mark.parametrize("format_version", [1, "2a1"])
+@pytest.mark.parametrize("format_version", [1, "2a2"])
 def test_a_condition_with_brackets_survives_needs_json(
     make_app: Any, tmp_path: Path, format_version: int | str
 ) -> None:
@@ -154,14 +154,14 @@ def test_a_condition_with_brackets_survives_needs_json(
 
 def _needs_records(path: Path, format_version: int | str) -> list[dict[str, Any]]:
     data = json.loads(path.read_text(encoding="utf-8"))
-    if format_version == "2a1":
+    if format_version == "2a2":
         return data["needs"]
     version = data["current_version"]
     return list(data["versions"][version]["needs"].values())
 
 
 def _prefixed_record_links(links: Any, prefix: str) -> Any:
-    if isinstance(links, dict):  # 2a1: link type -> entries
+    if isinstance(links, dict):  # the draft: link type -> entries
         return {
             name: _prefixed_record_links(items, prefix) for name, items in links.items()
         }

@@ -47,9 +47,10 @@ Every refusal is an ``ExchangeError`` whose ``code`` names the rule that was bro
 finding is a ``Diagnostic`` with a ``code``, the ``path`` of what was found in the file,
 and a ``message``.
 
-A draft of the next format, ``"2a1"``, is read only on opt-in --
-``select_version(None, drafts=("2a1",))`` -- and is **experimental**: it may change or be
-removed in any release (``design/v2a1-draft.md``).
+A draft of the next format, ``"2a2"``, is read only on opt-in --
+``select_version(None, drafts=("2a2",))`` -- and is **experimental**: it may change or be
+removed in any release (``design/v2a2-draft.md``). It replaces the draft ``"2a1"``, whose
+files are refused.
 
 Consumers decide the policy
 ---------------------------
