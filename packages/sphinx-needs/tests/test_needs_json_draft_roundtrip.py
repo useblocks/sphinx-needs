@@ -734,6 +734,28 @@ def test_the_empty_part_stays_dead_through_the_draft(
             _both_routes("mid", mid_json.read_text(encoding="utf-8")),
         ),
     )
+    start, _ = _build(
+        make_app,
+        _write(
+            tmp_path / "down_v1",
+            _both_routes("mid", up_json.read_text(encoding="utf-8")),
+        ),
+    )
+
+    def dead(app: Any) -> list[str]:
+        return [w for w in build_warnings(app) if "link_outgoing]" in w]
+
+    # reported as the same needs read from up's format-1 file are, on both routes
+    # (read before the needs view, whose post-processing would report them again)
+    assert dead(down) == dead(start)
+    assert _warnings(down, "link_outgoing") == [
+        "Need 'D_REQ_L' has unknown outgoing link 'D_REQ_A.' in field 'links' "
+        "[needs.link_outgoing]"
+    ]
+    assert _warnings(down, "external_link_outgoing") == [
+        "http://up.example/index.html#REQ_L: Need 'X_REQ_L' has unknown outgoing link "
+        "'X_REQ_A.' in field 'links' [needs.external_link_outgoing]"
+    ]
     needs = SphinxNeedsData(down.env).get_needs_view()
     for prefix in ("D_", "X_"):
         need = needs[f"{prefix}REQ_L"]
@@ -745,11 +767,6 @@ def test_the_empty_part_stays_dead_through_the_draft(
             (f"{prefix}REQ_A", "p1"),
         ], prefix
         assert need["has_dead_links"] is True, prefix
-    assert _warnings(down, "link_outgoing") == [
-        f"Need '{prefix}REQ_L' has unknown outgoing link '{prefix}REQ_A.' in field "
-        "'links' [needs.link_outgoing]"
-        for prefix in ("D_", "X_")
-    ]
     data = json.loads(down_json.read_text(encoding="utf-8"))
     written = data["versions"][data["current_version"]]["needs"]["D_REQ_L"]
     assert written["links"] == ["D_REQ_A", "D_REQ_A.", "D_REQ_A.p1"]
@@ -776,7 +793,7 @@ def test_a_record_stating_an_empty_part_id_is_refused(
     }
     app, _ = _build(make_app, _write(tmp_path / "down", _both_routes("up", document)))
     assert _warnings(app, "import_need") == [
-        "Need 'E_1' could not be imported: Part must have a non-empty string ID: '' "
+        "Need 'D_E_1' could not be imported: Part must have a non-empty string ID: '' "
         "[needs.import_need]"
     ]
     assert _warnings(app, "load_external_need") == [

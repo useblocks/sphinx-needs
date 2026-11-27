@@ -815,7 +815,7 @@ def test_the_builder_filter_is_honoured(test_app: Any) -> None:
     app = test_app
     app.build()
 
-    assert list(_records(app)) == ["SPEC_1"]
+    assert list(_records(app)) == ["SPEC_1", "SPEC_2"]
 
 
 @pytest.mark.parametrize(
@@ -934,7 +934,8 @@ def test_the_per_id_builder_honours_the_builder_filter(test_app: Any) -> None:
     app.build()
 
     assert sorted(p.name for p in Path(app.outdir, "needs_id").iterdir()) == [
-        "SPEC_1.json"
+        "SPEC_1.json",
+        "SPEC_2.json",
     ]
 
 

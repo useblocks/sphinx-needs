@@ -1,7 +1,7 @@
 # serializer version: 1
-# name: test_the_needs_builder_writes_2a1[test_app0]
+# name: test_the_needs_builder_writes_the_draft[test_app0]
   dict({
-    'format_version': '2a1',
+    'format_version': '2a2',
     'needs': list([
       dict({
         'content': dict({
@@ -57,9 +57,67 @@
       dict({
         'content': dict({
           'doctype': '.rst',
-          'parts': dict({
-            'p1': 'the part',
+          'text': 'Body :np:`(zc) content zc`.',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'constraints': list([
+          ]),
+          'tags': list([
+          ]),
+          'title': 'imported with parts',
+        }),
+        'id': 'IMP_2',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'parts': list([
+          dict({
+            'id': 'zc',
+            'text': 'content zc',
           }),
+          dict({
+            'id': 'aa',
+            'text': 'stated aa',
+          }),
+        ]),
+        'source': list([
+          dict({
+            'kind': 'file',
+            'language': '.json',
+            'physical': dict({
+              'path': 'imp.json',
+              'root': 'srcdir',
+            }),
+          }),
+          dict({
+            'document': 'imp',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 4,
+              'path': 'imp.rst',
+              'root': 'srcdir',
+              'start_line': 4,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Imported',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
           'text': 'A body with :np:`(p1) the part`.',
         }),
         'fields': dict({
@@ -82,6 +140,12 @@
           'parent_needs': list([
           ]),
         }),
+        'parts': list([
+          dict({
+            'id': 'p1',
+            'text': 'the part',
+          }),
+        ]),
         'source': list([
           dict({
             'document': 'index',
@@ -264,6 +328,70 @@
       dict({
         'content': dict({
           'doctype': '.rst',
+          'text': '''
+            Parts :np:`(zeta) last id first`, :np:`(alpha) first id second` and
+            :np:`(mid) middle`.
+          ''',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'constraints': list([
+          ]),
+          'tags': list([
+          ]),
+          'title': 'Parts out of id order',
+        }),
+        'id': 'REQ_5',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'parts': list([
+          dict({
+            'id': 'zeta',
+            'text': 'last id first',
+          }),
+          dict({
+            'id': 'alpha',
+            'text': 'first id second',
+          }),
+          dict({
+            'id': 'mid',
+            'text': 'middle',
+          }),
+        ]),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 39,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 35,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Requirements',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
           'text': 'Its source is the docstring.',
         }),
         'fields': dict({
@@ -416,10 +544,65 @@
             'kind': 'page',
             'language': '.rst',
             'physical': dict({
-              'end_line': 41,
+              'end_line': 47,
               'path': 'index.rst',
               'root': 'srcdir',
-              'start_line': 38,
+              'start_line': 44,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Specifications',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'spec',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': '',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'constraints': list([
+          ]),
+          'tags': list([
+          ]),
+          'title': 'Links to the empty part',
+        }),
+        'id': 'SPEC_2',
+        'links': dict({
+          'implements': list([
+            dict({
+              'id': 'REQ_5',
+              'part': '',
+            }),
+            dict({
+              'id': 'REQ_5',
+              'part': 'alpha',
+            }),
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 51,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 49,
             }),
             'semantic': list([
               dict({
@@ -494,22 +677,25 @@
     }),
   })
 # ---
-# name: test_the_per_id_builder_writes_one_2a1_document_per_need[test_app0]
+# name: test_the_per_id_builder_writes_one_draft_document_per_need[test_app0]
   list([
     'IMP_1.json',
+    'IMP_2.json',
     'REQ_1.json',
     'REQ_2.json',
     'REQ_3.json',
     'REQ_4.json',
+    'REQ_5.json',
     'REQ_DOC.json',
     'REQ_INC.json',
     'SPEC_1.json',
+    'SPEC_2.json',
     'SVC_1.json',
   ])
 # ---
-# name: test_the_per_id_builder_writes_one_2a1_document_per_need[test_app0].1
+# name: test_the_per_id_builder_writes_one_draft_document_per_need[test_app0].1
   dict({
-    'format_version': '2a1',
+    'format_version': '2a2',
     'needs': list([
       dict({
         'content': dict({

@@ -385,7 +385,7 @@ class NeedsList:
                     if not isinstance(needs_list, dict) or not isinstance(
                         needs_list.get("versions"), dict
                     ):
-                        # a file of another format (a needs.json of the draft 2a1 has
+                        # a file of another format (a needs.json of the draft of format 2 has
                         # no versions) or none: there is nothing to accumulate
                         log_warning(
                             self.log,

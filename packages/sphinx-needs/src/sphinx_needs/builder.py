@@ -9,8 +9,8 @@ from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
 from sphinx_needs._needsfile_draft import (
-    FORMAT_2A1,
-    NeedsFile2a1,
+    FORMAT_DRAFT,
+    NeedsFileDraft,
     json_format_version,
     warn_on_write,
 )
@@ -63,9 +63,9 @@ class NeedsBuilder(Builder):
         data = SphinxNeedsData(self.env)
         needs = data.get_needs_view()
         needs_config = NeedsSphinxConfig(self.env.config)
-        if json_format_version(needs_config) == FORMAT_2A1:
+        if json_format_version(needs_config) == FORMAT_DRAFT:
             # the draft: no versions, so no needs_file to accumulate them from
-            self._finish_2a1(
+            self._finish_draft(
                 filter_needs_view(
                     needs,
                     needs_config,
@@ -111,11 +111,13 @@ class NeedsBuilder(Builder):
         else:
             LOGGER.info("Needs successfully exported")
 
-    def _finish_2a1(self, needs: Iterable[NeedItem]) -> None:
-        """Write ``needs.json`` in the draft format 2a1 (experimental)."""
+    def _finish_draft(self, needs: Iterable[NeedItem]) -> None:
+        """Write ``needs.json`` in the draft format (experimental)."""
         warn_on_write(_app_of(self), self.env)
         try:
-            NeedsFile2a1(self.env).write(needs, os.path.join(self.outdir, "needs.json"))
+            NeedsFileDraft(self.env).write(
+                needs, os.path.join(self.outdir, "needs.json")
+            )
         except Exception as e:
             LOGGER.error(f"Error during writing json file: {e}")
         else:
@@ -240,10 +242,10 @@ class NeedsIdBuilder(Builder):
         needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
         if not os.path.exists(needs_dir):
             os.makedirs(needs_dir, exist_ok=True)
-        if json_format_version(needs_config) == FORMAT_2A1:
+        if json_format_version(needs_config) == FORMAT_DRAFT:
             # the draft: one document per need, ``needs: [record]``
             warn_on_write(_app_of(self), self.env)
-            writer = NeedsFile2a1(self.env)
+            writer = NeedsFileDraft(self.env)
             for need in filtered_needs:
                 try:
                     writer.write(
