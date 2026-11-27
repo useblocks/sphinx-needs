@@ -24,7 +24,7 @@ from sphinx_needs._need_source import (
     upstream_hops,
     writing_project,
 )
-from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
+from sphinx_needs._needsfile_draft import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.api.need import _in_restricted_parse
 from sphinx_needs.config import NeedsSphinxConfig

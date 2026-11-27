@@ -1,7 +1,7 @@
 """The reader of the draft format "2a1", held to its own conformance corpus.
 
-``tests/fixtures/needs_json_2a1_draft_conformance.toml`` is the executable half of
-``design/v2a1-draft.md``. It is NOT the shared reading corpus, which ubCode vendors and
+``tests/fixtures/needs_json_2a2_draft_conformance.toml`` is the executable half of
+``design/v2a2-draft.md``. It is NOT the shared reading corpus, which ubCode vendors and
 where "2a1" stays refused (``test_conformance.py`` runs that one): the draft is
 experimental, and its corpus is this package's own until the shape settles. Two things
 are asserted, as for the shared corpus:
@@ -29,7 +29,7 @@ import pytest
 from ub_needs_exchange import ExchangeError, load, parse
 
 CORPUS_PATH = (
-    Path(__file__).parent / "fixtures" / "needs_json_2a1_draft_conformance.toml"
+    Path(__file__).parent / "fixtures" / "needs_json_2a2_draft_conformance.toml"
 )
 
 #: The number of ``[[case]]`` rows the corpus carries.
@@ -103,7 +103,7 @@ def test_every_case_is_well_formed() -> None:
 def test_the_corpus_header_records_where_it_is_canonical() -> None:
     header = CORPUS_PATH.read_text(encoding="utf-8")
     assert (
-        "packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance.toml"
+        "packages/ub-needs-exchange/tests/fixtures/needs_json_2a2_draft_conformance.toml"
         in header
     )
     assert "EXPERIMENTAL" in header

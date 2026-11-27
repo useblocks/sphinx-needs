@@ -21,7 +21,7 @@ repos:
             packages/sphinx-needs/tests/fixtures/filter_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/parts_conformance\.toml|
             packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml|
-            packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance\.toml|
+            packages/ub-needs-exchange/tests/fixtures/needs_json_2a2_draft_conformance\.toml|
             packages/ub-needs-exchange/tests/fixtures/need_id_conformance\.toml|
             packages/sphinx-ub-directives/tests/fixtures/directive_presets_conformance\.toml|
             packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance\.toml
@@ -52,7 +52,7 @@ repos:
             packages/sphinx-needs/tests/fixtures/filter_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/parts_conformance\.toml$|
             packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml$|
-            packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance\.toml$|
+            packages/ub-needs-exchange/tests/fixtures/needs_json_2a2_draft_conformance\.toml$|
             packages/ub-needs-exchange/tests/fixtures/need_id_conformance\.toml$|
             packages/sphinx-ub-directives/tests/fixtures/directive_presets_conformance\.toml$|
             packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance\.toml$

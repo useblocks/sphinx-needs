@@ -177,7 +177,7 @@ needs.json format 2a1 (draft)
 
 With :ref:`needs_json_format_version` set to ``"2a1"``, the builders write the first draft of format version 2.
 Each build that writes one says, in one ``needs.beta`` warning, that the format is experimental.
-It is specified in the `needs.json 2a1 draft contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/v2a1-draft.md>`__
+It is specified in the `needs.json 2a1 draft contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/v2a2-draft.md>`__
 of the ``ub-needs-exchange`` library. In short:
 
 - the document says what it is with a ``format_version``, and has no ``versions``: one file is one snapshot of a

@@ -17,7 +17,7 @@ from sphinx_needs._need_source import (
     upstream_hops,
     writing_project,
 )
-from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
+from sphinx_needs._needsfile_draft import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, del_need
 from sphinx_needs.api.need import _create_from_record, _record_params
 from sphinx_needs.config import ExternalSource, NeedsSphinxConfig

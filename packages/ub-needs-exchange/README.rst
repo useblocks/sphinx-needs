@@ -49,7 +49,7 @@ and a ``message``.
 
 A draft of the next format, ``"2a1"``, is read only on opt-in --
 ``select_version(None, drafts=("2a1",))`` -- and is **experimental**: it may change or be
-removed in any release (``design/v2a1-draft.md``).
+removed in any release (``design/v2a2-draft.md``).
 
 Consumers decide the policy
 ---------------------------

@@ -8,7 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
-from sphinx_needs._needsfile_v2a1 import (
+from sphinx_needs._needsfile_draft import (
     FORMAT_2A1,
     NeedsFile2a1,
     json_format_version,

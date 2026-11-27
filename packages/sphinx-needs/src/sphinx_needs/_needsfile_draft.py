@@ -26,7 +26,7 @@ record is ``{id, type, fields, links, content, source}``:
 
 The keys are written in that order and the records in the order of their ids (as v1's
 ``sort_keys`` orders them), compact as v1 is. The draft contract is the
-ub-needs-exchange package's ``design/v2a1-draft.md``.
+ub-needs-exchange package's ``design/v2a2-draft.md``.
 """
 
 from __future__ import annotations

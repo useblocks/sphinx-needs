@@ -1,7 +1,7 @@
 """The draft needs.json format "2a1" (experimental): what the builders write under
 ``needs_json_format_version = "2a1"``, and that nothing moves without it.
 
-The project (``doc_test/doc_needs_json_2a1``) has a need with a part, a link to that
+The project (``doc_test/doc_needs_json_draft``) has a need with a part, a link to that
 part and one under a condition, a nested need (``parent_needs``), a need in a nested
 include, a ``needimport`` of a v1 file, a need in an autodoc docstring, a need a local
 service generates, a link type of the project's own, and a field one need type alone
@@ -19,11 +19,11 @@ from syrupy.filters import props
 
 import ub_needs_exchange as exchange
 from sphinx_needs import __version__
-from sphinx_needs._needsfile_v2a1 import hop_to_json
+from sphinx_needs._needsfile_draft import hop_to_json
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs_testkit import build_warnings
 
-PROJECT = "doc_test/doc_needs_json_2a1"
+PROJECT = "doc_test/doc_needs_json_draft"
 
 BETA = (
     'WARNING: needs.json format "2a1" is experimental: a file written in it may not '

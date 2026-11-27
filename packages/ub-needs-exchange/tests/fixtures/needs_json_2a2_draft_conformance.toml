@@ -2,14 +2,14 @@
 # reads only when it is asked to (`Document.select_version(..., drafts=("2a1",))`).
 #
 # Repository of record: useblocks/sphinx-needs (public)
-# Canonical path:       packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance.toml
+# Canonical path:       packages/ub-needs-exchange/tests/fixtures/needs_json_2a2_draft_conformance.toml
 #
 # EXPERIMENTAL, as the draft is: "2a1" may change or be removed in any release while it is
 # a draft, and a file of it is readable only by the release that wrote it. This corpus
 # changes with it. It is NOT the shared reading corpus
 # (`needs_json_reading_conformance.toml`, which ubCode vendors, and where "2a1" stays
 # refused): it is this package's own until the shape settles, when ubCode may vendor it
-# the same way. Its prose half is `design/v2a1-draft.md`.
+# the same way. Its prose half is `design/v2a2-draft.md`.
 #
 # Do not reformat this file. `.gitattributes` pins its line endings, and the taplo and
 # yamlfmt hooks exclude it: every `json = '''...'''` body below is the INPUT of a case, so a
@@ -31,7 +31,7 @@
 #     (`needs.0.links.links.1` for the second link of the type `links` of the first record)
 #   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
 #
-# `packages/ub-needs-exchange/tests/test_2a1_draft_conformance.py` runs every `[[case]]`
+# `packages/ub-needs-exchange/tests/test_draft_conformance.py` runs every `[[case]]`
 # against the Python reader AND asserts the case COUNT, so a truncated copy is a red test
 # rather than reduced coverage.
 #

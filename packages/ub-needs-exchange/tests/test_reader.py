@@ -467,8 +467,8 @@ def test_a_default_is_one_object_in_every_record():
 
 
 # ------------------------------------------------------------------------------------
-# the draft "2a1", on opt-in (design/v2a1-draft.md; its corpus is
-# tests/fixtures/needs_json_2a1_draft_conformance.toml)
+# the draft "2a1", on opt-in (design/v2a2-draft.md; its corpus is
+# tests/fixtures/needs_json_2a2_draft_conformance.toml)
 
 
 def draft(needs: Any, **envelope_keys: Any) -> dict[str, Any]:
@@ -695,7 +695,7 @@ def test_a_link_object_is_spelled_as_sphinx_needs_writes_it(link):
 def test_an_empty_condition_is_spelled_as_no_condition():
     """An empty condition is spelled ``B[]``, as sphinx-needs' writer spells it, which
     sphinx-needs reads as no condition: the one condition that does not read back as
-    itself, by design (``design/v2a1-draft.md`` §5.1)."""
+    itself, by design (``design/v2a2-draft.md`` §5.1)."""
     version = read_draft(
         draft(
             [{"id": "A", "type": "req", "links": {"l": [{"id": "B", "condition": ""}]}}]

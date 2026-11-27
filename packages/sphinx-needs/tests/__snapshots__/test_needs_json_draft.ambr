@@ -288,7 +288,7 @@
             'kind': 'code',
             'language': 'python',
             'physical': dict({
-              'path': 'json2a1_module.py',
+              'path': 'jsondraft_module.py',
               'root': 'srcdir',
             }),
             'semantic': list([
@@ -316,7 +316,7 @@
               }),
               dict({
                 'extras': dict({
-                  'id': 'json2a1_module.documented',
+                  'id': 'jsondraft_module.documented',
                   'signature': 'documented',
                 }),
                 'kind': 'py:function',

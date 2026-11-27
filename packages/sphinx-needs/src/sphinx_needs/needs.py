@@ -30,7 +30,7 @@ from sphinx_needs._directive_name import (
     register_need_directive,
 )
 from sphinx_needs._incremental import get_updated_docs, stash_purged_doc
-from sphinx_needs._needsfile_v2a1 import check_json_format_config
+from sphinx_needs._needsfile_draft import check_json_format_config
 from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (

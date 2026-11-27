@@ -60,7 +60,7 @@ packages/sphinx-codelinks/tests/__snapshots__/** text eol=lf
 packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml text eol=lf
 # Its draft "2a1" corpus is the package's own (experimental, not yet vendored), and protected the
 # same way: its `json = '...'` bodies are case inputs too.
-packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance.toml text eol=lf
+packages/ub-needs-exchange/tests/fixtures/needs_json_2a2_draft_conformance.toml text eol=lf
 # Its need-id grammar corpus (splitting an id at `::`, parsing and joining a namespace) is shared:
 # this repository is its repository of RECORD, and ubCode is to vendor it byte-for-byte. Its
 # strings are case inputs and expected outputs, so its bytes must be the same on every platform.

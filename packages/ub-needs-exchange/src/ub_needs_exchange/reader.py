@@ -20,8 +20,8 @@ a reader that prefixes them follows (11). The corpus
 
 On opt-in, it also reads a DRAFT of the next format, ``"2a1"`` (``select_version(...,
 drafts=("2a1",))``): an experimental format, which may change or be removed in any
-release while it is a draft. Its rules are ``design/v2a1-draft.md``, and its own corpus
-``tests/fixtures/needs_json_2a1_draft_conformance.toml``.
+release while it is a draft. Its rules are ``design/v2a2-draft.md``, and its own corpus
+``tests/fixtures/needs_json_2a2_draft_conformance.toml``.
 """
 
 from __future__ import annotations
@@ -110,7 +110,7 @@ DEFAULTS_REMOVED_WITHOUT_SCHEMA = "defaults_removed_without_schema"
 """The version was written without its default values, and carries no ``needs_schema``
 to restore them from."""
 
-# the codes of a Diagnostic of a ``"2a1"`` draft (``design/v2a1-draft.md``), besides
+# the codes of a Diagnostic of a ``"2a1"`` draft (``design/v2a2-draft.md``), besides
 # ``record_not_object``
 PROJECT_INVALID = "project_invalid"
 """The draft's ``project`` is absent or not an object, or its ``name`` or ``version`` is
@@ -246,7 +246,7 @@ class Version:
         of twenty thousand needs.)
 
         A ``"2a1"`` draft's records are projected to the shape a format-1 record has,
-        and carry their hops in :attr:`Record.source` (``design/v2a1-draft.md``); it has
+        and carry their hops in :attr:`Record.source` (``design/v2a2-draft.md``); it has
         no schema and no legacy keys, so ``apply_schema_defaults`` changes nothing there.
 
         :param apply_schema_defaults: Merge the ``needs_schema`` defaults under each
@@ -297,7 +297,7 @@ class Document:
         sections 3 and 4).
 
         :param drafts: The drafts of a later format to read as well, of which there is
-            one, ``"2a1"`` (``design/v2a1-draft.md``). Without it, a ``"2a1"`` file is
+            one, ``"2a1"`` (``design/v2a2-draft.md``). Without it, a ``"2a1"`` file is
             refused as any later format is. **Experimental**: a draft, and this
             parameter, may change or be removed in any release while the format is a
             draft. A ``"2a1"`` document has one version, which ``None`` selects, and a
@@ -376,7 +376,7 @@ class Document:
 def _select_draft(
     data: Mapping[str, Any], requested: str | None, draft: str
 ) -> Version:
-    """The one version of a ``"2a1"`` draft (``design/v2a1-draft.md`` section 2)."""
+    """The one version of a ``"2a1"`` draft (``design/v2a2-draft.md`` section 2)."""
     for key in ("versions", "current_version"):
         if key in data:
             raise ExchangeError(
@@ -427,7 +427,7 @@ def _draft_kept(
     needs: list[Any],
 ) -> tuple[list[tuple[int, str, Mapping[str, Any]]], list[Diagnostic]]:
     """The records of a draft that are read, each with its index, and a finding for each
-    that is skipped (``design/v2a1-draft.md`` section 3.1)."""
+    that is skipped (``design/v2a2-draft.md`` section 3.1)."""
     kept: list[tuple[int, str, Mapping[str, Any]]] = []
     skipped: list[Diagnostic] = []
     seen: dict[str, int] = {}
@@ -475,7 +475,7 @@ def _draft_kept(
 
 def _draft_records(needs: list[Any]) -> list[Record]:
     """A draft's records, each projected to the shape a format-1 record has
-    (``design/v2a1-draft.md`` section 3)."""
+    (``design/v2a2-draft.md`` section 3)."""
     return [
         _draft_record(index, need_id, value)
         for index, need_id, value in _draft_kept(needs)[0]
@@ -683,7 +683,7 @@ def _is_line(value: Any) -> bool:
 
 
 def _hop_problem(hop: Any) -> str | None:
-    """What is wrong with a hop's shape, or ``None`` (``design/v2a1-draft.md``
+    """What is wrong with a hop's shape, or ``None`` (``design/v2a2-draft.md``
     section 4). Keys it does not know are not checked."""
     if not isinstance(hop, Mapping):
         return "is not an object"

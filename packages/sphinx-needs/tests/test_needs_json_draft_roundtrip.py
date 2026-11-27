@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from sphinx_needs import _source_facets as facets
-from sphinx_needs._needsfile_v2a1 import AUTHORED_CORE, hop_to_json
+from sphinx_needs._needsfile_draft import AUTHORED_CORE, hop_to_json
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs_testkit import build_warnings

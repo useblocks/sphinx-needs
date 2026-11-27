@@ -13,8 +13,8 @@ that, a `"2a1"` file is refused exactly as the shared contract refuses every lat
 corpus are unchanged by it.
 
 Its executable half is this package's own corpus,
-[`tests/fixtures/needs_json_2a1_draft_conformance.toml`](../tests/fixtures/needs_json_2a1_draft_conformance.toml),
-run by `tests/test_2a1_draft_conformance.py`; "corpus: `name`" below is a case of it, and
+[`tests/fixtures/needs_json_2a2_draft_conformance.toml`](../tests/fixtures/needs_json_2a2_draft_conformance.toml),
+run by `tests/test_draft_conformance.py`; "corpus: `name`" below is a case of it, and
 `test_reader.py::…` a unit test. It is not the shared reading corpus, which ubCode
 vendors: it becomes one ubCode can vendor once the shape settles.
 
@@ -109,7 +109,7 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
    `format-version-a-pre-release-is-refused` and
    `format-version-is-checked-whatever-version-is-asked-for`;
    `test_reader.py::test_without_the_opt_in_a_draft_is_refused_exactly_as_before`;
-   `test_2a1_draft_conformance.py::test_the_shared_corpus_keeps_2a1_refused`.
+   `test_draft_conformance.py::test_the_shared_corpus_keeps_2a1_refused`.
 3. A `drafts` entry naming a draft this reader does not know is a programming error, not a
    finding about a file: `ValueError`, before the file is looked at. A string is a
    collection of its characters, so `drafts="2a1"` is one too.

@@ -5,12 +5,12 @@ import sys
 # them from its own copy of the project
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
-sys.modules.pop("json2a1_module", None)
-sys.modules.pop("json2a1_service", None)
+sys.modules.pop("jsondraft_module", None)
+sys.modules.pop("jsondraft_service", None)
 
 project = "up"
 version = "1.0"
-extensions = ["sphinx_needs", "sphinx.ext.autodoc", "json2a1_service"]
+extensions = ["sphinx_needs", "sphinx.ext.autodoc", "jsondraft_service"]
 # the included files are read through their hosts only
 exclude_patterns = ["frag/**", "_build"]
 

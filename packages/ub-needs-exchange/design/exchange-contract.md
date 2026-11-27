@@ -103,7 +103,7 @@ object identity). A rule marked **(not pinned)** has neither.
    a later format that has no `versions` is refused for its format, not for the envelope
    it lacks. No writer writes the key yet. (On opt-in only, the reader also reads the
    draft `"2a1"`, an experimental format with a contract and a corpus of its own:
-   [`v2a1-draft.md`](v2a1-draft.md). Without the opt-in, which this contract's corpus
+   [`v2a2-draft.md`](v2a2-draft.md). Without the opt-in, which this contract's corpus
    never asks for, `"2a1"` is refused as above.)
    Enforced by: corpus: `format-version-1`, `format-version-absent-is-1`,
    `format-version-above-1-is-refused`, `format-version-a-pre-release-is-refused`,
