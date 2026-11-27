@@ -435,6 +435,9 @@ def test_a_header_with_no_database_at_all_keeps_the_defines_read(
     assert recorder.notes == []
 
 
+#: :data:`ORPHAN_HEADER` with ids the build's regex takes (``^[A-Z0-9_]{5,}``)
+PROJECT_HEADER = ORPHAN_HEADER.replace("O_X,", "O_CONFIG_X,")
+
 #: a ``src-trace`` project whose database (in ``build/``) compiles ``refs.cpp`` for
 #: ``arm-none-eabi`` with ``-DCONFIG_X=1``, and whose ``orphan.h`` no entry includes
 ORPHAN_PROJECT = {
@@ -459,7 +462,7 @@ ORPHAN_PROJECT = {
         ),
         # the fixture's own, without its dangling reference
         "src/refs.cpp": "// @need-ids: REQ_001\nvoid implements_a() {}\n",
-        "src/orphan.h": ORPHAN_HEADER,
+        "src/orphan.h": PROJECT_HEADER,
     },
 }
 
@@ -477,7 +480,7 @@ def test_the_note_does_not_fail_a_warnings_as_errors_build(
     assert app.statuscode == 0
     assert build_warnings(app) == []
     needs = _json(app)["needs"]
-    assert {"O_BASE", "O_X", "O_ARM"} <= set(needs)
+    assert {"O_BASE", "O_CONFIG_X", "O_ARM"} <= set(needs)
     status = strip_colors(app._status.getvalue())
     database = tmp_path / "build" / "compile_commands.json"
     assert (
@@ -500,17 +503,18 @@ def test_an_edit_to_an_orphan_header_reads_it_again(
     state, is read."""
     _project(tmp_path, **ORPHAN_PROJECT)
     app = _build(tmp_path, make_app)
-    assert "O_Y" not in _json(app)["needs"]
+    assert "O_CONFIG_Y" not in _json(app)["needs"]
 
     header = tmp_path / "src" / "orphan.h"
     header.write_text(
-        ORPHAN_HEADER + "#ifdef CONFIG_Y\n// @Y, O_Y, impl\n#endif\n", encoding="utf-8"
+        PROJECT_HEADER + "#ifdef CONFIG_Y\n// @Y, O_CONFIG_Y, impl\n#endif\n",
+        encoding="utf-8",
     )
     _later(header)
     app = _build(tmp_path, make_app, freshenv=False)
 
     needs = _json(app)["needs"]
-    assert {"O_BASE", "O_X", "O_ARM", "O_Y"} <= set(needs)
+    assert {"O_BASE", "O_CONFIG_X", "O_ARM", "O_CONFIG_Y"} <= set(needs)
 
 
 def test_an_environment_pickled_at_env_version_10_is_read_again(
